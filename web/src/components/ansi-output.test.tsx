@@ -35,14 +35,18 @@ describe("terminal mirror colour space", () => {
 
   it("keeps muted rule glyphs on a literal dark-space grey", () => {
     const pre = mirror("├────────────┤\n");
-    const span = [...pre.querySelectorAll("span")].find((s) => s.textContent?.includes("─"));
+    const span = [...pre.querySelectorAll("[data-terminal-segment]")].find((s) =>
+      s.textContent?.includes("─"),
+    ) as HTMLElement | undefined;
     expect(span).toBeDefined();
     expect(span!.style.color).toBe("rgb(161, 161, 161)"); // #a1a1a1, --muted-foreground's dark half
   });
 
   it("emits palette variables for indexed colour so the 16 slots stay themeable", () => {
     const pre = mirror(`${ESC}[31mred${ESC}[0m`);
-    const span = [...pre.querySelectorAll("span")].find((s) => s.textContent === "red");
+    const span = [...pre.querySelectorAll("[data-terminal-segment]")].find(
+      (s) => s.textContent === "red",
+    ) as HTMLElement | undefined;
     expect(span!.style.color).toBe("var(--ansi-1)");
   });
 
@@ -50,12 +54,41 @@ describe("terminal mirror colour space", () => {
     const input = `${ESC}[48;2;57;57;71m› Summarize recent commits${ESC}[0m`;
     const { container: codex } = render(<AnsiOutput text={input} agent="codex" />);
     const { container: other } = render(<AnsiOutput text={input} agent="claude" />);
-    const codexSpan = codex.querySelector("pre span") as HTMLElement;
-    const otherSpan = other.querySelector("pre span") as HTMLElement;
+    const codexSpan = codex.querySelector("[data-terminal-segment]") as HTMLElement;
+    const otherSpan = other.querySelector("[data-terminal-segment]") as HTMLElement;
 
     expect(codexSpan.textContent).toBe("› Summarize recent commits");
     expect(codexSpan.style.backgroundColor).toBe("rgb(28, 28, 30)");
     expect(otherSpan.style.backgroundColor).toBe("rgb(57, 57, 71)");
+  });
+
+  it("fills the line leading between adjacent ANSI background rows", () => {
+    const text = `${ESC}[41mremoved${ESC}[0m\n${ESC}[42madded${ESC}[0m`;
+    const pre = mirror(text);
+    const spans = [...pre.querySelectorAll("[data-terminal-segment]")] as HTMLElement[];
+
+    expect(spans.map((span) => span.style.paddingBlock)).toEqual(["0.125em", "0.125em"]);
+    expect(pre.textContent).toBe("removed\nadded");
+  });
+
+  it("extends solid rows and a same-colour blank bridge across the mirror", () => {
+    const text = `${ESC}[41mremoved${ESC}[0m\n\n${ESC}[41mstill removed${ESC}[0m`;
+    const pre = mirror(text);
+    const lines = [...pre.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
+
+    expect(lines.map((line) => line.style.backgroundColor)).toEqual([
+      "var(--ansi-1)",
+      "var(--ansi-1)",
+      "var(--ansi-1)",
+    ]);
+    expect(pre.textContent).toBe("removed\n\nstill removed");
+  });
+
+  it("does not expand a partial background highlight", () => {
+    const pre = mirror(`${ESC}[41mhit${ESC}[0m plain`);
+    const line = pre.querySelector("[data-terminal-line]") as HTMLElement;
+
+    expect(line.style.backgroundColor).toBe("");
   });
 });
 

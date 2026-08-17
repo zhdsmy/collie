@@ -6,15 +6,22 @@ import { parseAnsi } from "@/lib/ansi";
 import { buildBlocks } from "@/lib/harness";
 import {
   lineText,
+  isBlank,
   splitLines,
   type Block,
   type MenuModel,
   type MultiSelectModel,
   type PreviewSelectModel,
   type PromptModel,
+  type StyledLine,
   type WizardModel,
 } from "@/lib/blocks";
-import { MIRROR_SPACE, MIRROR_INVERT, styleFor } from "@/components/mirror-space";
+import {
+  MIRROR_SPACE,
+  MIRROR_INVERT,
+  mirrorBackground,
+  styleFor,
+} from "@/components/mirror-space";
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks } from "@/lib/links";
 import { PromptSelectBlock, type PromptBlockAction } from "@/components/prompt-select-block";
@@ -121,6 +128,35 @@ function preClass(wrap: boolean, className?: string): string {
         "min-w-0 w-full max-w-full shrink-0 whitespace-pre overflow-x-auto overscroll-x-contain [touch-action:pan-x_pan-y]",
     className,
   );
+}
+
+// A real terminal paints backgrounds cell-by-cell across its fixed-width grid. In the wrapped web
+// mirror those trailing painted cells collapse, exposing page colour to the right. Promote only a
+// fully painted, single-colour row to a full-width surface; a local token highlight stays local.
+function solidLineBackground(line: StyledLine): string | undefined {
+  let background: string | undefined;
+  let hasText = false;
+  for (const segment of line.segments) {
+    if (segment.text.length === 0) continue;
+    hasText = true;
+    if (!segment.bg) return undefined;
+    if (background !== undefined && segment.bg !== background) return undefined;
+    background = segment.bg;
+  }
+  return hasText ? background : undefined;
+}
+
+function lineBackgrounds(lines: StyledLine[]): (string | undefined)[] {
+  const direct = lines.map(solidLineBackground);
+  return direct.map((background, index) => {
+    if (background !== undefined) return background;
+    if (index === 0 || index === lines.length - 1 || !isBlank(lineText(lines[index]!))) {
+      return undefined;
+    }
+    const before = direct[index - 1];
+    const after = direct[index + 1];
+    return before !== undefined && before === after ? before : undefined;
+  });
 }
 
 // Faithful, colored mirror of a pane's recent terminal output. Rendering flows through the Block AST
@@ -317,16 +353,17 @@ export const AnsiOutput = memo(function AnsiOutput({
 
   const renderBlock = (block: RawBlock, bi: number) => {
     if (bi > 0) offset += 1; // the "\n" separating this block from the previous
+    const backgrounds = lineBackgrounds(block.lines);
     return (
       <Fragment key={bi}>
-        {bi > 0 ? "\n" : null}
+        {bi > 0 ? <span className="hidden">{"\n"}</span> : null}
         {block.lines.map((line, li) => {
           if (li > 0) offset += 1; // the "\n" separating this line from the previous
           const segNodes = line.segments.map((s, si) => {
             const segStart = offset;
             offset += s.text.length;
             return (
-              <span key={si} style={styleFor(s, agent)}>
+              <span key={si} data-terminal-segment style={styleFor(s, agent)}>
                 {renderSegment(s.text, segStart)}
               </span>
             );
@@ -336,10 +373,21 @@ export const AnsiOutput = memo(function AnsiOutput({
           ) : (
             segNodes
           );
+          const background = backgrounds[li];
           return (
             <Fragment key={li}>
-              {li > 0 ? "\n" : null}
-              {content}
+              {li > 0 ? <span className="hidden">{"\n"}</span> : null}
+              <span
+                data-terminal-line
+                className={cn("block min-h-[1.25em] min-w-full", !wrap && "w-max")}
+                style={
+                  background === undefined
+                    ? undefined
+                    : { backgroundColor: mirrorBackground(background, agent) }
+                }
+              >
+                {content}
+              </span>
             </Fragment>
           );
         })}

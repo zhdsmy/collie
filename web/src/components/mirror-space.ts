@@ -39,6 +39,13 @@ export const MIRROR_INVERT = "[filter:invert(1)_hue-rotate(180deg)] dark:[filter
 const CODEX_INPUT_BACKGROUND = "rgb(57,57,71)";
 const CODEX_INPUT_SURFACE = "#1c1c1e";
 
+/** Resolve a terminal background into the mirror's dark colour space. */
+export function mirrorBackground(background: string, agent?: string): string {
+  return agent === "codex" && background === CODEX_INPUT_BACKGROUND
+    ? CODEX_INPUT_SURFACE
+    : background;
+}
+
 /** A segment's inline style. `muted` is the parser's own "this is TUI chrome" mark rather than an
  *  ANSI colour: drop the ANSI dim opacity so box-drawing and rule glyphs stay visible (var(--border)
  *  + dim was nearly invisible on mobile) and resolve it to #a1a1a1 — --muted-foreground's dark half,
@@ -47,7 +54,14 @@ export function styleFor(s: AnsiSegment, agent?: string): CSSProperties {
   const style = s.muted
     ? { ...s.style, color: "#a1a1a1", fontWeight: 400, opacity: 1 }
     : s.style;
-  return agent === "codex" && s.bg === CODEX_INPUT_BACKGROUND
-    ? { ...style, backgroundColor: CODEX_INPUT_SURFACE }
-    : style;
+  if (!s.bg) return style;
+
+  // Mirror rows use 1.25 line-height, while an inline background paints only the 1em glyph box.
+  // Vertical inline padding does not change line layout; half the extra leading on each side makes
+  // terminal cell backgrounds meet instead of exposing page-coloured horizontal seams.
+  return {
+    ...style,
+    backgroundColor: mirrorBackground(s.bg, agent),
+    paddingBlock: "0.125em",
+  };
 }
