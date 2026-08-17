@@ -92,8 +92,10 @@ export interface AnsiOutputProps {
 const NO_MATCHES: FindMatch[] = [];
 
 // In no-wrap mode the mirror promises terminal columns, not browser glyph advances. A fallback CJK
-// font is usually narrower than two `ch` units, so text after it (notably a TUI's border/shadow)
-// drifts left unless each wide grapheme reserves the two cells wcwidth assigned in the pane.
+// font is usually narrower than two mono cells, so text after it (notably a TUI's border/shadow)
+// drifts left unless each wide grapheme reserves the two cells wcwidth assigned in the pane. The
+// CSS reservation uses two hidden ASCII glyphs rather than `2ch`: Safari may resolve `ch` against a
+// different face than the one painting the surrounding terminal text.
 function terminalText(text: string, wrap: boolean): ReactNode {
   if (wrap) return text;
   const glyphs = displayClusters(text);
@@ -104,10 +106,9 @@ function terminalText(text: string, wrap: boolean): ReactNode {
       <span
         key={index}
         data-terminal-columns="2"
-        className="inline-block text-center"
-        style={{ width: "2ch" }}
+        className="terminal-wide-glyph"
       >
-        {glyph.text}
+        <span>{glyph.text}</span>
       </span>
     ) : (
       glyph.text

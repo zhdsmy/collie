@@ -234,6 +234,25 @@
   unicode-range: U+F0000-F1AFF;
 }
 
+/* A terminal-wide grapheme owns two cells even when Safari paints its CJK fallback face narrower.
+ * The invisible zeroes establish two cells in the same Latin mono face as neighbouring text; the
+ * real grapheme overlays them and remains the only DOM text, so copying output stays unchanged. */
+.terminal-wide-glyph {
+  position: relative;
+  display: inline-block;
+  text-align: center;
+}
+
+.terminal-wide-glyph::before {
+  content: "00";
+  visibility: hidden;
+}
+
+.terminal-wide-glyph > span {
+  position: absolute;
+  inset: 0;
+}
+
 @layer base {
   * {
     /* Full-strength ring, not /50: halved, the focus indicator measures 1.77:1 in light and 1.87:1

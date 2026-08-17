@@ -141,7 +141,8 @@ describe("mirror line wrapping", () => {
     const segments = [...pre.querySelectorAll("[data-terminal-segment]")] as HTMLElement[];
 
     expect(wide).toHaveLength(15);
-    expect(wide.every((glyph) => glyph.style.width === "2ch")).toBe(true);
+    expect(wide.every((glyph) => glyph.classList.contains("terminal-wide-glyph"))).toBe(true);
+    expect(wide.every((glyph) => glyph.children.length === 1)).toBe(true);
     expect(segments[1]!.style.backgroundColor).toBe("var(--ansi-0)");
     expect(segments[2]!.style.backgroundColor).toBe("var(--ansi-4)");
     expect(pre.textContent).toBe(`${dialog}   `);
