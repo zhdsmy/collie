@@ -2,8 +2,8 @@
 // rather than in blocks.ts to keep the dependency edge one-way: harness/ imports blocks.ts (for the
 // Block AST + pure helpers), never the reverse, so pulling an adapter's pipeline in can't form an
 // import cycle. Routing is trivial: the agent's adapter builds the blocks, or — for any unknown/
-// absent agent — the universal single raw block. This is the seam where the Claude-Code TUI grammars
-// (and any future agent's) run; every non-adapter agent keeps the pure raw mirror.
+// absent agent — the universal single raw block. This is the seam where each registered agent's TUI
+// grammars run; every non-adapter agent keeps the pure raw mirror.
 
 import type { Block, StyledLine } from "../blocks";
 import { adapterFor, hasBlockGrammar } from "./registry";

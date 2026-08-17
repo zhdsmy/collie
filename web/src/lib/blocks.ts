@@ -12,8 +12,8 @@
 // this core module has NO dependency on the agent grammars — the edge is one-way, which is what lets
 // an adapter import this AST without forming a cycle. These functions are PURE (no React) and,
 // together with the parser, run once per unique text (memoised by the renderer), so they're off the
-// hot polling path. The Claude grammars themselves (prompt-select detection, chrome stripping) live
-// in harness/claude; which agents get them is decided by the adapter registry (harness/registry).
+// hot polling path. Agent grammars (dialog detection, chrome stripping) live under harness/<agent>;
+// which agents get them is decided by the adapter registry (harness/registry).
 //
 // Invariant (relied on by find-in-output): joining every RAW block's line text with "\n" reproduces
 // the visible mirror text character-for-character. Find operates on global character offsets over

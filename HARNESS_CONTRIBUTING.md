@@ -66,6 +66,9 @@ An adapter earns capability incrementally. Ship a lower tier first; each is inde
   - a green **`describeAdapterConformance`** run (the CI gate, below), and
   - **maintainer live-verification against a real pane** before the send path is enabled.
 
+Codex intentionally stops at Tier 1: its adapter extracts chrome, status, and drafts, but does not
+lift interactive dialogs.
+
 ### The fail-closed contract (non-negotiable)
 
 **A detector MUST return `null` on anything it does not confidently recognise.** A partial lift is a

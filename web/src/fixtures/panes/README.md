@@ -228,6 +228,15 @@ transcript above the dialog" is not available as corroborating evidence the way 
 omp's `agent_status` stays `idle` while a picker is up; only the `ask` tool flips it to `blocked`.
 **Nothing may gate on `blocked`.**
 
+## Codex chrome corpus (captured 2026-08-18, Codex CLI 0.147.0)
+
+These captures are Base64-encoded so their ANSI styling and CRLF bytes remain exact in Git.
+
+| Fixture | State / what's in it | Herdr status |
+|---|---|---|
+| `codex--working-tail.ansi.b64` | Empty composer with a dim rotating prompt, followed by the styled model / `Working` / context status row | `working` |
+| `codex--idle-tail.ansi.b64` | Empty composer with a dim rotating prompt, followed by the styled model / `Ready` / approval / context / tasks status row | `idle` |
+
 ## Lessons already encoded here (don't re-learn them)
 
 - **Match on parsed text, not raw bytes**: SGR codes sit *between* glyphs (`❯` and `1.` are in

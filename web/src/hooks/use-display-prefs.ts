@@ -13,7 +13,7 @@ export interface DisplayPrefs {
   fontSize: number;
   /**
    * Raw-terminal escape hatch (default: false). When on, the mirror renders the PLAIN terminal —
-   * every Claude grammar (chrome stripping, native prompt-select buttons, the status strip) is
+   * every agent grammar (chrome stripping, native prompt-select buttons, the status strip) is
    * bypassed, so a misdetected/mis-rendered dialog can always be driven manually with the keys pad.
    * The universal fallback, made user-controllable.
    */
