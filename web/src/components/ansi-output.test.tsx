@@ -132,6 +132,27 @@ describe("mirror line wrapping", () => {
     expect(cls).not.toContain("whitespace-pre-wrap");
   });
 
+  it("reserves two terminal cells for CJK before a following ANSI shadow", () => {
+    const dialog = "│ 尝试用方向键、Tab 和 Enter 操作这个对话框        │";
+    const text = `${ESC}[30;47m${dialog}${ESC}[37;40m ${ESC}[44m  ${ESC}[0m`;
+    const { container } = render(<AnsiOutput text={text} wrap={false} />);
+    const pre = container.querySelector("pre")!;
+    const wide = [...pre.querySelectorAll("[data-terminal-columns='2']")] as HTMLElement[];
+    const segments = [...pre.querySelectorAll("[data-terminal-segment]")] as HTMLElement[];
+
+    expect(wide).toHaveLength(15);
+    expect(wide.every((glyph) => glyph.style.width === "2ch")).toBe(true);
+    expect(segments[1]!.style.backgroundColor).toBe("var(--ansi-0)");
+    expect(segments[2]!.style.backgroundColor).toBe("var(--ansi-4)");
+    expect(pre.textContent).toBe(`${dialog}   `);
+  });
+
+  it("leaves CJK as ordinary text when wrapping is on", () => {
+    const { container } = render(<AnsiOutput text="中文 prose" />);
+    expect(container.querySelector("[data-terminal-columns]")).toBeNull();
+    expect(container.querySelector("pre")!.textContent).toBe("中文 prose");
+  });
+
   it("keeps a marked ANSI border to one clipped row without changing its text, styles, links, or find offsets", () => {
     const border = `  ${"─".repeat(20)}  `;
     const text = `ordinary prose\n${ESC}[41m${border.slice(0, 12)}${ESC}[44m${border.slice(12)}${ESC}[0m\nsee https://herdr.dev/docs\n`;

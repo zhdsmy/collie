@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { displayWidth, WIDE_RANGES, COMBINING_RANGES } from "./text-width";
+import { displayClusters, displayWidth, WIDE_RANGES, COMBINING_RANGES } from "./text-width";
 
 describe("displayWidth", () => {
   it("counts ASCII as one column each", () => {
@@ -13,6 +13,14 @@ describe("displayWidth", () => {
 
   it("sums mixed ASCII + CJK correctly", () => {
     expect(displayWidth("ab日本")).toBe(2 + 4);
+  });
+
+  it("exposes grapheme widths for terminal-cell rendering", () => {
+    expect(displayClusters("A中B")).toEqual([
+      { text: "A", columns: 1 },
+      { text: "中", columns: 2 },
+      { text: "B", columns: 1 },
+    ]);
   });
 
   it("counts a combining mark as zero width (rides on its base)", () => {

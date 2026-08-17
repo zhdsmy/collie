@@ -185,6 +185,16 @@ function clusterWidth(cluster: string): number {
   return 1;
 }
 
+export interface DisplayCluster {
+  text: string;
+  columns: number;
+}
+
+/** Grapheme clusters paired with the number of terminal columns each one occupies. */
+export function displayClusters(text: string): DisplayCluster[] {
+  return clusters(text).map((cluster) => ({ text: cluster, columns: clusterWidth(cluster) }));
+}
+
 /** East-Asian-aware display width: W/F code points count 2 columns, combining marks 0, else 1.
  *  Iterates grapheme clusters (feature-detected `Intl.Segmenter`, code points otherwise); a
  *  cluster's width is its base code point's width. Ambiguous (A) glyphs count 1. */

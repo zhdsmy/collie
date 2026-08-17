@@ -24,6 +24,7 @@ import {
 } from "@/components/mirror-space";
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks } from "@/lib/links";
+import { displayClusters } from "@/lib/text-width";
 import { PromptSelectBlock, type PromptBlockAction } from "@/components/prompt-select-block";
 import { WizardBlock } from "@/components/wizard-block";
 import { PreviewSelectBlock, type PreviewBlockAction } from "@/components/preview-select-block";
@@ -89,6 +90,30 @@ export interface AnsiOutputProps {
 // Stable empty result so the "not searching" path keeps the same `matches` reference across polls
 // (no needless effect re-runs / parent count updates while find is closed).
 const NO_MATCHES: FindMatch[] = [];
+
+// In no-wrap mode the mirror promises terminal columns, not browser glyph advances. A fallback CJK
+// font is usually narrower than two `ch` units, so text after it (notably a TUI's border/shadow)
+// drifts left unless each wide grapheme reserves the two cells wcwidth assigned in the pane.
+function terminalText(text: string, wrap: boolean): ReactNode {
+  if (wrap) return text;
+  const glyphs = displayClusters(text);
+  if (glyphs.every((glyph) => glyph.columns === 1)) return text;
+
+  return glyphs.map((glyph, index) =>
+    glyph.columns === 2 ? (
+      <span
+        key={index}
+        data-terminal-columns="2"
+        className="inline-block text-center"
+        style={{ width: "2ch" }}
+      >
+        {glyph.text}
+      </span>
+    ) : (
+      glyph.text
+    ),
+  );
+}
 
 // The mirror's dark colour space and its light-theme inversion live in mirror-space.ts — the
 // statusline strip renders the same terminal segments and the two must not drift.
@@ -298,9 +323,9 @@ export const AnsiOutput = memo(function AnsiOutput({
   // highlighted. `currentAssigned` refs only the first slice of the focused match (a match can span
   // segments on a colour change) so scrollIntoView targets one stable node.
   const renderFind = (text: string, start: number): ReactNode => {
-    if (matches.length === 0) return text;
+    if (matches.length === 0) return terminalText(text, wrap);
     return splitSegment(text, start, matches).map((p, j) => {
-      if (p.matchIndex === null) return p.text;
+      if (p.matchIndex === null) return terminalText(p.text, wrap);
       const isCurrent = p.matchIndex === currentMatch;
       const attach = isCurrent && !currentAssigned;
       if (attach) currentAssigned = true;
@@ -327,7 +352,7 @@ export const AnsiOutput = memo(function AnsiOutput({
             isCurrent ? cn(MIRROR_INVERT, "bg-yellow-400 text-black") : "bg-yellow-400/30",
           )}
         >
-          {p.text}
+          {terminalText(p.text, wrap)}
         </span>
       );
     });
