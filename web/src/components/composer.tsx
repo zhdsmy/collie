@@ -102,9 +102,9 @@ const KEY_REVALIDATE_MS = 300;
 
 // Shared in-flow dock chrome for Keys/Quick — an IN-FLOW panel (never an overlay), so the terminal
 // mirror's flex-1 box shrinks and its tail stays visible while the dock is open (a covering sheet
-// hid exactly the prompt you were driving). Full-bleed top border + capped height keep the mirror
-// usable on a phone. The header (title + Close X) is a NON-scrolling child of a flex column; only the
-// body below it scrolls (max-h + overflow), so the Close X can never scroll out of reach on a short
+// hid exactly the prompt you were driving). The inset grouped surface + capped height keep the
+// composer hierarchy clear without crowding the mirror. The fixed header keeps its Close X
+// reachable; only the body below it scrolls (max-h + overflow), even on a short
 // viewport with a tall tray. One wrapper so Keys and Quick can't drift apart.
 function ComposerDock({
   title,
@@ -116,8 +116,8 @@ function ComposerDock({
   children: ReactNode;
 }) {
   return (
-    <div className="-mx-3 mb-2 flex flex-col border-t border-border bg-background">
-      <div className="flex items-center justify-between px-3 pt-2">
+    <div className="mb-2 flex flex-col overflow-hidden rounded-md border border-border/60 bg-background">
+      <div className="flex items-center justify-between bg-muted/30 px-3 py-1.5">
         <SectionLabel>{title}</SectionLabel>
         <Button
           variant="ghost"
@@ -719,7 +719,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
 
   return (
     <>
-      <div className="border-t border-border/60 bg-muted px-3 pb-[calc(env(safe-area-inset-bottom)_+_0.5rem)] pt-2.5">
+      {/* The document canvas paints the iOS home-indicator area. Keeping the inset out of this
+          padding avoids counting that safe area twice in standalone mode. */}
+      <div className="mx-2 mb-2 rounded-md border border-border/60 bg-muted px-3 pb-2 pt-2.5 shadow-sm">
         {/* Pending-send preview: visible from send until the mirror echoes back (or 6s). Shows the
             user what landed so they don't double-tap while waiting for the terminal to update. */}
         {lastSent && (
@@ -768,20 +770,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
-        {/* The one action row: Keys · Quick · Agent · ⚙ (Agent only when the pane's agent has
+        {/* The action row: Keys · Quick · Agent · ⚙ (Agent only when the pane's agent has
             commands). Display prefs used to sit on a second, permanent icon-only "View" row above
             this one; folding them behind the ⚙ gives the mirror that row back. The gear is icon-only
             and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
             keeping it narrow leaves the labelled buttons their width on a 390px phone. */}
-        {/* The "Controls" tag is lifted OUT of the row's flex flow and floated just above it. In
-            flow it was a fixed ~60px of a 390px phone width spent on a word that never changes,
-            which is what squeezed the toggles; absolute costs nothing and the row gets the width
-            back. `pt-3` on the row reserves the space it occupies so it can't collide with whatever
-            sits above. */}
-        <div className="relative mb-2 flex items-center gap-2 pt-3">
-          <SectionLabel className="absolute left-0 top-0 text-[10px] leading-none opacity-80">
-            Controls
-          </SectionLabel>
+        <div className="mb-2 flex items-center gap-2">
           {/* Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to open, tap
               again to close. aria-expanded ties each to the dock; secondary variant marks it pressed
               while open. Both share the single-valued `drawer`, so opening one closes the other. */}
