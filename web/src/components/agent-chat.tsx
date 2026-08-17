@@ -845,7 +845,7 @@ export function AgentChat({
                   {row.segments.map((s, si) => (
                     // Text nodes only — colour and weight come from the ANSI parse, never markup.
                     // Same XSS boundary as the mirror.
-                    <span key={si} style={styleFor(s)}>
+                    <span key={si} style={styleFor(s, agent?.agent)}>
                       {s.text}
                     </span>
                   ))}

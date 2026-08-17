@@ -45,6 +45,18 @@ describe("terminal mirror colour space", () => {
     const span = [...pre.querySelectorAll("span")].find((s) => s.textContent === "red");
     expect(span!.style.color).toBe("var(--ansi-1)");
   });
+
+  it("softens only Codex input chrome without changing its text", () => {
+    const input = `${ESC}[48;2;57;57;71m› Summarize recent commits${ESC}[0m`;
+    const { container: codex } = render(<AnsiOutput text={input} agent="codex" />);
+    const { container: other } = render(<AnsiOutput text={input} agent="claude" />);
+    const codexSpan = codex.querySelector("pre span") as HTMLElement;
+    const otherSpan = other.querySelector("pre span") as HTMLElement;
+
+    expect(codexSpan.textContent).toBe("› Summarize recent commits");
+    expect(codexSpan.style.backgroundColor).toBe("rgb(28, 28, 30)");
+    expect(otherSpan.style.backgroundColor).toBe("rgb(57, 57, 71)");
+  });
 });
 
 // Wrap defaults ON (#53): the mirror is mostly agent prose and a phone shows far fewer columns than

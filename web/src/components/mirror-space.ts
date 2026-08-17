@@ -33,10 +33,21 @@ import type { AnsiSegment } from "@/lib/ansi";
 export const MIRROR_SPACE = "[color-scheme:dark] bg-[#0a0a0a] text-[#fafafa]";
 export const MIRROR_INVERT = "[filter:invert(1)_hue-rotate(180deg)] dark:[filter:none]";
 
+// Codex paints its composer and submitted-query rows with this dark violet-grey. It reads as a
+// heavy lavender slab after the light mirror's inversion, so normalize that one semantic chrome
+// colour to iOS's dark secondary ground. The outer filter maps it to roughly #e3e3e5 in light.
+const CODEX_INPUT_BACKGROUND = "rgb(57,57,71)";
+const CODEX_INPUT_SURFACE = "#1c1c1e";
+
 /** A segment's inline style. `muted` is the parser's own "this is TUI chrome" mark rather than an
  *  ANSI colour: drop the ANSI dim opacity so box-drawing and rule glyphs stay visible (var(--border)
  *  + dim was nearly invisible on mobile) and resolve it to #a1a1a1 — --muted-foreground's dark half,
  *  written literally to match MIRROR_SPACE, since everything on these surfaces is dark-space. */
-export function styleFor(s: AnsiSegment): CSSProperties {
-  return s.muted ? { ...s.style, color: "#a1a1a1", fontWeight: 400, opacity: 1 } : s.style;
+export function styleFor(s: AnsiSegment, agent?: string): CSSProperties {
+  const style = s.muted
+    ? { ...s.style, color: "#a1a1a1", fontWeight: 400, opacity: 1 }
+    : s.style;
+  return agent === "codex" && s.bg === CODEX_INPUT_BACKGROUND
+    ? { ...style, backgroundColor: CODEX_INPUT_SURFACE }
+    : style;
 }

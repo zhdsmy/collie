@@ -326,7 +326,7 @@ export const AnsiOutput = memo(function AnsiOutput({
             const segStart = offset;
             offset += s.text.length;
             return (
-              <span key={si} style={styleFor(s)}>
+              <span key={si} style={styleFor(s, agent)}>
                 {renderSegment(s.text, segStart)}
               </span>
             );

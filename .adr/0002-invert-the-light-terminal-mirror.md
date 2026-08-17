@@ -1,7 +1,7 @@
 # 0002 — The light terminal mirror is inverted, not re-themed
 
 - **Status:** Accepted
-- **Date:** 2026-07-28 (revised 2026-07-29)
+- **Date:** 2026-07-28 (revised 2026-07-29 and 2026-08-17)
 - **Shipped in:** _(set at the release commit)_
 - **Trail:** every figure is measured. Colour-form counts come from live panes read through the
   production path (`pane.read` → `/api/pane/:id`); contrast is rasterized through a canvas to
@@ -73,6 +73,13 @@ Three rules follow, all load-bearing:
 3. **The filter is scoped to the `<pre>` alone.** The interactive blocks (prompt-select, wizard,
    preview, multi-select) are siblings, not children, so they keep normal app theming.
 
+One chrome-only exception does not change those rules: in a Codex pane, the exact
+`rgb(57,57,71)` background Codex uses for its composer and submitted-query rows is normalized to
+`#1c1c1e` in dark space. Two live panes emitted that same exact value for both rows. The original
+violet-grey became a heavy lavender slab after inversion; the replacement stays a restrained
+secondary surface in dark and maps to approximately `#e3e3e5` in light. This is keyed by both
+harness and exact background, so the same colour in another agent's output remains untouched.
+
 `--ansi-0…15` therefore has **one** set of values, the dark one. `lib/ansi.ts` still emits
 `var(--ansi-N)`: the variables remain the seam where indexed colour is defined once, and both
 spellings route through them.
@@ -138,8 +145,9 @@ be keyed to let that layer on later.
   for white rather than negated onto it. Rejected only because Collie cannot detect the agent's
   theme, so it cannot know when to suppress the filter. Revisit alongside a per-pane override or a
   reliable detection heuristic.
-- **Per-harness colour maps** (translate claude's dark palette to its light one). Needs a table per
-  harness, per theme, per release; breaks silently when a harness retunes a colour; and cannot cover
+- **Per-harness colour maps** (translate claude's dark palette to its light one). The single Codex
+  composer-ground exception above is semantic TUI chrome, not a palette. General maps still need a
+  table per harness, per theme, per release; break silently when a harness retunes a colour; and cannot cover
   output from the tools and programs an agent runs, which is in no table. If per-harness knowledge
   is ever wired in, the payload should be **one bit** — "authored for dark/light" — not a colour
   map. One bit is all the mirror needs.
