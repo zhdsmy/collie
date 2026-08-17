@@ -152,9 +152,9 @@ export default defineConfig({
         // Files baked into the precache manifest (injected at src/sw.ts's `self.__WB_MANIFEST`).
         // The SPA navigation fallback + /api denylist now live in src/sw.ts (a NavigationRoute):
         // injectManifest hands routing to the custom SW rather than generating it here.
-        // The bundled Nerd Font faces are deliberately excluded: they total ~1.1 MB and
-        // `unicode-range` already makes them lazy (index.css), so precaching them would charge
-        // every install for glyphs most herds never paint. src/sw.ts caches them on first use.
+        // Bundled fonts are deliberately excluded: Nerd symbols are unicode-range-lazy and the
+        // terminal faces are user-selected, so precaching would charge every install for fonts it
+        // may never paint. src/sw.ts caches each one on first use.
         globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
       },
       // Over plain HTTP (insecure context) the SW can't register; in dev we don't want it anyway.

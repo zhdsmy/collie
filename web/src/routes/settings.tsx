@@ -11,6 +11,7 @@ import { NotifyPrefsControl } from "@/components/notify-prefs-control";
 import { SnoozeControl } from "@/components/snooze-control";
 import { ThemeControl } from "@/components/theme-control";
 import { HapticsControl } from "@/components/haptics-control";
+import { TerminalFontControl } from "@/components/terminal-font-control";
 import { UpdateCheckControl } from "@/components/update-check-control";
 import { Switch } from "@/components/ui/switch";
 import { fetchConfig } from "@/lib/api";
@@ -20,8 +21,8 @@ import { homePath } from "@/lib/nav";
 import { useSession } from "@/lib/session";
 import type { PushAvailability } from "@/lib/push";
 
-// Settings page — currently just the push-notification toggle. Reachable from the home header gear.
-// Lives under the root route, so the snapshot polling/push-setup in RootLayout keeps running behind it.
+// Device-local and bridge-wide settings. Reachable from the home header gear. Lives under the root
+// route, so the snapshot polling/push setup in RootLayout keeps running behind it.
 export function SettingsRoute() {
   const navigate = useNavigate();
   const session = useSession();
@@ -75,6 +76,8 @@ export function SettingsRoute() {
         {/* First: it's the setting people come here to change, and below the notification stack it
             sat off-screen on a phone, a scroll into a 1240px page. */}
         <ThemeControl />
+
+        <TerminalFontControl />
 
         {/* Device behaviour sits with appearance — both are "how this phone treats you", as opposed
             to the herd/notification settings below. Renders nothing where vibrate is unsupported. */}

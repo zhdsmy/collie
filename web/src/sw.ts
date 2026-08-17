@@ -33,11 +33,11 @@ registerRoute(
   }),
 );
 
-// The bundled Nerd Font faces are out of the precache on purpose — `unicode-range` keeps them lazy,
-// and ~1.1 MB is not something to charge an install for (vite.config.ts, index.css). Cache-first on
-// first use gives them back offline. Hand-rolled rather than workbox-strategies: the SW bundle stays
-// at one dependency. Entries are never revised — the version is in the filename, so a regenerated
-// subset is a different URL and old entries are swept on activate, not overwritten.
+// Bundled fonts are out of the precache on purpose — Nerd symbols stay unicode-range-lazy, and the
+// selectable terminal faces should download only after the user chooses one (vite.config.ts,
+// index.css). Cache-first on first use gives them back offline. Hand-rolled rather than
+// workbox-strategies: the SW bundle stays at one dependency. Entries are never revised — the version
+// is in the filename, so a replacement uses a new URL and old entries are swept on activate.
 //
 // The cost, stated plainly: a device that installs the PWA and goes offline without ever painting a
 // Nerd Font glyph shows tofu until it is online once. Precaching would fix that by charging EVERY

@@ -45,16 +45,19 @@ export const NAVIGATION_NETWORK_ONLY = [
 ] as const;
 
 /**
- * The bundled Nerd Font faces (index.css). The SW caches these on first use rather than precaching
- * them — `unicode-range` keeps them lazy and ~1.1 MB is not something to charge an install for — and
- * sweeps anything else out of that cache on activate, which is why the live set has to be a value
- * both sides can read. The version is part of the filename: `public/` assets are unhashed, so a
- * regenerated subset must be a new URL or the permanent cache would serve the old one forever.
- * `fonts.test.ts` pins this list against the stylesheet and the files on disk.
+ * Bundled font faces declared by index.css. The SW caches these on first use rather than precaching
+ * them — SF Mono needs no download, selectable faces should cost only the user who selects them,
+ * and ~1.1 MB of Nerd symbols is not something to charge every install for. Anything outside this
+ * live set is swept on activate. Versions are part of filenames because `public/` assets are
+ * unhashed; `fonts.test.ts` pins this list against the stylesheet and files on disk.
  */
 export const FONT_URLS = [
   "/fonts/nerd-symbols-3.5.0-pua.woff2",
   "/fonts/nerd-symbols-3.5.0-spua.woff2",
+  "/fonts/geist-mono-1.3.1-variable.woff2",
+  "/fonts/geist-mono-5.2.8-symbols.woff2",
+  "/fonts/jetbrains-mono-2.304-regular.woff2",
+  "/fonts/jetbrains-mono-2.304-semibold.woff2",
 ] as const;
 
 /**

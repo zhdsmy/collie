@@ -36,6 +36,11 @@
      value inverse to --muted in light, then use --muted's dark half when the filter is disabled. */
   --mirror-codex-input-background: rgb(20 20 20);
 
+  /* Settings → Terminal selects this face list. SF Mono is the no-download default; the two named
+     web faces below stay unfetched until their data attribute makes them part of `font-mono`. */
+  --terminal-mono-face: ui-monospace, SFMono-Regular, "SF Mono", Menlo, "Cascadia Mono",
+    "Cascadia Code", Consolas, "Liberation Mono", monospace;
+
   --radius: 0.65rem;
   /* Light deviates from stock shadcn in two places, both measured rather than taste:
      --background is a step off white (stock has background == card == popover == pure white, so the
@@ -154,6 +159,16 @@
   }
 }
 
+:root[data-terminal-font="geist-mono"] {
+  --terminal-mono-face: "Geist Mono Web", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+    Consolas, monospace;
+}
+
+:root[data-terminal-font="jetbrains-mono"] {
+  --terminal-mono-face: "JetBrains Mono Web", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+    Consolas, monospace;
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -188,12 +203,10 @@
   --color-status-idle: var(--status-idle);
   --color-status-unknown: var(--status-unknown);
 
-  --font-mono: "Nerd Font Symbols", "JetBrains Mono", "Cascadia Mono", "Cascadia Code",
-    "Roboto Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
-    monospace;
+  --font-mono: "Nerd Font Symbols", var(--terminal-mono-face);
 }
 
-/* Nerd Font symbols, bundled — the only webfont Collie ships.
+/* Nerd Font symbols, bundled separately from the selectable terminal faces below.
  *
  * WHY. Agent prompts and status lines are full of Nerd Font glyphs (Powerline separators, devicons,
  * Material icons: OMP's `symbolPreset: nerd`, herdr's own output). Desktop browsers can resolve them
@@ -232,6 +245,42 @@
   src: url("/fonts/nerd-symbols-3.5.0-spua.woff2") format("woff2");
   font-display: swap;
   unicode-range: U+F0000-F1AFF;
+}
+
+/* Selectable terminal faces. All live under /fonts so sw.ts caches the chosen face on first use;
+ * no WOFF2 is precached, and SF Mono downloads nothing. Geist's small symbols face completes its
+ * box-drawing block. JetBrains ships separate regular/semibold files so ANSI bold stays genuine. */
+@font-face {
+  font-family: "Geist Mono Web";
+  src: url("/fonts/geist-mono-1.3.1-variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono Web";
+  src: url("/fonts/geist-mono-5.2.8-symbols.woff2") format("woff2-variations");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+2000-2001, U+2004-2008, U+200A, U+23B8-23BD, U+2500-259F;
+}
+
+@font-face {
+  font-family: "JetBrains Mono Web";
+  src: url("/fonts/jetbrains-mono-2.304-regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono Web";
+  src: url("/fonts/jetbrains-mono-2.304-semibold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
 }
 
 /* A terminal-wide grapheme owns two cells even when Safari paints its CJK fallback face narrower.
