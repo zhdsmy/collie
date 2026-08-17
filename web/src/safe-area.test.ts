@@ -5,10 +5,13 @@ const root = resolve(import.meta.dirname, "..");
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("mobile composer chrome", () => {
-  it("does not add the bottom safe-area inset to composer layout spacing", () => {
+  it("extends only the closed-keyboard background into the bottom safe area", () => {
     const composer = read("src/components/composer.tsx");
-    expect(composer).toContain("bg-muted px-3 pb-2 pt-2.5");
-    expect(composer).not.toContain("pb-[calc(env(safe-area-inset-bottom)");
+    expect(composer).toContain("const keyboardOpen = useKeyboardOpen()");
+    expect(composer).toContain('? "mb-2 pb-2"');
+    expect(composer).toContain(
+      '"mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]"',
+    );
   });
 
   it("does not reserve a label row above the composer actions", () => {
@@ -18,9 +21,11 @@ describe("mobile composer chrome", () => {
   });
 
   it("renders the composer as a modest inset floating panel", () => {
-    expect(read("src/components/composer.tsx")).toContain(
-      "mx-2 mb-2 rounded-md border border-border/60 bg-muted px-3 pb-2 pt-2.5 shadow-sm",
+    const composer = read("src/components/composer.tsx");
+    expect(composer).toContain(
+      "mx-2 rounded-md border border-border/60 bg-muted px-3 pt-2.5 shadow-sm",
     );
+    expect(composer).toContain('keyboardOpen\n            ? "mb-2 pb-2"');
   });
 
   it("groups an open composer drawer into a matching inset surface", () => {

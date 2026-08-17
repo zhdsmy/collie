@@ -4,6 +4,7 @@ import { useRevalidator } from "react-router";
 import { Check, ImagePlus, Keyboard, Loader2, Send, Settings2, Slash, Terminal, X, Zap } from "lucide-react";
 
 import type { DisplayPrefs } from "@/hooks/use-display-prefs";
+import { useKeyboardOpen } from "@/hooks/use-keyboard";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { useDirectTyping } from "@/hooks/use-direct-typing";
 import { setStatus } from "@/lib/status";
@@ -139,6 +140,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   ref,
 ) {
   const revalidator = useRevalidator();
+  const keyboardOpen = useKeyboardOpen();
   // Every write affordance is off when the pane is gone OR this device is read-only.
   const locked = gone || readOnly;
   // …and a ref alongside it, for the ONE caller that reads it after an await. `send()` checks
@@ -719,9 +721,18 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
 
   return (
     <>
-      {/* The document canvas paints the iOS home-indicator area. Keeping the inset out of this
-          padding avoids counting that safe area twice in standalone mode. */}
-      <div className="mx-2 mb-2 rounded-md border border-border/60 bg-muted px-3 pb-2 pt-2.5 shadow-sm">
+      {/* With the keyboard closed, extend only the panel background through the iOS bottom safe area:
+          extra padding paints downward while the equal negative margin keeps the flex layout and the
+          controls at their current safe height above the home indicator. Once the keyboard opens its
+          resized viewport owns the bottom edge, so retain the proven mb-2/pb-2 geometry unchanged. */}
+      <div
+        className={cn(
+          "mx-2 rounded-md border border-border/60 bg-muted px-3 pt-2.5 shadow-sm",
+          keyboardOpen
+            ? "mb-2 pb-2"
+            : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",
+        )}
+      >
         {/* Pending-send preview: visible from send until the mirror echoes back (or 6s). Shows the
             user what landed so they don't double-tap while waiting for the terminal to update. */}
         {lastSent && (
