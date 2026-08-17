@@ -33,11 +33,12 @@ import type { AnsiSegment } from "@/lib/ansi";
 export const MIRROR_SPACE = "[color-scheme:dark] bg-[#0a0a0a] text-[#fafafa]";
 export const MIRROR_INVERT = "[filter:invert(1)_hue-rotate(180deg)] dark:[filter:none]";
 
-// Codex paints its composer and submitted-query rows with this dark violet-grey. It reads as a
-// heavy lavender slab after the light mirror's inversion, so normalize that one semantic chrome
-// colour to iOS's dark secondary ground. The outer filter maps it to roughly #e3e3e5 in light.
+// Codex paints its composer and submitted-query rows with this dark violet-grey. Normalize that one
+// semantic chrome colour to the app's muted surface. The root variable is already expressed in the
+// mirror's dark space: light roots provide the inverse of muted, while dark roots provide muted's
+// dark half, so the outer filter lands on the same surface as the header and composer in both modes.
 const CODEX_INPUT_BACKGROUND = "rgb(57,57,71)";
-const CODEX_INPUT_SURFACE = "#1c1c1e";
+const CODEX_INPUT_SURFACE = "var(--mirror-codex-input-background)";
 
 /** Resolve a terminal background into the mirror's dark colour space. */
 export function mirrorBackground(background: string, agent?: string): string {

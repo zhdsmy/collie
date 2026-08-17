@@ -73,12 +73,14 @@ Three rules follow, all load-bearing:
 3. **The filter is scoped to the `<pre>` alone.** The interactive blocks (prompt-select, wizard,
    preview, multi-select) are siblings, not children, so they keep normal app theming.
 
-One chrome-only exception does not change those rules: in a Codex pane, the exact
-`rgb(57,57,71)` background Codex uses for its composer and submitted-query rows is normalized to
-`#1c1c1e` in dark space. Two live panes emitted that same exact value for both rows. The original
-violet-grey became a heavy lavender slab after inversion; the replacement stays a restrained
-secondary surface in dark and maps to approximately `#e3e3e5` in light. This is keyed by both
-harness and exact background, so the same colour in another agent's output remains untouched.
+One chrome-only exception is deliberately theme-aware: in a Codex pane, the exact
+`rgb(57,57,71)` background Codex uses for its composer and submitted-query rows is normalized through
+`--mirror-codex-input-background`. Two live panes emitted that same exact value for both rows. The
+variable is still authored in the mirror's dark space: on a light root it is the inverse of the
+app's muted surface, so the outer filter lands on muted; on a dark root it is muted's dark half and
+the filter is disabled. This makes that semantic chrome match the app header and composer without
+re-theming any agent output. It is keyed by both harness and exact background, so the same colour in
+another agent's output remains untouched.
 
 `--ansi-0…15` therefore has **one** set of values, the dark one. `lib/ansi.ts` still emits
 `var(--ansi-N)`: the variables remain the seam where indexed colour is defined once, and both

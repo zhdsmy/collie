@@ -58,7 +58,7 @@ describe("terminal mirror colour space", () => {
     const otherSpan = other.querySelector("[data-terminal-segment]") as HTMLElement;
 
     expect(codexSpan.textContent).toBe("› Summarize recent commits");
-    expect(codexSpan.style.backgroundColor).toBe("rgb(28, 28, 30)");
+    expect(codexSpan.style.backgroundColor).toBe("var(--mirror-codex-input-background)");
     expect(otherSpan.style.backgroundColor).toBe("rgb(57, 57, 71)");
   });
 
@@ -81,6 +81,8 @@ describe("terminal mirror colour space", () => {
       "var(--ansi-1)",
       "var(--ansi-1)",
     ]);
+    expect(lines.every((line) => line.className.includes("w-full"))).toBe(true);
+    expect(lines.every((line) => !line.className.includes("min-w-full"))).toBe(true);
     expect(pre.textContent).toBe("removed\n\nstill removed");
   });
 
@@ -104,6 +106,8 @@ describe("mirror line wrapping", () => {
 
   it("wraps by default rather than making the block a horizontal panner", () => {
     const cls = preFor({}).className;
+    expect(cls).toContain("w-full");
+    expect(cls).toContain("max-w-full");
     expect(cls).toContain("whitespace-pre-wrap");
     expect(cls).not.toContain("overflow-x-auto");
   });

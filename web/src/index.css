@@ -32,6 +32,9 @@
    by public/theme-init.js before the bundle loads. */
 :root {
   color-scheme: light dark;
+  /* Codex's terminal input is painted inside the mirror's light-theme inversion. Keep the raw
+     value inverse to --muted in light, then use --muted's dark half when the filter is disabled. */
+  --mirror-codex-input-background: rgb(20 20 20);
 
   --radius: 0.65rem;
   /* Light deviates from stock shadcn in two places, both measured rather than taste:
@@ -143,6 +146,12 @@
 }
 :root.dark {
   color-scheme: dark;
+  --mirror-codex-input-background: oklch(0.269 0 0);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --mirror-codex-input-background: oklch(0.269 0 0);
+  }
 }
 
 @theme inline {
