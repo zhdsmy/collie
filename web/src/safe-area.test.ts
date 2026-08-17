@@ -7,11 +7,14 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("mobile composer chrome", () => {
   it("extends only the closed-keyboard background into the bottom safe area", () => {
     const composer = read("src/components/composer.tsx");
+    const agentChat = read("src/components/agent-chat.tsx");
     expect(composer).toContain("const keyboardOpen = useKeyboardOpen()");
     expect(composer).toContain('? "mb-2 pb-2"');
     expect(composer).toContain(
       '"mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]"',
     );
+    expect(agentChat).toContain("max-w-[100dvw] flex-1 flex-col overflow-x-clip");
+    expect(agentChat).not.toContain("max-w-[100dvw] flex-1 flex-col overflow-x-hidden");
   });
 
   it("does not reserve a label row above the composer actions", () => {

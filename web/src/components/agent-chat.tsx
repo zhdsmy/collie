@@ -552,7 +552,10 @@ export function AgentChat({
   }
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 max-w-[100dvw] flex-1 flex-col overflow-x-hidden">
+    // `clip`, unlike `hidden`, does not force overflow-y to `auto`. The composer can therefore paint
+    // its closed-keyboard background into the bottom safe area without making this shell a competing
+    // vertical scroller; the mirror's own scrollport still clips terminal overflow below.
+    <div className="flex min-h-0 w-full min-w-0 max-w-[100dvw] flex-1 flex-col overflow-x-clip">
       {/* Header — the SAME AppHeader shell the dashboard and space mount, so the Collie mark is
           identical on every screen (no hand-rolled bar to drift). The pane's own bits ride in via
           slots: the `space › tab` breadcrumb as the center, the agent StatusBadge as the right-cluster
