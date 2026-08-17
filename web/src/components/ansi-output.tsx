@@ -359,11 +359,16 @@ export const AnsiOutput = memo(function AnsiOutput({
         {bi > 0 ? <span className="hidden">{"\n"}</span> : null}
         {block.lines.map((line, li) => {
           if (li > 0) offset += 1; // the "\n" separating this line from the previous
+          const background = backgrounds[li];
           const segNodes = line.segments.map((s, si) => {
             const segStart = offset;
             offset += s.text.length;
             return (
-              <span key={si} data-terminal-segment style={styleFor(s, agent)}>
+              <span
+                key={si}
+                data-terminal-segment
+                style={styleFor(s, agent, background === undefined)}
+              >
                 {renderSegment(s.text, segStart)}
               </span>
             );
@@ -373,7 +378,6 @@ export const AnsiOutput = memo(function AnsiOutput({
           ) : (
             segNodes
           );
-          const background = backgrounds[li];
           return (
             <Fragment key={li}>
               {li > 0 ? <span className="hidden">{"\n"}</span> : null}

@@ -47,15 +47,25 @@ export function mirrorBackground(background: string, agent?: string): string {
     : background;
 }
 
-/** A segment's inline style. `muted` is the parser's own "this is TUI chrome" mark rather than an
+/** A segment's inline style. `paintBackground=false` lets a solid row own the same background so
+ *  terminal padding cells cannot paint past that row's inset width. `muted` is the parser's own
+ *  "this is TUI chrome" mark rather than an
  *  ANSI colour: drop the ANSI dim opacity so box-drawing and rule glyphs stay visible (var(--border)
  *  + dim was nearly invisible on mobile) and resolve it to #a1a1a1 — --muted-foreground's dark half,
  *  written literally to match MIRROR_SPACE, since everything on these surfaces is dark-space. */
-export function styleFor(s: AnsiSegment, agent?: string): CSSProperties {
+export function styleFor(
+  s: AnsiSegment,
+  agent?: string,
+  paintBackground = true,
+): CSSProperties {
   const style = s.muted
     ? { ...s.style, color: "#a1a1a1", fontWeight: 400, opacity: 1 }
     : s.style;
   if (!s.bg) return style;
+  if (!paintBackground) {
+    const { backgroundColor: _, ...withoutBackground } = style;
+    return withoutBackground;
+  }
 
   // Mirror rows use 1.25 line-height, while an inline background paints only the 1em glyph box.
   // Vertical inline padding does not change line layout; half the extra leading on each side makes

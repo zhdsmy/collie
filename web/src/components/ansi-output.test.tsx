@@ -56,18 +56,28 @@ describe("terminal mirror colour space", () => {
     const { container: other } = render(<AnsiOutput text={input} agent="claude" />);
     const codexSpan = codex.querySelector("[data-terminal-segment]") as HTMLElement;
     const otherSpan = other.querySelector("[data-terminal-segment]") as HTMLElement;
+    const codexLine = codex.querySelector("[data-terminal-line]") as HTMLElement;
+    const otherLine = other.querySelector("[data-terminal-line]") as HTMLElement;
 
     expect(codexSpan.textContent).toBe("› Summarize recent commits");
-    expect(codexSpan.style.backgroundColor).toBe("var(--mirror-codex-input-background)");
-    expect(otherSpan.style.backgroundColor).toBe("rgb(57, 57, 71)");
+    expect(codexSpan.style.backgroundColor).toBe("");
+    expect(otherSpan.style.backgroundColor).toBe("");
+    expect(codexLine.style.backgroundColor).toBe("var(--mirror-codex-input-background)");
+    expect(otherLine.style.backgroundColor).toBe("rgb(57, 57, 71)");
   });
 
-  it("fills the line leading between adjacent ANSI background rows", () => {
+  it("lets solid rows own their background instead of overflowing terminal padding cells", () => {
     const text = `${ESC}[41mremoved${ESC}[0m\n${ESC}[42madded${ESC}[0m`;
     const pre = mirror(text);
     const spans = [...pre.querySelectorAll("[data-terminal-segment]")] as HTMLElement[];
+    const lines = [...pre.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
 
-    expect(spans.map((span) => span.style.paddingBlock)).toEqual(["0.125em", "0.125em"]);
+    expect(spans.map((span) => span.style.backgroundColor)).toEqual(["", ""]);
+    expect(spans.map((span) => span.style.paddingBlock)).toEqual(["", ""]);
+    expect(lines.map((line) => line.style.backgroundColor)).toEqual([
+      "var(--ansi-1)",
+      "var(--ansi-2)",
+    ]);
     expect(pre.textContent).toBe("removed\nadded");
   });
 
@@ -89,8 +99,11 @@ describe("terminal mirror colour space", () => {
   it("does not expand a partial background highlight", () => {
     const pre = mirror(`${ESC}[41mhit${ESC}[0m plain`);
     const line = pre.querySelector("[data-terminal-line]") as HTMLElement;
+    const highlighted = pre.querySelector("[data-terminal-segment]") as HTMLElement;
 
     expect(line.style.backgroundColor).toBe("");
+    expect(highlighted.style.backgroundColor).toBe("var(--ansi-1)");
+    expect(highlighted.style.paddingBlock).toBe("0.125em");
   });
 });
 
