@@ -15,13 +15,16 @@ const paneWithDraft = (draft: string) => `some output\n${BOX_RULE}\n❯ ${draft}
 const paneWithDialog = "Do you want to proceed?\n ❯ 1. Yes\n   2. No\n\n Esc to cancel";
 const codexPaint = (text: string, style = "") =>
   `\x1b[${style}48;2;57;57;71m${text}\x1b[0m`;
-const codexPaneWithDraft = (draft: string) =>
+const codexPaneWithDraft = (
+  draft: string,
+  statusLines = ["  gpt-5.6-sol high · Ready · Context 91% left"],
+) =>
   [
     "some output",
     codexPaint(" ".repeat(40)),
     `${codexPaint("› ", "1;")}${codexPaint(draft)}${codexPaint(" ".repeat(12))}`,
     codexPaint(" ".repeat(40)),
-    "  gpt-5.6-sol high · Ready · Context 91% left",
+    ...statusLines,
   ].join("\n");
 
 /** Record every reply POST, and let the fake pane's screen be swapped per test. */
@@ -227,6 +230,26 @@ describe("sendGuardedReply", () => {
     expect(out).toEqual({ status: "sent" });
     expect(calls).toEqual([
       { text: `${path} ${caption}`, submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
+  it("submits plain Codex text while the active composer offers queueing", async () => {
+    const text = "纯文字输入也报错";
+    const calls = harness(() =>
+      codexPaneWithDraft(text, ["  tab to queue message", "26% context left"]),
+    );
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text,
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text, submit: false },
       { text: "", submit: true },
     ]);
   });

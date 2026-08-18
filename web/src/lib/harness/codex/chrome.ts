@@ -4,12 +4,16 @@ import { isBlank, lineText, trimTrailingBlank, type StyledLine } from "../../blo
 const PROMPT_MARKER = "›";
 const MAX_COMPOSER_LINES = 100;
 const CONTEXT_FIELD = /(?:^|\s)Context \d+% left(?:\s|$)/;
+const QUEUE_HINT = /^tab to queue message$/i;
+const QUEUE_CONTEXT = /^\d+% context left$/i;
+const QUEUE_STATUS = /^tab to queue message\s+\d+% context left$/i;
 
 interface ComposerMatch {
   top: number;
   prompt: number;
   bottom: number;
-  status: number;
+  statusStart: number;
+  statusEnd: number;
 }
 
 function uniformBackground(line: StyledLine): string | null {
@@ -29,9 +33,30 @@ function startsWithPrompt(line: StyledLine): boolean {
   return lineText(line).trimStart().startsWith(PROMPT_MARKER);
 }
 
-function isStatusLine(line: StyledLine): boolean {
+function isRichStatusLine(line: StyledLine): boolean {
   const text = lineText(line).trim();
   return CONTEXT_FIELD.test(text) && text.split("·").length >= 3 && uniformBackground(line) === null;
+}
+
+function locateStatusStart(lines: StyledLine[], end: number): number | null {
+  const last = lines[end - 1]!;
+  const lastText = lineText(last).trim();
+  if (isRichStatusLine(last) || (QUEUE_STATUS.test(lastText) && uniformBackground(last) === null)) {
+    return end - 1;
+  }
+
+  const hint = lines[end - 2];
+  if (
+    hint !== undefined &&
+    QUEUE_CONTEXT.test(lastText) &&
+    QUEUE_HINT.test(lineText(hint).trim()) &&
+    uniformBackground(last) === null &&
+    uniformBackground(hint) === null
+  ) {
+    return end - 2;
+  }
+
+  return null;
 }
 
 function locateComposer(lines: StyledLine[]): ComposerMatch | null {
@@ -41,10 +66,10 @@ function locateComposer(lines: StyledLine[]): ComposerMatch | null {
   }
   if (end < 4) return null;
 
-  const status = end - 1;
-  if (!isStatusLine(lines[status]!)) return null;
+  const statusStart = locateStatusStart(lines, end);
+  if (statusStart === null) return null;
 
-  const bottom = status - 1;
+  const bottom = statusStart - 1;
   const background = uniformBackground(lines[bottom]!);
   if (background === null || !isBlank(lineText(lines[bottom]!))) return null;
 
@@ -66,7 +91,7 @@ function locateComposer(lines: StyledLine[]): ComposerMatch | null {
     if (startsWithPrompt(lines[i]!)) return null;
   }
 
-  return { top, prompt, bottom, status };
+  return { top, prompt, bottom, statusStart, statusEnd: end };
 }
 
 function draftSegments(line: StyledLine): AnsiSegment[] {
@@ -89,16 +114,16 @@ function draftSegments(line: StyledLine): AnsiSegment[] {
   return result;
 }
 
-/** Remove Codex's native composer and status row when their complete tail shape is present. */
+/** Remove Codex's native composer and status rows when their complete tail shape is present. */
 export function stripChrome(lines: StyledLine[]): StyledLine[] {
   const match = locateComposer(lines);
   return match === null ? lines : trimTrailingBlank(lines.slice(0, match.top));
 }
 
-/** Return Codex's styled model/state/context row from immediately below its composer. */
+/** Return Codex's styled status rows from immediately below its composer. */
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   const match = locateComposer(lines);
-  return match === null ? [] : [lines[match.status]!];
+  return match === null ? [] : lines.slice(match.statusStart, match.statusEnd);
 }
 
 /** Return the visible Codex draft, excluding its dim rotating placeholder. */

@@ -62,6 +62,18 @@ describe("Codex chrome", () => {
     );
   });
 
+  it.each([
+    [["  tab to queue message", "26% context left"]],
+    [["  tab to queue message     26% context left"]],
+  ])("recognises Codex's active queue footer across %s", (footer) => {
+    const composer = composerBuffer("纯文字输入也报错");
+    const captured = [...composer.slice(0, -1), ...lines(footer.join("\n"))];
+
+    expect(stripChrome(captured).map(lineText)).toEqual(["earlier output"]);
+    expect(extractStatusLines(captured).map(lineText)).toEqual(footer);
+    expect(extractInputDraft(captured)).toBe("纯文字输入也报错");
+  });
+
   it("does not surface Codex's dim rotating placeholder as a draft", () => {
     expect(extractInputDraft(composerBuffer("Explain this codebase", { dim: true }))).toBeNull();
   });
