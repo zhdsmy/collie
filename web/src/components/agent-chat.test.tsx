@@ -16,12 +16,12 @@ vi.mock("@/lib/wizard-action", () => ({
   submitWizardKeys: vi.fn(),
 }));
 vi.mock("@/hooks/use-keyboard", () => ({
-  useKeyboardOpen: vi.fn(() => false),
+  useKeyboardViewport: vi.fn(() => ({ open: false, offsetTop: 0 })),
 }));
 
 import { server } from "@/test/setup";
 import { clearStatus } from "@/lib/status";
-import { useKeyboardOpen } from "@/hooks/use-keyboard";
+import { useKeyboardViewport } from "@/hooks/use-keyboard";
 import { submitPromptOption } from "@/lib/prompt-action";
 import { submitWizardKeys } from "@/lib/wizard-action";
 import { fixtureAgents, fixtureTabs } from "@/test/handlers";
@@ -37,7 +37,7 @@ beforeAll(() => {
 });
 beforeEach(() => {
   clearStatus();
-  vi.mocked(useKeyboardOpen).mockReturnValue(false);
+  vi.mocked(useKeyboardViewport).mockReturnValue({ open: false, offsetTop: 0 });
 });
 
 function renderChat(overrides: Partial<ComponentProps<typeof AgentChat>> = {}) {
@@ -150,10 +150,11 @@ describe("AgentChat — compact keyboard layout", () => {
   });
 
   it("pins the title and gives navigation and composer chrome back to the terminal", () => {
-    vi.mocked(useKeyboardOpen).mockReturnValue(true);
+    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
     renderChat({ tabs: fixtureTabs });
 
     expect(screen.getByRole("banner")).toHaveClass("fixed");
+    expect(screen.getByRole("banner")).toHaveStyle({ top: "184px" });
     expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
     expect(screen.queryByText("Tabs")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Switch pane" })).not.toBeInTheDocument();

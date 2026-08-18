@@ -41,6 +41,8 @@ interface AppHeaderProps {
   override?: ReactNode;
   /** Pin the header to the visual viewport while a software keyboard has panned the layout viewport. */
   fixed?: boolean;
+  /** Visual viewport top relative to the layout viewport; non-zero when iOS pans for the keyboard. */
+  fixedTop?: number;
 }
 
 // The single header shell every screen mounts: the safe-area-aware zinc bar (sticky normally, fixed
@@ -61,6 +63,7 @@ export function AppHeader({
   rightTrail,
   override,
   fixed,
+  fixedTop = 0,
 }: AppHeaderProps) {
   // The same two shared-clock signals the ConnectionBanner reads, so the dog and the bar agree by
   // construction: gallop while troubled (≥4s not-live), rest muted once lost (≥15s, latched).
@@ -69,9 +72,10 @@ export function AppHeader({
   const lost = useConnectionLost(connecting);
   return (
     <header
+      style={fixed ? { top: fixedTop } : undefined}
       className={cn(
         "flex items-center gap-2 border-b border-border/60 bg-muted pl-4 pr-2 py-2 [padding-top:calc(env(safe-area-inset-top)_+_0.5rem)]",
-        fixed ? "fixed inset-x-0 top-0 z-40" : "sticky top-0 z-20",
+        fixed ? "fixed inset-x-0 z-40" : "sticky top-0 z-20",
       )}
     >
       {override ?? (

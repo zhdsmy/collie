@@ -6,7 +6,7 @@ import { useSwipeUp } from "@/hooks/use-swipe";
 import { useSpaceActions } from "@/hooks/use-spaces";
 import { useDashPrefs, openForCount } from "@/hooks/use-dash-prefs";
 import { useDisplayPrefs } from "@/hooks/use-display-prefs";
-import { useKeyboardOpen } from "@/hooks/use-keyboard";
+import { useKeyboardViewport } from "@/hooks/use-keyboard";
 import { useStableTerminalDraft } from "@/hooks/use-terminal-draft";
 import { isConnecting } from "@/lib/connection";
 import { setStatus } from "@/lib/status";
@@ -117,7 +117,7 @@ export function AgentChat({
   const { newTab } = useSpaceActions();
   // Single display-prefs instance: the View controls (in <Composer>) write it, the mirror reads it.
   const { prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus } = useDisplayPrefs();
-  const keyboardOpen = useKeyboardOpen();
+  const { open: keyboardOpen, offsetTop: keyboardViewportTop } = useKeyboardViewport();
   // Raw-terminal escape hatch: when on, every agent grammar is bypassed and the plain mirror shows,
   // so a mis-detected/mis-rendered dialog can always be driven by hand with the keys pad.
   const grammarsOn = !prefs.rawTerminal;
@@ -575,6 +575,7 @@ export function AgentChat({
         error={error}
         stalled={stalled}
         fixed={keyboardOpen}
+        fixedTop={keyboardViewportTop}
         onHome={onBack}
         override={
           findOpen ? (
@@ -678,13 +679,16 @@ export function AgentChat({
         )}
       </AppHeader>
 
-      {/* A fixed keyboard-mode header leaves normal flow. Reserve its exact 60px + safe-area height
-          so the terminal starts below it instead of sliding underneath. */}
+      {/* A fixed keyboard-mode header leaves normal flow. Reserve the visual viewport's panned offset
+          plus the header's 60px + safe-area height so the visible terminal starts below it. */}
       {keyboardOpen && (
         <div
           aria-hidden="true"
           data-testid="keyboard-header-spacer"
-          className="h-[calc(env(safe-area-inset-top)_+_3.75rem)] shrink-0"
+          className="shrink-0"
+          style={{
+            height: `calc(env(safe-area-inset-top) + 3.75rem + ${keyboardViewportTop}px)`,
+          }}
         />
       )}
 
