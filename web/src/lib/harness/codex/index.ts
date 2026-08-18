@@ -19,9 +19,9 @@ function clipCompletionSummary(lines: StyledLine[]): StyledLine[] {
   const summary = lines[summaryIndex];
   if (summary === undefined || !COMPLETION_SUMMARY.test(lineText(summary).trim())) return lines;
 
-  // Codex may paint the completion rule as separate terminal rows. They carry no information and
-  // wrap again on a phone, so retain only the labelled row and keep that row from wrapping.
-  return [...lines.slice(0, summaryIndex), { ...summary, noWrap: true }];
+  // Codex may paint the completion rule as separate terminal rows. They carry no information, so
+  // keep the labelled row and let its text wrap naturally with the rest of the terminal output.
+  return lines.slice(0, summaryIndex + 1);
 }
 
 function compactWhitespace(text: string): string {

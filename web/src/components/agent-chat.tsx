@@ -6,6 +6,7 @@ import { useSwipeUp } from "@/hooks/use-swipe";
 import { useSpaceActions } from "@/hooks/use-spaces";
 import { useDashPrefs, openForCount } from "@/hooks/use-dash-prefs";
 import { useDisplayPrefs } from "@/hooks/use-display-prefs";
+import { useKeyboardOpen } from "@/hooks/use-keyboard";
 import { useStableTerminalDraft } from "@/hooks/use-terminal-draft";
 import { isConnecting } from "@/lib/connection";
 import { setStatus } from "@/lib/status";
@@ -116,6 +117,7 @@ export function AgentChat({
   const { newTab } = useSpaceActions();
   // Single display-prefs instance: the View controls (in <Composer>) write it, the mirror reads it.
   const { prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus } = useDisplayPrefs();
+  const keyboardOpen = useKeyboardOpen();
   // Raw-terminal escape hatch: when on, every agent grammar is bypassed and the plain mirror shows,
   // so a mis-detected/mis-rendered dialog can always be driven by hand with the keys pad.
   const grammarsOn = !prefs.rawTerminal;
@@ -572,6 +574,7 @@ export function AgentChat({
         bridge={bridge}
         error={error}
         stalled={stalled}
+        fixed={keyboardOpen}
         onHome={onBack}
         override={
           findOpen ? (
@@ -675,6 +678,16 @@ export function AgentChat({
         )}
       </AppHeader>
 
+      {/* A fixed keyboard-mode header leaves normal flow. Reserve its exact 60px + safe-area height
+          so the terminal starts below it instead of sliding underneath. */}
+      {keyboardOpen && (
+        <div
+          aria-hidden="true"
+          data-testid="keyboard-header-spacer"
+          className="h-[calc(env(safe-area-inset-top)_+_3.75rem)] shrink-0"
+        />
+      )}
+
       {/* Content region below the header — the mirror inside is the scroller. */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Status line — a slim row pinned directly below the header (NOT the scrolling mirror), so a
@@ -687,8 +700,9 @@ export function AgentChat({
         <ReadOnlyBanner device={device} />
 
         {/* In-pane tab bar: the current space's tabs above the mirror — switch tab without leaving the
-            pane, or create one with +. No "All" here (you're always in a specific tab). */}
-        {agent && (
+            pane, or create one with +. No "All" here (you're always in a specific tab). Hidden while
+            the keyboard is open; the fixed title still identifies the pane and the mirror keeps the row. */}
+        {agent && !keyboardOpen && (
           <TabStrip
             workspaceId={agent.workspaceId}
             tabs={tabs}
@@ -707,8 +721,8 @@ export function AgentChat({
         )}
 
         {/* Pane switcher: the panes that share this tab (space › tab › pane). Mobile shows them as a
-            tabbed row rather than tiling the panes; only appears when the tab holds more than one. */}
-        {agent && (
+            tabbed row rather than tiling the panes; hidden with the tab bar while the keyboard is open. */}
+        {agent && !keyboardOpen && (
           <PaneStrip
             panes={[...agents, ...shellPanes]
               .filter((p) => p.workspaceId === agent.workspaceId && p.tabId === agent.tabId)
@@ -811,8 +825,8 @@ export function AgentChat({
               panes (each row has a ✕). A tall, full-width hit area so the swipe is easy to land (and a
               tap always works). Shown whenever a pane is open — even the last one, so it stays
               closable now that the nav drawer is gone. `touch-none` so the gesture is ours, not a
-              browser scroll. */}
-          {agents.length + shellPanes.length > 0 && (
+              browser scroll. Hidden in keyboard mode, where the terminal needs the row more. */}
+          {!keyboardOpen && agents.length + shellPanes.length > 0 && (
             <button
               type="button"
               aria-label="Switch pane"
@@ -867,6 +881,7 @@ export function AgentChat({
 
           <Composer
             ref={composerRef}
+            keyboardOpen={keyboardOpen}
             paneId={paneId}
             session={session}
             agent={agent?.agent}

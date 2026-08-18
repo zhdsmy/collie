@@ -78,7 +78,7 @@ describe("Codex chrome", () => {
     expect(extractInputDraft(composerBuffer("Explain this codebase", { dim: true }))).toBeNull();
   });
 
-  it("keeps Codex's completion summary and removes its trailing decorative rows", () => {
+  it("lets Codex's completion summary wrap and removes its trailing decorative rows", () => {
     const summary = "─ Worked for 14m 04s";
     const composer = composerBuffer("");
     const captured = [
@@ -89,7 +89,7 @@ describe("Codex chrome", () => {
 
     if (block.kind !== "raw") throw new Error("expected raw Codex block");
     expect(block.lines.map(lineText)).toEqual(["earlier output", summary]);
-    expect(block.lines.at(-1)!.noWrap).toBe(true);
+    expect(block.lines.at(-1)!.noWrap).toBeUndefined();
   });
 
   it("does not remove unrelated terminal rules", () => {

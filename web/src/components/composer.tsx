@@ -4,7 +4,6 @@ import { useRevalidator } from "react-router";
 import { Check, ImagePlus, Keyboard, Loader2, Send, Settings2, Slash, Terminal, X, Zap } from "lucide-react";
 
 import type { DisplayPrefs } from "@/hooks/use-display-prefs";
-import { useKeyboardOpen } from "@/hooks/use-keyboard";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { useDirectTyping } from "@/hooks/use-direct-typing";
 import { setStatus } from "@/lib/status";
@@ -35,6 +34,8 @@ export interface ComposerHandle {
 }
 
 interface ComposerProps {
+  /** Shared keyboard state from AgentChat; controls compact chrome and safe-area geometry. */
+  keyboardOpen?: boolean;
   paneId: string;
   /** The session the pane lives in (undefined = primary) — scopes every write to the right Herdr. */
   session?: string;
@@ -138,11 +139,28 @@ function ComposerDock({
 }
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, session, agent, isShell, gone, readOnly, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, onSent },
+  {
+    keyboardOpen = false,
+    paneId,
+    session,
+    agent,
+    isShell,
+    gone,
+    readOnly,
+    dialogPresent,
+    text,
+    terminalDraft,
+    rawTerminalDraft,
+    prefs,
+    setWrap,
+    stepFontSize,
+    setRawTerminal,
+    setTapToFocus,
+    onSent,
+  },
   ref,
 ) {
   const revalidator = useRevalidator();
-  const keyboardOpen = useKeyboardOpen();
   // Every write affordance is off when the pane is gone OR this device is read-only.
   const locked = gone || readOnly;
   // …and a ref alongside it, for the ONE caller that reads it after an await. `send()` checks
@@ -732,7 +750,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           resized viewport owns the bottom edge, so retain the proven mb-2/pb-2 geometry unchanged. */}
       <div
         className={cn(
-          "mx-2 rounded-md border border-border/60 bg-muted px-3 pt-2.5 shadow-sm",
+          "mx-2 rounded-md border border-border/60 bg-muted shadow-sm",
+          keyboardOpen ? "px-2 pt-1.5" : "px-3 pt-2.5",
           keyboardOpen
             ? "mb-2 pb-2"
             : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",
@@ -759,13 +778,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             mutually exclusive drawers is active renders here via the shared ComposerDock chrome. Keys
             mounts the NavTray (unmounts on close, so tab/queue reset each open); Quick mounts the two
             one-tap reply grids; Display mounts the labelled mirror prefs. Agent stays a covering
-            BottomSheet below (it's a palette, not a pad). */}
-        {drawer === "keys" && (
+            BottomSheet below (it's a palette, not a pad). Docks pause while the keyboard is open and
+            return with their state intact after it closes. */}
+        {!keyboardOpen && drawer === "keys" && (
           <ComposerDock title="Keys" onClose={closeDrawer}>
             <NavTray onSend={pressKeys} onQueueChange={setQueuedKeys} disabled={locked} />
           </ComposerDock>
         )}
-        {drawer === "quick" && (
+        {!keyboardOpen && drawer === "quick" && (
           <ComposerDock title="Quick" onClose={closeDrawer}>
             <QuickActionsContent
               onSend={(t) => send(t, false)}
@@ -776,7 +796,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
-        {drawer === "display" && (
+        {!keyboardOpen && drawer === "display" && (
           <ComposerDock title="Display" onClose={closeDrawer}>
             <DisplayPrefsContent
               prefs={prefs}
@@ -791,8 +811,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             commands). Display prefs used to sit on a second, permanent icon-only "View" row above
             this one; folding them behind the ⚙ gives the mirror that row back. The gear is icon-only
             and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
-            keeping it narrow leaves the labelled buttons their width on a 390px phone. */}
-        <div className="mb-2 flex items-center gap-2">
+            keeping it narrow leaves the labelled buttons their width on a 390px phone. The whole row
+            yields to the terminal while the software keyboard is already providing input controls. */}
+        {!keyboardOpen && (
+          <div className="mb-2 flex items-center gap-2">
           {/* Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to open, tap
               again to close. aria-expanded ties each to the dock; secondary variant marks it pressed
               while open. Both share the single-valued `drawer`, so opening one closes the other. */}
@@ -875,7 +897,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           >
             <Settings2 className="size-4" />
           </Button>
-        </div>
+          </div>
+        )}
         {/* Terminal-draft preview: a read-only view of a stranded "❯"-line draft (a message queued
             then recalled on the HOST, which stripChrome hides from the mirror). It appears only after
             the draft stabilises (never a blip/self-echo), then its text tracks the live line — host
@@ -980,6 +1003,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               direct.active &&
                 "border-primary focus-visible:border-primary focus-visible:ring-primary/30",
             )}
+            style={keyboardOpen ? { maxHeight: "5.75rem", overflowY: "auto" } : undefined}
             disabled={locked}
             rows={1}
           />

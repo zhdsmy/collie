@@ -15,12 +15,16 @@ vi.mock("@/lib/prompt-action", () => ({
 vi.mock("@/lib/wizard-action", () => ({
   submitWizardKeys: vi.fn(),
 }));
+vi.mock("@/hooks/use-keyboard", () => ({
+  useKeyboardOpen: vi.fn(() => false),
+}));
 
 import { server } from "@/test/setup";
 import { clearStatus } from "@/lib/status";
+import { useKeyboardOpen } from "@/hooks/use-keyboard";
 import { submitPromptOption } from "@/lib/prompt-action";
 import { submitWizardKeys } from "@/lib/wizard-action";
-import { fixtureAgents } from "@/test/handlers";
+import { fixtureAgents, fixtureTabs } from "@/test/handlers";
 import { AgentChat } from "./agent-chat";
 
 // The detail view's core job: type a reply and submit it to the bridge. This drives the whole wired
@@ -31,7 +35,10 @@ beforeAll(() => {
   // jsdom doesn't implement scrollTo; the terminal mirror's auto-scroll calls it.
   if (!Element.prototype.scrollTo) Element.prototype.scrollTo = () => {};
 });
-beforeEach(() => clearStatus());
+beforeEach(() => {
+  clearStatus();
+  vi.mocked(useKeyboardOpen).mockReturnValue(false);
+});
 
 function renderChat(overrides: Partial<ComponentProps<typeof AgentChat>> = {}) {
   const agent = fixtureAgents[0]!; // a blocked claude agent
@@ -128,6 +135,33 @@ describe("AgentChat — header title block", () => {
 
     await user.click(screen.getByRole("button", { name: /open webapp overview/i }));
     expect(await screen.findByText("overview:w1")).toBeInTheDocument();
+  });
+});
+
+describe("AgentChat — compact keyboard layout", () => {
+  it("keeps the normal pane navigation and composer chrome when the keyboard is closed", () => {
+    renderChat({ tabs: fixtureTabs });
+
+    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+    expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
+    expect(screen.getByText("Tabs")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Switch pane" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
+  });
+
+  it("pins the title and gives navigation and composer chrome back to the terminal", () => {
+    vi.mocked(useKeyboardOpen).mockReturnValue(true);
+    renderChat({ tabs: fixtureTabs });
+
+    expect(screen.getByRole("banner")).toHaveClass("fixed");
+    expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
+    expect(screen.queryByText("Tabs")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Switch pane" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Keys" })).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/type a reply/i)).toHaveStyle({
+      maxHeight: "5.75rem",
+      overflowY: "auto",
+    });
   });
 });
 

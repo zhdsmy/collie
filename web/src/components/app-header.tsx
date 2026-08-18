@@ -6,6 +6,7 @@ import { isConnecting } from "@/lib/connection";
 import { useConnectionLost, useConnectionTrouble } from "@/hooks/use-connection-lost";
 import { settingsPath } from "@/lib/nav";
 import { CollieHome } from "@/components/collie-home";
+import { cn } from "@/lib/utils";
 import type { BridgeStatus } from "@/lib/types";
 
 interface AppHeaderProps {
@@ -38,11 +39,14 @@ interface AppHeaderProps {
    *  content while it's up — the find bar owns the row one-handed, exactly as before — but it still
    *  lives inside this one shell so the sticky/safe-area/zinc bar is never copy-pasted. */
   override?: ReactNode;
+  /** Pin the header to the visual viewport while a software keyboard has panned the layout viewport. */
+  fixed?: boolean;
 }
 
-// The single header shell every screen mounts: the sticky, safe-area-aware zinc bar with the Collie
-// mark on the left, an optional route breadcrumb in the middle, and the caller's right cluster. The
-// mark's connection animation is baked in here (not a slot), so no caller can forget it: it gallops on
+// The single header shell every screen mounts: the safe-area-aware zinc bar (sticky normally, fixed
+// while a pane's software keyboard is open) with the Collie mark on the left, an optional route
+// breadcrumb in the middle, and the caller's right cluster. The mark's connection animation is baked
+// in here (not a slot), so no caller can forget it: it gallops on
 // sustained trouble and rests muted once lost, computed from the SAME shared clock as the top
 // ConnectionBanner so the two never diverge. A healthy header is calm — just the mark + the caller's
 // own items (switcher/badge + gear).
@@ -56,6 +60,7 @@ export function AppHeader({
   rightLead,
   rightTrail,
   override,
+  fixed,
 }: AppHeaderProps) {
   // The same two shared-clock signals the ConnectionBanner reads, so the dog and the bar agree by
   // construction: gallop while troubled (≥4s not-live), rest muted once lost (≥15s, latched).
@@ -63,7 +68,12 @@ export function AppHeader({
   const trouble = useConnectionTrouble(connecting);
   const lost = useConnectionLost(connecting);
   return (
-    <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-border/60 bg-muted pl-4 pr-2 py-2 [padding-top:calc(env(safe-area-inset-top)_+_0.5rem)]">
+    <header
+      className={cn(
+        "flex items-center gap-2 border-b border-border/60 bg-muted pl-4 pr-2 py-2 [padding-top:calc(env(safe-area-inset-top)_+_0.5rem)]",
+        fixed ? "fixed inset-x-0 top-0 z-40" : "sticky top-0 z-20",
+      )}
+    >
       {override ?? (
         <>
           <CollieHome onHome={onHome} trouble={trouble} lost={lost} wordmark={wordmark} />

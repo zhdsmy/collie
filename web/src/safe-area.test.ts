@@ -9,7 +9,8 @@ describe("mobile composer chrome", () => {
     const composer = read("src/components/composer.tsx");
     const agentChat = read("src/components/agent-chat.tsx");
     const messageList = read("src/components/ui/chat/chat-message-list.tsx");
-    expect(composer).toContain("const keyboardOpen = useKeyboardOpen()");
+    expect(agentChat).toContain("const keyboardOpen = useKeyboardOpen()");
+    expect(composer).toContain("keyboardOpen = false");
     expect(composer).toContain('? "mb-2 pb-2"');
     expect(composer).toContain(
       '"mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]"',
@@ -30,7 +31,7 @@ describe("mobile composer chrome", () => {
   it("renders the composer as a modest inset floating panel", () => {
     const composer = read("src/components/composer.tsx");
     expect(composer).toContain(
-      "mx-2 rounded-md border border-border/60 bg-muted px-3 pt-2.5 shadow-sm",
+      "mx-2 rounded-md border border-border/60 bg-muted shadow-sm",
     );
     expect(composer).toContain('keyboardOpen\n            ? "mb-2 pb-2"');
   });
