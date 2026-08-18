@@ -12,6 +12,10 @@ describe("AgentIcon", () => {
       expect(svg!.querySelector("path")).not.toBeNull();
       // The tile carries its own solid brand background (theme-independent contrast).
       expect(svg!.querySelector("rect")?.getAttribute("fill")).toMatch(/^#[0-9a-fA-F]{6}$/);
+      expect(svg!.querySelectorAll("rect")[1]).toHaveAttribute(
+        "stroke",
+        "var(--agent-icon-border)",
+      );
       expect(screen.getByRole("img", { name: `${agent} logo` })).toBeInTheDocument();
     },
   );

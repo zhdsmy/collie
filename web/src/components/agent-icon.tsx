@@ -15,9 +15,9 @@ function brandKey(agent: string): string | undefined {
 }
 
 /**
- * A square "app icon" tile for an agent, rendered as inline SVG (CSP-safe, theme-independent — the
- * tile carries its own brand background so the mark reads on any UI theme). Falls back to a neutral
- * initials tile for agents we don't have a logo for, so unknown agents stay legible. Size comes from
+ * A square "app icon" tile for an agent, rendered as inline SVG (CSP-safe). The tile carries its own
+ * brand background and a theme-aware inset edge, so black brand tiles remain distinct from Collie's
+ * dark terminal surface. Falls back to a neutral initials tile for unknown agents. Size comes from
  * `className` (e.g. `size-9`).
  */
 export function AgentIcon({
@@ -53,6 +53,16 @@ export function AgentIcon({
       aria-label={`${agent} logo`}
     >
       <rect width="24" height="24" rx="5.3" fill={brand.bg} />
+      <rect
+        x="0.35"
+        y="0.35"
+        width="23.3"
+        height="23.3"
+        rx="4.95"
+        fill="none"
+        stroke="var(--agent-icon-border)"
+        strokeWidth="0.7"
+      />
       {/* Inset the 24×24 mark to ~62% so every logo carries uniform app-icon padding. */}
       <g
         transform="translate(4.6 4.6) scale(0.617)"

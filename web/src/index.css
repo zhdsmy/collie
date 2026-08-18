@@ -34,7 +34,7 @@
   color-scheme: light dark;
   /* Codex's terminal input is painted inside the mirror's light-theme inversion. Keep the raw
      value inverse to --muted in light, then use --muted's dark half when the filter is disabled. */
-  --mirror-codex-input-background: rgb(20 20 20);
+  --mirror-codex-input-background: rgb(16 16 16);
 
   /* Settings → Terminal selects this face list. SF Mono is the no-download default; the two named
      web faces below stay unfetched until their data attribute makes them part of `font-mono`. */
@@ -42,19 +42,17 @@
     "Cascadia Code", Consolas, "Liberation Mono", monospace;
 
   --radius: 0.65rem;
-  /* Light deviates from stock shadcn in two places, both measured rather than taste:
-     --background is a step off white (stock has background == card == popover == pure white, so the
-     entire dashboard hierarchy rests on one 1.26:1 hairline), and --muted-foreground is darkened
-     for headroom (see below). oklch(0.97) rasterizes to rgb(245,245,245), which is exactly the
-     terminal mirror's inverted background — so the mirror stops showing a seam against the page. */
+  /* The page stays exactly complementary to the terminal mirror: oklch(0.97) rasterizes to
+     rgb(245,245,245), the inverse of its dark #0a0a0a ground. Raised and interactive surfaces below
+     carry a restrained cool cast, adding hierarchy without tinting raw terminal output. */
   --background: light-dark(oklch(0.97 0 0), oklch(0.145 0 0));
   --foreground: light-dark(oklch(0.145 0 0), oklch(0.985 0 0));
-  --card: light-dark(oklch(1 0 0), oklch(0.205 0 0));
+  --card: light-dark(oklch(1 0 0), oklch(0.22 0.008 255));
   --card-foreground: light-dark(oklch(0.145 0 0), oklch(0.985 0 0));
-  --popover: light-dark(oklch(1 0 0), oklch(0.205 0 0));
+  --popover: light-dark(oklch(1 0 0), oklch(0.22 0.008 255));
   --popover-foreground: light-dark(oklch(0.145 0 0), oklch(0.985 0 0));
-  --primary: light-dark(oklch(0.205 0 0), oklch(0.922 0 0));
-  --primary-foreground: light-dark(oklch(0.985 0 0), oklch(0.205 0 0));
+  --primary: light-dark(oklch(0.22 0.012 255), oklch(0.94 0.006 250));
+  --primary-foreground: light-dark(oklch(0.985 0 0), oklch(0.22 0.012 255));
   /* The "this control is ON" tint — a very light sky. Its own token pair rather than reusing
      --secondary because the two say different things: secondary is a quieter surface, this is a
      STATE, and the row needs the difference legible at a glance (an open dock, an armed mode). Kept
@@ -67,35 +65,30 @@
      7.3:1 light, 9.2:1 dark. */
   --control-on: light-dark(oklch(0.90 0.06 235), oklch(0.32 0.05 240));
   --control-on-foreground: light-dark(oklch(0.38 0.12 245), oklch(0.89 0.06 235));
-  --secondary: light-dark(oklch(0.94 0 0), oklch(0.269 0 0));
+  --secondary: light-dark(oklch(0.925 0.012 250), oklch(0.29 0.012 250));
   --secondary-foreground: light-dark(oklch(0.205 0 0), oklch(0.985 0 0));
-  /* Light --muted is a step BELOW --background so the header/composer chrome band still reads as a
-     distinct surface now that the page is no longer white. */
-  --muted: light-dark(oklch(0.94 0 0), oklch(0.269 0 0));
-  /* Light was oklch(0.556) — 4.74:1 on white, i.e. zero headroom, so every /70, /80 and opacity-60
-     derivative in the app fell under 3:1 while its dark counterpart passed. Darkened to buy that
-     headroom back; the alpha modifiers on small text were dropped as well, since no token value
-     rescues a /70. */
-  --muted-foreground: light-dark(oklch(0.48 0 0), oklch(0.708 0 0));
-  /* Light --accent must be a real step off --background, not stock shadcn's 0.97. Stock is right
-     only while background is pure white; 0.18.0 deliberately moved background to 0.97 (see above),
-     which silently made accent === background — so every "this is the current one" highlight
-     (`bg-accent` in the pane switcher and session switcher) and every `hover:bg-accent` rendered
-     as nothing at all in light mode. It sits a step BELOW --muted (0.94), not between it and
-     --background: the switcher needs three separable values — resting 0.97, hover (bg-muted/60)
-     ~0.94, active 0.92 — and 0.94 would have collided the last two. */
-  --accent: light-dark(oklch(0.92 0 0), oklch(0.269 0 0));
+  /* Muted is the shared header/composer surface. Its light half remains the inverse of
+     --mirror-codex-input-background, while its dark half is the mirror's direct background, so the
+     Codex input rows merge into that chrome in both themes. */
+  --muted: light-dark(rgb(239 239 239), oklch(0.245 0 0));
+  /* Secondary copy needs enough headroom for small labels and timestamps. The subtle cool cast
+     separates it from ANSI-neutral terminal output without turning the shell into a blue theme. */
+  --muted-foreground: light-dark(oklch(0.44 0.014 255), oklch(0.75 0.012 255));
+  /* Accent is deliberately stronger than muted and secondary: switchers need resting, hover, and
+     selected rows to remain distinguishable in both themes. A small cool chroma gives selected
+     state identity while primary actions and lifecycle statuses retain their own colors. */
+  --accent: light-dark(oklch(0.9 0.018 250), oklch(0.315 0.018 250));
   --accent-foreground: light-dark(oklch(0.205 0 0), oklch(0.985 0 0));
   --destructive: light-dark(oklch(0.577 0.245 27.325), oklch(0.704 0.191 22.216));
   --destructive-foreground: light-dark(oklch(0.985 0 0), oklch(0.985 0 0));
-  --border: light-dark(oklch(0.922 0 0), oklch(1 0 0 / 12%));
-  --input: light-dark(oklch(0.922 0 0), oklch(1 0 0 / 15%));
-  /* Light is darkened off stock shadcn (0.708 → 0.62): at 0.708 the focus ring measures 2.58:1 on
-     white, under the 3:1 WCAG 1.4.11 floor for a non-text indicator — and components draw it at
-     `ring-ring/50`, which halves that again. On an app whose buttons type into a live shell, a focus
-     ring you can't locate is a real problem. Still worth an on-device look: even at 0.62 the /50
-     variant is marginal. */
-  --ring: light-dark(oklch(0.62 0 0), oklch(0.556 0 0));
+  --border: light-dark(oklch(0.875 0.012 250), oklch(1 0 0 / 16%));
+  --input: light-dark(oklch(0.84 0.014 250), oklch(1 0 0 / 20%));
+  /* Focus uses a restrained system blue instead of another grey edge. It is the only transient
+     outline in a neutral control field, so keyboard focus stays obvious in either theme. */
+  --ring: light-dark(oklch(0.58 0.14 250), oklch(0.74 0.12 240));
+  /* Official black agent tiles need a boundary on the near-black terminal surface. Kept separate
+     from --border because the stroke is painted inside an SVG and cannot use alpha utilities. */
+  --agent-icon-border: light-dark(oklch(0 0 0 / 14%), oklch(1 0 0 / 24%));
 
   /* Agent lifecycle status palette — the app's primary at-a-glance signal, so both halves are
      tuned against their own ground rather than one set being reused. The dark values glow on
@@ -151,11 +144,11 @@
 }
 :root.dark {
   color-scheme: dark;
-  --mirror-codex-input-background: oklch(0.269 0 0);
+  --mirror-codex-input-background: oklch(0.245 0 0);
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --mirror-codex-input-background: oklch(0.269 0 0);
+    --mirror-codex-input-background: oklch(0.245 0 0);
   }
 }
 

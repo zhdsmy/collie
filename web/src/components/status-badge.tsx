@@ -31,8 +31,8 @@ const RING: Record<AgentStatus, string> = {
   blocked: "border-status-blocked",
   working: "border-status-working",
   done: "border-status-done",
-  idle: "border-status-idle/60",
-  unknown: "border-status-unknown/60",
+  idle: "border-status-idle/75",
+  unknown: "border-status-unknown/75",
 };
 
 export function StatusDot({
