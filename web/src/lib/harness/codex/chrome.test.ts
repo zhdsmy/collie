@@ -66,6 +66,17 @@ describe("Codex chrome", () => {
     expect(extractInputDraft(composerBuffer("Explain this codebase", { dim: true }))).toBeNull();
   });
 
+  it("keeps Codex's labelled exit summary on one visual row", () => {
+    const summary = `─ Worked for 14m 04s ${"─".repeat(120)}`;
+    const composer = composerBuffer("");
+    const captured = [...lines(`earlier output\n${summary}`), ...composer.slice(1)];
+    const block = codexBuildBlocks(captured)[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual(["earlier output", summary]);
+    expect(block.lines.at(-1)!.noWrap).toBe(true);
+  });
+
   it("returns the original buffer when the composer background is torn", () => {
     const torn = composerBuffer("hello", { bottomBackground: "0;0;0" });
     expect(stripChrome(torn)).toBe(torn);
