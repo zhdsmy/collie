@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/format";
 import { AGENT_BRANDS } from "@/components/agent-icon-data";
@@ -27,6 +29,7 @@ export function AgentIcon({
   agent: string | null | undefined;
   className?: string;
 }) {
+  const { t } = useTranslation();
   const brand = agent ? AGENT_BRANDS[brandKey(agent) ?? ""] : undefined;
 
   if (!brand) {
@@ -37,7 +40,7 @@ export function AgentIcon({
           className,
         )}
         role="img"
-        aria-label={agent ? `${agent} icon` : "agent icon"}
+        aria-label={agent ? t("common.agentIconNamed", { agent }) : t("common.agentIcon")}
       >
         {initials(agent ?? "")}
       </span>
@@ -50,7 +53,7 @@ export function AgentIcon({
       viewBox="0 0 24 24"
       className={cn("shrink-0", className)}
       role="img"
-      aria-label={`${agent} logo`}
+      aria-label={t("common.agentLogo", { agent })}
     >
       <rect width="24" height="24" rx="5.3" fill={brand.bg} />
       <rect

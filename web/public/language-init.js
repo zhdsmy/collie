@@ -7,14 +7,20 @@
     let language = supported;
     if (!language) {
       const preferred = navigator.languages?.length ? navigator.languages : [navigator.language];
-      const chinese = preferred.find((tag) => tag.toLowerCase().startsWith("zh"));
-      if (!chinese) language = "en";
-      else {
-        const tag = chinese.toLowerCase();
-        language =
-          /(?:^|-)hant(?:-|$)/.test(tag) || /(?:^|-)(?:tw|hk|mo)(?:-|$)/.test(tag)
-            ? "zh-TW"
-            : "zh-CN";
+      language = "en";
+      for (const candidate of preferred) {
+        const tag = candidate.toLowerCase();
+        if (tag.startsWith("zh")) {
+          language =
+            /(?:^|-)hant(?:-|$)/.test(tag) || /(?:^|-)(?:tw|hk|mo)(?:-|$)/.test(tag)
+              ? "zh-TW"
+              : "zh-CN";
+          break;
+        }
+        if (tag === "en" || tag.startsWith("en-")) {
+          language = "en";
+          break;
+        }
       }
     }
     document.documentElement.lang = language;

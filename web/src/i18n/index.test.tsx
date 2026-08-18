@@ -28,11 +28,13 @@ describe("language preference", () => {
 
   it.each([
     [["en-US"], "en"],
+    [["en-US", "zh-CN"], "en"],
     [["zh-CN"], "zh-CN"],
     [["zh-Hans-SG"], "zh-CN"],
     [["zh-TW"], "zh-TW"],
     [["zh-Hant-HK"], "zh-TW"],
     [["ja-JP", "zh-MO"], "zh-TW"],
+    [["ja-JP", "en-GB", "zh-TW"], "en"],
   ] as const)("maps browser languages %j to %s", (languages, expected) => {
     expect(resolveSystemLanguage(languages)).toBe(expected);
   });

@@ -49,11 +49,13 @@ export function resolveSystemLanguage(
 ): AppLanguage {
   for (const language of languages) {
     const tag = language.toLowerCase();
-    if (!tag.startsWith("zh")) continue;
-    if (/(?:^|-)hant(?:-|$)/.test(tag) || /(?:^|-)(?:tw|hk|mo)(?:-|$)/.test(tag)) {
-      return "zh-TW";
+    if (tag.startsWith("zh")) {
+      if (/(?:^|-)hant(?:-|$)/.test(tag) || /(?:^|-)(?:tw|hk|mo)(?:-|$)/.test(tag)) {
+        return "zh-TW";
+      }
+      return "zh-CN";
     }
-    return "zh-CN";
+    if (tag === "en" || tag.startsWith("en-")) return "en";
   }
   return "en";
 }

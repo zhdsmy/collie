@@ -1,8 +1,13 @@
 import { render, screen } from "@testing-library/react";
 
 import { AgentIcon } from "./agent-icon";
+import { i18n } from "@/i18n";
 
 describe("AgentIcon", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
   it.each(["claude", "codex", "pi", "opencode"])(
     "renders the %s brand logo as an inline-SVG app-icon tile",
     (agent) => {
@@ -48,5 +53,11 @@ describe("AgentIcon", () => {
   it("forwards className for sizing", () => {
     const { container } = render(<AgentIcon agent="claude" className="size-9" />);
     expect(container.querySelector("svg")?.getAttribute("class")).toContain("size-9");
+  });
+
+  it("localizes its accessible label", async () => {
+    await i18n.changeLanguage("zh-CN");
+    render(<AgentIcon agent="codex" />);
+    expect(screen.getByRole("img", { name: "codex 标志" })).toBeInTheDocument();
   });
 });
