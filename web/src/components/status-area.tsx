@@ -33,7 +33,7 @@ export function StatusArea({ className }: { className?: string }) {
       aria-live="polite"
       onClick={dismissable ? () => clearStatus() : undefined}
       className={cn(
-        "flex items-center justify-center gap-1.5 rounded-md border bg-background/95 px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur duration-200 animate-in fade-in",
+        "flex items-start justify-center gap-1.5 rounded-md border bg-background/95 px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur duration-200 animate-in fade-in",
         dismissable
           ? "pointer-events-auto cursor-pointer border-status-blocked/50"
           : "border-border/60",
@@ -41,9 +41,11 @@ export function StatusArea({ className }: { className?: string }) {
         className,
       )}
     >
-      <Icon className="size-3.5 shrink-0" />
-      <span className="truncate">{status.text}</span>
-      {dismissable && <X className="size-3.5 shrink-0 opacity-70" />}
+      <Icon className="mt-0.5 size-3.5 shrink-0" />
+      <span className="min-w-0 whitespace-normal break-words text-left leading-5">
+        {status.text}
+      </span>
+      {dismissable && <X className="mt-0.5 size-3.5 shrink-0 opacity-70" />}
     </div>
   );
 }
