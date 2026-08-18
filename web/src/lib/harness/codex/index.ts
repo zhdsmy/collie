@@ -10,18 +10,27 @@ const IMAGE_PLACEHOLDER = /\[\s*Image\s+#\d+\s*\]/g;
 const MIN_CAPTION_CHARS = 4;
 const MIN_WINDOWED_CAPTION_CHARS = 8;
 
-function clipCompletionSummary(lines: StyledLine[]): StyledLine[] {
-  let summaryIndex = lines.length - 1;
-  while (summaryIndex >= 0 && DECORATIVE_RULE.test(lineText(lines[summaryIndex]!).trim())) {
-    summaryIndex--;
+function normalizeCompletionSummaries(lines: StyledLine[]): StyledLine[] {
+  let normalized: StyledLine[] | undefined;
+
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]!;
+    if (!COMPLETION_SUMMARY.test(lineText(line).trim())) {
+      normalized?.push(line);
+      continue;
+    }
+
+    normalized ??= lines.slice(0, index);
+    normalized.push({ ...line, noWrap: true });
+    while (
+      index + 1 < lines.length &&
+      DECORATIVE_RULE.test(lineText(lines[index + 1]!).trim())
+    ) {
+      index++;
+    }
   }
 
-  const summary = lines[summaryIndex];
-  if (summary === undefined || !COMPLETION_SUMMARY.test(lineText(summary).trim())) return lines;
-
-  // Codex may paint the completion rule as separate terminal rows. They carry no information, so
-  // keep the labelled row and let its text wrap naturally with the rest of the terminal output.
-  return lines.slice(0, summaryIndex + 1);
+  return normalized ?? lines;
 }
 
 function compactWhitespace(text: string): string {
@@ -61,7 +70,7 @@ export function imageDraftCarriesSend(sent: string, draft: string): boolean {
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
-  return [{ kind: "raw", lines: clipCompletionSummary(stripChrome(lines)) }];
+  return [{ kind: "raw", lines: normalizeCompletionSummaries(stripChrome(lines)) }];
 }
 
 export { extractInputDraft, extractStatusLines };

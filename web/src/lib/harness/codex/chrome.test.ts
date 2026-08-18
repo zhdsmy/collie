@@ -78,18 +78,60 @@ describe("Codex chrome", () => {
     expect(extractInputDraft(composerBuffer("Explain this codebase", { dim: true }))).toBeNull();
   });
 
-  it("lets Codex's completion summary wrap and removes its trailing decorative rows", () => {
+  it("keeps Codex's final completion summary on one line and removes its decorative rows", () => {
     const summary = "─ Worked for 14m 04s";
     const composer = composerBuffer("");
     const captured = [
-      ...lines(`earlier output\n${summary}\n${"─".repeat(120)}\n${"─".repeat(80)}`),
+      ...lines(
+        `earlier output\n\x1b[2;37m${summary}\x1b[0m\n${"─".repeat(120)}\n${"─".repeat(80)}`,
+      ),
       ...composer.slice(1),
     ];
     const block = codexBuildBlocks(captured)[0]!;
 
     if (block.kind !== "raw") throw new Error("expected raw Codex block");
     expect(block.lines.map(lineText)).toEqual(["earlier output", summary]);
-    expect(block.lines.at(-1)!.noWrap).toBeUndefined();
+    expect(block.lines.at(-1)!.noWrap).toBe(true);
+    expect(block.lines.at(-1)!.segments).toEqual(captured[1]!.segments);
+  });
+
+  it("normalizes every completion summary without changing surrounding output", () => {
+    const firstSummary = "─ Worked for 1m 02s";
+    const secondSummary = "──── Worked for 35s";
+    const decorativeRule = "─".repeat(120);
+    const unrelatedRule = "─".repeat(80);
+    const captured = lines(
+      [
+        "first query",
+        firstSummary,
+        decorativeRule,
+        decorativeRule,
+        "first answer",
+        "ordinary prose Worked for this example",
+        unrelatedRule,
+        "second query",
+        secondSummary,
+        "second answer",
+      ].join("\n"),
+    );
+    const block = codexBuildBlocks(captured)[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([
+      "first query",
+      firstSummary,
+      "first answer",
+      "ordinary prose Worked for this example",
+      unrelatedRule,
+      "second query",
+      secondSummary,
+      "second answer",
+    ]);
+    expect(block.lines.filter((line) => lineText(line).includes("Worked for"))).toEqual([
+      expect.objectContaining({ noWrap: true }),
+      expect.not.objectContaining({ noWrap: true }),
+      expect.objectContaining({ noWrap: true }),
+    ]);
   });
 
   it("does not remove unrelated terminal rules", () => {
