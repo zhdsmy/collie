@@ -18,6 +18,17 @@ export function useAutoScroll<T extends HTMLElement = HTMLDivElement>(
   const scrollRef = useRef<T>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const autoScroll = useRef(true);
+  const geometry = useRef<{ clientHeight: number; scrollHeight: number } | null>(null);
+
+  const captureGeometry = useCallback((el: HTMLElement) => {
+    const next = { clientHeight: el.clientHeight, scrollHeight: el.scrollHeight };
+    const previous = geometry.current;
+    geometry.current = next;
+    return (
+      previous !== null &&
+      (previous.clientHeight !== next.clientHeight || previous.scrollHeight !== next.scrollHeight)
+    );
+  }, []);
 
   const atBottom = useCallback(
     (el: HTMLElement) => Math.abs(el.scrollHeight - el.scrollTop - el.clientHeight) <= offset,
@@ -42,17 +53,28 @@ export function useAutoScroll<T extends HTMLElement = HTMLDivElement>(
   const onScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
+    // iOS can dispatch scroll before ResizeObserver when the keyboard shrinks the terminal. Preserve
+    // the existing follow intent for that layout-generated event; only unchanged geometry means the
+    // scroll came from the user and may turn following off.
+    if (captureGeometry(el) && autoScroll.current) {
+      pinToBottom();
+      setIsAtBottom(true);
+      onAtBottomChange?.(true);
+      return;
+    }
     const bottom = atBottom(el);
     autoScroll.current = bottom;
     setIsAtBottom(bottom);
     onAtBottomChange?.(bottom);
-  }, [atBottom, onAtBottomChange]);
+  }, [atBottom, captureGeometry, onAtBottomChange, pinToBottom]);
 
   // Re-pin before paint when new content arrives — opening a pane / switching tabs must land on
   // the live tail without a flash of the oldest scrollback. Yields if the user has scrolled away.
   useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el) captureGeometry(el);
     pinToBottom();
-  }, [dep, pinToBottom]);
+  }, [dep, captureGeometry, pinToBottom]);
 
   // Re-pin when the container OR its content resizes while we're following.
   // - Container: a shrinking viewport (keys dock, on-screen keyboard) pushes the tail below the fold.
@@ -65,9 +87,11 @@ export function useAutoScroll<T extends HTMLElement = HTMLDivElement>(
     const el = scrollRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
 
-    const ro = new ResizeObserver(() => {
+    const pinAfterLayout = () => {
+      captureGeometry(el);
       pinToBottom();
-    });
+    };
+    const ro = new ResizeObserver(pinAfterLayout);
     ro.observe(el);
     for (const child of Array.from(el.children)) {
       ro.observe(child);
@@ -81,7 +105,7 @@ export function useAutoScroll<T extends HTMLElement = HTMLDivElement>(
           if (node instanceof Element) ro.observe(node);
         }
       }
-      pinToBottom();
+      pinAfterLayout();
     });
     mo.observe(el, { childList: true });
 
@@ -89,7 +113,7 @@ export function useAutoScroll<T extends HTMLElement = HTMLDivElement>(
       ro.disconnect();
       mo.disconnect();
     };
-  }, [pinToBottom]);
+  }, [captureGeometry, pinToBottom]);
 
   return { scrollRef, isAtBottom, scrollToBottom, onScroll };
 }

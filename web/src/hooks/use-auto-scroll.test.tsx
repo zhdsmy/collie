@@ -35,11 +35,14 @@ function setMetrics(
 }
 
 function Harness({ dep = "constant" }: { dep?: unknown }) {
-  const { scrollRef, onScroll } = useAutoScroll<HTMLDivElement>({ dep });
+  const { scrollRef, isAtBottom, onScroll } = useAutoScroll<HTMLDivElement>({ dep });
   return (
-    <div ref={scrollRef} onScroll={onScroll} data-testid="scroll">
-      <div data-testid="content">body</div>
-    </div>
+    <>
+      <div ref={scrollRef} onScroll={onScroll} data-testid="scroll">
+        <div data-testid="content">body</div>
+      </div>
+      <span data-testid="at-bottom">{String(isAtBottom)}</span>
+    </>
   );
 }
 
@@ -96,6 +99,24 @@ describe("useAutoScroll — resize re-pin", () => {
     expect(scrollTo).toHaveBeenCalledWith({ top: 500, behavior: "auto" });
   });
 
+  it("does not mistake a keyboard resize scroll for the user leaving the tail", () => {
+    const { getByTestId } = render(<Harness />);
+    const el = getByTestId("scroll");
+    setMetrics(el, { scrollHeight: 500, clientHeight: 200, scrollTop: 300 });
+    const scrollTo = vi.fn();
+    el.scrollTo = scrollTo as unknown as HTMLElement["scrollTo"];
+    act(() => fireResize(el)); // establish the pre-keyboard geometry while following
+    scrollTo.mockClear();
+
+    // iOS delivers this scroll before ResizeObserver: the viewport is shorter but scrollTop has not
+    // caught up yet, so a plain at-bottom calculation would incorrectly show the jump-to-tail arrow.
+    setMetrics(el, { scrollHeight: 500, clientHeight: 100, scrollTop: 300 });
+    fireEvent.scroll(el);
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 500, behavior: "auto" });
+    expect(getByTestId("at-bottom")).toHaveTextContent("true");
+  });
+
   it("re-pins when CONTENT grows while following (pane open / AnsiOutput layout)", () => {
     // Opening a pane paints the scroll container at its final flex height first; the terminal
     // mirror's content then grows inside it. That does NOT resize the container — only the child —
@@ -117,6 +138,7 @@ describe("useAutoScroll — resize re-pin", () => {
     const el = getByTestId("scroll");
     // Scrolled up: 500 - 0 - 200 = 300px from the bottom, past the 24px threshold → not following.
     setMetrics(el, { scrollHeight: 500, clientHeight: 200, scrollTop: 0 });
+    act(() => fireResize(el)); // establish layout geometry before the user's unchanged-size scroll
     fireEvent.scroll(el); // onScroll captures the scrolled-up intent (autoScroll = false)
 
     const scrollTo = vi.fn();

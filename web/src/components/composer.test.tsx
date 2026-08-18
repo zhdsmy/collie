@@ -45,11 +45,12 @@ function renderComposer(overrides: Partial<ComponentProps<typeof Composer>> = {}
     text: "pane output",
     terminalDraft: null,
     rawTerminalDraft: null,
-    prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true },
+    prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true },
     setWrap: vi.fn(),
     stepFontSize: vi.fn(),
     setRawTerminal: vi.fn(),
     setTapToFocus: vi.fn(),
+    setCompactKeyboard: vi.fn(),
     onSent: vi.fn(),
     ...overrides,
   };
@@ -92,11 +93,12 @@ function renderComposerWithStatus(overrides: Partial<ComponentProps<typeof Compo
     text: "pane output",
     terminalDraft: null,
     rawTerminalDraft: null,
-    prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true },
+    prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true },
     setWrap: vi.fn(),
     stepFontSize: vi.fn(),
     setRawTerminal: vi.fn(),
     setTapToFocus: vi.fn(),
+    setCompactKeyboard: vi.fn(),
     onSent: vi.fn(),
     ...overrides,
   };
@@ -441,11 +443,12 @@ describe("Composer — send", () => {
               text="pane output"
               terminalDraft={null}
               rawTerminalDraft="leftover"
-              prefs={{ wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true }}
+              prefs={{ wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true }}
               setWrap={vi.fn()}
               stepFontSize={vi.fn()}
               setRawTerminal={vi.fn()}
               setTapToFocus={vi.fn()}
+              setCompactKeyboard={vi.fn()}
               onSent={vi.fn()}
             />
           </>
@@ -534,11 +537,12 @@ describe("Composer — send", () => {
       text: "pane output",
       terminalDraft: null,
       rawTerminalDraft: null,
-      prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true },
+      prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true },
       setWrap: vi.fn(),
       stepFontSize: vi.fn(),
       setRawTerminal: vi.fn(),
       setTapToFocus: vi.fn(),
+      setCompactKeyboard: vi.fn(),
       onSent: vi.fn(),
     };
     const router = createMemoryRouter([
@@ -630,11 +634,12 @@ describe("Composer — typing into the terminal", () => {
             text="pane output"
             terminalDraft={null}
             rawTerminalDraft={null}
-            prefs={{ wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true }}
+            prefs={{ wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true }}
             setWrap={vi.fn()}
             stepFontSize={vi.fn()}
             setRawTerminal={vi.fn()}
             setTapToFocus={vi.fn()}
+            setCompactKeyboard={vi.fn()}
             onSent={vi.fn()}
           />
         </>
@@ -762,11 +767,12 @@ describe("Composer — typing into the terminal", () => {
             text="pane output"
             terminalDraft={null}
             rawTerminalDraft={null}
-            prefs={{ wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true }}
+            prefs={{ wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true }}
             setWrap={vi.fn()}
             stepFontSize={vi.fn()}
             setRawTerminal={vi.fn()}
             setTapToFocus={vi.fn()}
+            setCompactKeyboard={vi.fn()}
             onSent={vi.fn()}
           />
         </>
@@ -953,11 +959,12 @@ describe("Composer — typing into the terminal", () => {
             text="pane output"
             terminalDraft={null}
             rawTerminalDraft={null}
-            prefs={{ wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true }}
+            prefs={{ wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true }}
             setWrap={vi.fn()}
             stepFontSize={vi.fn()}
             setRawTerminal={vi.fn()}
             setTapToFocus={vi.fn()}
+            setCompactKeyboard={vi.fn()}
             onSent={vi.fn()}
           />
         </>
@@ -1215,11 +1222,12 @@ function renderDraftHarness(overrides: Partial<ComponentProps<typeof Composer>> 
       readOnly: false,
       dialogPresent: false,
       text: "pane output",
-      prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true },
+      prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true },
       setWrap: vi.fn(),
       stepFontSize: vi.fn(),
       setRawTerminal: vi.fn(),
       setTapToFocus: vi.fn(),
+      setCompactKeyboard: vi.fn(),
       onSent: vi.fn(),
       ...rest,
       terminalDraft: stable,
@@ -1486,11 +1494,12 @@ describe("Composer — in-flight echo suppression (match-last-sent)", () => {
       text: "pane output",
       terminalDraft: draft,
       rawTerminalDraft: draft,
-      prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true },
+      prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true },
       setWrap: vi.fn(),
       stepFontSize: vi.fn(),
       setRawTerminal: vi.fn(),
       setTapToFocus: vi.fn(),
+      setCompactKeyboard: vi.fn(),
       onSent: vi.fn(),
     };
     return (
@@ -1859,7 +1868,7 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
 describe("Composer — display prefs behind the gear", () => {
   it("the View row is gone; wrap/raw/font live behind the Display gear as labelled controls", async () => {
     const user = userEvent.setup();
-    renderComposer();
+    const props = renderComposer();
 
     // Nothing display-related is on the permanent rows any more.
     expect(screen.queryByRole("button", { name: "Decrease font size" })).not.toBeInTheDocument();
@@ -1868,8 +1877,13 @@ describe("Composer — display prefs behind the gear", () => {
 
     // Named controls, not bare glyphs — the whole point of the move.
     expect(screen.getByRole("switch", { name: "Wrap lines" })).toBeInTheDocument();
+    const compact = screen.getByRole("switch", { name: "Compact keyboard mode" });
+    expect(compact).toBeChecked();
     expect(screen.getByRole("switch", { name: "Raw terminal" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Decrease font size" })).toBeInTheDocument();
+
+    await user.click(compact);
+    expect(props.setCompactKeyboard).toHaveBeenCalledWith(false);
   });
 
   it("the Display dock shares the single drawer slot with Keys", async () => {
@@ -2021,11 +2035,12 @@ describe("Composer — draft persistence", () => {
       text: "pane output",
       terminalDraft: null,
       rawTerminalDraft: null,
-      prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true },
+      prefs: { wrap: true, fontSize: 11, rawTerminal: false, tapToFocus: true, compactKeyboard: true },
       setWrap: vi.fn(),
       stepFontSize: vi.fn(),
       setRawTerminal: vi.fn(),
       setTapToFocus: vi.fn(),
+      setCompactKeyboard: vi.fn(),
       onSent: vi.fn(),
       ...overrides,
     };

@@ -30,15 +30,22 @@ export interface DisplayPrefs {
    * that IS ours to give.
    */
   tapToFocus: boolean;
+  /** Keep the pane header visible and hide composer controls while the software keyboard is open. */
+  compactKeyboard: boolean;
 }
 
-// NOT bumped for `tapToFocus`: loadPrefs defaults each field independently, so a v4 payload written
-// before it existed simply reads the default. Bumping would silently reset everyone's wrap, size and
-// raw-terminal choice to buy nothing.
+// NOT bumped for additive prefs: loadPrefs defaults each field independently, so an older v4 payload
+// simply reads the new default. Bumping would silently reset existing choices to buy nothing.
 const STORAGE_KEY = "collie:display-prefs:v4";
 export const FONT_MIN = 9;
 export const FONT_MAX = 16;
-const DEFAULTS: DisplayPrefs = { wrap: true, fontSize: 12, rawTerminal: false, tapToFocus: true };
+const DEFAULTS: DisplayPrefs = {
+  wrap: true,
+  fontSize: 12,
+  rawTerminal: false,
+  tapToFocus: true,
+  compactKeyboard: true,
+};
 
 function clampFont(n: number): number {
   return Math.max(FONT_MIN, Math.min(FONT_MAX, Math.round(n)));
@@ -56,6 +63,8 @@ function loadPrefs(): DisplayPrefs {
       fontSize: typeof p.fontSize === "number" ? clampFont(p.fontSize) : DEFAULTS.fontSize,
       rawTerminal: typeof p.rawTerminal === "boolean" ? p.rawTerminal : DEFAULTS.rawTerminal,
       tapToFocus: typeof p.tapToFocus === "boolean" ? p.tapToFocus : DEFAULTS.tapToFocus,
+      compactKeyboard:
+        typeof p.compactKeyboard === "boolean" ? p.compactKeyboard : DEFAULTS.compactKeyboard,
     };
   } catch {
     return DEFAULTS;
@@ -84,6 +93,8 @@ export interface UseDisplayPrefsReturn {
   setRawTerminal: (raw: boolean) => void;
   /** Toggle or explicitly set whether a mirror tap focuses the composer. */
   setTapToFocus: (tapToFocus: boolean) => void;
+  /** Toggle or explicitly set compact keyboard chrome. */
+  setCompactKeyboard: (compactKeyboard: boolean) => void;
 }
 
 export function useDisplayPrefs(): UseDisplayPrefsReturn {
@@ -129,5 +140,21 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     });
   }, []);
 
-  return { prefs, setWrap, setFontSize, stepFontSize, setRawTerminal, setTapToFocus };
+  const setCompactKeyboard = useCallback((compactKeyboard: boolean) => {
+    setPrefs((p) => {
+      const next: DisplayPrefs = { ...p, compactKeyboard };
+      savePrefs(next);
+      return next;
+    });
+  }, []);
+
+  return {
+    prefs,
+    setWrap,
+    setFontSize,
+    stepFontSize,
+    setRawTerminal,
+    setTapToFocus,
+    setCompactKeyboard,
+  };
 }

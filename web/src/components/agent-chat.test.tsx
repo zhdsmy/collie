@@ -139,6 +139,8 @@ describe("AgentChat — header title block", () => {
 });
 
 describe("AgentChat — compact keyboard layout", () => {
+  afterEach(() => localStorage.clear());
+
   it("keeps the normal pane navigation and composer chrome when the keyboard is closed", () => {
     renderChat({ tabs: fixtureTabs });
 
@@ -163,6 +165,21 @@ describe("AgentChat — compact keyboard layout", () => {
       maxHeight: "5.75rem",
       overflowY: "auto",
     });
+  });
+
+  it("leaves the header and input controls in their normal mode when the preference is off", () => {
+    localStorage.setItem(
+      "collie:display-prefs:v4",
+      JSON.stringify({ compactKeyboard: false }),
+    );
+    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
+    renderChat({ tabs: fixtureTabs });
+
+    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+    expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
+    // Pane navigation still yields to the terminal independently of the compact chrome preference.
+    expect(screen.queryByText("Tabs")).not.toBeInTheDocument();
   });
 });
 

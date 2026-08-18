@@ -116,8 +116,16 @@ export function AgentChat({
   const connecting = isConnecting({ bridge, error, stalled });
   const { newTab } = useSpaceActions();
   // Single display-prefs instance: the View controls (in <Composer>) write it, the mirror reads it.
-  const { prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus } = useDisplayPrefs();
+  const {
+    prefs,
+    setWrap,
+    stepFontSize,
+    setRawTerminal,
+    setTapToFocus,
+    setCompactKeyboard,
+  } = useDisplayPrefs();
   const { open: keyboardOpen, offsetTop: keyboardViewportTop } = useKeyboardViewport();
+  const compactKeyboard = keyboardOpen && prefs.compactKeyboard;
   // Raw-terminal escape hatch: when on, every agent grammar is bypassed and the plain mirror shows,
   // so a mis-detected/mis-rendered dialog can always be driven by hand with the keys pad.
   const grammarsOn = !prefs.rawTerminal;
@@ -574,7 +582,7 @@ export function AgentChat({
         bridge={bridge}
         error={error}
         stalled={stalled}
-        fixed={keyboardOpen}
+        fixed={compactKeyboard}
         fixedTop={keyboardViewportTop}
         onHome={onBack}
         override={
@@ -681,7 +689,7 @@ export function AgentChat({
 
       {/* A fixed keyboard-mode header leaves normal flow. Reserve the visual viewport's panned offset
           plus the header's 60px + safe-area height so the visible terminal starts below it. */}
-      {keyboardOpen && (
+      {compactKeyboard && (
         <div
           aria-hidden="true"
           data-testid="keyboard-header-spacer"
@@ -901,6 +909,7 @@ export function AgentChat({
             stepFontSize={stepFontSize}
             setRawTerminal={setRawTerminal}
             setTapToFocus={setTapToFocus}
+            setCompactKeyboard={setCompactKeyboard}
             onSent={onSent}
           />
         </div>

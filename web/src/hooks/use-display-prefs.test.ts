@@ -9,7 +9,13 @@ describe("useDisplayPrefs", () => {
 
   it("returns defaults when localStorage is empty", () => {
     const { result } = renderHook(() => useDisplayPrefs());
-    expect(result.current.prefs).toEqual({ wrap: true, fontSize: 12, rawTerminal: false, tapToFocus: true });
+    expect(result.current.prefs).toEqual({
+      wrap: true,
+      fontSize: 12,
+      rawTerminal: false,
+      tapToFocus: true,
+      compactKeyboard: true,
+    });
   });
 
   it("persists wrap=true and reloads it on mount", () => {
@@ -27,9 +33,24 @@ describe("useDisplayPrefs", () => {
   });
 
   it("loads persisted prefs from localStorage on mount", () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ wrap: false, fontSize: 14, rawTerminal: true, tapToFocus: false }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        wrap: false,
+        fontSize: 14,
+        rawTerminal: true,
+        tapToFocus: false,
+        compactKeyboard: false,
+      }),
+    );
     const { result } = renderHook(() => useDisplayPrefs());
-    expect(result.current.prefs).toEqual({ wrap: false, fontSize: 14, rawTerminal: true, tapToFocus: false });
+    expect(result.current.prefs).toEqual({
+      wrap: false,
+      fontSize: 14,
+      rawTerminal: true,
+      tapToFocus: false,
+      compactKeyboard: false,
+    });
   });
 
   it("persists rawTerminal and reloads it on mount (the escape hatch survives a reload)", () => {
@@ -51,12 +72,27 @@ describe("useDisplayPrefs", () => {
     expect(reloaded.current.prefs.tapToFocus).toBe(false);
   });
 
-  // The storage key was deliberately NOT bumped for tapToFocus: a payload written before it existed
-  // must keep every other choice and take the default for the new one. A bump would have reset them.
-  it("reads a pre-tapToFocus payload without discarding the prefs it does have", () => {
+  it("persists compactKeyboard and reloads it on mount", () => {
+    const { result } = renderHook(() => useDisplayPrefs());
+    expect(result.current.prefs.compactKeyboard).toBe(true);
+    act(() => result.current.setCompactKeyboard(false));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).compactKeyboard).toBe(false);
+    const { result: reloaded } = renderHook(() => useDisplayPrefs());
+    expect(reloaded.current.prefs.compactKeyboard).toBe(false);
+  });
+
+  // The storage key is deliberately not bumped for additive prefs: an older payload must keep every
+  // choice it has and take defaults for fields added later. A bump would have reset those choices.
+  it("reads an older payload without discarding the prefs it does have", () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ wrap: false, fontSize: 15, rawTerminal: true }));
     const { result } = renderHook(() => useDisplayPrefs());
-    expect(result.current.prefs).toEqual({ wrap: false, fontSize: 15, rawTerminal: true, tapToFocus: true });
+    expect(result.current.prefs).toEqual({
+      wrap: false,
+      fontSize: 15,
+      rawTerminal: true,
+      tapToFocus: true,
+      compactKeyboard: true,
+    });
   });
 
   it("setFontSize clamps below minimum to 9", () => {
@@ -92,12 +128,24 @@ describe("useDisplayPrefs", () => {
   it("falls back to defaults on malformed JSON", () => {
     localStorage.setItem(STORAGE_KEY, "not-json{{{");
     const { result } = renderHook(() => useDisplayPrefs());
-    expect(result.current.prefs).toEqual({ wrap: true, fontSize: 12, rawTerminal: false, tapToFocus: true });
+    expect(result.current.prefs).toEqual({
+      wrap: true,
+      fontSize: 12,
+      rawTerminal: false,
+      tapToFocus: true,
+      compactKeyboard: true,
+    });
   });
 
   it("falls back to defaults when stored value is not an object", () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(42));
     const { result } = renderHook(() => useDisplayPrefs());
-    expect(result.current.prefs).toEqual({ wrap: true, fontSize: 12, rawTerminal: false, tapToFocus: true });
+    expect(result.current.prefs).toEqual({
+      wrap: true,
+      fontSize: 12,
+      rawTerminal: false,
+      tapToFocus: true,
+      compactKeyboard: true,
+    });
   });
 });

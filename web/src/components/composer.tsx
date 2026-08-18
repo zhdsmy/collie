@@ -67,6 +67,7 @@ interface ComposerProps {
   stepFontSize: (delta: number) => void;
   setRawTerminal: (raw: boolean) => void;
   setTapToFocus: (tapToFocus: boolean) => void;
+  setCompactKeyboard: (compactKeyboard: boolean) => void;
   /** Snap the mirror to the live tail (follow + revalidate + scroll) after a successful send. */
   onSent: () => void;
 }
@@ -156,11 +157,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     stepFontSize,
     setRawTerminal,
     setTapToFocus,
+    setCompactKeyboard,
     onSent,
   },
   ref,
 ) {
   const revalidator = useRevalidator();
+  const compactKeyboard = keyboardOpen && prefs.compactKeyboard;
   // Every write affordance is off when the pane is gone OR this device is read-only.
   const locked = gone || readOnly;
   // …and a ref alongside it, for the ONE caller that reads it after an await. `send()` checks
@@ -778,14 +781,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             mutually exclusive drawers is active renders here via the shared ComposerDock chrome. Keys
             mounts the NavTray (unmounts on close, so tab/queue reset each open); Quick mounts the two
             one-tap reply grids; Display mounts the labelled mirror prefs. Agent stays a covering
-            BottomSheet below (it's a palette, not a pad). Docks pause while the keyboard is open and
-            return with their state intact after it closes. */}
-        {!keyboardOpen && drawer === "keys" && (
+            BottomSheet below (it's a palette, not a pad). Compact keyboard mode pauses the docks and
+            returns them with their state intact after the keyboard closes. */}
+        {!compactKeyboard && drawer === "keys" && (
           <ComposerDock title="Keys" onClose={closeDrawer}>
             <NavTray onSend={pressKeys} onQueueChange={setQueuedKeys} disabled={locked} />
           </ComposerDock>
         )}
-        {!keyboardOpen && drawer === "quick" && (
+        {!compactKeyboard && drawer === "quick" && (
           <ComposerDock title="Quick" onClose={closeDrawer}>
             <QuickActionsContent
               onSend={(t) => send(t, false)}
@@ -796,7 +799,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
-        {!keyboardOpen && drawer === "display" && (
+        {!compactKeyboard && drawer === "display" && (
           <ComposerDock title="Display" onClose={closeDrawer}>
             <DisplayPrefsContent
               prefs={prefs}
@@ -804,6 +807,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               stepFontSize={stepFontSize}
               setRawTerminal={setRawTerminal}
               setTapToFocus={setTapToFocus}
+              setCompactKeyboard={setCompactKeyboard}
             />
           </ComposerDock>
         )}
@@ -811,9 +815,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             commands). Display prefs used to sit on a second, permanent icon-only "View" row above
             this one; folding them behind the ⚙ gives the mirror that row back. The gear is icon-only
             and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
-            keeping it narrow leaves the labelled buttons their width on a 390px phone. The whole row
-            yields to the terminal while the software keyboard is already providing input controls. */}
-        {!keyboardOpen && (
+            keeping it narrow leaves the labelled buttons their width on a 390px phone. Compact
+            keyboard mode yields the whole row while the software keyboard provides input controls. */}
+        {!compactKeyboard && (
           <div className="mb-2 flex items-center gap-2">
           {/* Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to open, tap
               again to close. aria-expanded ties each to the dock; secondary variant marks it pressed

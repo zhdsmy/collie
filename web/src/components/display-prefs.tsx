@@ -24,6 +24,7 @@ interface DisplayPrefsContentProps {
   stepFontSize: (delta: number) => void;
   setRawTerminal: (raw: boolean) => void;
   setTapToFocus: (tapToFocus: boolean) => void;
+  setCompactKeyboard: (compactKeyboard: boolean) => void;
 }
 
 // One settings row: name (+ optional explanation) on the left, control on the right. Module-level so
@@ -58,6 +59,7 @@ export function DisplayPrefsContent({
   stepFontSize,
   setRawTerminal,
   setTapToFocus,
+  setCompactKeyboard,
 }: DisplayPrefsContentProps) {
   return (
     <div className="divide-y divide-border/60 border-t border-border/60 bg-muted/30 px-3 py-1">
@@ -84,6 +86,19 @@ export function DisplayPrefsContent({
             checked={prefs.tapToFocus}
             onCheckedChange={setTapToFocus}
             aria-label="Tap to type"
+          />
+        }
+      />
+      <Row
+        label="Compact keyboard mode"
+        hint="Keeps the pane header visible and hides input controls while typing."
+        htmlFor="pref-compact-keyboard"
+        control={
+          <Switch
+            id="pref-compact-keyboard"
+            checked={prefs.compactKeyboard}
+            onCheckedChange={setCompactKeyboard}
+            aria-label="Compact keyboard mode"
           />
         }
       />
