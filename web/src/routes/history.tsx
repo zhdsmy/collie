@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLoaderData, useNavigate, useParams, useRouteLoaderData } from "react-router";
+import { useTranslation } from "react-i18next";
 import { ArrowUpToLine, ChevronDown, ChevronUp, Loader2, ScrollText, Search, X } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
@@ -27,12 +28,12 @@ import type { TranscriptEntry } from "@/lib/types";
 // The loader is deliberately not revalidated (`shouldRevalidate: false` in router.tsx), so the 1.5 s
 // poll never re-pulls a several-hundred-turn transcript out from under the reader.
 
-/** Why the strip is empty, in the user's terms. Each is an ordinary state, not an error. */
-const UNAVAILABLE_COPY: Record<NonNullable<HistoryData["unavailable"]>, string> = {
-  disabled: "Transcript history is switched off on this bridge (COLLIE_TRANSCRIPT).",
-  "no-session": "This pane has no agent session, so there's no transcript to read.",
-  "no-log": "No transcript file was found for this pane's session yet.",
-  error: "Couldn't read the transcript. Pull back and try again.",
+/** Translation key for why the strip is empty. Each is an ordinary state, not an error. */
+const UNAVAILABLE_KEYS = {
+  disabled: "history.unavailable.disabled",
+  "no-session": "history.unavailable.noSession",
+  "no-log": "history.unavailable.noLog",
+  error: "history.unavailable.error",
 };
 
 /** Turns rendered on open — a few screens, so first paint stays instant on the longest threads. */
@@ -43,6 +44,7 @@ const RENDER_STEP = 120;
 const GROW_THRESHOLD = 800;
 
 export function HistoryRoute() {
+  const { t } = useTranslation();
   const data = useLoaderData() as HistoryData;
   const root = useRouteLoaderData(ROOT_ROUTE_ID) as HomeData;
   const { paneId = "" } = useParams();
@@ -107,11 +109,11 @@ export function HistoryRoute() {
       setRenderCount((c) => c + res.entries.length); // keep the newly-fetched turns visible
       setHasMore(res.hasMore);
     } catch {
-      setStatus("Couldn't load older history", "error");
+      setStatus(t("history.loadOlderFailed"), "error");
     } finally {
       setLoading(false);
     }
-  }, [entries, hasMore, loading, paneId, session]);
+  }, [entries, hasMore, loading, paneId, session, t]);
 
   /** Reveal more of what we already hold; only hit the network once nothing is left in memory. */
   const growUpward = useCallback(() => {
@@ -210,7 +212,7 @@ export function HistoryRoute() {
             <button
               type="button"
               onClick={() => setFindOpen(true)}
-              aria-label="Find in history"
+              aria-label={t("find.inHistory")}
               className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
             >
               <Search className="size-4" />
@@ -229,7 +231,7 @@ export function HistoryRoute() {
           <button
             type="button"
             onClick={() => navigate(panePath(paneId, session))}
-            aria-label="Close history"
+            aria-label={t("history.close")}
             className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
           >
             <X className="size-4" />
@@ -239,7 +241,7 @@ export function HistoryRoute() {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <ScrollText className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="truncate font-semibold leading-tight">History</span>
+            <span className="truncate font-semibold leading-tight">{t("history.title")}</span>
           </div>
           <div className="truncate text-xs leading-tight text-muted-foreground">{title}</div>
         </div>
@@ -249,7 +251,7 @@ export function HistoryRoute() {
         <ChatMessageList ref={listRef} className="px-3 py-3">
           {entries.length === 0 ? (
             <div className="px-2 py-16 text-center text-sm text-muted-foreground">
-              {UNAVAILABLE_COPY[data.unavailable ?? "no-log"]}
+              {t(UNAVAILABLE_KEYS[data.unavailable ?? "no-log"])}
             </div>
           ) : (
             <>
@@ -267,13 +269,13 @@ export function HistoryRoute() {
                   ) : (
                     <ArrowUpToLine className="size-3.5" />
                   )}
-                  {loading ? "Loading…" : "Load older"}
+                  {loading ? t("chat.loading") : t("chat.loadOlder")}
                 </button>
               ) : (
                 <div className="mb-3 text-center text-[11px] text-muted-foreground">
                   {data.fileTruncated
-                    ? "Start of the readable transcript (the log was clipped at the read cap)"
-                    : "Start of the conversation"}
+                    ? t("history.startReadable")
+                    : t("history.start")}
                 </div>
               )}
               <TranscriptView
@@ -294,7 +296,7 @@ export function HistoryRoute() {
             <button
               type="button"
               onClick={() => jumpTo(step(userTurns, cursor, -1))}
-              aria-label="Previous message you sent"
+              aria-label={t("history.previousSent")}
               className="flex size-9 items-center justify-center text-muted-foreground transition-colors active:bg-muted"
             >
               <ChevronUp className="size-4" />
@@ -302,7 +304,7 @@ export function HistoryRoute() {
             <button
               type="button"
               onClick={() => jumpTo(step(userTurns, cursor, 1))}
-              aria-label="Next message you sent"
+              aria-label={t("history.nextSent")}
               className="flex size-9 items-center justify-center border-t text-muted-foreground transition-colors active:bg-muted"
             >
               <ChevronDown className="size-4" />

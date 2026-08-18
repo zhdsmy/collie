@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Chip } from "@/components/ui/chip";
 import { SectionLabel } from "@/components/ui/section-label";
@@ -47,6 +48,7 @@ export function TabStrip({
   onRenamed,
   onClosed,
 }: TabStripProps) {
+  const { t } = useTranslation();
   const [sheetTab, setSheetTab] = useState<TabView | null>(null);
   // Actions need both callbacks wired (revalidate on rename, fall back on close); without them the
   // chips stay plain tap-to-switch — long-press is inert.
@@ -59,8 +61,10 @@ export function TabStrip({
     <>
       {/* shrink-0 for the same reason as SpaceStrip — see the note there. */}
       <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-t border-border/40 px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <SectionLabel>Tabs</SectionLabel>
-        {allowAll && <Chip label="All" active={selected === null} onClick={() => onSelect(null)} />}
+        <SectionLabel>{t("navigation.tabs")}</SectionLabel>
+        {allowAll && (
+          <Chip label={t("common.all")} active={selected === null} onClick={() => onSelect(null)} />
+        )}
         {wsTabs.map((t) => (
           <Chip
             key={t.tabId}
@@ -80,7 +84,7 @@ export function TabStrip({
         <button
           type="button"
           onClick={() => onNewTab(workspaceId)}
-          aria-label="New tab"
+          aria-label={t("navigation.newTab")}
           className="flex size-8 shrink-0 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground transition-colors hover:bg-accent active:scale-95"
         >
           <Plus className="size-4" />

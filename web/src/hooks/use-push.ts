@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { useLanguage } from "@/i18n";
 import {
   disablePush,
   enablePush,
@@ -9,10 +10,11 @@ import {
   type PushState,
 } from "@/lib/push";
 
-// On mount, subscribe to Web Push — unless the user turned it off in Settings. Best-effort and
-// silent: service workers + Push need a secure context, so over plain HTTP this no-ops (it lights up
-// once served over HTTPS). The subscribe flow lives in lib/push so the settings page can reuse it.
+// On mount, and whenever the resolved UI language changes, subscribe/update Web Push unless the user
+// turned it off in Settings. Best-effort and silent: service workers + Push need a secure context, so
+// over plain HTTP this no-ops. Re-registering the same endpoint updates its notification locale.
 export function usePushSetup() {
+  const { resolved } = useLanguage();
   useEffect(() => {
     if (isPushDisabledByUser()) return;
     let cancelled = false;
@@ -26,7 +28,7 @@ export function usePushSetup() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [resolved]);
 }
 
 // Settings-page controller: the current push state plus an enable/disable action that refreshes it.

@@ -1,4 +1,5 @@
 import { TerminalSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { AgentIcon } from "@/components/agent-icon";
@@ -43,9 +44,12 @@ export function ThreadSidebar({
   onShellsOpenChange,
   className,
 }: ThreadSidebarProps) {
+  const { t } = useTranslation();
   if (agents.length === 0 && shellPanes.length === 0) {
     return (
-      <div className="px-4 py-12 text-center text-sm text-muted-foreground">No agents running.</div>
+      <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+        {t("dashboard.noAgents")}
+      </div>
     );
   }
 
@@ -79,7 +83,7 @@ export function ThreadSidebar({
       {shellPanes.length > 0 && (
         <Section
           id="switch-shells"
-          label="Shells"
+          label={t("navigation.shells")}
           count={shellPanes.length}
           dot="bg-status-unknown"
           {...(onShellsOpenChange ? { open: shellsOpen, onToggle: onShellsOpenChange } : {})}

@@ -1,4 +1,5 @@
 import { TerminalSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { ShellBadge, StatusBadge, StatusDot } from "@/components/status-badge";
 import { AgentIcon } from "@/components/agent-icon";
 import { timeAgoShort } from "@/lib/format";
 import { paneParts, paneTitleInTab } from "@/lib/pane-name";
-import { STATUS_LABEL } from "@/lib/types";
+import { statusKey } from "@/i18n";
 import type { AgentView } from "@/lib/types";
 
 interface AgentCardProps {
@@ -63,6 +64,7 @@ export function AgentCard({
   statusStyle = "badge",
   density = "card",
 }: AgentCardProps) {
+  const { t } = useTranslation();
   const isShell = agent.kind === "shell";
   const blocked = agent.status === "blocked";
   const inTab = scope === "tab";
@@ -170,7 +172,7 @@ export function AgentCard({
           <ShellBadge />
         ) : cornerDot ? (
           /* The dot itself is colour-only and lives on the avatar; give SR users the word. */
-          <span className="sr-only">{STATUS_LABEL[agent.status]}</span>
+          <span className="sr-only">{t(statusKey(agent.status))}</span>
         ) : (
           <StatusBadge status={agent.status} />
         )}

@@ -100,6 +100,13 @@ describe("NotificationCoordinator — debounce", () => {
       body: "demo · /home/you/demo",
       paneId: "p1",
       renotify: true,
+      copy: {
+        kind: "agent",
+        agent: "claude",
+        status: "blocked",
+        workspaceLabel: "demo",
+        cwd: "/home/you/demo",
+      },
     });
   });
 
@@ -132,6 +139,12 @@ describe("NotificationCoordinator — coalescing", () => {
       body: "claude, codex",
       paneId: undefined,
       renotify: true,
+      copy: {
+        kind: "agents",
+        count: 2,
+        status: "blocked",
+        agents: ["claude", "codex"],
+      },
     });
   });
 
@@ -154,6 +167,13 @@ describe("NotificationCoordinator — coalescing", () => {
       body: "demo · /home/you/demo",
       paneId: "p1",
       renotify: false, // a retraction update must not re-buzz
+      copy: {
+        kind: "agent",
+        agent: "claude",
+        status: "blocked",
+        workspaceLabel: "demo",
+        cwd: "/home/you/demo",
+      },
     });
   });
 });
@@ -257,6 +277,13 @@ describe("makeNotifySink", () => {
     body: "demo · /home/you/demo",
     paneId: "p1",
     renotify: true,
+    copy: {
+      kind: "agent",
+      agent: "claude",
+      status: "blocked",
+      workspaceLabel: "demo",
+      cwd: "/home/you/demo",
+    },
   };
   class RecordingPush {
     readonly sent: PushMessage[] = [];
@@ -269,7 +296,14 @@ describe("makeNotifySink", () => {
     const push = new RecordingPush();
     makeNotifySink(push, { isMuted: () => false }, "collie:herd").render(summary);
     expect(push.sent).toEqual([
-      { title: "claude needs you", body: "demo · /home/you/demo", tag: "collie:herd", paneId: "p1", renotify: true },
+      {
+        title: "claude needs you",
+        body: "demo · /home/you/demo",
+        tag: "collie:herd",
+        paneId: "p1",
+        renotify: true,
+        copy: summary.copy,
+      },
     ]);
   });
 

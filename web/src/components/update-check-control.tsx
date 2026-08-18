@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useRevalidator, useRouteLoaderData } from "react-router";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,13 +17,16 @@ import type { UpdateInfo } from "@/lib/types";
 // UpdateBanner reflects the new state. The actionable "available"/"restart needed" lines live in that
 // banner; here we only confirm an up-to-date result or surface a check failure.
 
-function describe(update: UpdateInfo | undefined): string {
-  if (!update) return "Check whether a new Collie version is available.";
-  const checked = update.checkedAt ? ` · checked ${timeAgo(update.checkedAt)}` : "";
-  return `Running v${update.current}${checked}`;
+function describe(update: UpdateInfo | undefined, t: TFunction): string {
+  if (!update) return t("settings.updateCheckDescription");
+  const checked = update.checkedAt
+    ? t("settings.updateChecked", { time: timeAgo(update.checkedAt) })
+    : "";
+  return t("settings.updateRunning", { version: update.current, checked });
 }
 
 export function UpdateCheckControl() {
+  const { t } = useTranslation();
   const data = useRouteLoaderData(ROOT_ROUTE_ID) as HomeData | undefined;
   const update = data?.update;
   const revalidator = useRevalidator();
@@ -57,8 +62,8 @@ export function UpdateCheckControl() {
         <div className="flex min-w-0 items-start gap-3">
           <RefreshCw className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
           <div className="min-w-0">
-            <div className="font-medium">Updates</div>
-            <p className="text-sm text-muted-foreground">{describe(update)}</p>
+            <div className="font-medium">{t("settings.updatesTitle")}</div>
+            <p className="text-sm text-muted-foreground">{describe(update, t)}</p>
           </div>
         </div>
       </div>
@@ -68,16 +73,18 @@ export function UpdateCheckControl() {
           {busy ? (
             <>
               <Loader2 className="size-4 animate-spin" />
-              Checking…
+              {t("settings.updateChecking")}
             </>
           ) : (
-            "Check for updates"
+            t("settings.updateCheck")
           )}
         </Button>
         {/* Lightweight result — the actionable "available"/"restart" case is left to the UpdateBanner. */}
-        {!busy && error && <span className="text-xs text-status-blocked">Couldn't check.</span>}
+        {!busy && error && (
+          <span className="text-xs text-status-blocked">{t("settings.updateCheckFailed")}</span>
+        )}
         {!busy && !error && upToDate && (
-          <span className="text-xs text-muted-foreground">Up to date</span>
+          <span className="text-xs text-muted-foreground">{t("settings.updateUpToDate")}</span>
         )}
       </div>
     </Card>

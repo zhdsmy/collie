@@ -1,8 +1,9 @@
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { useLongPress } from "@/hooks/use-long-press";
 import { StatusDot } from "@/components/status-badge";
 import { TRIAGE_STATUS, type TriageKey } from "@/lib/triage";
-import { STATUS_LABEL } from "@/lib/types";
+import { statusKey } from "@/i18n";
 
 interface ChipProps {
   label: string;
@@ -38,6 +39,7 @@ interface ChipProps {
 // the chip's own fill, and the chip has two fills (active/inactive). Inline, it just works, and it
 // matches how the space rows and section headings already read.
 export function Chip({ label, active, ring, status, onClick, onLongPress, onTapActive }: ChipProps) {
+  const { t } = useTranslation();
   const longPress = useLongPress(onLongPress);
 
   // A long-press already suppresses the ensuing click (via longPress.onClickCapture), so this only
@@ -76,7 +78,7 @@ export function Chip({ label, active, ring, status, onClick, onLongPress, onTapA
             className="size-2"
           />
           {/* The dot is colour-only; say it in words for screen readers. */}
-          <span className="sr-only">{STATUS_LABEL[TRIAGE_STATUS[status]]}</span>
+          <span className="sr-only">{t(statusKey(TRIAGE_STATUS[status]))}</span>
         </>
       )}
       {label}

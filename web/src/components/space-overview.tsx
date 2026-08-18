@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FolderPlus, LayoutGrid, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { SectionHeader } from "@/components/section-header";
@@ -7,7 +8,7 @@ import { StatusDot } from "@/components/status-badge";
 import { filterSpaces, sortSpacesByRecency, spaceLastSeenMap, spaceTriageMap } from "@/lib/spaces";
 import { TRIAGE_STATUS } from "@/lib/triage";
 import { timeAgo } from "@/lib/format";
-import { STATUS_LABEL } from "@/lib/types";
+import { statusKey } from "@/i18n";
 import type { AgentView, WorkspaceView } from "@/lib/types";
 
 interface SpaceOverviewProps {
@@ -34,6 +35,7 @@ export function SpaceOverview({
   open,
   onOpenChange,
 }: SpaceOverviewProps) {
+  const { t } = useTranslation();
   // Ephemeral view state, like SpaceRoute's tab selection — a filter you typed yesterday should not
   // greet you today with most of your spaces missing.
   const [query, setQuery] = useState("");
@@ -50,7 +52,7 @@ export function SpaceOverview({
   return (
     <section className="flex flex-col gap-2 px-3 py-4">
       <SectionHeader
-        label="Spaces"
+        label={t("navigation.spaces")}
         // While filtering, the count reports what you can SEE — a header reading (45) above four
         // rows makes you doubt the filter rather than trust it.
         count={query.trim() ? visible.length : workspaces.length}
@@ -63,7 +65,12 @@ export function SpaceOverview({
             {blockedSpaces > 0 && (
               <span
                 className="flex items-center gap-1 text-[11px] font-semibold tabular-nums text-status-blocked"
-                aria-label={`${blockedSpaces} ${blockedSpaces === 1 ? "space needs" : "spaces need"} you`}
+                aria-label={t(
+                  blockedSpaces === 1
+                    ? "dashboard.spaceNeedsOne"
+                    : "dashboard.spaceNeedsOther",
+                  { count: blockedSpaces },
+                )}
               >
                 <span className="size-2 rounded-full bg-status-blocked" aria-hidden />
                 {blockedSpaces}
@@ -72,7 +79,7 @@ export function SpaceOverview({
             <button
               type="button"
               onClick={onNewSpace}
-              aria-label="New space"
+              aria-label={t("navigation.newSpace")}
               className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95"
             >
               <FolderPlus className="size-4" />
@@ -94,8 +101,8 @@ export function SpaceOverview({
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filter spaces…"
-                aria-label="Filter spaces"
+                placeholder={t("dashboard.filterSpaces")}
+                aria-label={t("dashboard.filterSpaces")}
                 // min-h-9 so the control itself clears the 36px touch floor, not just its padded label.
                 className="min-h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
@@ -103,10 +110,12 @@ export function SpaceOverview({
           )}
 
           {workspaces.length === 0 ? (
-            <p className="px-1 py-6 text-center text-sm text-muted-foreground">No spaces yet.</p>
+            <p className="px-1 py-6 text-center text-sm text-muted-foreground">
+              {t("dashboard.noSpaces")}
+            </p>
           ) : visible.length === 0 ? (
             <p className="px-1 py-6 text-center text-sm text-muted-foreground">
-              No space matches “{query}”.
+              {t("dashboard.noSpaceMatch", { query })}
             </p>
           ) : (
             visible.map((w) => {
@@ -141,7 +150,7 @@ export function SpaceOverview({
                       <>
                         <StatusDot status={status} />
                         {/* The dot alone is colour-only; give SR users the status word. */}
-                        <span className="sr-only">{STATUS_LABEL[status]}</span>
+                        <span className="sr-only">{t(statusKey(status))}</span>
                       </>
                     ) : (
                       <span className="size-2.5 shrink-0 rounded-full border border-muted-foreground/40" />
@@ -150,7 +159,12 @@ export function SpaceOverview({
                     {/* One count plus a relative time is what a 390px row has room for — the tab
                         count went, the pane count is the useful one. */}
                     <span
-                      aria-label={`${w.paneCount} ${w.paneCount === 1 ? "pane" : "panes"}`}
+                      aria-label={t(
+                        w.paneCount === 1
+                          ? "dashboard.paneCountOne"
+                          : "dashboard.paneCountOther",
+                        { count: w.paneCount },
+                      )}
                       className="inline-flex shrink-0 items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground"
                     >
                       <LayoutGrid className="size-3.5" aria-hidden />

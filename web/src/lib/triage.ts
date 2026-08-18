@@ -7,6 +7,7 @@
 //   lastActiveAt — when the agent last changed status
 //   lastSeenAt   — when you last opened or drove it through Collie
 import type { AgentStatus, AgentView } from "./types";
+import { i18n } from "@/i18n";
 
 /** Which way the Recent section runs. Attention sections never invert. */
 export type RecentDir = "newest" | "oldest";
@@ -128,8 +129,14 @@ export function triage(agents: readonly AgentView[], dir: RecentDir = "newest"):
  * up without the status-colour bullet the switcher had, and a new field would have done it again.
  */
 export function sectionHeaderProps(s: TriageSection) {
+  const labelKey = {
+    needs: "status.needsYou",
+    ready: "status.readyUnseen",
+    working: "status.working",
+    recent: "status.recent",
+  } as const;
   return {
-    label: s.label,
+    label: i18n.t(labelKey[s.key]),
     count: s.agents.length,
     dot: s.dot,
     ...(s.accent ? { accent: s.accent } : {}),

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useNavigate, useRevalidator } from "react-router";
+import { useTranslation } from "react-i18next";
 import { ArrowUpToLine, Loader2, ScrollText, Search, TerminalSquare } from "lucide-react";
 import { useSwipeUp } from "@/hooks/use-swipe";
 import { useSpaceActions } from "@/hooks/use-spaces";
@@ -108,6 +109,7 @@ export function AgentChat({
   onBack,
   onSelect,
 }: AgentChatProps) {
+  const { t } = useTranslation();
   const revalidator = useRevalidator();
   const navigate = useNavigate();
   // Poll-truth "is the data on screen not live". The header (AppHeader) reads the same inputs to drive
@@ -331,7 +333,7 @@ export function AgentChat({
   const handlePromptAction = useCallback(
     async (action: PromptBlockAction, prompt: PromptModel) => {
       if (readOnly) {
-        setStatus("Read-only — device not authorised", "error");
+        setStatus(t("access.readOnly"), "error");
         return false;
       }
       const base = {
@@ -350,21 +352,21 @@ export function AgentChat({
           ? await submitPromptOption({ ...base, option: action.option })
           : await submitPromptFeedback({ ...base, text: action.text });
       if (result.status === "sent") {
-        setStatus(action.kind === "feedback" ? "Feedback sent" : "Sent", "success");
+        setStatus(action.kind === "feedback" ? t("chat.feedbackSent") : t("chat.sent"), "success");
         setFollowing(true);
         revalidator.revalidate();
         listRef.current?.scrollToBottom();
       } else if (result.status === "changed") {
-        setStatus("Menu changed — refreshing", "warn");
+        setStatus(t("chat.menuChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || "Send failed", "error");
+        setStatus(result.error || t("chat.sendFailed"), "error");
       }
       // Reported back so the block can keep a refused feedback draft on screen rather than discard
       // what someone just thumb-typed. Option taps ignore it.
       return result.status === "sent";
     },
-    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator],
+    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator, t],
   );
 
   // Tap a wizard control (an option digit, step navigation, or the review step's submit/cancel).
@@ -376,7 +378,7 @@ export function AgentChat({
   const handleWizardAction = useCallback(
     async (keys: string[], wizard: WizardModel) => {
       if (readOnly) {
-        setStatus("Read-only — device not authorised", "error");
+        setStatus(t("access.readOnly"), "error");
         return;
       }
       const result = await submitWizardKeys({
@@ -389,18 +391,18 @@ export function AgentChat({
         keys,
       });
       if (result.status === "sent") {
-        setStatus("Sent", "success");
+        setStatus(t("chat.sent"), "success");
         setFollowing(true);
         revalidator.revalidate();
         listRef.current?.scrollToBottom();
       } else if (result.status === "changed") {
-        setStatus("Wizard changed — refreshing", "warn");
+        setStatus(t("chat.wizardChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || "Send failed", "error");
+        setStatus(result.error || t("chat.sendFailed"), "error");
       }
     },
-    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator],
+    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator, t],
   );
 
   // Tap a preview-dialog control (an option, the note add/edit/remove, or the wizard step nav).
@@ -412,7 +414,7 @@ export function AgentChat({
   const handlePreviewAction = useCallback(
     async (action: PreviewBlockAction, preview: PreviewSelectModel) => {
       if (readOnly) {
-        setStatus("Read-only — device not authorised", "error");
+        setStatus(t("access.readOnly"), "error");
         return;
       }
       const base = {
@@ -431,21 +433,25 @@ export function AgentChat({
             : await submitPreviewKeys({ ...base, keys: action.keys });
       if (result.status === "sent") {
         setStatus(
-          action.kind === "note" ? (action.text ? "Note saved" : "Note removed") : "Sent",
+          action.kind === "note"
+            ? action.text
+              ? t("chat.noteSaved")
+              : t("chat.noteRemoved")
+            : t("chat.sent"),
           "success",
         );
         setFollowing(true);
         revalidator.revalidate();
         listRef.current?.scrollToBottom();
       } else if (result.status === "changed") {
-        setStatus("Dialog changed — refreshing", "warn");
+        setStatus(t("chat.dialogChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || "Send failed", "error");
+        setStatus(result.error || t("chat.sendFailed"), "error");
         revalidator.revalidate();
       }
     },
-    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator],
+    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator, t],
   );
 
   // Tap a multi-select control (toggle a checkbox, Submit, the "Chat about this" escape, or the
@@ -456,7 +462,7 @@ export function AgentChat({
   const handleMultiSelectAction = useCallback(
     async (action: MultiSelectIntent, multi: MultiSelectModel) => {
       if (readOnly) {
-        setStatus("Read-only — device not authorised", "error");
+        setStatus(t("access.readOnly"), "error");
         return;
       }
       const result = await submitMultiSelectIntent({
@@ -469,18 +475,18 @@ export function AgentChat({
         intent: action,
       });
       if (result.status === "sent") {
-        setStatus("Sent", "success");
+        setStatus(t("chat.sent"), "success");
         setFollowing(true);
         revalidator.revalidate();
         listRef.current?.scrollToBottom();
       } else if (result.status === "changed") {
-        setStatus("Selection changed — refreshing", "warn");
+        setStatus(t("chat.selectionChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || "Send failed", "error");
+        setStatus(result.error || t("chat.sendFailed"), "error");
       }
     },
-    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator],
+    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator, t],
   );
 
   // Tap a generic-menu control (a footer-named key like Enter/s/Esc, or an arrow). Same guard-first
@@ -491,7 +497,7 @@ export function AgentChat({
   const handleMenuAction = useCallback(
     async (action: MenuBlockAction, menu: MenuModel) => {
       if (readOnly) {
-        setStatus("Read-only — device not authorised", "error");
+        setStatus(t("access.readOnly"), "error");
         return;
       }
       const result = await submitMenuKeys({
@@ -505,18 +511,18 @@ export function AgentChat({
         nav: action.nav,
       });
       if (result.status === "sent") {
-        setStatus("Sent", "success");
+        setStatus(t("chat.sent"), "success");
         setFollowing(true);
         revalidator.revalidate();
         listRef.current?.scrollToBottom();
       } else if (result.status === "changed") {
-        setStatus("The screen changed — refreshing", "warn");
+        setStatus(t("chat.screenChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || "Send failed", "error");
+        setStatus(result.error || t("chat.sendFailed"), "error");
       }
     },
-    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator],
+    [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator, t],
   );
 
   // NOTE: the composer is deliberately NOT auto-focused on open/switch — that would pop the Android
@@ -622,7 +628,7 @@ export function AgentChat({
                 <button
                   type="button"
                   onClick={openFind}
-                  aria-label="Find in output"
+                  aria-label={t("chat.findOutput")}
                   className="-mr-1 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
                 >
                   <Search className="size-4" />
@@ -632,7 +638,7 @@ export function AgentChat({
                 <button
                   type="button"
                   onClick={() => navigate(historyPath(paneId, session))}
-                  aria-label="Conversation history"
+                  aria-label={t("chat.conversationHistory")}
                   className="-mr-1 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
                 >
                   <ScrollText className="size-4" />
@@ -654,7 +660,7 @@ export function AgentChat({
           <button
             type="button"
             onClick={() => openSpace(agent.workspaceId)}
-            aria-label={`Open ${agent.workspaceLabel} overview`}
+            aria-label={t("chat.openSpaceOverview", { space: agent.workspaceLabel })}
             className="-mx-1 flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-0.5 text-left transition-colors active:bg-muted/60"
           >
             {isShell ? (
@@ -682,7 +688,7 @@ export function AgentChat({
           </button>
         ) : (
           <div className="min-w-0 flex-1">
-            <span className="truncate font-semibold">(agent gone)</span>
+            <span className="truncate font-semibold">{t("chat.agentGone")}</span>
           </div>
         )}
       </AppHeader>
@@ -789,7 +795,7 @@ export function AgentChat({
                     className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-md py-2 text-xs font-medium text-muted-foreground transition-colors active:bg-muted/50"
                   >
                     <ScrollText className="size-3.5" />
-                    Show entire history
+                    {t("chat.showEntireHistory")}
                   </button>
                 ) : moreScrollback ? (
                   <button
@@ -803,7 +809,7 @@ export function AgentChat({
                     ) : (
                       <ArrowUpToLine className="size-3.5" />
                     )}
-                    {loadingOlder ? "Loading…" : "Load older"}
+                    {loadingOlder ? t("chat.loading") : t("chat.loadOlder")}
                   </button>
                 ) : null}
                 <AnsiOutput
@@ -823,7 +829,9 @@ export function AgentChat({
                 />
               </>
             ) : (
-              <div className="py-16 text-center text-sm text-muted-foreground">(no recent output)</div>
+              <div className="py-16 text-center text-sm text-muted-foreground">
+                {t("chat.noRecentOutput")}
+              </div>
             )}
           </ChatMessageList>
         </div>
@@ -841,7 +849,7 @@ export function AgentChat({
           {!keyboardOpen && agents.length + shellPanes.length > 0 && (
             <button
               type="button"
-              aria-label="Switch pane"
+              aria-label={t("chat.switchPane")}
               {...swipe}
               onClick={() => setDrawer("switcher")}
               className="flex w-full touch-none items-center justify-center py-3.5 transition-colors active:bg-muted/50"
@@ -917,7 +925,11 @@ export function AgentChat({
 
       {/* Swipe-up quick switcher — just the panes (agents + shells), reached by the thumb gesture.
           Switch-only: pane closing lives in the pane pill's long-press sheet, not here. */}
-      <BottomSheet open={drawer === "switcher"} onClose={closeDrawer} title="Switch pane">
+      <BottomSheet
+        open={drawer === "switcher"}
+        onClose={closeDrawer}
+        title={t("chat.switchPane")}
+      >
         <ThreadSidebar
           agents={agents}
           shellPanes={shellPanes}

@@ -98,6 +98,7 @@ const updateMonitor = new UpdateMonitor({
       title: "Collie update available",
       body: `Version ${latest} is available`,
       target: "settings",
+      copy: { kind: "update", version: latest },
     }),
 });
 

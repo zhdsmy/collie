@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AArrowDown, AArrowUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -61,62 +62,63 @@ export function DisplayPrefsContent({
   setTapToFocus,
   setCompactKeyboard,
 }: DisplayPrefsContentProps) {
+  const { t } = useTranslation();
   return (
     <div className="divide-y divide-border/60 border-t border-border/60 bg-muted/30 px-3 py-1">
       <Row
-        label="Wrap lines"
-        hint="Off shows column-faithful output for TUI tables — you pan instead."
+        label={t("display.wrapLines")}
+        hint={t("display.wrapLinesHint")}
         htmlFor="pref-wrap"
         control={
           <Switch
             id="pref-wrap"
             checked={prefs.wrap}
             onCheckedChange={setWrap}
-            aria-label="Wrap lines"
+            aria-label={t("display.wrapLines")}
           />
         }
       />
       <Row
-        label="Tap to type"
-        hint="On, tapping the mirror anywhere opens the keyboard. Off, the mirror behaves like a document — taps land on the text and only the composer opens the keyboard."
+        label={t("display.tapToType")}
+        hint={t("display.tapToTypeHint")}
         htmlFor="pref-tap-to-focus"
         control={
           <Switch
             id="pref-tap-to-focus"
             checked={prefs.tapToFocus}
             onCheckedChange={setTapToFocus}
-            aria-label="Tap to type"
+            aria-label={t("display.tapToType")}
           />
         }
       />
       <Row
-        label="Compact keyboard mode"
-        hint="Keeps the pane header visible and hides input controls while typing."
+        label={t("display.compactKeyboard")}
+        hint={t("display.compactKeyboardHint")}
         htmlFor="pref-compact-keyboard"
         control={
           <Switch
             id="pref-compact-keyboard"
             checked={prefs.compactKeyboard}
             onCheckedChange={setCompactKeyboard}
-            aria-label="Compact keyboard mode"
+            aria-label={t("display.compactKeyboard")}
           />
         }
       />
       <Row
-        label="Raw terminal"
-        hint="Shows the plain mirror — no tappable prompt buttons, no chrome or status strips. Use it when a dialog renders wrong and you want to drive it by hand from Keys."
+        label={t("display.rawTerminal")}
+        hint={t("display.rawTerminalHint")}
         htmlFor="pref-raw"
         control={
           <Switch
             id="pref-raw"
             checked={prefs.rawTerminal}
             onCheckedChange={setRawTerminal}
-            aria-label="Raw terminal"
+            aria-label={t("display.rawTerminal")}
           />
         }
       />
       <Row
-        label="Text size"
+        label={t("display.textSize")}
         control={
           <div className="flex items-center gap-1">
             <Button
@@ -125,7 +127,7 @@ export function DisplayPrefsContent({
               className="size-9"
               disabled={prefs.fontSize <= FONT_MIN}
               onClick={() => stepFontSize(-1)}
-              aria-label="Decrease font size"
+              aria-label={t("display.decreaseFont")}
             >
               <AArrowDown className="size-4" />
             </Button>
@@ -138,7 +140,7 @@ export function DisplayPrefsContent({
               className="size-9"
               disabled={prefs.fontSize >= FONT_MAX}
               onClick={() => stepFontSize(1)}
-              aria-label="Increase font size"
+              aria-label={t("display.increaseFont")}
             >
               <AArrowUp className="size-4" />
             </Button>

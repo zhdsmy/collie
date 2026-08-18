@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, Check, Inbox } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { SectionHeader } from "@/components/section-header";
@@ -46,13 +47,14 @@ export function AgentList({
   onRecentOpenChange,
   emptyState = true,
 }: AgentListProps) {
+  const { t } = useTranslation();
   if (agents.length === 0) {
     if (!emptyState) return null;
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-24 text-muted-foreground">
         <Inbox className="size-7" />
         <span className="text-sm">
-          {bridge === "connected" ? "No agents running." : "Waiting for Herdr…"}
+          {bridge === "connected" ? t("dashboard.noAgents") : t("dashboard.waitingForHerdr")}
         </span>
       </div>
     );
@@ -72,7 +74,7 @@ export function AgentList({
       {allClear && (
         <p className="flex items-center gap-2 px-1 py-1 text-sm font-medium">
           <Check className="size-5 shrink-0 text-status-done" aria-hidden />
-          Nothing needs you
+          {t("dashboard.nothingNeedsYou")}
         </p>
       )}
       {sections.map((s) => {
@@ -131,6 +133,7 @@ export function AgentList({
 // One tap flips the Recent order. Deliberately not a menu — the design offers a direction, not a
 // choice of sort keys. min-h-9 keeps it on the 36px touch floor.
 function SortToggle({ dir, onChange }: { dir: RecentDir; onChange: (dir: RecentDir) => void }) {
+  const { t } = useTranslation();
   const newest = dir === "newest";
   const Icon = newest ? ArrowDown : ArrowUp;
   return (
@@ -138,9 +141,7 @@ function SortToggle({ dir, onChange }: { dir: RecentDir; onChange: (dir: RecentD
       type="button"
       onClick={() => onChange(flipDir(dir))}
       aria-label={
-        newest
-          ? "Sorted by most recently used first — switch to oldest first"
-          : "Sorted by oldest first — switch to most recently used first"
+        newest ? t("dashboard.sortNewest") : t("dashboard.sortOldest")
       }
       // A bordered chip, not bare text: unstyled it read as an annotation ("sorted newest") rather
       // than something you can press. Fixed width so flipping it doesn't shift the header. No fill —
@@ -149,7 +150,9 @@ function SortToggle({ dir, onChange }: { dir: RecentDir; onChange: (dir: RecentD
       className="flex min-h-9 items-center justify-center gap-1 rounded-full border px-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95"
     >
       <Icon className="size-3.5" aria-hidden />
-      <span className="w-[3.25rem] text-left">{newest ? "Newest" : "Oldest"}</span>
+      <span className="w-[3.25rem] text-left">
+        {newest ? t("dashboard.newest") : t("dashboard.oldest")}
+      </span>
     </button>
   );
 }

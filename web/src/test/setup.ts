@@ -6,6 +6,7 @@ import { setupServer } from "msw/node";
 import { handlers, resetTypedDraft } from "./handlers";
 import { __resetConnectionHealth } from "@/lib/connection-health";
 import { __resetDraftPrune } from "@/lib/drafts";
+import { i18n, setLanguagePreference } from "@/i18n";
 
 // One MSW server for all tests; tests add per-case overrides with `server.use(...)`.
 export const server = setupServer(...handlers);
@@ -28,6 +29,8 @@ beforeEach(() => {
     // ignore
   }
   __resetDraftPrune();
+  setLanguagePreference("system");
+  void i18n.changeLanguage("en");
 });
 afterEach(() => {
   cleanup();

@@ -29,7 +29,7 @@ describe("ThreadSidebar", () => {
     );
     // blocked → Needs you, working → Working, idle → Recent (lib/triage.ts)
     expect(screen.getByText("Needs you")).toBeInTheDocument();
-    expect(screen.getByText("Working")).toBeInTheDocument();
+    expect(screen.getByText(/working/i)).toBeInTheDocument();
     expect(screen.getByText("Recent")).toBeInTheDocument();
   });
 
@@ -37,7 +37,7 @@ describe("ThreadSidebar", () => {
     // Only a blocked agent → no Working / Recent headers.
     render(<ThreadSidebar agents={[fixtureAgents[0]!]} currentPaneId="" onSelect={vi.fn()} />);
     expect(screen.getByText("Needs you")).toBeInTheDocument();
-    expect(screen.queryByText("Working")).toBeNull();
+    expect(screen.queryByText(/working/i)).toBeNull();
     expect(screen.queryByText("Recent")).toBeNull();
   });
 

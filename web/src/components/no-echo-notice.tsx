@@ -1,4 +1,5 @@
 import { KeyRound, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 
@@ -36,11 +37,12 @@ interface NoEchoNoticeProps {
 // blocks the remedy. Clearing on the way through fixes both: it is the one path where the draft is
 // known to be a secret, and dropping it is what the operator wanted anyway.
 export function NoEchoNotice({ prompt, typed, onUseType, onDismiss }: NoEchoNoticeProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-2 flex items-start gap-1.5 rounded-md bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground">
       <KeyRound className="mt-0.5 size-3 shrink-0" />
       <div className="min-w-0 flex-1">
-        <div className="font-medium">Password prompt — nothing echoes</div>
+        <div className="font-medium">{t("composer.passwordPromptTitle")}</div>
         <div className="mt-0.5 truncate font-mono text-[11px] leading-snug text-muted-foreground/90">
           {prompt}
         </div>
@@ -52,11 +54,11 @@ export function NoEchoNotice({ prompt, typed, onUseType, onDismiss }: NoEchoNoti
         <div className="mt-1 leading-snug">
           {onUseType === null
             ? typed
-              ? "What you typed is already in the pane, unsubmitted — but this view isn't live, so nothing can be sent from here. Answer it at the terminal."
-              : "Nothing was typed. This view isn't live, so the keys that would work can't be sent from here."
+              ? t("composer.passwordTypedLocked")
+              : t("composer.passwordBlockedLocked")
             : typed
-              ? "What you typed is already in the pane — it just can't be confirmed, so it wasn't submitted. Press Enter in Type, and don't send it again."
-              : "Send confirms what it typed, and this prompt shows nothing to confirm. Type sends your keys straight through, Enter included."}
+              ? t("composer.passwordTypedLive")
+              : t("composer.passwordBlockedLive")}
         </div>
       </div>
       {onUseType !== null && (
@@ -66,14 +68,14 @@ export function NoEchoNotice({ prompt, typed, onUseType, onDismiss }: NoEchoNoti
           className="h-6 shrink-0 self-center px-2 text-xs font-medium"
           onClick={onUseType}
         >
-          Use Type
+          {t("composer.useType")}
         </Button>
       )}
       <Button
         variant="ghost"
         size="icon"
         className="size-6 shrink-0 self-start text-muted-foreground"
-        aria-label="Dismiss password-prompt notice"
+        aria-label={t("composer.dismissPasswordNotice")}
         onClick={onDismiss}
       >
         <X className="size-3" />

@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { CommandPalette } from "./command-palette";
+import { i18n } from "@/i18n";
 import type { OperatorCommand } from "@/lib/types";
 
 function setup(overrides?: { agent?: string | null; mine?: OperatorCommand[] }) {
@@ -18,6 +19,10 @@ function setup(overrides?: { agent?: string | null; mine?: OperatorCommand[] }) 
 }
 
 describe("CommandPalette", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
   it("shows only common commands when the query is empty", () => {
     setup();
     // /status is common; /doctor is not.
@@ -132,6 +137,38 @@ describe("CommandPalette", () => {
     expect(screen.getByText("/fork-in-herdr")).toBeInTheDocument();
     // The sheet is the operator's shortcuts now — no searching past ten rows nobody picked.
     expect(screen.queryByText("/compact")).toBeNull();
+  });
+
+  it("localizes shipped descriptions and searches them while keeping operator copy verbatim", async () => {
+    await i18n.changeLanguage("zh-CN");
+    const user = userEvent.setup();
+    const { unmount } = render(
+      <CommandPalette
+        open
+        onClose={() => {}}
+        agent="claude"
+        onInsert={() => {}}
+        onSubmit={() => {}}
+      />,
+    );
+    expect(screen.getByText("总结对话以释放上下文；可选指定重点")).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText(/搜索 51 个命令/), "剪贴板");
+    expect(screen.getByText("/copy")).toBeInTheDocument();
+    unmount();
+
+    setup({
+      agent: "omp",
+      mine: [
+        {
+          agent: "omp",
+          command: "/fork-in-herdr",
+          description: "Fork into a new herdr tab",
+          takesArg: false,
+          argHint: "",
+        },
+      ],
+    });
+    expect(screen.getByText("Fork into a new herdr tab")).toBeInTheDocument();
   });
 
   it("still asks twice before a renamed destructive command", async () => {

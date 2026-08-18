@@ -4,6 +4,7 @@
 import { trackBusy } from "./busy";
 import { markLive } from "./connection-health";
 import { observeServerBuild, SERVER_BUILD_HEADER } from "./server-build";
+import { i18n } from "@/i18n";
 import type {
   ActionResponse,
   BridgeConfig,
@@ -42,12 +43,62 @@ export type { NotifyPrefs, UpdateInfo };
 export const XHR_HEADER = "x-requested-with";
 export const XHR_HEADER_VALUE = "XMLHttpRequest";
 
-class ApiError extends Error {
+const API_ERROR_KEYS = {
+  unknown_session: "apiErrors.unknownSession",
+  access_denied: "apiErrors.accessDenied",
+  device_not_authorized: "apiErrors.deviceNotAuthorized",
+  method_not_allowed: "apiErrors.methodNotAllowed",
+  invalid_subscription: "apiErrors.invalidSubscription",
+  invalid_request: "apiErrors.invalidRequest",
+  invalid_snooze: "apiErrors.invalidSnooze",
+  invalid_notification_preferences: "apiErrors.invalidNotificationPreferences",
+  herdr_read_failed: "apiErrors.herdrReadFailed",
+  transcript_read_failed: "apiErrors.transcriptReadFailed",
+  invalid_expected_prompt: "apiErrors.invalidExpectedPrompt",
+  missing_keys: "apiErrors.missingKeys",
+  invalid_label: "apiErrors.invalidLabel",
+  multipart_required: "apiErrors.multipartRequired",
+  image_too_large: "apiErrors.imageTooLarge",
+  missing_file: "apiErrors.missingFile",
+  unsupported_image_type: "apiErrors.unsupportedImageType",
+  terminal_write_failed: "apiErrors.terminalWriteFailed",
+  submit_failed_after_typing: "apiErrors.submitFailedAfterTyping",
+  operation_failed: "apiErrors.operationFailed",
+  prompt_changed: "apiErrors.promptChanged",
+} as const;
+
+type ErrorParams = Record<string, string | number>;
+
+interface ApiErrorDetail {
+  raw: string;
+  message: string;
+  code?: string;
+  params?: ErrorParams;
+}
+
+/** Translate a Collie-owned stable code; an unknown bridge/proxy error stays verbatim. */
+export function localizeApiError(
+  code: string | undefined,
+  params: ErrorParams | undefined,
+  fallback: string,
+): string {
+  if (!code || !Object.hasOwn(API_ERROR_KEYS, code)) return fallback;
+  return i18n.t(API_ERROR_KEYS[code as keyof typeof API_ERROR_KEYS], params ?? {});
+}
+
+export class ApiError extends Error {
   readonly status: number;
-  constructor(message: string, status: number) {
+  readonly code?: string;
+  readonly params?: ErrorParams;
+  readonly rawMessage: string;
+
+  constructor(message: string, status: number, detail?: ApiErrorDetail) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = detail?.code;
+    this.params = detail?.params;
+    this.rawMessage = detail?.message ?? message;
   }
 }
 
@@ -100,13 +151,48 @@ function withSession(path: string, session?: string): string {
   return `${path}${sep}session=${encodeURIComponent(s)}`;
 }
 
-// Best-effort human-readable failure detail: the response body if present, else the status text.
-async function errorDetail(res: Response): Promise<string> {
+/** Parse both the new `{ error, code, params }` body and legacy plain-text/JSON errors. */
+export function parseApiErrorDetail(raw: string, statusText = ""): ApiErrorDetail {
+  const fallback = raw || statusText;
+  if (!raw) return { raw, message: fallback };
   try {
-    return (await res.text()) || res.statusText;
+    const body = JSON.parse(raw) as Record<string, unknown>;
+    if (typeof body !== "object" || body === null) return { raw, message: fallback };
+    const message = typeof body.error === "string" ? body.error : fallback;
+    const code = typeof body.code === "string" ? body.code : undefined;
+    const entries =
+      typeof body.params === "object" && body.params !== null
+        ? Object.entries(body.params).filter(
+            (entry): entry is [string, string | number] =>
+              typeof entry[1] === "string" || typeof entry[1] === "number",
+          )
+        : [];
+    const params = entries.length > 0 ? Object.fromEntries(entries) : undefined;
+    return { raw, message, code, params };
   } catch {
-    return res.statusText;
+    return { raw, message: fallback };
   }
+}
+
+async function errorDetail(res: Response): Promise<ApiErrorDetail> {
+  try {
+    return parseApiErrorDetail(await res.text(), res.statusText);
+  } catch {
+    return parseApiErrorDetail("", res.statusText);
+  }
+}
+
+function localizeStructuredError<T>(value: T): T {
+  if (typeof value !== "object" || value === null) return value;
+  const body = value as Record<string, unknown>;
+  if (body.ok !== false || typeof body.error !== "string" || typeof body.code !== "string") {
+    return value;
+  }
+  const detail = parseApiErrorDetail(JSON.stringify(body));
+  return {
+    ...body,
+    error: localizeApiError(detail.code, detail.params, detail.message),
+  } as T;
 }
 
 /**
@@ -130,7 +216,11 @@ function promptChangedResponse(detail: string): ActionResponse | null {
       body.code === "prompt_changed" &&
       typeof body.error === "string"
     ) {
-      return { ok: false, error: body.error, code: "prompt_changed" };
+      return localizeStructuredError({
+        ok: false,
+        error: body.error,
+        code: "prompt_changed",
+      });
     }
   } catch {
     // A non-JSON error body follows the existing ApiError path below.
@@ -169,12 +259,16 @@ async function doReq<T>(path: string, init?: RequestInit, recover?: Recover<T>):
   captureBuild(res);
   if (!res.ok) {
     const detail = await errorDetail(res);
-    const recovered = recover?.(res.status, detail);
+    const recovered = recover?.(res.status, detail.raw);
     if (recovered !== null && recovered !== undefined) return recovered;
-    throw new ApiError(`${path} → ${res.status} ${detail}`, res.status);
+    throw new ApiError(
+      localizeApiError(detail.code, detail.params, detail.message),
+      res.status,
+      detail,
+    );
   }
   if (res.status === 204) return undefined as T;
-  return (await res.json()) as T;
+  return localizeStructuredError((await res.json()) as T);
 }
 
 // Every mutating request (non-GET) feeds the app-wide busy signal so the top progress bar shows
@@ -251,7 +345,12 @@ export async function fetchPane(
   }
 
   if (!res.ok) {
-    throw new ApiError(`${url} → ${res.status} ${await errorDetail(res)}`, res.status);
+    const detail = await errorDetail(res);
+    throw new ApiError(
+      localizeApiError(detail.code, detail.params, detail.message),
+      res.status,
+      detail,
+    );
   }
 
   // Parse the body BEFORE recording the ETag, so the cache only ever holds an (etag, text) pair
@@ -458,9 +557,14 @@ export function uploadImage(paneId: string, file: File, session?: string): Promi
         signal: withTimeout(undefined, UPLOAD_TIMEOUT_MS),
       });
       if (!res.ok) {
-        throw new ApiError(`upload → ${res.status} ${await errorDetail(res)}`, res.status);
+        const detail = await errorDetail(res);
+        throw new ApiError(
+          localizeApiError(detail.code, detail.params, detail.message),
+          res.status,
+          detail,
+        );
       }
-      return (await res.json()) as UploadResponse;
+      return localizeStructuredError((await res.json()) as UploadResponse);
     })(),
   );
 }

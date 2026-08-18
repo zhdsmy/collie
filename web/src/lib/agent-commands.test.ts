@@ -1,4 +1,4 @@
-import { commandsFor } from "./agent-commands";
+import { commandsFor, SHIPPED_COMMAND_DESCRIPTIONS } from "./agent-commands";
 
 describe("commandsFor", () => {
   it("returns the Claude catalog for 'claude'", () => {
@@ -120,6 +120,8 @@ describe("commandsFor", () => {
         expect(seen.has(c.command)).toBe(false); // no duplicate commands within a catalog
         seen.add(c.command);
         expect(c.description.length).toBeGreaterThan(0);
+        expect(c.descriptionId).toBeTruthy();
+        expect(SHIPPED_COMMAND_DESCRIPTIONS[c.descriptionId!]).toBe(c.description);
         if (c.takesArg) expect(c.argHint.length).toBeGreaterThan(0);
         else expect(c.argHint).toBe("");
       }
@@ -161,6 +163,7 @@ describe("commandsFor with the operator's own rows", () => {
     expect(row?.common).toBe(true);
     expect(row?.dangerous).toBe(false);
     expect(row?.description).toBe("Fork into a new herdr tab");
+    expect(row?.descriptionId).toBeUndefined();
   });
 
   it("gives an agent with no catalog a palette when an unscoped extra applies", () => {

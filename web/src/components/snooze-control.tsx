@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BellOff, Loader2 } from "lucide-react";
 import { useRevalidator } from "react-router";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,11 +18,12 @@ const PRESETS: ReadonlyArray<{ label: string; minutes: number }> = [
   { label: "4h", minutes: 240 },
 ];
 
-function formatTime(ts: number): string {
-  return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+function formatTime(ts: number, locale: string): string {
+  return new Date(ts).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
 }
 
 export function SnoozeControl({ snoozedUntil }: { snoozedUntil: number | null }) {
+  const { t, i18n } = useTranslation();
   const revalidator = useRevalidator();
   const [busy, setBusy] = useState(false);
   const snoozed = snoozedUntil !== null && snoozedUntil > Date.now();
@@ -42,11 +44,13 @@ export function SnoozeControl({ snoozedUntil }: { snoozedUntil: number | null })
         <div className="flex min-w-0 items-start gap-3">
           <BellOff className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
           <div className="min-w-0">
-            <div className="font-medium">Do not disturb</div>
+            <div className="font-medium">{t("settings.snoozeTitle")}</div>
             <p className="text-sm text-muted-foreground">
               {snoozed
-                ? `Snoozed until ${formatTime(snoozedUntil)} — no pushes until then.`
-                : "Pause all push notifications for a while."}
+                ? t("settings.snoozedUntil", {
+                    time: formatTime(snoozedUntil, i18n.resolvedLanguage ?? "en"),
+                  })
+                : t("settings.snoozeDescription")}
             </p>
           </div>
         </div>
@@ -56,7 +60,7 @@ export function SnoozeControl({ snoozedUntil }: { snoozedUntil: number | null })
       <div className="flex items-center gap-2 border-t border-border/60 p-3">
         {snoozed ? (
           <Button variant="secondary" size="sm" disabled={busy} onClick={() => apply(null)}>
-            Resume now
+            {t("settings.resumeNow")}
           </Button>
         ) : (
           PRESETS.map((p) => (

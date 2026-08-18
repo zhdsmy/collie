@@ -1,3 +1,5 @@
+import { i18n } from "@/i18n";
+
 // Small presentational helpers.
 
 /** Collapse $HOME to `~` — handles /home/<user>, /Users/<user> (macOS), /var/home/<user> (Fedora). */
@@ -52,16 +54,21 @@ export function initials(name: string): string {
  * difference between `interview-con…` and `interview-consistency`.
  */
 export function timeAgoShort(ts: number, now: number = Date.now()): string {
-  const full = timeAgo(ts, now);
-  return full === "just now" ? "now" : full.replace(/ ago$/, "");
+  const secs = Math.max(0, Math.round((now - ts) / 1000));
+  if (secs < 60) return i18n.t("time.now");
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return i18n.t("time.minuteShort", { count: mins });
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return i18n.t("time.hourShort", { count: hrs });
+  return i18n.t("time.dayShort", { count: Math.floor(hrs / 24) });
 }
 
 export function timeAgo(ts: number, now: number = Date.now()): string {
   const secs = Math.max(0, Math.round((now - ts) / 1000));
-  if (secs < 60) return "just now";
+  if (secs < 60) return i18n.t("time.justNow");
   const mins = Math.floor(secs / 60);
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 60) return i18n.t("time.minuteAgo", { count: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  if (hrs < 24) return i18n.t("time.hourAgo", { count: hrs });
+  return i18n.t("time.dayAgo", { count: Math.floor(hrs / 24) });
 }

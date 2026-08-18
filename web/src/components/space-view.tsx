@@ -1,4 +1,6 @@
 import { groupPanesByTab } from "@/lib/spaces";
+import { useTranslation } from "react-i18next";
+
 import type { AgentView, TabView, WorkspaceView } from "@/lib/types";
 import { AgentCard } from "./agent-card";
 
@@ -17,6 +19,7 @@ interface SpaceViewProps {
 // labelled section when "All" is active. A freshly-created tab's shell shows up here so you can open
 // it and launch your own agent.
 export function SpaceView({ workspace, tabs, agents, shellPanes, selectedTab, onOpen }: SpaceViewProps) {
+  const { t } = useTranslation();
   const allGroups = groupPanesByTab(workspace.workspaceId, tabs, agents, shellPanes);
   const groups = selectedTab ? allGroups.filter((g) => g.tabId === selectedTab) : allGroups;
 
@@ -25,8 +28,8 @@ export function SpaceView({ workspace, tabs, agents, shellPanes, selectedTab, on
       <div className="px-1">
         <h2 className="truncate text-sm font-semibold">{workspace.label}</h2>
         <p className="text-xs text-muted-foreground">
-          {workspace.tabCount} {workspace.tabCount === 1 ? "tab" : "tabs"} ·{" "}
-          {workspace.paneCount} {workspace.paneCount === 1 ? "pane" : "panes"}
+          {t("space.tabCount", { count: workspace.tabCount })} ·{" "}
+          {t("space.paneCount", { count: workspace.paneCount })}
         </p>
       </div>
 
@@ -38,7 +41,7 @@ export function SpaceView({ workspace, tabs, agents, shellPanes, selectedTab, on
             </h3>
           )}
           {g.panes.length === 0 ? (
-            <p className="px-1 text-xs text-muted-foreground">(empty tab)</p>
+            <p className="px-1 text-xs text-muted-foreground">{t("space.emptyTab")}</p>
           ) : (
             <div className="flex flex-col gap-2">
               {/* scope="tab": this list already sits under its space heading and per-tab section,
@@ -58,7 +61,7 @@ export function SpaceView({ workspace, tabs, agents, shellPanes, selectedTab, on
 
       {groups.length === 0 && (
         <p className="px-1 py-8 text-center text-sm text-muted-foreground">
-          {selectedTab ? "This tab has no panes." : "This space has no panes."}
+          {selectedTab ? t("space.noPanesInTab") : t("space.noPanesInSpace")}
         </p>
       )}
     </div>

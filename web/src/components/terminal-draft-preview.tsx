@@ -1,4 +1,5 @@
 import { Terminal } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 
@@ -25,11 +26,12 @@ interface TerminalDraftPreviewProps {
 // lines. Take over is withdrawn (not disabled-looking, just absent) when the line is only the harness's
 // own paste placeholder — see `onTakeOver`.
 export function TerminalDraftPreview({ text, onTakeOver }: TerminalDraftPreviewProps) {
+  const { t } = useTranslation();
   return (
     <div className="mb-2 flex items-start gap-1.5 rounded-md bg-muted/40 px-2.5 py-1.5 text-xs text-muted-foreground">
       <Terminal className="mt-0.5 size-3 shrink-0" />
       <div className="min-w-0 flex-1">
-        <div className="font-medium">Draft in terminal</div>
+        <div className="font-medium">{t("composer.draftInTerminal")}</div>
         <div className="mt-0.5 line-clamp-3 whitespace-pre-wrap break-words font-mono text-[11px] leading-snug text-muted-foreground/90">
           {text}
         </div>
@@ -41,7 +43,7 @@ export function TerminalDraftPreview({ text, onTakeOver }: TerminalDraftPreviewP
           className="h-6 shrink-0 self-center px-2 text-xs font-medium"
           onClick={onTakeOver}
         >
-          Take over
+          {t("composer.takeOver")}
         </Button>
       )}
     </div>

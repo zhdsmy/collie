@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  apiError,
   BUILD_HEADER,
   cacheControlFor,
   checkAccess,
@@ -69,6 +70,19 @@ function cfg(overrides: Partial<Config> = {}): Config {
     ...overrides,
   };
 }
+
+describe("apiError", () => {
+  test("returns stable code and params alongside the English fallback", async () => {
+    const response = apiError("unknown session: cpp", "unknown_session", 404, { session: "cpp" });
+    expect(response.status).toBe(404);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(await response.json()).toEqual({
+      error: "unknown session: cpp",
+      code: "unknown_session",
+      params: { session: "cpp" },
+    });
+  });
+});
 
 describe("checkAccess — same-origin / CSRF gate", () => {
   test("allows a request with no Origin header (same-origin GET)", () => {
@@ -535,7 +549,10 @@ describe("pane write prompt binding", () => {
         "default",
       );
       expect(res.status).toBe(400);
-      expect(await res.text()).toBe("bad expected_prompt");
+      expect(await res.json()).toEqual({
+        error: "bad expected_prompt",
+        code: "invalid_expected_prompt",
+      });
       expect(client.reads).toEqual([]);
       expect(client.keys).toEqual([]);
     }
@@ -555,7 +572,10 @@ describe("pane write prompt binding", () => {
         "default",
       );
       expect(res.status).toBe(400);
-      expect(await res.text()).toBe("bad expected_prompt");
+      expect(await res.json()).toEqual({
+        error: "bad expected_prompt",
+        code: "invalid_expected_prompt",
+      });
       expect(client.reads).toEqual([]);
       expect(client.texts).toEqual([]);
       expect(client.keys).toEqual([]);

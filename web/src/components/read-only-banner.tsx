@@ -1,4 +1,5 @@
 import { Lock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { isReadOnly } from "@/lib/types";
 import type { DeviceAuth } from "@/lib/types";
@@ -15,6 +16,7 @@ export function ReadOnlyBanner({
   device: DeviceAuth | undefined;
   className?: string;
 }) {
+  const { t } = useTranslation();
   if (!isReadOnly(device)) return null;
   return (
     <div
@@ -25,10 +27,7 @@ export function ReadOnlyBanner({
       )}
     >
       <Lock className="size-3.5 shrink-0" />
-      <span>
-        Read-only — this device isn’t authorised to type into agents
-        {device?.device ? ` (${device.device})` : ""}.
-      </span>
+      <span>{t("access.readOnly", { device: device?.device ? ` (${device.device})` : "" })}</span>
     </div>
   );
 }

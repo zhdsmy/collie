@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useRevalidator, useRouteLoaderData } from "react-router";
+import { useTranslation } from "react-i18next";
 
 import { AppHeader, SettingsGear } from "@/components/app-header";
 import { ReadOnlyBanner } from "@/components/read-only-banner";
@@ -21,6 +22,7 @@ import { isReadOnly } from "@/lib/types";
 // Shares the root snapshot (no own loader), reading :spaceId from the URL — a deep-linkable,
 // back-button-friendly drill-in. The SpaceStrip's "All" chip returns to the dashboard.
 export function SpaceRoute() {
+  const { t } = useTranslation();
   const data = useRouteLoaderData(ROOT_ROUTE_ID) as HomeData;
   const { spaceId = "" } = useParams();
   const stalled = useLoadingStalled();
@@ -59,10 +61,10 @@ export function SpaceRoute() {
   if (selectedWs) everExisted.current = true;
   useEffect(() => {
     if (gone && data.bridge === "connected" && !data.error) {
-      setStatus(everExisted.current ? "Space closed" : "Space not found", "info");
+      setStatus(everExisted.current ? t("actions.spaceClosed") : t("actions.spaceNotFound"), "info");
       navigate(homePath(data.session), { replace: true });
     }
-  }, [gone, data.bridge, data.error, data.session, navigate]);
+  }, [gone, data.bridge, data.error, data.session, navigate, t]);
 
   return (
     <div className="mx-auto flex min-h-0 w-full max-w-screen-sm flex-1 flex-col">

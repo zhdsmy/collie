@@ -1,4 +1,5 @@
 import { fetchConfig, XHR_HEADER, XHR_HEADER_VALUE } from "@/lib/api";
+import { getResolvedLanguage, type AppLanguage } from "@/i18n";
 import type { BridgeConfig } from "@/lib/types";
 
 // Client-side control of Web Push: the browser subscription plus a per-device preference. We persist
@@ -74,17 +75,25 @@ function rememberEndpoint(endpoint: string | null): void {
 }
 
 /** The body `/api/subscribe` receives, built field by field rather than by serialising the
- *  PushSubscription whole: the bridge stores what it is sent, so the shape is a contract. `replaces`
+ * whole PushSubscription. `locale` is the concrete resolved language (never `system`).
+ * The bridge stores exactly what it is sent, so the shape is a contract. `replaces`
  *  is present only when this device held a DIFFERENT endpoint before — re-registering the same one
  *  supersedes nothing. Pure, and exported, because `enablePush` itself needs a real PushManager. */
 export function subscribeBody(
   json: PushSubscriptionJSON,
   previous: string | null,
-): { endpoint: string; keys: { p256dh: string; auth: string }; replaces?: string } {
+  locale: AppLanguage = "en",
+): {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  locale: AppLanguage;
+  replaces?: string;
+} {
   const endpoint = json.endpoint ?? "";
   const body = {
     endpoint,
     keys: { p256dh: json.keys?.p256dh ?? "", auth: json.keys?.auth ?? "" },
+    locale,
   };
   if (previous === null || previous === "" || previous === endpoint) return body;
   return { ...body, replaces: previous };
@@ -144,7 +153,7 @@ export async function enablePush(): Promise<EnableResult> {
       applicationServerKey: serverKey,
     });
   }
-  const body = subscribeBody(sub.toJSON(), rememberedEndpoint());
+  const body = subscribeBody(sub.toJSON(), rememberedEndpoint(), getResolvedLanguage());
   const res = await fetch("/api/subscribe", {
     method: "POST",
     headers: { "content-type": "application/json", [XHR_HEADER]: XHR_HEADER_VALUE },

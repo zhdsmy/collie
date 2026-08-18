@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/sheet";
@@ -14,6 +15,7 @@ interface NewSpaceSheetProps {
 // directory blank to open the shell in your home dir (it's a shell — cd from there), or set a path
 // for a specific project. The new space opens a fresh shell you launch your own agent in.
 export function NewSpaceSheet({ open, onClose, onCreate }: NewSpaceSheetProps) {
+  const { t } = useTranslation();
   const [label, setLabel] = useState("");
   const [cwd, setCwd] = useState("");
 
@@ -34,14 +36,16 @@ export function NewSpaceSheet({ open, onClose, onCreate }: NewSpaceSheetProps) {
   }
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="New space">
+    <BottomSheet open={open} onClose={onClose} title={t("newSpace.title")}>
       <div className="flex flex-col gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">Directory (optional)</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            {t("newSpace.directory")}
+          </span>
           <input
             value={cwd}
             onChange={(e) => setCwd(e.target.value)}
-            placeholder="~ (home dir)"
+            placeholder={t("newSpace.directoryPlaceholder")}
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
@@ -49,16 +53,18 @@ export function NewSpaceSheet({ open, onClose, onCreate }: NewSpaceSheetProps) {
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">Label (optional)</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            {t("newSpace.label")}
+          </span>
           <input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="name this space"
+            placeholder={t("newSpace.labelPlaceholder")}
             className="h-11 rounded-lg border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </label>
         <Button onClick={create} className="mt-1 h-11">
-          Create space &amp; open shell
+          {t("newSpace.create")}
         </Button>
       </div>
     </BottomSheet>

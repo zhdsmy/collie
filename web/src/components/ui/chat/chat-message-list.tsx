@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const ChatMessageList = React.forwardRef<ChatMessageListHandle, ChatMessageListP
     { className, children, dep, onAtBottomChange, hasNew, ...props },
     ref,
   ) {
+    const { t } = useTranslation();
     const { scrollRef, isAtBottom, scrollToBottom, onScroll } = useAutoScroll<HTMLDivElement>({
       dep,
       onAtBottomChange,
@@ -64,7 +66,7 @@ const ChatMessageList = React.forwardRef<ChatMessageListHandle, ChatMessageListP
             size="icon"
             variant="outline"
             className="absolute bottom-3 left-1/2 z-10 size-9 -translate-x-1/2 rounded-full shadow-md"
-            aria-label="Scroll to latest"
+            aria-label={t("chat.scrollLatest")}
           >
             <ArrowDown className="size-4" />
             {hasNew && (

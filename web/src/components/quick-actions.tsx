@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -6,6 +7,17 @@ import { Button } from "@/components/ui/button";
 import { ECHO_DONE_MS, useActionEcho } from "@/hooks/use-action-echo";
 import type { EchoPhase } from "@/hooks/use-action-echo";
 import { quickRepliesFor } from "@/lib/quick-replies";
+
+const QUICK_REPLY_KEYS = {
+  common: "quickReplies.common",
+  confirm: "quickReplies.confirm",
+  continue: "quickReplies.continue",
+  "commit and push": "quickReplies.commitAndPush",
+  no: "quickReplies.no",
+  retry: "quickReplies.retry",
+  skip: "quickReplies.skip",
+  yes: "quickReplies.yes",
+} as const;
 
 interface QuickActionsContentProps {
   /** Resolves true once the reply is verified sent — drives the ✓ and the deferred close. */
@@ -26,6 +38,7 @@ function Group({
   busy,
   phaseOf,
   onFire,
+  labelFor,
 }: {
   title: string;
   items: readonly string[];
@@ -35,10 +48,13 @@ function Group({
   busy: boolean;
   phaseOf: (id: string) => EchoPhase;
   onFire: (text: string) => void;
+  labelFor: (value: string) => string;
 }) {
   return (
     <div>
-      <p className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">{title}</p>
+      <p className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+        {labelFor(title)}
+      </p>
       <div className={`grid gap-2 ${cols}`}>
         {items.map((t) => {
           const phase = phaseOf(t);
@@ -58,7 +74,7 @@ function Group({
             >
               {phase === "pending" && <Loader2 className="size-4 animate-spin" />}
               {phase === "done" && <Check className="size-4" />}
-              {t}
+              {labelFor(t)}
             </Button>
           );
         })}
@@ -84,6 +100,7 @@ export function QuickActionsContent({
   isShell,
   disabled,
 }: QuickActionsContentProps) {
+  const { t } = useTranslation();
   const groups = quickRepliesFor(agent, isShell);
   const echo = useActionEcho();
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,6 +123,11 @@ export function QuickActionsContent({
     });
   };
 
+  const labelFor = (value: string): string => {
+    const key = QUICK_REPLY_KEYS[value as keyof typeof QUICK_REPLY_KEYS];
+    return key ? t(key) : value;
+  };
+
   return (
     <div className="space-y-4 border-t border-border/60 bg-muted/30 px-3 py-2.5">
       {groups.map((g) => (
@@ -118,6 +140,7 @@ export function QuickActionsContent({
           busy={echo.pending}
           phaseOf={echo.phaseOf}
           onFire={fire}
+          labelFor={labelFor}
         />
       ))}
     </div>

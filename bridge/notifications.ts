@@ -1,3 +1,4 @@
+import type { PushCopy } from "./localization.ts";
 import type { PushMessage } from "./push.ts";
 import type { AgentStatus, AgentView } from "./types.ts";
 
@@ -34,6 +35,8 @@ export interface HerdSummary {
   paneId?: string;
   /** Re-alert (buzz) the device — true when a new alert arrived, false on a silent retraction update. */
   renotify: boolean;
+  /** Locale-neutral fields used to render this summary separately for every subscribed device. */
+  copy: PushCopy;
 }
 
 export interface NotifySink {
@@ -69,7 +72,14 @@ export function makeNotifySink(
   return {
     render: (s) => {
       if (mute.isMuted()) return;
-      const msg: PushMessage = { title: s.title, body: s.body, tag: herdTag, paneId: s.paneId, renotify: s.renotify };
+      const msg: PushMessage = {
+        title: s.title,
+        body: s.body,
+        tag: herdTag,
+        paneId: s.paneId,
+        renotify: s.renotify,
+        copy: s.copy,
+      };
       if (sessionName !== undefined) msg.session = sessionName;
       void push.send(msg);
     },
@@ -191,6 +201,13 @@ export class NotificationCoordinator<H = unknown> {
         body: `${a.workspaceLabel} · ${a.cwd}`,
         paneId,
         renotify,
+        copy: {
+          kind: "agent",
+          agent: a.agent,
+          status: a.status,
+          workspaceLabel: a.workspaceLabel,
+          cwd: a.cwd,
+        },
       };
     }
     const alerts = entries.map(([, a]) => a);
@@ -202,7 +219,17 @@ export class NotificationCoordinator<H = unknown> {
       : allDone
         ? `${n} agents done`
         : `${n} agents need attention`;
-    return { title, body: alerts.map((a) => a.agent).join(", "), renotify };
+    return {
+      title,
+      body: alerts.map((a) => a.agent).join(", "),
+      renotify,
+      copy: {
+        kind: "agents",
+        count: n,
+        status: allBlocked ? "blocked" : allDone ? "done" : "mixed",
+        agents: alerts.map((a) => a.agent),
+      },
+    };
   }
 
   private cancelPending(id: string): void {

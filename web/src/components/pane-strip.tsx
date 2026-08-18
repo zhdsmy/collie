@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TerminalSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { SectionLabel } from "@/components/ui/section-label";
@@ -38,6 +39,7 @@ export function PaneStrip({
   onRenamed,
   onClosed,
 }: PaneStripProps) {
+  const { t } = useTranslation();
   const [sheetPane, setSheetPane] = useState<AgentView | null>(null);
   // Actions need both callbacks wired (revalidate on rename, navigate on close); without them the
   // pills stay plain tap-to-switch — long-press is inert.
@@ -48,7 +50,7 @@ export function PaneStrip({
   return (
     <>
       <div className="flex items-center gap-2 overflow-x-auto border-t border-border/40 bg-muted/20 px-3 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <SectionLabel>Panes</SectionLabel>
+        <SectionLabel>{t("navigation.panes")}</SectionLabel>
         {panes.map((p) => (
           <PanePill
             key={p.paneId}
@@ -92,6 +94,7 @@ function PanePill({
   /** A plain tap on the pill when it's already `active` — opens actions instead of a no-op re-select. */
   onTapActive?: () => void;
 }) {
+  const { t } = useTranslation();
   const isShell = pane.kind === "shell";
   // The "pN" suffix of the pane id disambiguates same-named panes (two claudes in one tab).
   const tag = pane.paneId.split(":").pop();
@@ -116,7 +119,7 @@ function PanePill({
       onClick={onClick}
       {...longPress}
       aria-current={active ? "true" : undefined}
-      title={active && onTapActive ? "Tap for pane actions" : undefined}
+      title={active && onTapActive ? t("navigation.paneActions") : undefined}
       className={cn(
         // select-none + -webkit-touch-callout:none stop iOS Safari's selection loupe / touch callout,
         // whose native long-press gesture otherwise fires pointercancel and kills our hold timer.

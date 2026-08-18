@@ -14,6 +14,7 @@ import {
   type PromptBindingResult,
 } from "./prompt-binding.ts";
 import type { Push, PushSubscription } from "./push.ts";
+import { pushLocale } from "./localization.ts";
 import { herdTagFor, type SessionRegistry } from "./sessions.ts";
 import type { Snooze } from "./snooze.ts";
 import type { UpdateMonitor } from "./update.ts";
@@ -174,12 +175,14 @@ export function startServer(opts: {
       // never builds a path. An unknown name is a 404. Global routes below ignore the param entirely.
       const sessionName = url.searchParams.get("session") ?? undefined;
       const unknownSession = () =>
-        jsonError(`unknown session: ${sessionName ?? ""}`, 404, req.headers.get("accept-encoding"));
+        apiError(`unknown session: ${sessionName ?? ""}`, "unknown_session", 404, {
+          session: sessionName ?? "",
+        });
 
       // ── Live state (polled by the client) ────────────────────────────────
       if (pathname === "/api/snapshot") {
         const gate = checkAccess(req, cfg);
-        if (!gate.ok) return text(gate.reason, 403);
+        if (!gate.ok) return apiError(gate.reason, "access_denied", 403);
         const rt = registry.get(sessionName);
         if (!rt) return unknownSession();
         const { agents, shellPanes, workspaces, tabs, bridge } = rt.engine.current();
@@ -284,7 +287,7 @@ export function startServer(opts: {
         if (action === "upload" && req.method === "POST") return uploadPane(cfg, paneId, req, audit, device, session);
         if (action === "close" && req.method === "POST") return closePane(herdr, paneId, req, audit, device, session);
         if (action === "rename" && req.method === "POST") return renamePane(herdr, paneId, req, audit, device, session);
-        return text("method not allowed", 405);
+        return apiError("method not allowed", "method_not_allowed", 405);
       }
 
       // ── Misc API ─────────────────────────────────────────────────────────
@@ -320,12 +323,15 @@ export function startServer(opts: {
         try {
           body = await req.json();
         } catch {
-          return text("bad subscription", 400);
+          return apiError("bad subscription", "invalid_subscription", 400);
         }
-        if (!isPushSubscription(body)) return text("bad subscription", 400);
+        if (!isPushSubscription(body)) {
+          return apiError("bad subscription", "invalid_subscription", 400);
+        }
         await push.addSubscription(body, {
           replaces: supersededEndpoint(body),
           userAgent: req.headers.get("user-agent") ?? undefined,
+          locale: pushLocale((body as { locale?: unknown }).locale),
         });
         return secure(new Response(null, { status: 204 }));
       }
@@ -337,10 +343,12 @@ export function startServer(opts: {
         try {
           body = await req.json();
         } catch {
-          return text("bad request", 400);
+          return apiError("bad request", "invalid_request", 400);
         }
         const until = (body as { snoozedUntil?: unknown }).snoozedUntil;
-        if (until !== null && typeof until !== "number") return text("bad snoozedUntil", 400);
+        if (until !== null && typeof until !== "number") {
+          return apiError("bad snoozedUntil", "invalid_snooze", 400);
+        }
         await snooze.set(until);
         // Snoozing should also clear whatever's already on the lock screen — across every session,
         // since snooze is bridge-wide. Each session owns its own notification slot (tag).
@@ -366,17 +374,19 @@ export function startServer(opts: {
           try {
             body = await req.json();
           } catch {
-            return text("bad request", 400);
+            return apiError("bad request", "invalid_request", 400);
           }
           const patch = parseNotifyPrefsPatch(body);
-          if (!patch) return text("bad prefs", 400);
+          if (!patch) {
+            return apiError("bad prefs", "invalid_notification_preferences", 400);
+          }
           const updated = await notifyPrefs.set(patch);
           // Prefs may have just disabled a kind — retract any pending/outstanding alerts of it, in
           // every live session (prefs are bridge-wide; each session has its own coordinator).
           for (const rt of registry.all()) rt.notifications.applyPrefs();
           return json(updated, req.headers.get("accept-encoding"));
         }
-        return text("method not allowed", 405);
+        return apiError("method not allowed", "method_not_allowed", 405);
       }
       if (pathname === "/api/update/check" && req.method === "POST") {
         // Force an immediate upstream check (the "check for updates" button), instead of waiting for
@@ -499,7 +509,12 @@ async function readPane(
       build,
     );
   } catch (err) {
-    return text(`herdr read failed: ${(err as Error).message}`, 502);
+    return apiError(
+      `herdr read failed: ${(err as Error).message}`,
+      "herdr_read_failed",
+      502,
+      { reason: (err as Error).message },
+    );
   }
 }
 
@@ -563,7 +578,12 @@ async function paneHistory(
     if (page === null) return unavailable("no-log");
     return json({ paneId, available: true, ...page } satisfies PaneHistoryResponse, accept);
   } catch (err) {
-    return text(`transcript read failed: ${(err as Error).message}`, 502);
+    return apiError(
+      `transcript read failed: ${(err as Error).message}`,
+      "transcript_read_failed",
+      502,
+      { reason: (err as Error).message },
+    );
   }
 }
 
@@ -636,10 +656,10 @@ export async function replyPane(
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return text("bad body", 400);
+    return apiError("bad body", "invalid_request", 400);
   }
   const expected = expectedPrompt(body);
-  if (!expected.ok) return text("bad expected_prompt", 400);
+  if (!expected.ok) return apiError("bad expected_prompt", "invalid_expected_prompt", 400);
   const txt = body.text ?? "";
   const submit = body.submit ?? true;
   const ae = req.headers.get("accept-encoding");
@@ -678,8 +698,15 @@ export async function replyPane(
     },
   });
   if (outcome.ok) return json({ ok: true } satisfies ActionResponse, ae);
+  const code = outcome.textDelivered ? "submit_failed_after_typing" : "terminal_write_failed";
   return json(
-    { ok: false, error: outcome.error, textDelivered: outcome.textDelivered } satisfies ActionResponse,
+    {
+      ok: false,
+      error: outcome.error,
+      code,
+      params: { reason: outcome.error },
+      textDelivered: outcome.textDelivered,
+    } satisfies ActionResponse,
     ae,
   );
 }
@@ -697,12 +724,12 @@ export async function keysPane(
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return text("bad body", 400);
+    return apiError("bad body", "invalid_request", 400);
   }
   const expected = expectedPrompt(body);
-  if (!expected.ok) return text("bad expected_prompt", 400);
+  if (!expected.ok) return apiError("bad expected_prompt", "invalid_expected_prompt", 400);
   const keys = Array.isArray(body.keys) ? body.keys.filter((k): k is string => typeof k === "string") : [];
-  if (keys.length === 0) return text("no keys", 400);
+  if (keys.length === 0) return apiError("no keys", "missing_keys", 400);
   const ae = req.headers.get("accept-encoding");
   const binding = expected.present
     ? await checkPromptBinding(herdr, cfg, paneId, expected.value)
@@ -737,7 +764,16 @@ export async function keysPane(
         detail: { keys, sent: false, promptBinding: binding.audit },
       });
     }
-    return json({ ok: false, error: (err as Error).message } satisfies ActionResponse, ae);
+    const reason = (err as Error).message;
+    return json(
+      {
+        ok: false,
+        error: reason,
+        code: "terminal_write_failed",
+        params: { reason },
+      } satisfies ActionResponse,
+      ae,
+    );
   }
 }
 
@@ -860,7 +896,7 @@ async function closePane(
     audit.record({ action: "pane.close", paneId, session, device, detail: {} });
     return json({ ok: true } satisfies ActionResponse, ae);
   } catch (err) {
-    return json({ ok: false, error: (err as Error).message } satisfies ActionResponse, ae);
+    return operationError(err, ae);
   }
 }
 
@@ -881,9 +917,11 @@ async function renamePane(
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return text("bad body", 400);
+    return apiError("bad body", "invalid_request", 400);
   }
-  if (body.label !== null && typeof body.label !== "string") return text("bad label", 400);
+  if (body.label !== null && typeof body.label !== "string") {
+    return apiError("bad label", "invalid_label", 400);
+  }
   const trimmed = typeof body.label === "string" ? body.label.trim() : "";
   const label = trimmed.length > 0 ? trimmed : null;
   try {
@@ -891,7 +929,7 @@ async function renamePane(
     audit.record({ action: "pane.rename", paneId, session, device, detail: { label } });
     return json({ ok: true } satisfies ActionResponse, ae);
   } catch (err) {
-    return json({ ok: false, error: (err as Error).message } satisfies ActionResponse, ae);
+    return operationError(err, ae);
   }
 }
 
@@ -927,16 +965,16 @@ async function renameTab(
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return text("bad body", 400);
+    return apiError("bad body", "invalid_request", 400);
   }
   const parsed = normalizeTabLabel(body.label);
-  if (!parsed.ok) return text(parsed.error, 400);
+  if (!parsed.ok) return apiError(parsed.error, "invalid_label", 400);
   try {
     await herdr.renameTab(tabId, parsed.label);
     audit.record({ action: "tab.rename", session, device, detail: { tabId, label: parsed.label } });
     return json({ ok: true } satisfies ActionResponse, ae);
   } catch (err) {
-    return json({ ok: false, error: (err as Error).message } satisfies ActionResponse, ae);
+    return operationError(err, ae);
   }
 }
 
@@ -958,7 +996,7 @@ async function closeTab(
     audit.record({ action: "tab.close", session, device, detail: { tabId } });
     return json({ ok: true } satisfies ActionResponse, ae);
   } catch (err) {
-    return json({ ok: false, error: (err as Error).message } satisfies ActionResponse, ae);
+    return operationError(err, ae);
   }
 }
 
@@ -977,11 +1015,20 @@ async function createTab(
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return text("bad body", 400);
+    return apiError("bad body", "invalid_request", 400);
   }
   const workspaceId = body.workspaceId?.trim();
   const ae = req.headers.get("accept-encoding");
-  if (!workspaceId) return json({ ok: false, error: "workspaceId required" } satisfies CreateResponse, ae);
+  if (!workspaceId) {
+    return json(
+      {
+        ok: false,
+        error: "workspaceId required",
+        code: "invalid_request",
+      } satisfies CreateResponse,
+      ae,
+    );
+  }
   try {
     const created = await herdr.createTab(workspaceId, { label: body.label, cwd: body.cwd });
     const label =
@@ -999,7 +1046,7 @@ async function createTab(
       pane: { ...created, workspaceLabel: label },
     } satisfies CreateResponse, ae);
   } catch (err) {
-    return json({ ok: false, error: (err as Error).message } satisfies CreateResponse, ae);
+    return operationError(err, ae);
   }
 }
 
@@ -1017,7 +1064,7 @@ async function createWorkspace(
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return text("bad body", 400);
+    return apiError("bad body", "invalid_request", 400);
   }
   const cwd = body.cwd?.trim() || homedir();
   const ae = req.headers.get("accept-encoding");
@@ -1041,7 +1088,7 @@ async function createWorkspace(
       },
     } satisfies CreateResponse, ae);
   } catch (err) {
-    return json({ ok: false, error: (err as Error).message } satisfies CreateResponse, ae);
+    return operationError(err, ae);
   }
 }
 
@@ -1064,10 +1111,11 @@ async function uploadPane(
   if (Number.isFinite(declared) && declared > MAX_UPLOAD_BYTES + MAX_UPLOAD_OVERHEAD) {
     return secure(
       new Response(
-        JSON.stringify({
-          ok: false,
-          error: "image too large (max 10 MB)",
-        } satisfies UploadResponse),
+          JSON.stringify({
+            ok: false,
+            error: "image too large (max 10 MB)",
+            code: "image_too_large",
+          } satisfies UploadResponse),
         { status: 413, headers: { "content-type": "application/json; charset=utf-8" } },
       ),
     );
@@ -1076,18 +1124,37 @@ async function uploadPane(
   try {
     form = await req.formData();
   } catch {
-    return text("expected multipart form data", 400);
+    return apiError("expected multipart form data", "multipart_required", 400);
   }
   const file = form.get("file");
   if (!(file instanceof File)) {
-    return json({ ok: false, error: "no file" } satisfies UploadResponse, ae);
+    return json(
+      { ok: false, error: "no file", code: "missing_file" } satisfies UploadResponse,
+      ae,
+    );
   }
   const ext = IMAGE_EXT[file.type];
   if (!ext) {
-    return json({ ok: false, error: `unsupported type: ${file.type || "unknown"}` } satisfies UploadResponse, ae);
+    const type = file.type || "unknown";
+    return json(
+      {
+        ok: false,
+        error: `unsupported type: ${type}`,
+        code: "unsupported_image_type",
+        params: { type },
+      } satisfies UploadResponse,
+      ae,
+    );
   }
   if (file.size > MAX_UPLOAD_BYTES) {
-    return json({ ok: false, error: "image too large (max 10 MB)" } satisfies UploadResponse, ae);
+    return json(
+      {
+        ok: false,
+        error: "image too large (max 10 MB)",
+        code: "image_too_large",
+      } satisfies UploadResponse,
+      ae,
+    );
   }
   try {
     const dir = join(cfg.stateDir, "uploads");
@@ -1107,7 +1174,7 @@ async function uploadPane(
     });
     return json({ ok: true, path: fullPath } satisfies UploadResponse, ae);
   } catch (err) {
-    return json({ ok: false, error: (err as Error).message } satisfies UploadResponse, ae);
+    return operationError(err, ae);
   }
 }
 
@@ -1197,9 +1264,9 @@ export function isHostAllowed(host: string, cfg: Config): boolean {
  */
 export function guard(req: Request, cfg: Config, level: "read" | "write"): Response | null {
   const gate = checkAccess(req, cfg, level);
-  if (!gate.ok) return text(gate.reason, 403);
+  if (!gate.ok) return apiError(gate.reason, "access_denied", 403);
   if (level === "write" && !deviceAuth(req, cfg).authorized) {
-    return text("device not authorised", 403);
+    return apiError("device not authorised", "device_not_authorized", 403);
   }
   return null;
 }
@@ -1254,17 +1321,31 @@ function json(data: unknown, acceptEncoding: string | null, status = 200): Respo
   return secure(new Response(response.body, { status, headers: response.headers }));
 }
 
-/**
- * A JSON error body with a non-200 status (e.g. an unknown-session 404). The body is tiny (below the
- * gzip threshold), so a plain uncompressed JSON response is the whole story — no need for the gzip
- * path. `acceptEncoding` is accepted for call-site symmetry with {@link json} but not needed here.
- */
-function jsonError(message: string, status: number, _acceptEncoding: string | null): Response {
+/** Stable machine code plus English fallback for old clients and unknown client locales. */
+export function apiError(
+  message: string,
+  code: string,
+  status: number,
+  params?: Record<string, string | number>,
+): Response {
   return secure(
-    new Response(JSON.stringify({ error: message }), {
+    new Response(JSON.stringify({ error: message, code, ...(params ? { params } : {}) }), {
       status,
       headers: { "content-type": "application/json; charset=utf-8" },
     }),
+  );
+}
+
+function operationError(error: unknown, acceptEncoding: string | null): Response {
+  const reason = error instanceof Error ? error.message : String(error);
+  return json(
+    {
+      ok: false,
+      error: reason,
+      code: "operation_failed",
+      params: { reason },
+    },
+    acceptEncoding,
   );
 }
 

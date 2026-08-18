@@ -11,6 +11,9 @@
     <!-- Blocking, and first: the pin class must be on <html> before anything paints. Same-origin,
          so `script-src 'self'` already allows it. -->
     <script src="/theme-init.js"></script>
+    <!-- Same first-paint contract for the document language. Product copy renders after React, but
+         screen readers inspect <html lang> as soon as the document exists. -->
+    <script src="/language-init.js"></script>
     <!-- Browser chrome follows the OS for System users. useTheme rewrites these at runtime for
          someone who has pinned the opposite of their OS. -->
     <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)" />

@@ -1,5 +1,6 @@
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { WizardStepChip } from "@/lib/blocks";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ export function WizardStepper({
   onBack: () => void;
   onNext: () => void;
 }) {
+  const { t } = useTranslation();
   // The first question has nothing to its left; the TUI clamps there anyway, but a disabled control
   // says so rather than sending a key that does nothing.
   const atFirstQuestion = !submitCurrent && (steps[0]?.current ?? false);
@@ -54,9 +56,17 @@ export function WizardStepper({
   // advance button's name changing — neither of which is reliably announced. Say it out loud, once,
   // on change. Politely: it is context, not an interruption.
   const position = submitCurrent
-    ? `Step ${steps.length + 1} of ${steps.length + 1}, Submit`
+    ? t("dialogs.stepPosition", {
+        current: steps.length + 1,
+        total: steps.length + 1,
+        label: t("dialogs.submit"),
+      })
     : currentIndex >= 0
-      ? `Step ${currentIndex + 1} of ${steps.length + 1}, ${steps[currentIndex]!.label}`
+      ? t("dialogs.stepPosition", {
+          current: currentIndex + 1,
+          total: steps.length + 1,
+          label: steps[currentIndex]!.label,
+        })
       : "";
   return (
     <div className="flex items-center gap-1.5">
@@ -65,14 +75,14 @@ export function WizardStepper({
       </span>
       <button
         type="button"
-        aria-label="Previous step"
+        aria-label={t("dialogs.previousStep")}
         disabled={locked || atFirstQuestion}
         onClick={onBack}
         className={CHEVRON_CLASS}
       >
         {busyBack ? busyIcon : <ChevronLeft className="size-4" />}
       </button>
-      <ol aria-label="Questions" className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+      <ol aria-label={t("dialogs.questions")} className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
         {steps.map((step, i) => (
           <li
             key={i}
@@ -80,7 +90,10 @@ export function WizardStepper({
             className={cn(CHIP_CLASS, step.current ? CHIP_CURRENT : CHIP_IDLE)}
           >
             {step.answered ? (
-              <Check className="size-3 shrink-0 text-primary" aria-label="Answered" />
+              <Check
+                className="size-3 shrink-0 text-primary"
+                aria-label={t("common.answered")}
+              />
             ) : null}
             <span className="truncate">{step.label}</span>
           </li>
@@ -91,12 +104,12 @@ export function WizardStepper({
           aria-current={submitCurrent ? "step" : undefined}
           className={cn(CHIP_CLASS, submitCurrent ? CHIP_CURRENT : CHIP_IDLE)}
         >
-          <span>Submit</span>
+          <span>{t("dialogs.submit")}</span>
         </li>
       </ol>
       <button
         type="button"
-        aria-label="Next step"
+        aria-label={t("dialogs.nextStep")}
         disabled={locked || nextDisabled}
         onClick={onNext}
         className={CHEVRON_CLASS}

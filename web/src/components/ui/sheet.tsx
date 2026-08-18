@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ open, onClose, title, children, className }: BottomSheetProps) {
+  const { t } = useTranslation();
   const panelRef = React.useRef<HTMLDivElement>(null);
   const drag = React.useRef({ startY: 0, atTop: false, engaged: false, dy: 0 });
   const [dragY, setDragY] = React.useState(0);
@@ -159,7 +161,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
               size="icon"
               className="size-8"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t("common.close")}
             >
               <X className="size-4" />
             </Button>
@@ -193,6 +195,7 @@ export function SideSheet({
   footer,
   className,
 }: SideSheetProps) {
+  const { t } = useTranslation();
   const panelRef = React.useRef<HTMLDivElement>(null);
   const titleId = React.useId();
   useDialogFocus(open, panelRef);
@@ -246,7 +249,7 @@ export function SideSheet({
               size="icon"
               className="size-8"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={t("common.close")}
             >
               <X className="size-4" />
             </Button>

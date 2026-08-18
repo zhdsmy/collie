@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, Check, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import type { MultiSelectModel } from "@/lib/blocks";
@@ -48,12 +49,25 @@ export function MultiSelectBlock({ multi, onAction, disabled }: MultiSelectBlock
   return <CheckboxPhase multi={multi} locked={locked} sending={sending} onPress={press} />;
 }
 
-const spinnerSm = (
-  <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" aria-label="Sending" />
-);
-const spinnerMd = (
-  <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-muted-foreground" aria-label="Sending" />
-);
+function SpinnerSm() {
+  const { t } = useTranslation();
+  return (
+    <Loader2
+      className="size-3.5 shrink-0 animate-spin text-muted-foreground"
+      aria-label={t("dialogs.sending")}
+    />
+  );
+}
+
+function SpinnerMd() {
+  const { t } = useTranslation();
+  return (
+    <Loader2
+      className="mt-0.5 size-4 shrink-0 animate-spin text-muted-foreground"
+      aria-label={t("dialogs.sending")}
+    />
+  );
+}
 
 function CheckboxPhase({
   multi,
@@ -66,6 +80,7 @@ function CheckboxPhase({
   sending: string | null;
   onPress: (id: string, action: MultiSelectIntent) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <PromptPanel ariaLabel={multi.question}>
       {multi.steps && (
@@ -74,7 +89,7 @@ function CheckboxPhase({
           locked={locked}
           busyBack={sending === "nav-back"}
           busyNext={sending === "nav-next"}
-          busyIcon={spinnerSm}
+          busyIcon={<SpinnerSm />}
           onBack={() => onPress("nav-back", { kind: "nav", keys: WIZARD_BACK_KEYS })}
           onNext={() => onPress("nav-next", { kind: "nav", keys: WIZARD_NEXT_KEYS })}
         />
@@ -118,7 +133,7 @@ function CheckboxPhase({
                   </span>
                 ) : null}
               </span>
-              {busy ? spinnerMd : null}
+              {busy ? <SpinnerMd /> : null}
             </button>
           );
         })}
@@ -136,7 +151,7 @@ function CheckboxPhase({
         onClick={() => onPress("advance", { kind: "advance" })}
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary/60 bg-primary/15 px-3 py-2 text-sm font-medium text-foreground transition-colors active:bg-primary/25 disabled:opacity-60"
       >
-        {sending === "advance" ? spinnerSm : null}
+        {sending === "advance" ? <SpinnerSm /> : null}
         {multi.advanceLabel}
       </button>
 
@@ -150,9 +165,9 @@ function CheckboxPhase({
         >
           <span className="min-w-0 flex-1">
             {multi.escape.label}
-            <span className="text-muted-foreground"> — ends the questions</span>
+            <span className="text-muted-foreground">{t("dialogs.endsQuestions")}</span>
           </span>
-          {sending === "escape" ? spinnerSm : null}
+          {sending === "escape" ? <SpinnerSm /> : null}
         </button>
       ) : null}
     </PromptPanel>
@@ -170,15 +185,16 @@ function ReviewPhase({
   sending: string | null;
   onPress: (id: string, action: MultiSelectIntent) => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <PromptPanel ariaLabel="Ready to submit your answers?">
-      <QuestionHeading>Ready to submit your answers?</QuestionHeading>
+    <PromptPanel ariaLabel={t("dialogs.readyToSubmit")}>
+      <QuestionHeading>{t("dialogs.readyToSubmit")}</QuestionHeading>
       {incomplete ? (
         // role="alert" so a screen reader announces the incomplete-answers warning when the review
         // screen mounts — otherwise a user could confirm a partial set without ever hearing it.
         <div role="alert" className="flex items-center gap-1.5 text-xs text-status-working">
           <AlertTriangle className="size-3.5 shrink-0" />
-          You have not answered all questions
+          {t("dialogs.unansweredWarning")}
         </div>
       ) : null}
       <div className="flex flex-col gap-1.5">
@@ -188,8 +204,8 @@ function ReviewPhase({
           onClick={() => onPress("confirm", { kind: "confirm" })}
           className="flex w-full items-center justify-center gap-2 rounded-lg border border-primary/60 bg-primary/15 px-3 py-2 text-sm font-medium text-foreground transition-colors active:bg-primary/25 disabled:opacity-60"
         >
-          {sending === "confirm" ? spinnerSm : null}
-          Submit answers
+          {sending === "confirm" ? <SpinnerSm /> : null}
+          {t("dialogs.submitAnswers")}
         </button>
         <button
           type="button"
@@ -197,8 +213,8 @@ function ReviewPhase({
           onClick={() => onPress("cancel", { kind: "cancel" })}
           className="flex w-full items-center justify-center gap-2 rounded-lg border border-border/70 px-3 py-1.5 text-xs text-muted-foreground transition-colors active:bg-muted disabled:opacity-60"
         >
-          {sending === "cancel" ? spinnerSm : null}
-          Cancel
+          {sending === "cancel" ? <SpinnerSm /> : null}
+          {t("common.cancel")}
         </button>
       </div>
     </PromptPanel>

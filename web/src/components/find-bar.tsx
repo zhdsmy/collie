@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ interface FindBarProps {
   onNext: () => void;
   onClose: () => void;
   /** What is being searched — the mirror says "output", the transcript says "history". */
-  subject?: string;
+  subject?: "output" | "history";
 }
 
 // Compact one-row find bar that takes over the header while searching the pane mirror. Thumb-reach:
@@ -30,6 +31,7 @@ export function FindBar({
   onClose,
   subject = "output",
 }: FindBarProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   // Focus (and pop the keyboard) as soon as the bar opens so the user can type immediately.
   useEffect(() => {
@@ -61,8 +63,10 @@ export function FindBar({
             onClose();
           }
         }}
-        placeholder={`Find in ${subject}…`}
-        aria-label={`Find in ${subject}`}
+        placeholder={t(
+          subject === "history" ? "find.inHistoryPlaceholder" : "find.inOutputPlaceholder",
+        )}
+        aria-label={t(subject === "history" ? "find.inHistory" : "find.inOutput")}
         className="h-9 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
       />
       <span className="shrink-0 whitespace-nowrap px-1 font-mono text-xs tabular-nums text-muted-foreground">
@@ -74,7 +78,7 @@ export function FindBar({
         className="size-9 shrink-0 text-muted-foreground"
         disabled={count === 0}
         onClick={onPrev}
-        aria-label="Previous match"
+        aria-label={t("find.previous")}
       >
         <ChevronUp className="size-4" />
       </Button>
@@ -84,7 +88,7 @@ export function FindBar({
         className="size-9 shrink-0 text-muted-foreground"
         disabled={count === 0}
         onClick={onNext}
-        aria-label="Next match"
+        aria-label={t("find.next")}
       >
         <ChevronDown className="size-4" />
       </Button>
@@ -93,7 +97,7 @@ export function FindBar({
         size="icon"
         className="size-9 shrink-0 text-muted-foreground"
         onClick={onClose}
-        aria-label="Close find"
+        aria-label={t("find.close")}
       >
         <X className="size-4" />
       </Button>

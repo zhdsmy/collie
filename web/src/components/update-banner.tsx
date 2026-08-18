@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { useRouteLoaderData } from "react-router";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { ROOT_ROUTE_ID, type HomeData } from "@/lib/loaders";
 import type { UpdateInfo } from "@/lib/types";
+import { i18n } from "@/i18n";
 
 // The footer "update available" chip, sitting next to the build stamp. It reads the snapshot's
 // optional `update` field (surfaced on the root loader data) and, when there's something to do,
@@ -32,19 +34,23 @@ export function updateNotice(update: UpdateInfo | undefined): UpdateNotice | nul
   if (update.bridgeStale) {
     // No release page for "restart needed" — show the Herdr restart action to copy.
     return {
-      line: "Bridge restart needed",
+      line: i18n.t("updates.bridgeRestartNeeded"),
       command: "herdr plugin action invoke restart --plugin herdr.collie",
     };
   }
   // Guard on `latest` too: without a version string there's nothing meaningful to name. The release
   // page (linked) carries the update commands, so the footer just links there.
   if (update.releaseAvailable && update.latest) {
-    return { line: `Collie ${update.latest} available`, href: update.latestUrl ?? undefined };
+    return {
+      line: i18n.t("updates.collieAvailable", { version: update.latest }),
+      href: update.latestUrl ?? undefined,
+    };
   }
   return null;
 }
 
 export function UpdateBanner({ className }: { className?: string }) {
+  const { t } = useTranslation();
   // Home is the root route; space/settings are its children — so the root loader data (and its
   // `update`) is in scope for all three footers via one read.
   const data = useRouteLoaderData(ROOT_ROUTE_ID) as HomeData | undefined;
@@ -91,7 +97,7 @@ export function UpdateBanner({ className }: { className?: string }) {
           <button
             type="button"
             onClick={copy}
-            aria-label={`Copy command: ${notice.command}`}
+            aria-label={t("updates.copyCommand", { command: notice.command })}
             className="inline-flex items-center gap-1 align-middle rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground/80"
           >
             <code>{notice.command}</code>

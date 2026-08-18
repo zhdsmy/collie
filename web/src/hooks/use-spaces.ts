@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import { useNavigate, useRevalidator, useRouteLoaderData } from "react-router";
 
+import { i18n } from "@/i18n";
 import * as api from "@/lib/api";
 import { setStatus } from "@/lib/status";
 import { panePath } from "@/lib/nav";
@@ -50,7 +51,7 @@ export function useSpaceActions() {
         focused: false,
         kind: "shell",
       };
-      setStatus(`New ${what} ready — launch your agent`, "success");
+      setStatus(i18n.t(what === "tab" ? "actions.newTabReady" : "actions.newSpaceReady"), "success");
       revalidatorRef.current.revalidate();
       navigate(panePath(p.paneId, sessionRef.current), { state: { freshPane: fresh } });
     },
@@ -59,7 +60,7 @@ export function useSpaceActions() {
 
   const newTab = useCallback(
     async (workspaceId: string) => {
-      if (readOnlyRef.current) return setStatus("Read-only — device not authorised", "error");
+      if (readOnlyRef.current) return setStatus(i18n.t("access.readOnly"), "error");
       try {
         open(await api.createTab(workspaceId, {}, sessionRef.current), "tab");
       } catch (e) {
@@ -71,7 +72,7 @@ export function useSpaceActions() {
 
   const newSpace = useCallback(
     async (opts: { label?: string; cwd?: string } = {}) => {
-      if (readOnlyRef.current) return setStatus("Read-only — device not authorised", "error");
+      if (readOnlyRef.current) return setStatus(i18n.t("access.readOnly"), "error");
       try {
         open(await api.createWorkspace(opts, sessionRef.current), "space");
       } catch (e) {

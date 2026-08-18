@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 
+import { i18n } from "@/i18n";
 import type { AgentStatus, AgentView } from "@/lib/types";
 import { setStatus } from "@/lib/status";
 
@@ -21,9 +22,15 @@ export function useAgentTransitions(agents: AgentView[], openPaneId: string | nu
         if (!was || was === a.status) continue;
         if (a.paneId === openPaneId) continue; // you're already looking at it
         if (a.status === "blocked") {
-          setStatus(`${a.agent} needs you · ${a.workspaceLabel}`, "warn");
+          setStatus(
+            i18n.t("status.agentNeedsYou", { agent: a.agent, workspace: a.workspaceLabel }),
+            "warn",
+          );
         } else if (a.status === "done") {
-          setStatus(`${a.agent} is done · ${a.workspaceLabel}`, "success");
+          setStatus(
+            i18n.t("status.agentDone", { agent: a.agent, workspace: a.workspaceLabel }),
+            "success",
+          );
         }
       }
     }

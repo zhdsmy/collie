@@ -1,4 +1,5 @@
 import { Outlet, useLoaderData, useParams, useRouteError } from "react-router";
+import { useTranslation } from "react-i18next";
 
 import { usePolling } from "@/hooks/use-polling";
 import { usePollBusy } from "@/hooks/use-poll-busy";
@@ -59,12 +60,13 @@ export function RootLayout() {
 // state: the dog rests, the copy says we can't reach Collie, and a Retry re-runs the loaders from
 // scratch (a full reload clears most transient failures). Below the threshold it's unchanged.
 export function BootSplash() {
+  const { t } = useTranslation();
   const stuck = useConnectionLost(true);
   if (!stuck) {
     return (
       <div className="flex h-[100dvh] flex-col items-center justify-center gap-3 text-muted-foreground">
-        <DogGallop running size="4rem" label="Loading" />
-        <span className="text-sm">Connecting to the herd…</span>
+        <DogGallop running size="4rem" label={t("common.loading")} />
+        <span className="text-sm">{t("boot.connecting")}</span>
       </div>
     );
   }
@@ -74,16 +76,14 @@ export function BootSplash() {
           rest-frame, whose full-stretch mid-stride pose looks frozen mid-run. The "Not connected"
           copy below carries the accessible meaning, so the icon is decorative. */}
       <img src="/favicon.svg" alt="" className="size-16 opacity-40 grayscale" />
-      <p className="font-medium text-foreground">Not connected</p>
-      <p className="max-w-xs text-sm text-muted-foreground">
-        Can&rsquo;t reach Collie — check your connection to the host, then try again.
-      </p>
+      <p className="font-medium text-foreground">{t("boot.notConnected")}</p>
+      <p className="max-w-xs text-sm text-muted-foreground">{t("boot.notConnectedDescription")}</p>
       <button
         type="button"
         onClick={() => window.location.reload()}
         className="text-sm underline underline-offset-4"
       >
-        Retry
+        {t("common.retry")}
       </button>
     </div>
   );
@@ -92,11 +92,12 @@ export function BootSplash() {
 // Last-resort recovery screen for a render-phase error or a loader throw — a full reload re-runs the
 // loaders from scratch, which clears most transient failures.
 export function RootError() {
+  const { t } = useTranslation();
   const error = useRouteError();
-  const message = error instanceof Error ? error.message : "Unknown error";
+  const message = error instanceof Error ? error.message : t("boot.unknownError");
   return (
     <div className="flex h-[100dvh] flex-col items-center justify-center gap-3 p-6 text-center">
-      <p className="font-medium text-destructive">Something went wrong</p>
+      <p className="font-medium text-destructive">{t("boot.somethingWentWrong")}</p>
       <p className="max-w-xs text-sm text-muted-foreground">{message}</p>
       <button
         type="button"
@@ -110,7 +111,7 @@ export function RootError() {
         }}
         className="text-sm underline underline-offset-4"
       >
-        Reload
+        {t("common.reload")}
       </button>
     </div>
   );

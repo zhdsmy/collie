@@ -241,16 +241,22 @@ export type PaneHistoryResponse =
       fileTruncated: boolean;
     };
 
+export type ErrorParams = Record<string, string | number>;
+
+export interface StructuredError {
+  error: string;
+  code?: string;
+  params?: ErrorParams;
+}
+
 export type ActionResponse =
   | { ok: true }
-  | {
+  | (StructuredError & {
       ok: false;
-      error: string;
       textDelivered?: boolean;
-      code?: "prompt_changed";
-    };
+    });
 
-export type UploadResponse = { ok: true; path: string } | { ok: false; error: string };
+export type UploadResponse = { ok: true; path: string } | (StructuredError & { ok: false });
 
 /** A freshly-created shell pane — enough to navigate into before the next poll lands. */
 export interface CreatedPane {
@@ -262,7 +268,7 @@ export interface CreatedPane {
 }
 
 /** Result of creating a new tab/space — on success `pane` is the fresh shell to navigate into. */
-export type CreateResponse = { ok: true; pane: CreatedPane } | { ok: false; error: string };
+export type CreateResponse = { ok: true; pane: CreatedPane } | (StructuredError & { ok: false });
 
 /**
  * One operator-declared palette row (a `[[commands]]` table in their `commands.toml`). Mirrors

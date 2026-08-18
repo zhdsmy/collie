@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Settings } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 
 import { isConnecting } from "@/lib/connection";
 import { useConnectionLost, useConnectionTrouble } from "@/hooks/use-connection-lost";
@@ -100,12 +101,13 @@ export function AppHeader({
 // The Settings gear, shared so the dashboard and space headers don't each hand-roll it. Session-scoped
 // so the navigation stays on the session you're viewing.
 export function SettingsGear({ session }: { session?: string }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <button
       type="button"
       onClick={() => navigate(settingsPath(session))}
-      aria-label="Settings"
+      aria-label={t("settings.title")}
       // A real 44px box, NOT padding pulled back by a negative margin. The negative-margin trick
       // keeps icons visually tight but lets adjacent boxes overlap (two -m-3 buttons pull 24px
       // against a 12px gap, so a neighbour steals 12px of this one's hit area) and drags the last

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Pencil, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { BottomSheet } from "@/components/ui/sheet";
 import { ActionRow, DestructiveActionRow, RenameView } from "@/components/action-sheet-rows";
@@ -43,6 +44,7 @@ export function PaneActionsSheet({
   onRenamed,
   onClosed,
 }: PaneActionsSheetProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>("actions");
   const [label, setLabel] = useState("");
   const [saving, setSaving] = useState(false);
@@ -73,11 +75,11 @@ export function PaneActionsSheet({
     try {
       const res = await api.renamePane(pane.paneId, next, session);
       if (res.ok) {
-        setStatus(next ? "Renamed" : "Label cleared", "success");
+        setStatus(next ? t("actions.renamed") : t("actions.labelCleared"), "success");
         onRenamed();
         onClose();
       } else {
-        setStatus(res.error ?? "Rename failed", "error");
+        setStatus(res.error ?? t("actions.renameFailed"), "error");
       }
     } catch (e) {
       setStatus(e instanceof Error ? e.message : String(e), "error");
@@ -97,7 +99,7 @@ export function PaneActionsSheet({
         onClose();
         onClosed(pane.paneId);
       } else {
-        setStatus(res.error ?? "Close failed", "error");
+        setStatus(res.error ?? t("actions.closeFailed"), "error");
       }
     } catch (e) {
       setStatus(e instanceof Error ? e.message : String(e), "error");
@@ -109,23 +111,27 @@ export function PaneActionsSheet({
   const confirming = !!pane && pending === pane.paneId;
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={pane ? paneDisplayName(pane) : "Pane"}>
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={pane ? paneDisplayName(pane) : t("actions.pane")}
+    >
       {readOnly ? (
         <p className="py-2 text-sm text-muted-foreground">
-          Read-only — this device isn't authorised to rename or close panes.
+          {t("actions.readOnlyPanes")}
         </p>
       ) : mode === "actions" ? (
         <div className="flex flex-col gap-1">
           <ActionRow
             icon={<Pencil className="size-4 shrink-0 text-muted-foreground" />}
-            label="Rename"
+            label={t("actions.rename")}
             onClick={() => setMode("rename")}
           />
           <DestructiveActionRow
             icon={<XCircle className="size-4 shrink-0" />}
-            label="Close pane"
-            confirmLabel="Tap again to close"
-            closingLabel="Closing…"
+            label={t("actions.closePane")}
+            confirmLabel={t("actions.tapClose")}
+            closingLabel={t("actions.closing")}
             armed={confirming}
             closing={closing}
             onClick={() => void requestClose()}
@@ -141,7 +147,7 @@ export function PaneActionsSheet({
           saving={saving}
           // A blank pane field clears the label (blank → null on the bridge), so Save stays enabled.
           canSave={true}
-          placeholder="name this pane"
+          placeholder={t("actions.namePane")}
         />
       )}
     </BottomSheet>

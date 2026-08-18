@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CornerDownLeft, Pencil, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export function CommandPalette({
   onInsert,
   onSubmit,
 }: CommandPaletteProps) {
+  const { t } = useTranslation();
   const all = commandsFor(agent, mine);
   const [query, setQuery] = useState("");
   const { pending, confirm, reset } = usePendingConfirm();
@@ -41,10 +43,16 @@ export function CommandPalette({
   }, [open, reset]);
 
   const q = query.trim().toLowerCase();
+  const descriptionFor = (command: AgentCommand): string =>
+    command.descriptionId
+      ? t(`commandDescriptions.${command.descriptionId}`, { defaultValue: command.description })
+      : command.description;
   const list = q
     ? all.filter(
         (c) =>
-          c.command.toLowerCase().includes(q) || c.description.toLowerCase().includes(q),
+          c.command.toLowerCase().includes(q) ||
+          c.description.toLowerCase().includes(q) ||
+          descriptionFor(c).toLowerCase().includes(q),
       )
     : all.filter((c) => c.common);
 
@@ -61,7 +69,12 @@ export function CommandPalette({
   }
 
   return (
-    <BottomSheet open={open} onClose={onClose} title="Agent commands" className="max-h-[85dvh]">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={t("commands.title")}
+      className="max-h-[85dvh]"
+    >
       {agent && (
         <div className="mb-3 flex items-center gap-2">
           <AgentIcon agent={agent} className="size-6" />
@@ -79,20 +92,22 @@ export function CommandPalette({
           spellCheck={false}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={`Search ${all.length} commands…`}
+          placeholder={t("commands.search", { count: all.length })}
           className="h-11 w-full rounded-md border border-input bg-transparent pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring"
         />
       </div>
 
       {!q && (
         <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
-          Common · type to search all {all.length}
+          {t("commands.commonHint", { count: all.length })}
         </p>
       )}
 
       <div className="flex flex-col gap-1">
         {list.length === 0 && (
-          <p className="py-8 text-center text-sm text-muted-foreground">No commands match “{query}”.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {t("commands.noMatch", { query })}
+          </p>
         )}
         {list.map((c) => {
           const isPending = pending === c.command;
@@ -120,10 +135,12 @@ export function CommandPalette({
                     <span className="font-mono text-[11px] text-muted-foreground">{c.argHint}</span>
                   )}
                 </div>
-                <p className="truncate text-xs text-muted-foreground">{c.description}</p>
+                <p className="truncate text-xs text-muted-foreground">{descriptionFor(c)}</p>
               </div>
               {isPending ? (
-                <span className="shrink-0 text-xs font-medium text-destructive">Confirm?</span>
+                <span className="shrink-0 text-xs font-medium text-destructive">
+                  {t("commands.confirm")}
+                </span>
               ) : c.takesArg ? (
                 <Pencil className="size-4 shrink-0 text-muted-foreground" />
               ) : (

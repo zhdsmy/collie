@@ -1,5 +1,6 @@
 import { Moon, MonitorSmartphone, Sun } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Card } from "@/components/ui/card";
 import { useTheme } from "@/hooks/use-theme";
@@ -11,10 +12,14 @@ import { cn } from "@/lib/utils";
 // implies you are meant to keep reaching for it, and this is a set-once preference — System already
 // follows the phone, which is the situational flip (outdoors, in bed) happening on its own.
 
-const OPTIONS: ReadonlyArray<{ value: Theme; label: string; icon: LucideIcon }> = [
-  { value: "system", label: "System", icon: MonitorSmartphone },
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
+const OPTIONS: ReadonlyArray<{
+  value: Theme;
+  labelKey: "common.system" | "settings.light" | "settings.dark";
+  icon: LucideIcon;
+}> = [
+  { value: "system", labelKey: "common.system", icon: MonitorSmartphone },
+  { value: "light", labelKey: "settings.light", icon: Sun },
+  { value: "dark", labelKey: "settings.dark", icon: Moon },
 ];
 
 /** The icon names the CURRENT mode, not the next one — so the button reads as a status display you
@@ -25,6 +30,7 @@ export function themeIcon(theme: Theme): LucideIcon {
 
 /** Settings card. Mirrors the icon/title/description shape of the other rows. */
 export function ThemeControl() {
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const Icon = themeIcon(theme);
 
@@ -34,15 +40,17 @@ export function ThemeControl() {
         <div className="flex min-w-0 items-start gap-3">
           <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
           <div className="min-w-0">
-            <div className="font-medium">Appearance</div>
-            <p className="text-sm text-muted-foreground">Follow your phone, or pin one.</p>
+            <div className="font-medium">{t("settings.appearanceTitle")}</div>
+            <p className="text-sm text-muted-foreground">
+              {t("settings.appearanceDescription")}
+            </p>
           </div>
         </div>
       </div>
 
       <div
         role="radiogroup"
-        aria-label="Appearance"
+        aria-label={t("settings.appearanceTitle")}
         className="flex gap-1 border-t border-border/60 p-2"
       >
         {OPTIONS.map((option) => {
@@ -65,7 +73,7 @@ export function ThemeControl() {
               )}
             >
               <option.icon className="size-4 shrink-0" />
-              {option.label}
+              {t(option.labelKey)}
             </button>
           );
         })}

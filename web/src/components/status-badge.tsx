@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import { type AgentStatus, STATUS_LABEL } from "@/lib/types";
+import type { AgentStatus } from "@/lib/types";
+import { statusKey } from "@/i18n";
 
 const DOT: Record<AgentStatus, string> = {
   blocked: "bg-status-blocked",
@@ -86,19 +88,21 @@ export function StatusBadge({
   stale?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <Badge
       variant="outline"
       className={cn("gap-1.5 transition-opacity", CHIP[status], stale && "opacity-40", className)}
     >
       <span className={cn("size-1.5 rounded-full", DOT[status])} />
-      {STATUS_LABEL[status]}
+      {t(statusKey(status))}
     </Badge>
   );
 }
 
 /** Muted "shell" tag shown in place of a StatusBadge for a bare shell pane (no agent). */
 export function ShellBadge({ stale, className }: { stale?: boolean; className?: string }) {
+  const { t } = useTranslation();
   return (
     <span
       className={cn(
@@ -107,7 +111,7 @@ export function ShellBadge({ stale, className }: { stale?: boolean; className?: 
         className,
       )}
     >
-      shell
+      {t("status.shell")}
     </span>
   );
 }

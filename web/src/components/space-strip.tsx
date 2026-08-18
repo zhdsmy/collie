@@ -1,4 +1,5 @@
 import { ChevronLeft, Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Chip } from "@/components/ui/chip";
 import { SectionLabel } from "@/components/ui/section-label";
@@ -29,6 +30,7 @@ export function SpaceStrip({
   onNewSpace,
   onBack,
 }: SpaceStripProps) {
+  const { t } = useTranslation();
   // shrink-0: this strip is a child of the space route's `flex-1 flex-col` scroller, so without it
   // the strip flex-shrinks to 16px while its 32px chips overflow — the tab row below then paints
   // straight over the chips.
@@ -41,12 +43,12 @@ export function SpaceStrip({
           className="flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-background py-1 pl-1.5 pr-3 text-sm font-medium text-foreground transition-colors hover:bg-muted active:scale-95"
         >
           <ChevronLeft className="size-4" />
-          Back
+          {t("common.back")}
         </button>
       ) : (
         <>
-          <SectionLabel>Spaces</SectionLabel>
-          <Chip label="All" active={selected === null} onClick={() => onSelect(null)} />
+          <SectionLabel>{t("navigation.spaces")}</SectionLabel>
+          <Chip label={t("common.all")} active={selected === null} onClick={() => onSelect(null)} />
         </>
       )}
       {workspaces.map((w) => (
@@ -63,7 +65,7 @@ export function SpaceStrip({
       <button
         type="button"
         onClick={onNewSpace}
-        aria-label="New space"
+        aria-label={t("navigation.newSpace")}
         className="flex size-8 shrink-0 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground transition-colors hover:bg-accent active:scale-95"
       >
         <Plus className="size-4" />

@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function KeyQueueStrip({
   onBaseChar,
   disabled,
 }: KeyQueueStripProps) {
+  const { t } = useTranslation();
   // Self-guarding: nothing to show unless a modifier is armed or keys are queued.
   if (mods.length === 0 && queue.length === 0) return null;
 
@@ -46,7 +48,7 @@ export function KeyQueueStrip({
             key={`${key}-${i}`}
             type="button"
             onClick={() => onRemove(i)}
-            aria-label={`Remove ${label}`}
+            aria-label={t("keys.removeQueued", { key: label })}
             className={cn(
               "inline-flex h-8 items-center gap-1 rounded-md border border-border bg-muted/50 px-2 text-xs font-medium",
               isDangerKey(key) && "border-destructive/40 text-destructive",
@@ -75,11 +77,11 @@ export function KeyQueueStrip({
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          placeholder="key"
+          placeholder={t("keys.keyPlaceholder")}
           value=""
           disabled={disabled}
           onChange={(e) => onBaseChar(e.target.value)}
-          aria-label="Type a key to combine"
+          aria-label={t("keys.typeToCombine")}
           className="h-8 w-14 rounded-md border border-input bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring disabled:opacity-50"
         />
       )}
@@ -93,7 +95,7 @@ export function KeyQueueStrip({
           disabled={disabled || queue.length === 0}
           onClick={onSend}
         >
-          Send
+          {t("composer.send")}
         </Button>
         <Button
           type="button"
@@ -102,7 +104,7 @@ export function KeyQueueStrip({
           className="size-8 text-muted-foreground"
           disabled={disabled}
           onClick={onClear}
-          aria-label="Clear queued keys"
+          aria-label={t("keys.clearQueue")}
         >
           <X className="size-4" />
         </Button>

@@ -18,6 +18,8 @@ export interface AgentCommand {
   command: string;
   /** One-line, action-oriented description. */
   description: string;
+  /** Present only on Collie's shipped rows; operator-provided descriptions stay verbatim. */
+  descriptionId?: string;
   /** True if the command commonly takes an argument — tap inserts it into the composer to edit. */
   takesArg: boolean;
   /** Placeholder shown after insert, e.g. "[instructions]" / "<model>". Empty if no arg. */
@@ -221,13 +223,27 @@ const OMP: readonly AgentCommand[] = [
   { command: "/resume", description: "Open the session picker", takesArg: false, argHint: "", common: false, dangerous: false },
 ];
 
+function withDescriptionIds(agent: string, commands: readonly AgentCommand[]): readonly AgentCommand[] {
+  return commands.map((command) => ({
+    ...command,
+    descriptionId: `${agent}_${command.command.slice(1).replaceAll("-", "_")}`,
+  }));
+}
+
 const CATALOG: Record<string, readonly AgentCommand[]> = {
-  claude: CLAUDE,
-  codex: CODEX,
-  pi: PI,
-  opencode: OPENCODE,
-  omp: OMP,
+  claude: withDescriptionIds("claude", CLAUDE),
+  codex: withDescriptionIds("codex", CODEX),
+  pi: withDescriptionIds("pi", PI),
+  opencode: withDescriptionIds("opencode", OPENCODE),
+  omp: withDescriptionIds("omp", OMP),
 };
+
+/** English fallback catalog keyed by the stable IDs carried only by shipped rows. */
+export const SHIPPED_COMMAND_DESCRIPTIONS: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.values(CATALOG).flatMap((commands) =>
+    commands.map((command) => [command.descriptionId!, command.description]),
+  ),
+);
 
 /**
  * Commands for a Herdr-detected agent (`pane.agent`, e.g. "claude" / "codex") — the operator's own

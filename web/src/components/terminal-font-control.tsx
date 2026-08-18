@@ -1,5 +1,6 @@
 import type { ChangeEvent } from "react";
 import { ChevronDown, TerminalSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Card } from "@/components/ui/card";
 import { useTerminalFont, type TerminalFont } from "@/hooks/use-terminal-font";
@@ -11,6 +12,7 @@ const OPTIONS: ReadonlyArray<{ value: TerminalFont; label: string }> = [
 ];
 
 export function TerminalFontControl() {
+  const { t } = useTranslation();
   const { font, setFont } = useTerminalFont();
 
   function select(event: ChangeEvent<HTMLSelectElement>) {
@@ -21,12 +23,12 @@ export function TerminalFontControl() {
     <Card className="gap-0 py-0">
       <div className="flex items-center gap-3 p-4">
         <TerminalSquare className="size-5 shrink-0 text-muted-foreground" />
-        <div className="font-medium">Terminal</div>
+        <div className="font-medium">{t("settings.terminalTitle")}</div>
       </div>
 
       <div className="flex min-h-14 items-center justify-between gap-4 border-t border-border/60 px-4 py-2">
         <label htmlFor="terminal-font" className="min-w-0 text-sm font-medium">
-          Monospace font
+          {t("settings.monospaceFont")}
         </label>
         <div className="relative shrink-0">
           <select

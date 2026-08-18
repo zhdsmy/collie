@@ -33,10 +33,11 @@ describe("keysMatch", () => {
 describe("subscribeBody", () => {
   const json = { endpoint: "https://push/new", keys: { p256dh: "P", auth: "A" } };
 
-  it("carries exactly endpoint + keys when this device has registered nothing before", () => {
+  it("carries endpoint, keys, and the English default when nothing was registered before", () => {
     expect(subscribeBody(json, null)).toEqual({
       endpoint: "https://push/new",
       keys: { p256dh: "P", auth: "A" },
+      locale: "en",
     });
   });
 
@@ -44,8 +45,13 @@ describe("subscribeBody", () => {
     expect(subscribeBody(json, "https://push/old")).toEqual({
       endpoint: "https://push/new",
       keys: { p256dh: "P", auth: "A" },
+      locale: "en",
       replaces: "https://push/old",
     });
+  });
+
+  it("sends the current resolved locale as a concrete language", () => {
+    expect(subscribeBody(json, null, "zh-TW").locale).toBe("zh-TW");
   });
 
   it("does not claim to supersede ITSELF — a re-register of the same endpoint replaces nothing", () => {
@@ -58,6 +64,6 @@ describe("subscribeBody", () => {
 
   it("never forwards a field the browser happened to put on the subscription", () => {
     const extra = { ...json, expirationTime: 123, junk: "x" } as PushSubscriptionJSON;
-    expect(Object.keys(subscribeBody(extra, null)).sort()).toEqual(["endpoint", "keys"]);
+    expect(Object.keys(subscribeBody(extra, null)).sort()).toEqual(["endpoint", "keys", "locale"]);
   });
 });

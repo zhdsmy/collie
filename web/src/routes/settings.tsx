@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Bell, Loader2 } from "lucide-react";
 import { useNavigate, useRouteLoaderData } from "react-router";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { BuildStamp } from "@/components/build-stamp";
@@ -10,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { NotifyPrefsControl } from "@/components/notify-prefs-control";
 import { SnoozeControl } from "@/components/snooze-control";
 import { ThemeControl } from "@/components/theme-control";
+import { LanguageControl } from "@/components/language-control";
 import { HapticsControl } from "@/components/haptics-control";
 import { TerminalFontControl } from "@/components/terminal-font-control";
 import { UpdateCheckControl } from "@/components/update-check-control";
@@ -24,6 +26,7 @@ import type { PushAvailability } from "@/lib/push";
 // Device-local and bridge-wide settings. Reachable from the home header gear. Lives under the root
 // route, so the snapshot polling/push setup in RootLayout keeps running behind it.
 export function SettingsRoute() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const session = useSession();
   const { state, busy, setEnabled } = usePushControl();
@@ -53,7 +56,7 @@ export function SettingsRoute() {
   async function toggle(next: boolean) {
     setError(null);
     const res = await setEnabled(next);
-    if (next && !res.ok) setError(reasonText(res.reason));
+    if (next && !res.ok) setError(reasonText(res.reason, t));
   }
 
   return (
@@ -65,17 +68,19 @@ export function SettingsRoute() {
           // size="icon" is 36px; the header's other controls are 44px since the tap-target pass.
           className="size-11"
           onClick={() => navigate(homePath(session))}
-          aria-label="Back"
+          aria-label={t("common.back")}
         >
           <ArrowLeft className="size-5" />
         </Button>
-        <h1 className="text-lg font-semibold tracking-tight">Settings</h1>
+        <h1 className="text-lg font-semibold tracking-tight">{t("settings.title")}</h1>
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4">
         {/* First: it's the setting people come here to change, and below the notification stack it
             sat off-screen on a phone, a scroll into a 1240px page. */}
         <ThemeControl />
+
+        <LanguageControl />
 
         <TerminalFontControl />
 
@@ -88,10 +93,8 @@ export function SettingsRoute() {
             <div className="flex min-w-0 items-start gap-3">
               <Bell className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
               <div className="min-w-0">
-                <div className="font-medium">Push notifications</div>
-                <p className="text-sm text-muted-foreground">
-                  Get a notification when an agent needs you.
-                </p>
+                <div className="font-medium">{t("settings.pushTitle")}</div>
+                <p className="text-sm text-muted-foreground">{t("settings.pushDescription")}</p>
               </div>
             </div>
             {/* Fixed slot the size of the Switch (h-6 w-11): the spinner is smaller, so without it
@@ -102,7 +105,7 @@ export function SettingsRoute() {
                   checked={on}
                   disabled={toggleDisabled}
                   onCheckedChange={toggle}
-                  aria-label="Push notifications"
+                  aria-label={t("settings.pushTitle")}
                 />
               ) : (
                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
@@ -112,7 +115,7 @@ export function SettingsRoute() {
 
           {state && blocked && (
             <p className="border-t border-border/60 px-4 py-2.5 text-xs text-muted-foreground">
-              {availabilityNote(state.availability)}
+              {availabilityNote(state.availability, t)}
             </p>
           )}
           {error && (
@@ -149,31 +152,31 @@ export function SettingsRoute() {
   );
 }
 
-function reasonText(reason: PushAvailability | undefined): string {
+function reasonText(reason: PushAvailability | undefined, t: ReturnType<typeof useTranslation>["t"]): string {
   switch (reason) {
     case "insecure":
-      return "Push needs an HTTPS connection.";
+      return t("settings.pushError.insecure");
     case "server-off":
-      return "Push isn't configured on the bridge (no VAPID keys).";
+      return t("settings.pushError.serverOff");
     case "denied":
-      return "Notifications are blocked — enable them in your browser settings.";
+      return t("settings.pushError.denied");
     case "unsupported":
-      return "This browser doesn't support push notifications.";
+      return t("settings.pushError.unsupported");
     default:
-      return "Couldn't enable push notifications.";
+      return t("settings.pushError.fallback");
   }
 }
 
-function availabilityNote(a: PushAvailability): string {
+function availabilityNote(a: PushAvailability, t: ReturnType<typeof useTranslation>["t"]): string {
   switch (a) {
     case "insecure":
-      return "Unavailable over plain HTTP — serve Collie over HTTPS to enable push.";
+      return t("settings.pushAvailability.insecure");
     case "server-off":
-      return "The bridge has no VAPID keys configured, so push is disabled server-side.";
+      return t("settings.pushAvailability.serverOff");
     case "denied":
-      return "Notifications are blocked for this site. Re-enable them in your browser settings.";
+      return t("settings.pushAvailability.denied");
     case "unsupported":
-      return "This browser doesn't support push notifications.";
+      return t("settings.pushAvailability.unsupported");
     case "ready":
       return "";
   }

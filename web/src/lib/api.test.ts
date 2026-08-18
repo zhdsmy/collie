@@ -2,12 +2,16 @@ import { http, HttpResponse } from "msw";
 
 import { server } from "@/test/setup";
 import { fixtureSnapshot } from "@/test/handlers";
+import { i18n } from "@/i18n";
 import { __resetConnectionHealth, lastHealthyAt } from "./connection-health";
 import {
+  ApiError,
   checkForUpdates,
   createTab,
   fetchPane,
   fetchSnapshot,
+  localizeApiError,
+  parseApiErrorDetail,
   sendKeys,
   sendReply,
   uploadImage,
@@ -18,6 +22,56 @@ import {
 
 // The default happy-path handlers live in test/handlers.ts; here we focus on the write paths and the
 // ApiError-on-non-2xx contract that every mutation depends on (and uploadImage's separate code path).
+describe("API error localization", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  it("parses structured errors and keeps legacy plain text as the fallback", () => {
+    const raw = JSON.stringify({
+      error: "unknown session: cpp",
+      code: "unknown_session",
+      params: { session: "cpp", ignored: false },
+    });
+    expect(parseApiErrorDetail(raw)).toEqual({
+      raw,
+      message: "unknown session: cpp",
+      code: "unknown_session",
+      params: { session: "cpp" },
+    });
+    expect(parseApiErrorDetail("proxy refused").message).toBe("proxy refused");
+  });
+
+  it("translates known codes and leaves unknown server text unchanged", async () => {
+    await i18n.changeLanguage("zh-CN");
+    expect(localizeApiError("unknown_session", { session: "cpp" }, "fallback")).toBe(
+      "未知会话：cpp",
+    );
+    expect(localizeApiError("proxy_error", undefined, "proxy refused")).toBe("proxy refused");
+  });
+
+  it("preserves metadata on a localized ApiError", async () => {
+    await i18n.changeLanguage("zh-TW");
+    server.use(
+      http.post("*/api/pane/:id/reply", () =>
+        HttpResponse.json(
+          { error: "device not authorised", code: "device_not_authorized" },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    const error = await sendReply("w1:p1", "hi").catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({
+      message: "此裝置未獲授權",
+      status: 403,
+      code: "device_not_authorized",
+      rawMessage: "device not authorised",
+    });
+  });
+});
+
 describe("api client", () => {
   it("sendReply returns the bridge's ok result on success", async () => {
     await expect(sendReply("w1:p1", "hi")).resolves.toEqual({ ok: true });
@@ -32,8 +86,32 @@ describe("api client", () => {
     server.use(
       http.post(/\/api\/pane\/[^/]+\/reply$/, () => new HttpResponse("herdr down", { status: 502 })),
     );
-    await expect(sendReply("w1:p1", "hi")).rejects.toThrow(/502/);
-    await expect(sendReply("w1:p1", "hi")).rejects.toThrow(/herdr down/);
+    await expect(sendReply("w1:p1", "hi")).rejects.toMatchObject({
+      message: "herdr down",
+      status: 502,
+      rawMessage: "herdr down",
+    });
+  });
+
+  it("localizes a structured failure returned with a successful status", async () => {
+    await i18n.changeLanguage("zh-CN");
+    server.use(
+      http.post(/\/api\/pane\/[^/]+\/reply$/, () =>
+        HttpResponse.json({
+          ok: false,
+          error: "operation failed: disk full",
+          code: "operation_failed",
+          params: { reason: "disk full" },
+        }),
+      ),
+    );
+    await expect(sendReply("w1:p1", "hi")).resolves.toEqual({
+      ok: false,
+      error: "操作失败：disk full",
+      code: "operation_failed",
+      params: { reason: "disk full" },
+    });
+    await i18n.changeLanguage("en");
   });
 
   it("adds expected_prompt to reply and keys bodies only when supplied", async () => {
@@ -67,7 +145,7 @@ describe("api client", () => {
     );
     await expect(sendKeys("w1:p1", ["1"], undefined, "Approve?")).resolves.toEqual({
       ok: false,
-      error: "prompt changed",
+      error: "The terminal prompt changed. Try again.",
       code: "prompt_changed",
     });
   });
@@ -87,7 +165,7 @@ describe("api client", () => {
     );
     await expect(sendReply("w1:p1", "hi", true, undefined, "Approve?")).resolves.toEqual({
       ok: false,
-      error: "prompt changed",
+      error: "The terminal prompt changed. Try again.",
       code: "prompt_changed",
     });
   });
@@ -105,7 +183,11 @@ describe("api client", () => {
       http.post(/\/api\/pane\/[^/]+\/upload$/, () => new HttpResponse("too big", { status: 413 })),
     );
     const file = new File(["x"], "x.png", { type: "image/png" });
-    await expect(uploadImage("w1:p1", file)).rejects.toThrow(/413/);
+    await expect(uploadImage("w1:p1", file)).rejects.toMatchObject({
+      message: "too big",
+      status: 413,
+      rawMessage: "too big",
+    });
   });
 
   it("checkForUpdates POSTs (no body) and returns the fresh UpdateInfo", async () => {
@@ -132,7 +214,11 @@ describe("api client", () => {
 
   it("checkForUpdates throws on a non-2xx response", async () => {
     server.use(http.post("/api/update/check", () => new HttpResponse("down", { status: 503 })));
-    await expect(checkForUpdates()).rejects.toThrow(/503/);
+    await expect(checkForUpdates()).rejects.toMatchObject({
+      message: "down",
+      status: 503,
+      rawMessage: "down",
+    });
   });
 });
 
@@ -267,7 +353,7 @@ describe("api client — connection-health stamping", () => {
   it("does NOT stamp when a poll fails (the throw precedes the stamp)", async () => {
     server.use(http.get("/api/snapshot", () => new HttpResponse("boom", { status: 502 })));
     __resetConnectionHealth(1);
-    await expect(fetchSnapshot()).rejects.toThrow(/502/);
+    await expect(fetchSnapshot()).rejects.toMatchObject({ message: "boom", status: 502 });
     expect(lastHealthyAt()).toBe(1);
   });
 });

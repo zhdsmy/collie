@@ -22,6 +22,74 @@ afterAll(async () => {
   await Promise.all(dirs.map((d) => rm(d, { recursive: true, force: true })));
 });
 
+describe("localized delivery", () => {
+  test("persists locale and renders one structured message per subscription", async () => {
+    const cfg = await tempCfg();
+    const delivered = new Map<string, string>();
+    const sender: PushSender = (subscription, payload) => {
+      delivered.set(subscription.endpoint, payload);
+      return Promise.resolve();
+    };
+    const push = new Push(cfg, sender);
+    enable(push, []);
+    await push.addSubscription(sub("english"), { locale: "en" });
+    await push.addSubscription(sub("simplified"), { locale: "zh-CN" });
+    await push.addSubscription(sub("traditional"), { locale: "zh-TW" });
+
+    await push.send({
+      title: "codex needs you",
+      body: "demo · /repo",
+      paneId: "p1",
+      copy: {
+        kind: "agent",
+        agent: "codex",
+        status: "blocked",
+        workspaceLabel: "demo",
+        cwd: "/repo",
+      },
+    });
+
+    expect(JSON.parse(delivered.get("english")!)).toMatchObject({ title: "codex needs you" });
+    expect(JSON.parse(delivered.get("simplified")!)).toMatchObject({
+      title: "codex 需要你处理",
+    });
+    expect(JSON.parse(delivered.get("traditional")!)).toMatchObject({
+      title: "codex 需要你處理",
+    });
+    for (const payload of delivered.values()) expect(JSON.parse(payload).copy).toBeUndefined();
+
+    const rows = JSON.parse(
+      await readFile(join(cfg.stateDir, "push-subscriptions.json"), "utf8"),
+    ) as Array<{ endpoint: string; locale?: string }>;
+    expect(Object.fromEntries(rows.map((row) => [row.endpoint, row.locale]))).toEqual({
+      english: "en",
+      simplified: "zh-CN",
+      traditional: "zh-TW",
+    });
+  });
+
+  test("a legacy subscription without locale receives the English fallback", async () => {
+    const cfg = await tempCfg();
+    let payload = "";
+    const push = new Push(cfg, (_subscription, next) => {
+      payload = next;
+      return Promise.resolve();
+    });
+    enable(push, [sub("legacy")]);
+
+    await push.send({
+      title: "fallback",
+      body: "fallback",
+      copy: { kind: "update", version: "0.32.0" },
+    });
+
+    expect(JSON.parse(payload)).toMatchObject({
+      title: "Collie update available",
+      body: "Version 0.32.0 is available",
+    });
+  });
+});
+
 function sub(endpoint: string): PushSubscription {
   return { endpoint, keys: { p256dh: "p", auth: "a" } };
 }

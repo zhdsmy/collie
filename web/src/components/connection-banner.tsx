@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRevalidator } from "react-router";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   CheckCircle2,
   Loader2,
@@ -72,6 +74,7 @@ export function ConnectionBanner({ bridge, error, authError }: ConnectionBannerP
 // so it still works if React is wedged. Reload stays alongside it, since a merely stale session on
 // an already-signed-in device recovers without leaving the app.
 function AuthErrorBanner() {
+  const { t } = useTranslation();
   return (
     <div data-top-banner className="grid shrink-0 grid-rows-[1fr] overflow-hidden opacity-100">
       <div className="min-h-0 overflow-hidden">
@@ -85,7 +88,7 @@ function AuthErrorBanner() {
         >
           <TriangleAlert className={cn("size-3.5 shrink-0", TINT.blocked.icon)} />
           <span className="min-w-0 flex-1 truncate font-medium text-foreground">
-            Access refused. This is not a connection problem.
+            {t("connection.accessRefused")}
           </span>
           <a
             href={PROXY_AUTH_PATH}
@@ -95,12 +98,12 @@ function AuthErrorBanner() {
             )}
           >
             <LogIn className="size-3.5" />
-            Sign in
+            {t("common.signIn")}
           </a>
           <Button
             size="icon"
             variant="ghost"
-            aria-label="Reload"
+            aria-label={t("common.reload")}
             className="size-6 text-muted-foreground"
             onClick={() => window.location.reload()}
           >
@@ -113,6 +116,7 @@ function AuthErrorBanner() {
 }
 
 function ConnectionStateBanner({ bridge, error }: Omit<ConnectionBannerProps, "authError">) {
+  const { t } = useTranslation();
   const stalled = useLoadingStalled();
   const connecting = isConnecting({ bridge, error, stalled });
   const trouble = useConnectionTrouble(connecting);
@@ -204,7 +208,7 @@ function ConnectionStateBanner({ bridge, error }: Omit<ConnectionBannerProps, "a
     setRetrying(false);
   }
 
-  const view = resolveView(shownTone, online, probe);
+  const view = resolveView(shownTone, online, probe, t);
 
   return (
     // Outer grid collapses 0fr → 1fr (an in-flow height animation the layout below rides), fading with
@@ -245,12 +249,12 @@ function ConnectionStateBanner({ bridge, error }: Omit<ConnectionBannerProps, "a
                 ) : (
                   <RotateCw className="size-3.5" />
                 )}
-                Retry
+                {t("common.retry")}
               </Button>
               <Button
                 size="icon"
                 variant="ghost"
-                aria-label="Reload"
+                aria-label={t("common.reload")}
                 className="size-6 text-muted-foreground"
                 onClick={() => window.location.reload()}
               >
@@ -266,21 +270,21 @@ function ConnectionStateBanner({ bridge, error }: Omit<ConnectionBannerProps, "a
 
 // Copy + tint + icon per tone. Green/amber are fixed; red names the cause — the bridge answering means
 // Herdr is the outage, otherwise onLine decides between a true offline drop and an unreachable Collie.
-function resolveView(tone: Tone, online: boolean, probe: Probe) {
+function resolveView(tone: Tone, online: boolean, probe: Probe, t: TFunction) {
   if (tone === "green") {
-    return { copy: "Connected", Icon: CheckCircle2, row: TINT.done.row, icon: TINT.done.icon } as const;
+    return { copy: t("common.connected"), Icon: CheckCircle2, row: TINT.done.row, icon: TINT.done.icon } as const;
   }
   if (tone === "amber") {
     // Static Plug (no spinner) — the galloping dog carries the motion, and a spinner would fight
     // prefers-reduced-motion. Ambient by design.
-    return { copy: "Reconnecting…", Icon: Plug, row: TINT.working.row, icon: TINT.working.icon } as const;
+    return { copy: t("connection.reconnecting"), Icon: Plug, row: TINT.working.row, icon: TINT.working.icon } as const;
   }
   const cause =
     probe === "reachable"
-      ? { copy: "Herdr is down on the host", Icon: TriangleAlert }
+      ? { copy: t("connection.herdrDown"), Icon: TriangleAlert }
       : probe === "unreachable" && !online
-        ? { copy: "Offline — can't reach Collie", Icon: WifiOff }
-        : { copy: "Can't reach Collie", Icon: TriangleAlert };
+        ? { copy: t("connection.offline"), Icon: WifiOff }
+        : { copy: t("connection.cannotReach"), Icon: TriangleAlert };
   return { copy: cause.copy, Icon: cause.Icon, row: TINT.blocked.row, icon: TINT.blocked.icon } as const;
 }
 

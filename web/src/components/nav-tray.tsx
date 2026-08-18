@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, ChevronDown, Lock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -65,6 +66,7 @@ const DIGITS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 type Tab = "keys" | "digits";
 
 export function NavTray({ onSend, onQueueChange, disabled }: NavTrayProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("keys");
   const [ctrlOpen, setCtrlOpen] = useState(false);
   const { queue, mods, activeMods, composing, arm, press, pushBase, removeAt, clear, take } =
@@ -207,7 +209,7 @@ export function NavTray({ onSend, onQueueChange, disabled }: NavTrayProps) {
           aria-pressed={tab === "keys"}
           className="h-8 text-sm font-medium"
         >
-          Keys
+          {t("keys.keys")}
         </Button>
         <Button
           type="button"
@@ -272,7 +274,7 @@ export function NavTray({ onSend, onQueueChange, disabled }: NavTrayProps) {
               onClick={() => setCtrlOpen((o) => !o)}
               className="flex items-center gap-1 px-1 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground"
             >
-              Presets
+              {t("keys.presets")}
               <ChevronDown className={cn("size-3 transition-transform", ctrlOpen && "rotate-180")} />
             </button>
             {ctrlOpen && (
@@ -296,7 +298,7 @@ export function NavTray({ onSend, onQueueChange, disabled }: NavTrayProps) {
                       )}
                     >
                       {isPending ? (
-                        "Confirm?"
+                        t("keys.confirm")
                       ) : phase === "done" ? (
                         <Check className="size-4" />
                       ) : (

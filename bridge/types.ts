@@ -250,17 +250,23 @@ export type PaneHistoryResponse =
  * (text was typed but the submit keypress failed) so the client knows NOT to resend — resending would
  * duplicate the already-typed text. Absent/false ⇒ nothing landed, so a resend is safe.
  */
+export type ErrorParams = Record<string, string | number>;
+
+export interface StructuredError {
+  error: string;
+  code?: string;
+  params?: ErrorParams;
+}
+
 export type ActionResponse =
   | { ok: true }
-  | {
+  | (StructuredError & {
       ok: false;
-      error: string;
       textDelivered?: boolean;
-      code?: "prompt_changed";
-    };
+    });
 
 /** POST /api/pane/:id/upload — image saved to a host file; `path` is the absolute path to ref. */
-export type UploadResponse = { ok: true; path: string } | { ok: false; error: string };
+export type UploadResponse = { ok: true; path: string } | (StructuredError & { ok: false });
 
 /** A freshly-created shell pane — enough for the client to navigate into before the next poll. */
 export interface CreatedPane {
@@ -275,7 +281,7 @@ export interface CreatedPane {
  * POST /api/tab | /api/workspace — created a new tab/space with a fresh shell. On success `pane`
  * is that shell, so the client can navigate straight into it before the next poll lands.
  */
-export type CreateResponse = { ok: true; pane: CreatedPane } | { ok: false; error: string };
+export type CreateResponse = { ok: true; pane: CreatedPane } | (StructuredError & { ok: false });
 
 /**
  * One operator-declared slash command (a `[[commands]]` row in their `commands.toml`). A pane any of
