@@ -194,6 +194,21 @@ describe("AgentList — the direction toggle", () => {
     agent("stale", "idle", { lastSeenAt: 100 }),
   ];
 
+  it("sizes the sort label from its content instead of reserving trailing space", () => {
+    render(
+      <AgentList
+        agents={herd}
+        onOpen={vi.fn()}
+        recentDir="newest"
+        onRecentDirChange={vi.fn()}
+      />,
+    );
+    const button = screen.getByRole("button", { name: /switch to oldest first/i });
+    const label = within(button).getByText("Newest");
+    expect(label).toHaveClass("whitespace-nowrap");
+    expect(label).not.toHaveClass("w-[3.25rem]");
+  });
+
   it("orders Recent newest-first and flips on tap", async () => {
     const user = userEvent.setup();
     const onRecentDirChange = vi.fn();

@@ -144,13 +144,13 @@ function SortToggle({ dir, onChange }: { dir: RecentDir; onChange: (dir: RecentD
         newest ? t("dashboard.sortNewest") : t("dashboard.sortOldest")
       }
       // A bordered chip, not bare text: unstyled it read as an annotation ("sorted newest") rather
-      // than something you can press. Fixed width so flipping it doesn't shift the header. No fill —
-      // filled, it outweighed the heading it sits beside, which is backwards for a control that
-      // reorders the section you care least about.
+      // than something you can press. Let the label size the chip so short localized copy does not
+      // leave a large empty tail. No fill — filled, it outweighed the heading it sits beside, which is
+      // backwards for a control that reorders the section you care least about.
       className="flex min-h-9 items-center justify-center gap-1 rounded-full border px-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95"
     >
       <Icon className="size-3.5" aria-hidden />
-      <span className="w-[3.25rem] text-left">
+      <span className="whitespace-nowrap">
         {newest ? t("dashboard.newest") : t("dashboard.oldest")}
       </span>
     </button>

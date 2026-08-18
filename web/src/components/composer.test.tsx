@@ -1866,6 +1866,11 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
 });
 
 describe("Composer — display prefs behind the gear", () => {
+  it("keeps the Display gear inset from the panel edge", () => {
+    renderComposer();
+    expect(screen.getByRole("button", { name: "Display settings" })).toHaveClass("mr-1");
+  });
+
   it("the View row is gone; wrap/raw/font live behind the Display gear as labelled controls", async () => {
     const user = userEvent.setup();
     const props = renderComposer();

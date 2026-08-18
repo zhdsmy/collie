@@ -921,7 +921,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           <Button
             variant="ghost"
             size="icon"
-            className={cn("size-8 shrink-0", drawer === "display" ? CONTROL_ON : CONTROL_OFF)}
+            className={cn("mr-1 size-8 shrink-0", drawer === "display" ? CONTROL_ON : CONTROL_OFF)}
             aria-label={translate("composer.displaySettings")}
             aria-expanded={drawer === "display"}
             onClick={() => requestDrawer(drawer === "display" ? null : "display")}
