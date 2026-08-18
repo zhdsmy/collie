@@ -151,6 +151,18 @@ describe("Codex image draft verification", () => {
     ).toBe(true);
   });
 
+  it("accepts a partially converted, windowed multi-image draft", () => {
+    const second = "/root/.local/state/collie/uploads/wC_p8-second.png";
+    const third = "/root/.local/state/collie/uploads/wC_p8-third.jpg";
+    const question = "有什么好的解决方案么，这个输入键盘的条又是干啥的";
+    const sent = `${upload} ${second}\n前面的图片用于对比\n${third}\n${question}`;
+
+    expect(imageDraftCarriesSend(sent, `${upload} [Image #1] 前面的图片用于对比 ${question}`)).toBe(
+      true,
+    );
+    expect(imageDraftCarriesSend(sent, `[Image #1] ${question}`)).toBe(true);
+  });
+
   it("rejects mismatched tokens, captions, and ambiguous image-only drafts", () => {
     expect(imageDraftCarriesSend(`${upload} 请检查这个终端界面是否正常`, "请检查这个终端界面是否正常")).toBe(false);
     expect(imageDraftCarriesSend(`${upload} 请检查这个终端界面是否正常`, "[Image #1] 请删除这个终端里的所有内容")).toBe(
@@ -158,5 +170,19 @@ describe("Codex image draft verification", () => {
     );
     expect(imageDraftCarriesSend(upload, "[Image #1]")).toBe(false);
     expect(imageDraftCarriesSend("请检查这个终端界面是否正常", "[Image #1] 请检查这个终端界面是否正常")).toBe(false);
+    const second = "/root/.local/state/collie/uploads/wC_p8-second.png";
+    expect(
+      imageDraftCarriesSend(
+        `${upload} ${second} 请检查这个终端界面是否正常`,
+        "/tmp/uploads/not-this-send.png [Image #1] 请检查这个终端界面是否正常",
+      ),
+    ).toBe(false);
+    expect(
+      imageDraftCarriesSend(
+        `${upload} ${second} 请检查这个终端界面是否正常`,
+        "[Image #1] [Image #2] [Image #3] 请检查这个终端界面是否正常",
+      ),
+    ).toBe(false);
+    expect(imageDraftCarriesSend(`${upload} 这张图看看`, "[Image #1] 看看")).toBe(false);
   });
 });

@@ -234,6 +234,28 @@ describe("sendGuardedReply", () => {
     ]);
   });
 
+  it("submits a windowed Codex draft when only one of several image paths is visible", async () => {
+    const first = "/root/.local/state/collie/uploads/wC_p8-first.jpg";
+    const second = "/root/.local/state/collie/uploads/wC_p8-second.png";
+    const third = "/root/.local/state/collie/uploads/wC_p8-third.jpg";
+    const question = "有什么好的解决方案么，这个输入键盘的条又是干啥的";
+    const text = `${first} ${second}\n前面的图片用于对比\n${third}\n${question}`;
+    const calls = harness(() => codexPaneWithDraft(`[Image #1] ${question}`));
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text,
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text, submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
   it("submits plain Codex text while the active composer offers queueing", async () => {
     const text = "纯文字输入也报错";
     const calls = harness(() =>

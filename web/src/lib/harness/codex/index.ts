@@ -8,6 +8,7 @@ const UPLOAD_IMAGE_PATH =
   /(?:^|\s)(\/(?:[^\s/]+\/)*uploads\/[^\s/]+\.(?:gif|jpe?g|png|webp))(?=\s|$)/gi;
 const IMAGE_PLACEHOLDER = /\[\s*Image\s+#\d+\s*\]/g;
 const MIN_CAPTION_CHARS = 4;
+const MIN_WINDOWED_CAPTION_CHARS = 8;
 
 function clipCompletionSummary(lines: StyledLine[]): StyledLine[] {
   let summaryIndex = lines.length - 1;
@@ -27,19 +28,36 @@ function compactWhitespace(text: string): string {
   return text.replace(/\s+/g, "");
 }
 
+function uploadPaths(text: string): string[] {
+  return [...text.matchAll(UPLOAD_IMAGE_PATH)].map((match) => match[1]!);
+}
+
 /** Verify Codex's replacement of Collie upload paths with its own `[Image #N]` tokens. */
 export function imageDraftCarriesSend(sent: string, draft: string): boolean {
-  const uploadCount = [...sent.matchAll(UPLOAD_IMAGE_PATH)].length;
-  if (uploadCount === 0) return false;
+  const sentPaths = uploadPaths(sent);
+  if (sentPaths.length === 0) return false;
+
+  const unmatchedPaths = [...sentPaths];
+  for (const path of uploadPaths(draft)) {
+    const index = unmatchedPaths.indexOf(path);
+    if (index === -1) return false;
+    unmatchedPaths.splice(index, 1);
+  }
 
   const placeholderCount = [...draft.matchAll(IMAGE_PLACEHOLDER)].length;
-  if (placeholderCount !== uploadCount) return false;
+  if (placeholderCount === 0 || placeholderCount > unmatchedPaths.length) return false;
 
   const sentCaption = compactWhitespace(sent.replace(UPLOAD_IMAGE_PATH, " "));
-  const draftCaption = compactWhitespace(draft.replace(IMAGE_PLACEHOLDER, " "));
-  if (Array.from(sentCaption).length < MIN_CAPTION_CHARS) return false;
+  const draftCaption = compactWhitespace(
+    draft.replace(UPLOAD_IMAGE_PATH, " ").replace(IMAGE_PLACEHOLDER, " "),
+  );
+  const exactCaption = draftCaption === sentCaption;
+  const minimum = exactCaption ? MIN_CAPTION_CHARS : MIN_WINDOWED_CAPTION_CHARS;
+  if (Array.from(draftCaption).length < minimum) return false;
 
-  return draftCaption === sentCaption;
+  // Long Codex drafts are windowed, so leading paths and caption rows may be off-screen. The visible
+  // caption must still be one contiguous slice of the text sent alongside the images.
+  return exactCaption || sentCaption.includes(draftCaption);
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
@@ -54,6 +72,6 @@ export const codexAdapter: HarnessAdapter = {
   extractStatusLines,
   extractInputDraft,
   // Codex consumes image paths and renders `[Image #N]`, so the generic literal verifier cannot
-  // see the original send. Require matching token counts and the complete accompanying caption.
+  // see the original send. Verify replacement tokens against this send's paths and caption.
   draftCarriesSend: imageDraftCarriesSend,
 };
