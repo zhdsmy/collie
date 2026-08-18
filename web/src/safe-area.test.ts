@@ -49,3 +49,22 @@ describe("mobile composer chrome", () => {
     expect(composer).not.toContain("-mx-3 mb-2 flex flex-col border-t");
   });
 });
+
+describe("top safe area ownership", () => {
+  it("does not repeat the notch inset below an in-flow top banner", () => {
+    const rootRoute = read("src/routes/root.tsx");
+    const header = read("src/components/app-header.tsx");
+    const updateBanner = read("src/components/update-available-banner.tsx");
+    const connectionBanner = read("src/components/connection-banner.tsx");
+    const css = read("src/index.css");
+
+    expect(rootRoute).toContain('className="app-shell flex h-[100dvh] flex-col"');
+    expect(header).toContain("app-header flex items-center");
+    expect(updateBanner).toContain("data-top-banner");
+    expect(connectionBanner.match(/data-top-banner/g)).toHaveLength(2);
+    expect(css).toContain(".app-shell:has(> [data-top-banner]) .app-header");
+    expect(css).toContain(
+      ".app-shell > [data-top-banner] ~ [data-top-banner] .app-top-banner-row",
+    );
+  });
+});

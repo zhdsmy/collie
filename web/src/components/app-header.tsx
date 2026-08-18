@@ -74,7 +74,7 @@ export function AppHeader({
     <header
       style={fixed ? { top: fixedTop } : undefined}
       className={cn(
-        "flex items-center gap-2 border-b border-border/60 bg-muted pl-4 pr-2 py-2 [padding-top:calc(env(safe-area-inset-top)_+_0.5rem)]",
+        "app-header flex items-center gap-2 border-b border-border/60 bg-muted pl-4 pr-2 py-2 [padding-top:calc(env(safe-area-inset-top)_+_0.5rem)]",
         fixed ? "fixed inset-x-0 z-40" : "sticky top-0 z-20",
       )}
     >

@@ -73,13 +73,13 @@ export function ConnectionBanner({ bridge, error, authError }: ConnectionBannerP
 // an already-signed-in device recovers without leaving the app.
 function AuthErrorBanner() {
   return (
-    <div className="grid shrink-0 grid-rows-[1fr] overflow-hidden opacity-100">
+    <div data-top-banner className="grid shrink-0 grid-rows-[1fr] overflow-hidden opacity-100">
       <div className="min-h-0 overflow-hidden">
         <div
           role="alert"
           aria-live="polite"
           className={cn(
-            "flex items-center gap-2 border-b px-4 py-1 text-xs [padding-top:calc(env(safe-area-inset-top)_+_0.25rem)]",
+            "app-top-banner-row flex items-center gap-2 border-b px-4 py-1 text-xs [--app-top-row-pad:0.25rem] [padding-top:calc(env(safe-area-inset-top)_+_var(--app-top-row-pad))]",
             TINT.blocked.row,
           )}
         >
@@ -210,6 +210,7 @@ function ConnectionStateBanner({ bridge, error }: Omit<ConnectionBannerProps, "a
     // Outer grid collapses 0fr → 1fr (an in-flow height animation the layout below rides), fading with
     // opacity; the inner wrapper clips the content while it's collapsed. Snaps under reduced motion.
     <div
+      data-top-banner
       className={cn(
         "grid shrink-0 overflow-hidden transition-all duration-200 ease-out motion-reduce:transition-none",
         open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
@@ -221,8 +222,9 @@ function ConnectionStateBanner({ bridge, error }: Omit<ConnectionBannerProps, "a
           role={shownTone === "red" ? "alert" : "status"}
           aria-live="polite"
           className={cn(
-            // Thin single row: text-xs, tight padding, safe-area top inset, never wraps.
-            "flex items-center gap-2 border-b px-4 py-1 text-xs [padding-top:calc(env(safe-area-inset-top)_+_0.25rem)]",
+            // Thin single row: text-xs, tight padding, never wraps. The first visible top band owns
+            // the safe-area inset; index.css removes it when another band is already above this one.
+            "app-top-banner-row flex items-center gap-2 border-b px-4 py-1 text-xs [--app-top-row-pad:0.25rem] [padding-top:calc(env(safe-area-inset-top)_+_var(--app-top-row-pad))]",
             view.row,
           )}
         >

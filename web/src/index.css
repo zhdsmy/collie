@@ -302,6 +302,17 @@
   inset: 0;
 }
 
+/* Exactly one top row owns the notch inset. Without this, an in-flow update/connection banner and
+ * the route header each add safe-area-inset-top, leaving a blank Dynamic Island-height band between
+ * them. A second simultaneous banner also uses only its normal row padding. */
+.app-shell:has(> [data-top-banner]) .app-header {
+  padding-top: 0.5rem;
+}
+
+.app-shell > [data-top-banner] ~ [data-top-banner] .app-top-banner-row {
+  padding-top: var(--app-top-row-pad);
+}
+
 @layer base {
   * {
     /* Full-strength ring, not /50: halved, the focus indicator measures 1.77:1 in light and 1.87:1
