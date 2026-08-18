@@ -13,6 +13,16 @@ const BOX_RULE = "─".repeat(40); // clears the 20-glyph border threshold in ha
 const paneWithDraft = (draft: string) => `some output\n${BOX_RULE}\n❯ ${draft}\n${BOX_RULE}`;
 // A focused permission dialog: no input box at the tail at all, so extractInputDraft sees nothing.
 const paneWithDialog = "Do you want to proceed?\n ❯ 1. Yes\n   2. No\n\n Esc to cancel";
+const codexPaint = (text: string, style = "") =>
+  `\x1b[${style}48;2;57;57;71m${text}\x1b[0m`;
+const codexPaneWithDraft = (draft: string) =>
+  [
+    "some output",
+    codexPaint(" ".repeat(40)),
+    `${codexPaint("› ", "1;")}${codexPaint(draft)}${codexPaint(" ".repeat(12))}`,
+    codexPaint(" ".repeat(40)),
+    "  gpt-5.6-sol high · Ready · Context 91% left",
+  ].join("\n");
 
 /** Record every reply POST, and let the fake pane's screen be swapped per test. */
 function harness(screen: () => string) {
@@ -198,6 +208,25 @@ describe("sendGuardedReply", () => {
     // sends nothing but its configured submitKeys.
     expect(calls).toEqual([
       { text: "ship it please", submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
+  it("submits when Codex replaces an uploaded image path with its image token", async () => {
+    const path = "/root/.local/state/collie/uploads/wC_p8-example-1234.jpg";
+    const caption = "请检查这个终端界面是否正常";
+    const calls = harness(() => codexPaneWithDraft(`[Image #1] ${caption}`));
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: `${path} ${caption}`,
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: `${path} ${caption}`, submit: false },
       { text: "", submit: true },
     ]);
   });

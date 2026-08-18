@@ -7,7 +7,7 @@ import { parseAnsi } from "../../ansi";
 import { lineText, splitLines, type StyledLine } from "../../blocks";
 import { adapterFor, hasBlockGrammar } from "../registry";
 import { extractInputDraft, extractStatusLines, stripChrome } from "./chrome";
-import { codexAdapter, codexBuildBlocks } from ".";
+import { codexAdapter, codexBuildBlocks, imageDraftCarriesSend } from ".";
 
 const PANES_DIR = join(import.meta.dirname, "..", "..", "..", "fixtures", "panes");
 const BACKGROUND = "57;57;71";
@@ -66,15 +66,28 @@ describe("Codex chrome", () => {
     expect(extractInputDraft(composerBuffer("Explain this codebase", { dim: true }))).toBeNull();
   });
 
-  it("keeps Codex's labelled exit summary on one visual row", () => {
-    const summary = `─ Worked for 14m 04s ${"─".repeat(120)}`;
+  it("keeps Codex's completion summary and removes its trailing decorative rows", () => {
+    const summary = "─ Worked for 14m 04s";
     const composer = composerBuffer("");
-    const captured = [...lines(`earlier output\n${summary}`), ...composer.slice(1)];
+    const captured = [
+      ...lines(`earlier output\n${summary}\n${"─".repeat(120)}\n${"─".repeat(80)}`),
+      ...composer.slice(1),
+    ];
     const block = codexBuildBlocks(captured)[0]!;
 
     if (block.kind !== "raw") throw new Error("expected raw Codex block");
     expect(block.lines.map(lineText)).toEqual(["earlier output", summary]);
     expect(block.lines.at(-1)!.noWrap).toBe(true);
+  });
+
+  it("does not remove unrelated terminal rules", () => {
+    const rule = "─".repeat(80);
+    const composer = composerBuffer("");
+    const captured = [...lines(`test output\n${rule}`), ...composer.slice(1)];
+    const block = codexBuildBlocks(captured)[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual(["test output", rule]);
   });
 
   it("returns the original buffer when the composer background is torn", () => {
@@ -99,5 +112,39 @@ describe("Codex chrome", () => {
     expect(codexBuildBlocks(captured)).toEqual([
       { kind: "raw", lines: [expect.objectContaining({ segments: expect.any(Array) })] },
     ]);
+  });
+});
+
+describe("Codex image draft verification", () => {
+  const upload = "/root/.local/state/collie/uploads/wC_p8-example-1234.jpg";
+
+  it("accepts Codex image placeholders when their count and caption match", () => {
+    expect(imageDraftCarriesSend(`${upload}\n\n本来是图片路径`, "[Image #1]\n\n本来是图片路径")).toBe(true);
+
+    const second = "/custom/collie/uploads/wC_p8-second.png";
+    expect(
+      imageDraftCarriesSend(
+        `${upload} ${second} compare these two screenshots carefully`,
+        "[Image #1] [Image #2] compare these two screenshots carefully",
+      ),
+    ).toBe(true);
+  });
+
+  it("tolerates only whitespace introduced while the Codex composer wraps", () => {
+    expect(
+      imageDraftCarriesSend(
+        `${upload} 请检查这个终端界面是否正常`,
+        "[Image #1] 请检查这个终端 界面是否正常",
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects mismatched tokens, captions, and ambiguous image-only drafts", () => {
+    expect(imageDraftCarriesSend(`${upload} 请检查这个终端界面是否正常`, "请检查这个终端界面是否正常")).toBe(false);
+    expect(imageDraftCarriesSend(`${upload} 请检查这个终端界面是否正常`, "[Image #1] 请删除这个终端里的所有内容")).toBe(
+      false,
+    );
+    expect(imageDraftCarriesSend(upload, "[Image #1]")).toBe(false);
+    expect(imageDraftCarriesSend("请检查这个终端界面是否正常", "[Image #1] 请检查这个终端界面是否正常")).toBe(false);
   });
 });
