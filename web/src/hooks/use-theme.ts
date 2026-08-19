@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 // App theme preference, persisted in localStorage.
 //
@@ -9,7 +9,7 @@ import { useCallback, useSyncExternalStore } from "react";
 // What CSS can't do, and this owns:
 //   1. The pin class on <html> — bidirectionally. A stale class MUST come off, or Dark → System
 //      leaves `.dark` stamped and the page stays dark until a full reload.
-//   2. The theme-color metas, which carry `media` attributes and so follow the OS rather than a pin.
+//   2. The theme-color metas, which follow the OS rather than a pin and, on Android, the top surface.
 //
 // State lives at module scope rather than in component state, so the OS listener survives App.tsx
 // unmounting the router for the idle lock — a component-scoped listener would stop tracking the OS
@@ -23,11 +23,20 @@ export type ResolvedTheme = "light" | "dark";
 const STORAGE_KEY = "collie:theme:v1";
 const DEFAULT: Theme = "system";
 
-/** Browser chrome — Android's URL bar and task-switcher card. These are --background's two halves
- *  rasterized: oklch(0.97) is rgb(245,245,245) and oklch(0.145) is rgb(10,10,10). Not #ffffff for
- *  light — the page is a step off white on purpose (index.css), and a pure-white URL bar above it
- *  shows the seam. Re-measure these if --background moves. */
-const META_COLOR: Record<ResolvedTheme, string> = { light: "#f5f5f5", dark: "#0a0a0a" };
+type ThemeColorSurface = "background" | "muted";
+
+/** Browser chrome colours rasterized from index.css. Android uses the muted pair while AppHeader is
+ * mounted so its system status bar meets that header without a seam. iOS never switches surface: its
+ * safe-area treatment stays CSS-owned. Re-measure these pairs if either token moves. */
+const META_COLOR: Record<ThemeColorSurface, Record<ResolvedTheme, string>> = {
+  background: { light: "#f5f5f5", dark: "#0a0a0a" },
+  muted: { light: "#efefef", dark: "#202020" },
+};
+let androidSurface: ThemeColorSurface = "background";
+
+function isAndroid(): boolean {
+  return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+}
 
 /** Read the pin. BARE string, not JSON — public/theme-init.js does the same strict compare before
  *  first paint, and JSON.stringify would write `"dark"` with the quotes and silently break it. */
@@ -73,7 +82,7 @@ function apply(theme: Theme, resolved: ResolvedTheme): void {
     // getAttribute, not `.media` — that reflected property is not implemented everywhere (jsdom
     // among them), and reading it blind throws on the undefined.
     const own: ResolvedTheme = meta.getAttribute("media")?.includes("dark") ? "dark" : "light";
-    meta.content = META_COLOR[pinned ? resolved : own];
+    meta.content = META_COLOR[androidSurface][pinned ? resolved : own];
   });
 }
 
@@ -132,4 +141,19 @@ export function useTheme(): UseThemeReturn {
   }, []);
 
   return { ...snapshot, setTheme };
+}
+
+/** Match Android's system status bar to AppHeader without changing iOS page or safe-area styling. */
+export function useAndroidHeaderThemeColor(): void {
+  const { theme, resolved } = useTheme();
+
+  useEffect(() => {
+    if (!isAndroid()) return;
+    androidSurface = "muted";
+    apply(theme, resolved);
+    return () => {
+      androidSurface = "background";
+      apply(theme, resolved);
+    };
+  }, [theme, resolved]);
 }

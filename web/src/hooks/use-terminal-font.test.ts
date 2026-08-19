@@ -15,12 +15,12 @@ async function bootstrap(stored: string | null) {
 }
 
 describe("useTerminalFont store", () => {
-  it("defaults to SF Mono and stamps the root before a control mounts", async () => {
+  it("defaults to the system monospace stack and stamps the root before a control mounts", async () => {
     await bootstrap(null);
-    expect(document.documentElement.dataset.terminalFont).toBe("sf-mono");
+    expect(document.documentElement.dataset.terminalFont).toBe("system-mono");
   });
 
-  it.each(["sf-mono", "geist-mono", "jetbrains-mono"] as const)(
+  it.each(["system-mono", "geist-mono", "jetbrains-mono"] as const)(
     "restores %s from localStorage",
     async (stored) => {
       await bootstrap(stored);
@@ -30,7 +30,7 @@ describe("useTerminalFont store", () => {
 
   it("ignores an unknown stored face", async () => {
     await bootstrap("comic-sans");
-    expect(document.documentElement.dataset.terminalFont).toBe("sf-mono");
+    expect(document.documentElement.dataset.terminalFont).toBe("system-mono");
   });
 
   it("persists a selection and applies it immediately", async () => {

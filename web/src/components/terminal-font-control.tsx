@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useTerminalFont, type TerminalFont } from "@/hooks/use-terminal-font";
 
 const OPTIONS: ReadonlyArray<{ value: TerminalFont; label: string }> = [
-  { value: "sf-mono", label: "SF Mono" },
+  { value: "system-mono", label: "System Mono" },
   { value: "geist-mono", label: "Geist Mono" },
   { value: "jetbrains-mono", label: "JetBrains Mono" },
 ];

@@ -10,7 +10,7 @@ it("offers the three terminal faces and applies the selected one", async () => {
   const select = screen.getByRole("combobox", { name: "Monospace font" });
 
   expect([...select.querySelectorAll("option")].map((option) => option.textContent)).toEqual([
-    "SF Mono",
+    "System Mono",
     "Geist Mono",
     "JetBrains Mono",
   ]);

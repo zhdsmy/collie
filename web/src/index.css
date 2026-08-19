@@ -36,8 +36,8 @@
      value inverse to --muted in light, then use --muted's dark half when the filter is disabled. */
   --mirror-codex-input-background: rgb(16 16 16);
 
-  /* Settings → Terminal selects this face list. SF Mono is the no-download default; the two named
-     web faces below stay unfetched until their data attribute makes them part of `font-mono`. */
+  /* Settings → Terminal selects this face list. System Mono is the no-download default; the two
+     named web faces below stay unfetched until their data attribute makes them part of `font-mono`. */
   --terminal-mono-face: ui-monospace, SFMono-Regular, "SF Mono", Menlo, "Cascadia Mono",
     "Cascadia Code", Consolas, "Liberation Mono", monospace;
 
@@ -241,8 +241,8 @@
 }
 
 /* Selectable terminal faces. All live under /fonts so sw.ts caches the chosen face on first use;
- * no WOFF2 is precached, and SF Mono downloads nothing. Geist's small symbols face completes its
- * box-drawing block. JetBrains ships separate regular/semibold files so ANSI bold stays genuine. */
+ * no WOFF2 is precached, and System Mono downloads nothing. Geist's small symbols face completes
+ * its box-drawing block. JetBrains ships separate regular/semibold files so ANSI bold stays genuine. */
 @font-face {
   font-family: "Geist Mono Web";
   src: url("/fonts/geist-mono-1.3.1-variable.woff2") format("woff2");

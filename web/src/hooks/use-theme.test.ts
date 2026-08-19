@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { UseThemeReturn } from "./use-theme";
 
@@ -40,9 +40,14 @@ function installMatchMedia(initialDark: boolean) {
 }
 
 /** Fresh module instance, so module-scope state doesn't leak between cases. */
-async function loadModule(): Promise<{ useTheme: () => UseThemeReturn }> {
+interface ThemeModule {
+  useTheme: () => UseThemeReturn;
+  useAndroidHeaderThemeColor: () => void;
+}
+
+async function loadModule(): Promise<ThemeModule> {
   vi.resetModules();
-  return (await import("./use-theme")) as { useTheme: () => UseThemeReturn };
+  return (await import("./use-theme")) as ThemeModule;
 }
 
 /** The hook's non-React surface is what matters here; drive it through the store it exports. */
@@ -57,6 +62,8 @@ async function bootstrap(stored: string | null, osDark = false) {
 function classes(): string[] {
   return [...document.documentElement.classList];
 }
+
+afterEach(() => vi.restoreAllMocks());
 
 describe("useTheme store", () => {
   beforeEach(() => {
@@ -128,6 +135,43 @@ describe("useTheme store", () => {
     const contents = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].map(
       (m) => m.content,
     );
+    expect(contents).toEqual(["#f5f5f5", "#0a0a0a"]);
+  });
+
+  it("matches Android system chrome to AppHeader and restores it on unmount", async () => {
+    vi.spyOn(window.navigator, "userAgent", "get").mockReturnValue(
+      "Mozilla/5.0 (Linux; Android 15)",
+    );
+    document.head.innerHTML =
+      '<meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)">' +
+      '<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">';
+    const { useAndroidHeaderThemeColor } = await bootstrap(null);
+    const { renderHook } = await import("@testing-library/react");
+    const { unmount } = renderHook(() => useAndroidHeaderThemeColor());
+    const contents = () =>
+      [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].map(
+        (meta) => meta.content,
+      );
+
+    expect(contents()).toEqual(["#efefef", "#202020"]);
+    unmount();
+    expect(contents()).toEqual(["#f5f5f5", "#0a0a0a"]);
+  });
+
+  it("leaves iOS theme-color handling unchanged when AppHeader mounts", async () => {
+    vi.spyOn(window.navigator, "userAgent", "get").mockReturnValue(
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)",
+    );
+    document.head.innerHTML =
+      '<meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)">' +
+      '<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">';
+    const { useAndroidHeaderThemeColor } = await bootstrap(null);
+    const { renderHook } = await import("@testing-library/react");
+    renderHook(() => useAndroidHeaderThemeColor());
+    const contents = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].map(
+      (meta) => meta.content,
+    );
+
     expect(contents).toEqual(["#f5f5f5", "#0a0a0a"]);
   });
 });

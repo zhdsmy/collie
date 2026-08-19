@@ -4,13 +4,13 @@ import { useCallback, useSyncExternalStore } from "react";
 // root data attribute and CSS variables in index.css, so terminal output and compact command text
 // stay in sync without threading a font prop through the component tree.
 
-export type TerminalFont = "sf-mono" | "geist-mono" | "jetbrains-mono";
+export type TerminalFont = "system-mono" | "geist-mono" | "jetbrains-mono";
 
 const STORAGE_KEY = "collie:terminal-font:v1";
-const DEFAULT: TerminalFont = "sf-mono";
+const DEFAULT: TerminalFont = "system-mono";
 
 function isTerminalFont(value: string | null): value is TerminalFont {
-  return value === "sf-mono" || value === "geist-mono" || value === "jetbrains-mono";
+  return value === "system-mono" || value === "geist-mono" || value === "jetbrains-mono";
 }
 
 function loadFont(): TerminalFont {

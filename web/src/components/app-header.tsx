@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { isConnecting } from "@/lib/connection";
 import { useConnectionLost, useConnectionTrouble } from "@/hooks/use-connection-lost";
+import { useAndroidHeaderThemeColor } from "@/hooks/use-theme";
 import { settingsPath } from "@/lib/nav";
 import { CollieHome } from "@/components/collie-home";
 import { cn } from "@/lib/utils";
@@ -66,6 +67,7 @@ export function AppHeader({
   fixed,
   fixedTop = 0,
 }: AppHeaderProps) {
+  useAndroidHeaderThemeColor();
   // The same two shared-clock signals the ConnectionBanner reads, so the dog and the bar agree by
   // construction: gallop while troubled (≥4s not-live), rest muted once lost (≥15s, latched).
   const connecting = isConnecting({ bridge, error, stalled });
