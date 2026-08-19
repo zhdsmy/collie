@@ -842,8 +842,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             commands). Display prefs used to sit on a second, permanent icon-only "View" row above
             this one; folding them behind the ⚙ gives the mirror that row back. The gear is icon-only
             and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
-            keeping it narrow leaves the labelled buttons their width on a 390px phone. Compact
-            keyboard mode yields the whole row while the software keyboard provides input controls. */}
+            keeping it narrow leaves the labelled buttons their width on a 390px phone. At phone
+            widths the decorative action glyphs yield to the full labels, which keeps longer
+            translations readable without adding a second row. Compact keyboard mode yields the
+            whole row while the software keyboard provides input controls. */}
         {!compactKeyboard && (
           <div className="mb-2 flex min-w-0 items-center gap-1">
           {/* Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to open, tap
@@ -860,7 +862,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             aria-expanded={drawer === "keys"}
             onClick={() => requestDrawer(drawer === "keys" ? null : "keys")}
           >
-              <Keyboard className="size-4 shrink-0" />
+              <Keyboard className="size-4 shrink-0 [@media(max-width:480px)]:hidden" />
               <span className="min-w-0 truncate">{translate("composer.keys")}</span>
           </Button>
           {/* "Type into terminal" lives HERE, beside Keys, rather than on the Send button.
@@ -896,7 +898,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               direct.activate();
             }}
           >
-              <Terminal className="size-4 shrink-0" />
+              <Terminal className="size-4 shrink-0 [@media(max-width:480px)]:hidden" />
               <span className="min-w-0 truncate">{translate("composer.type")}</span>
           </Button>
           <Button
@@ -910,7 +912,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             aria-expanded={drawer === "quick"}
             onClick={() => requestDrawer(drawer === "quick" ? null : "quick")}
           >
-              <Zap className="size-4 shrink-0" />
+              <Zap className="size-4 shrink-0 [@media(max-width:480px)]:hidden" />
               <span className="min-w-0 truncate">{translate("composer.quick")}</span>
           </Button>
           {commands.length > 0 && (
@@ -921,7 +923,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               disabled={locked}
               onClick={() => requestDrawer("cmd")}
             >
-                <Slash className="size-4 shrink-0" />
+                <Slash className="size-4 shrink-0 [@media(max-width:480px)]:hidden" />
                 <span className="min-w-0 truncate">{translate("composer.agent")}</span>
             </Button>
           )}

@@ -1866,7 +1866,7 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
 });
 
 describe("Composer — display prefs behind the gear", () => {
-  it("lets the labelled controls shrink so the Display gear stays inside the panel", () => {
+  it("keeps full labels available at phone widths while the Display gear stays inside", () => {
     renderComposer();
     const gear = screen.getByRole("button", { name: "Display settings" });
     const row = gear.parentElement;
@@ -1877,6 +1877,7 @@ describe("Composer — display prefs behind the gear", () => {
     )) {
       expect(button).toHaveClass("min-w-0", "flex-auto", "shrink", "overflow-hidden");
       expect(button.querySelector("span")).toHaveClass("min-w-0", "truncate");
+      expect(button.querySelector("svg")).toHaveClass("[@media(max-width:480px)]:hidden");
     }
   });
 
