@@ -216,8 +216,8 @@ describe("sendGuardedReply", () => {
   });
 
   it("submits when Codex replaces an uploaded image path with its image token", async () => {
-    const path = "/root/.local/state/collie/uploads/wC_p8-example-1234.jpg";
-    const caption = "请检查这个终端界面是否正常";
+    const path = "/test-state/uploads/example.jpg";
+    const caption = "请检查终端布局是否正常";
     const calls = harness(() => codexPaneWithDraft(`[Image #1] ${caption}`));
 
     const out = await sendGuardedReply({
@@ -235,11 +235,11 @@ describe("sendGuardedReply", () => {
   });
 
   it("submits a windowed Codex draft when only one of several image paths is visible", async () => {
-    const first = "/root/.local/state/collie/uploads/wC_p8-first.jpg";
-    const second = "/root/.local/state/collie/uploads/wC_p8-second.png";
-    const third = "/root/.local/state/collie/uploads/wC_p8-third.jpg";
-    const question = "有什么好的解决方案么，这个输入键盘的条又是干啥的";
-    const text = `${first} ${second}\n前面的图片用于对比\n${third}\n${question}`;
+    const first = "/test-state/uploads/first.jpg";
+    const second = "/test-state/uploads/second.png";
+    const third = "/test-state/uploads/third.jpg";
+    const question = "请比较这些截图中的布局差异";
+    const text = `${first} ${second}\n前两张是对照样本\n${third}\n${question}`;
     const calls = harness(() => codexPaneWithDraft(`[Image #1] ${question}`));
 
     const out = await sendGuardedReply({

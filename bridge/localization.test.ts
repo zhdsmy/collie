@@ -16,7 +16,7 @@ describe("push localization", () => {
       agent: "codex",
       status: "done" as const,
       workspaceLabel: "collie",
-      cwd: "/opt/collie",
+      cwd: "/home/you/collie",
     };
     expect(localizePushCopy(single, "en").title).toBe("codex is done");
     expect(localizePushCopy(single, "zh-CN").title).toBe("codex 已完成");

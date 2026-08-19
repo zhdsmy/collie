@@ -1,21 +1,28 @@
 import { lineText, type Block, type StyledLine } from "../../blocks";
+import { draftCarriesSend as textDraftCarriesSend } from "../../draft-match";
 import type { HarnessAdapter } from "../types";
 import { extractInputDraft, extractStatusLines, stripChrome } from "./chrome";
 
 const COMPLETION_SUMMARY = /^─+\s+Worked for\b/;
-const DECORATIVE_RULE = /^─+$/;
+const DECORATIVE_RULE = /^─{40,}$/;
 const UPLOAD_IMAGE_PATH =
   /(?:^|\s)(\/(?:[^\s/]+\/)*uploads\/[^\s/]+\.(?:gif|jpe?g|png|webp))(?=\s|$)/gi;
-const IMAGE_PLACEHOLDER = /\[\s*Image\s+#\d+\s*\]/g;
+const IMAGE_PLACEHOLDER = /(?:^|\s)\[\s*Image\s+#\d+\s*\]/g;
 const MIN_CAPTION_CHARS = 4;
 const MIN_WINDOWED_CAPTION_CHARS = 8;
+
+function isCompletionSummary(line: StyledLine): boolean {
+  if (!COMPLETION_SUMMARY.test(lineText(line).trim())) return false;
+  const visible = line.segments.filter((segment) => segment.text.trim().length > 0);
+  return visible.length > 0 && visible.every((segment) => segment.dim === true);
+}
 
 function normalizeCompletionSummaries(lines: StyledLine[]): StyledLine[] {
   let normalized: StyledLine[] | undefined;
 
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index]!;
-    if (!COMPLETION_SUMMARY.test(lineText(line).trim())) {
+    if (!isCompletionSummary(line)) {
       normalized?.push(line);
       continue;
     }
@@ -33,12 +40,16 @@ function normalizeCompletionSummaries(lines: StyledLine[]): StyledLine[] {
   return normalized ?? lines;
 }
 
-function compactWhitespace(text: string): string {
-  return text.replace(/\s+/g, "");
-}
-
 function uploadPaths(text: string): string[] {
   return [...text.matchAll(UPLOAD_IMAGE_PATH)].map((match) => match[1]!);
+}
+
+function captionWithoutImages(text: string): string {
+  return text.replace(UPLOAD_IMAGE_PATH, "").replace(IMAGE_PLACEHOLDER, "").trim();
+}
+
+function visibleCaptionLength(text: string): number {
+  return Array.from(text).filter((character) => !/\s/u.test(character)).length;
 }
 
 /** Verify Codex's replacement of Collie upload paths with its own `[Image #N]` tokens. */
@@ -56,17 +67,15 @@ export function imageDraftCarriesSend(sent: string, draft: string): boolean {
   const placeholderCount = [...draft.matchAll(IMAGE_PLACEHOLDER)].length;
   if (placeholderCount === 0 || placeholderCount > unmatchedPaths.length) return false;
 
-  const sentCaption = compactWhitespace(sent.replace(UPLOAD_IMAGE_PATH, " "));
-  const draftCaption = compactWhitespace(
-    draft.replace(UPLOAD_IMAGE_PATH, " ").replace(IMAGE_PLACEHOLDER, " "),
-  );
+  const sentCaption = captionWithoutImages(sent);
+  const draftCaption = captionWithoutImages(draft);
   const exactCaption = draftCaption === sentCaption;
   const minimum = exactCaption ? MIN_CAPTION_CHARS : MIN_WINDOWED_CAPTION_CHARS;
-  if (Array.from(draftCaption).length < minimum) return false;
+  if (visibleCaptionLength(draftCaption) < minimum) return false;
 
   // Long Codex drafts are windowed, so leading paths and caption rows may be off-screen. The visible
-  // caption must still be one contiguous slice of the text sent alongside the images.
-  return exactCaption || sentCaption.includes(draftCaption);
+  // caption must still satisfy the same fail-closed fold-seam matcher as ordinary text sends.
+  return textDraftCarriesSend(sentCaption, draftCaption);
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {

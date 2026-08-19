@@ -103,14 +103,14 @@ describe("Codex chrome", () => {
     const captured = lines(
       [
         "first query",
-        firstSummary,
+        `\x1b[2;37m${firstSummary}\x1b[0m`,
         decorativeRule,
         decorativeRule,
         "first answer",
         "ordinary prose Worked for this example",
         unrelatedRule,
         "second query",
-        secondSummary,
+        `\x1b[2;37m${secondSummary}\x1b[0m`,
         "second answer",
       ].join("\n"),
     );
@@ -144,6 +144,16 @@ describe("Codex chrome", () => {
     expect(block.lines.map(lineText)).toEqual(["test output", rule]);
   });
 
+  it("does not rewrite plain terminal output that resembles a completion summary", () => {
+    const summary = "─ Worked for demo";
+    const rule = "─".repeat(80);
+    const block = codexBuildBlocks(lines(`tool output\n${summary}\n${rule}\nreal output`))[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual(["tool output", summary, rule, "real output"]);
+    expect(block.lines[1]!.noWrap).toBeUndefined();
+  });
+
   it("returns the original buffer when the composer background is torn", () => {
     const torn = composerBuffer("hello", { bottomBackground: "0;0;0" });
     expect(stripChrome(torn)).toBe(torn);
@@ -170,12 +180,12 @@ describe("Codex chrome", () => {
 });
 
 describe("Codex image draft verification", () => {
-  const upload = "/root/.local/state/collie/uploads/wC_p8-example-1234.jpg";
+  const upload = "/test-state/uploads/example.jpg";
 
   it("accepts Codex image placeholders when their count and caption match", () => {
-    expect(imageDraftCarriesSend(`${upload}\n\n本来是图片路径`, "[Image #1]\n\n本来是图片路径")).toBe(true);
+    expect(imageDraftCarriesSend(`${upload}\n\n请比较这张截图`, "[Image #1]\n\n请比较这张截图")).toBe(true);
 
-    const second = "/custom/collie/uploads/wC_p8-second.png";
+    const second = "/alternate-state/uploads/second.png";
     expect(
       imageDraftCarriesSend(
         `${upload} ${second} compare these two screenshots carefully`,
@@ -187,44 +197,45 @@ describe("Codex image draft verification", () => {
   it("tolerates only whitespace introduced while the Codex composer wraps", () => {
     expect(
       imageDraftCarriesSend(
-        `${upload} 请检查这个终端界面是否正常`,
-        "[Image #1] 请检查这个终端 界面是否正常",
+        `${upload} 请检查终端布局是否正常`,
+        "[Image #1] 请检查终端 布局是否正常",
       ),
     ).toBe(true);
   });
 
   it("accepts a partially converted, windowed multi-image draft", () => {
-    const second = "/root/.local/state/collie/uploads/wC_p8-second.png";
-    const third = "/root/.local/state/collie/uploads/wC_p8-third.jpg";
-    const question = "有什么好的解决方案么，这个输入键盘的条又是干啥的";
-    const sent = `${upload} ${second}\n前面的图片用于对比\n${third}\n${question}`;
+    const second = "/test-state/uploads/second.png";
+    const third = "/test-state/uploads/third.jpg";
+    const question = "请比较这些截图中的布局差异";
+    const sent = `${upload} ${second}\n前两张是对照样本\n${third}\n${question}`;
 
-    expect(imageDraftCarriesSend(sent, `${upload} [Image #1] 前面的图片用于对比 ${question}`)).toBe(
+    expect(imageDraftCarriesSend(sent, `${upload} [Image #1] 前两张是对照样本 ${question}`)).toBe(
       true,
     );
     expect(imageDraftCarriesSend(sent, `[Image #1] ${question}`)).toBe(true);
   });
 
   it("rejects mismatched tokens, captions, and ambiguous image-only drafts", () => {
-    expect(imageDraftCarriesSend(`${upload} 请检查这个终端界面是否正常`, "请检查这个终端界面是否正常")).toBe(false);
-    expect(imageDraftCarriesSend(`${upload} 请检查这个终端界面是否正常`, "[Image #1] 请删除这个终端里的所有内容")).toBe(
+    expect(imageDraftCarriesSend(`${upload} 请检查终端布局是否正常`, "请检查终端布局是否正常")).toBe(false);
+    expect(imageDraftCarriesSend(`${upload} 请检查终端布局是否正常`, "[Image #1] 请删除终端里的所有内容")).toBe(
       false,
     );
     expect(imageDraftCarriesSend(upload, "[Image #1]")).toBe(false);
-    expect(imageDraftCarriesSend("请检查这个终端界面是否正常", "[Image #1] 请检查这个终端界面是否正常")).toBe(false);
-    const second = "/root/.local/state/collie/uploads/wC_p8-second.png";
+    expect(imageDraftCarriesSend("请检查终端布局是否正常", "[Image #1] 请检查终端布局是否正常")).toBe(false);
+    expect(imageDraftCarriesSend(`${upload} echo a b`, "[Image #1] echo ab")).toBe(false);
+    const second = "/test-state/uploads/second.png";
     expect(
       imageDraftCarriesSend(
-        `${upload} ${second} 请检查这个终端界面是否正常`,
-        "/tmp/uploads/not-this-send.png [Image #1] 请检查这个终端界面是否正常",
+        `${upload} ${second} 请检查终端布局是否正常`,
+        "/other-state/uploads/not-this-send.png [Image #1] 请检查终端布局是否正常",
       ),
     ).toBe(false);
     expect(
       imageDraftCarriesSend(
-        `${upload} ${second} 请检查这个终端界面是否正常`,
-        "[Image #1] [Image #2] [Image #3] 请检查这个终端界面是否正常",
+        `${upload} ${second} 请检查终端布局是否正常`,
+        "[Image #1] [Image #2] [Image #3] 请检查终端布局是否正常",
       ),
     ).toBe(false);
-    expect(imageDraftCarriesSend(`${upload} 这张图看看`, "[Image #1] 看看")).toBe(false);
+    expect(imageDraftCarriesSend(`${upload} 请看截图`, "[Image #1] 截图")).toBe(false);
   });
 });

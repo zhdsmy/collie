@@ -26,7 +26,9 @@ describe("mobile composer chrome", () => {
 
   it("does not reserve a label row above the composer actions", () => {
     const composer = read("src/components/composer.tsx");
-    expect(composer).toContain('className="mb-2 flex items-center gap-2"');
+    expect(composer).toMatch(
+      /<div className="mb-2 flex[^"\n]*\bmin-w-0\b[^"\n]*\bitems-center\b/,
+    );
     expect(composer).not.toMatch(/<SectionLabel[^>]*>\s*Controls\s*<\/SectionLabel>/s);
   });
 
