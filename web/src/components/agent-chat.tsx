@@ -9,6 +9,7 @@ import { useDashPrefs, openForCount } from "@/hooks/use-dash-prefs";
 import { useDisplayPrefs } from "@/hooks/use-display-prefs";
 import { useKeyboardViewport } from "@/hooks/use-keyboard";
 import { useStableTerminalDraft } from "@/hooks/use-terminal-draft";
+import { localizeClientError } from "@/lib/client-errors";
 import { isConnecting } from "@/lib/connection";
 import { setStatus } from "@/lib/status";
 import { ChatMessageList, type ChatMessageListHandle } from "@/components/ui/chat/chat-message-list";
@@ -360,7 +361,7 @@ export function AgentChat({
         setStatus(t("chat.menuChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || t("chat.sendFailed"), "error");
+        setStatus(localizeClientError(result) || t("chat.sendFailed"), "error");
       }
       // Reported back so the block can keep a refused feedback draft on screen rather than discard
       // what someone just thumb-typed. Option taps ignore it.
@@ -399,7 +400,7 @@ export function AgentChat({
         setStatus(t("chat.wizardChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || t("chat.sendFailed"), "error");
+        setStatus(localizeClientError(result) || t("chat.sendFailed"), "error");
       }
     },
     [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator, t],
@@ -447,7 +448,7 @@ export function AgentChat({
         setStatus(t("chat.dialogChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || t("chat.sendFailed"), "error");
+        setStatus(localizeClientError(result) || t("chat.sendFailed"), "error");
         revalidator.revalidate();
       }
     },
@@ -483,7 +484,7 @@ export function AgentChat({
         setStatus(t("chat.selectionChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || t("chat.sendFailed"), "error");
+        setStatus(localizeClientError(result) || t("chat.sendFailed"), "error");
       }
     },
     [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator, t],
@@ -519,7 +520,7 @@ export function AgentChat({
         setStatus(t("chat.screenChanged"), "warn");
         revalidator.revalidate();
       } else {
-        setStatus(result.error || t("chat.sendFailed"), "error");
+        setStatus(localizeClientError(result) || t("chat.sendFailed"), "error");
       }
     },
     [readOnly, paneId, session, requestedLines, shown.revision, agent?.agent, revalidator, t],

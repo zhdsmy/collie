@@ -327,6 +327,25 @@ const en = {
     operationFailed: "Operation failed: {{reason}}",
     promptChanged: "The terminal prompt changed. Try again.",
   },
+  clientErrors: {
+    feedbackEmpty: "Nothing to send",
+    feedbackInputNotOpen: "The feedback box didn't open — check the pane.",
+    feedbackNotReceived: "The feedback didn't arrive — nothing was submitted.",
+    noteClearFailed: "Couldn't clear the existing note — check the pane.",
+    noteInputNotClosed: "The note input didn't close — check the pane.",
+    noteInputNotOpen: "The note input didn't open — check the pane.",
+    noteNotReceived: "The note text didn't arrive — check the pane.",
+    replyInputLeftDuringClear:
+      "The agent's input box left the screen while its input line was being cleared — a menu or dialog is probably up. Your message wasn't typed.",
+    replyMessageNotReceived:
+      "Message didn't reach the input box — a dialog may be waiting, and if you were answering it by key that key likely landed. Nothing was submitted.",
+    replyNoInputBox:
+      "The agent's input box isn't on screen — a menu or dialog is probably up. Nothing was typed.",
+    replyPasswordBlocked:
+      "That's a password prompt — it shows nothing as you type, so Send can never confirm the text arrived. Nothing was typed.",
+    replyPasswordTyped:
+      "That's a password prompt — it shows nothing as you type, so the text can't be confirmed and nothing was submitted. What you typed is already in the pane.",
+  },
   boot: {
     connecting: "Connecting to the herd…",
     notConnected: "Not connected",
@@ -469,6 +488,8 @@ const en = {
     directStarted: "Typing into the terminal — keys send as you type.",
     directStopped: "Back to sending replies",
     directTitle: "Typing into terminal",
+    discardQueuedKeys_one: "Tap again to discard {{count}} queued key",
+    discardQueuedKeys_other: "Tap again to discard {{count}} queued keys",
     dialogWaiting: "A dialog is waiting — answer it first, then send.",
     display: "Display",
     displaySettings: "Display settings",
@@ -794,6 +815,24 @@ const zhCN = {
     operationFailed: "操作失败：{{reason}}",
     promptChanged: "终端提示已变化，请重试。",
   },
+  clientErrors: {
+    feedbackEmpty: "没有可发送的内容",
+    feedbackInputNotOpen: "反馈输入框未打开，请检查窗格。",
+    feedbackNotReceived: "反馈内容未到达输入框，未提交任何内容。",
+    noteClearFailed: "无法清除现有备注，请检查窗格。",
+    noteInputNotClosed: "备注输入框未关闭，请检查窗格。",
+    noteInputNotOpen: "备注输入框未打开，请检查窗格。",
+    noteNotReceived: "备注内容未到达输入框，请检查窗格。",
+    replyInputLeftDuringClear:
+      "清除输入行时，Agent 的输入框已离开屏幕——可能打开了菜单或对话框。未输入你的消息。",
+    replyMessageNotReceived:
+      "消息未到达输入框——可能有对话框正在等待；如果你刚才是通过按键回答，对应按键可能已经生效。未提交任何内容。",
+    replyNoInputBox: "屏幕上没有 Agent 的输入框——可能打开了菜单或对话框。未输入任何内容。",
+    replyPasswordBlocked:
+      "这是密码提示——输入内容不会显示，因此“发送”无法确认文本已到达。未输入任何内容。",
+    replyPasswordTyped:
+      "这是密码提示——输入内容不会显示，无法确认文本，因此未提交任何内容。你输入的内容已在窗格中。",
+  },
   boot: {
     connecting: "正在连接到 agent 集群...",
     notConnected: "未连接",
@@ -935,6 +974,8 @@ const zhCN = {
     directStarted: "正在向终端输入 — 按键将随输入发送。",
     directStopped: "已返回发送回复模式",
     directTitle: "正在向终端输入",
+    discardQueuedKeys_one: "再次点按以丢弃 {{count}} 个已排队按键",
+    discardQueuedKeys_other: "再次点按以丢弃 {{count}} 个已排队按键",
     dialogWaiting: "有一个对话框正在等待，请先完成它再发送。",
     display: "显示",
     displaySettings: "显示设置",
@@ -1252,6 +1293,24 @@ const zhTW = {
     operationFailed: "操作失敗：{{reason}}",
     promptChanged: "終端提示已變更，請重試。",
   },
+  clientErrors: {
+    feedbackEmpty: "沒有可傳送的內容",
+    feedbackInputNotOpen: "意見回饋輸入框未開啟，請檢查窗格。",
+    feedbackNotReceived: "意見回饋未到達輸入框，未送出任何內容。",
+    noteClearFailed: "無法清除現有備註，請檢查窗格。",
+    noteInputNotClosed: "備註輸入框未關閉，請檢查窗格。",
+    noteInputNotOpen: "備註輸入框未開啟，請檢查窗格。",
+    noteNotReceived: "備註內容未到達輸入框，請檢查窗格。",
+    replyInputLeftDuringClear:
+      "清除輸入列時，Agent 的輸入框已離開畫面——可能開啟了選單或對話框。未輸入你的訊息。",
+    replyMessageNotReceived:
+      "訊息未到達輸入框——可能有對話框正在等待；如果你剛才是透過按鍵回答，對應按鍵可能已經生效。未送出任何內容。",
+    replyNoInputBox: "畫面上沒有 Agent 的輸入框——可能開啟了選單或對話框。未輸入任何內容。",
+    replyPasswordBlocked:
+      "這是密碼提示——輸入內容不會顯示，因此「傳送」無法確認文字已到達。未輸入任何內容。",
+    replyPasswordTyped:
+      "這是密碼提示——輸入內容不會顯示，無法確認文字，因此未送出任何內容。你輸入的內容已在窗格中。",
+  },
   boot: {
     connecting: "正在連線到 agent 叢集...",
     notConnected: "未連線",
@@ -1393,6 +1452,8 @@ const zhTW = {
     directStarted: "正在向終端機輸入 — 按鍵會隨輸入傳送。",
     directStopped: "已返回傳送回覆模式",
     directTitle: "正在向終端機輸入",
+    discardQueuedKeys_one: "再次點按以丟棄 {{count}} 個已排入佇列的按鍵",
+    discardQueuedKeys_other: "再次點按以丟棄 {{count}} 個已排入佇列的按鍵",
     dialogWaiting: "有一個對話框正在等待，請先完成它再傳送。",
     display: "顯示",
     displaySettings: "顯示設定",

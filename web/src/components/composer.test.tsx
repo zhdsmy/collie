@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
+import { i18n } from "@/i18n";
 import { clearStatus, useStatus } from "@/lib/status";
 import { isReloadHeld, __resetReloadGuard } from "@/lib/reload-guard";
 import { loadDraft } from "@/lib/drafts";
@@ -1027,6 +1028,27 @@ describe("Composer — blocked pre-flight override", () => {
     expect(props.onSent).not.toHaveBeenCalled();
     // The button names what the override actually does — type, not send.
     expect(screen.getByRole("button", { name: /type anyway/i })).toBeInTheDocument();
+  });
+
+  it("shows a blocked-send error in the selected language", async () => {
+    await i18n.changeLanguage("zh-CN");
+    try {
+      const user = userEvent.setup();
+      servePicker([]);
+      renderComposerWithStatus();
+      const box = screen.getByPlaceholderText("输入回复...");
+
+      await user.type(box, "请继续");
+      await user.click(screen.getByRole("button", { name: "发送" }));
+
+      await waitFor(() =>
+        expect(screen.getByTestId("status")).toHaveTextContent(
+          "屏幕上没有 Agent 的输入框——可能打开了菜单或对话框。未输入任何内容。",
+        ),
+      );
+    } finally {
+      await i18n.changeLanguage("en");
+    }
   });
 
   it("the second tap types anyway, but STILL withholds the submit key", async () => {

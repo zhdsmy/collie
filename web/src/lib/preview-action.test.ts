@@ -401,7 +401,11 @@ describe("submitPreviewNote — n → verify focus → clear → type → Escape
     const m = model({});
     mockFetchPane.mockResolvedValue(paneWith(buffer({}))); // editing state never appears
     const res = await submitPreviewNote({ ...base, preview: m, text: "hello" });
-    expect(res).toEqual({ status: "error", error: "Note input didn't open — check the pane" });
+    expect(res).toEqual({
+      status: "error",
+      error: "Note input didn't open — check the pane",
+      clientError: "note_input_not_open",
+    });
     expect(mockSendKeys.mock.calls).toEqual([
       ["w1:p1", ["n"], undefined, m.regionSignature],
     ]);

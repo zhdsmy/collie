@@ -290,7 +290,10 @@ describe("sendGuardedReply", () => {
     });
 
     expect(out.status).toBe("blocked");
-    expect(out).toMatchObject({ error: expect.stringMatching(/input box isn't on screen/i) });
+    expect(out).toMatchObject({
+      clientError: "reply_no_input_box",
+      error: expect.stringMatching(/input box isn't on screen/i),
+    });
     // Nothing was typed AT ALL — not even the unsubmitted send_text.
     expect(calls).toEqual([]);
   });
@@ -310,6 +313,7 @@ describe("sendGuardedReply", () => {
 
     expect(out).toMatchObject({
       status: "blocked",
+      clientError: "reply_password_blocked",
       error: expect.stringMatching(/password prompt/i),
       noEcho: "[sudo] password for altan:",
     });
@@ -332,6 +336,7 @@ describe("sendGuardedReply", () => {
 
     expect(out).toMatchObject({
       status: "stalled",
+      clientError: "reply_password_typed",
       noEcho: "[sudo] password for altan:",
       error: expect.stringMatching(/already in the pane/i),
     });
@@ -392,7 +397,10 @@ describe("sendGuardedReply", () => {
       force: true,
       ...instant,
     });
-    expect(out).toMatchObject({ error: expect.stringMatching(/that key likely landed/i) });
+    expect(out).toMatchObject({
+      clientError: "reply_message_not_received",
+      error: expect.stringMatching(/that key likely landed/i),
+    });
   });
 
   it("#34: does not mistake somebody else's stranded draft for our text", async () => {
@@ -508,7 +516,10 @@ describe("sendGuardedReply", () => {
     });
 
     expect(out.status).toBe("error");
-    expect(out).toMatchObject({ textDelivered: true });
+    expect(out).toMatchObject({
+      clientError: "reply_submit_failed_after_typing",
+      textDelivered: true,
+    });
   });
 });
 
@@ -660,7 +671,10 @@ describe("onComposerSeen — destructive pre-type work needs positive evidence",
 
     expect(log).toEqual(["sweep"]); // the sweep was authorised; the message was not
     expect(out.status).toBe("blocked");
-    expect(out).toMatchObject({ error: expect.stringMatching(/while its input line was being cleared/i) });
+    expect(out).toMatchObject({
+      clientError: "reply_input_left_during_clear",
+      error: expect.stringMatching(/while its input line was being cleared/i),
+    });
   });
 
   it("skips the re-confirming read when the caller put nothing on the wire", async () => {

@@ -20,6 +20,7 @@
 import { fetchPane, sendReply } from "./api";
 import { parseAnsi } from "./ansi";
 import { splitLines } from "./blocks";
+import type { ClientError, ClientErrorCode } from "./client-errors";
 import { draftCarriesSend } from "./draft-match";
 import { adapterFor, type HarnessAdapter } from "./harness";
 import { POLL_ATTEMPTS, POLL_DELAY_MS, defaultSleep, type Sleep } from "./harness/guard";
@@ -39,13 +40,24 @@ export type ReplyOutcome =
    * `noEcho` carries the password prompt the refusing read was looking at, when it was one — see
    * lib/no-echo.ts.
    */
-  | { status: "blocked"; error: string; noEcho?: string }
+  | {
+      status: "blocked";
+      error: string;
+      clientError: ClientErrorCode;
+      noEcho?: string;
+    }
   /** Text never reached the input box — NO submit key was sent. The caller MUST keep the draft.
    *  `noEcho`: the prompt the last verification read saw, when the reason the text never appeared is
    *  that the screen is deliberately not showing it — see lib/no-echo.ts. */
-  | { status: "stalled"; error: string; noEcho?: string }
-  /** Transport/RPC failure. `textDelivered` = text is in the pane but unsubmitted; don't resend. */
-  | { status: "error"; error: string; textDelivered?: boolean };
+  | {
+      status: "stalled";
+      error: string;
+      clientError: ClientErrorCode;
+      noEcho?: string;
+    }
+  /** Transport/RPC failure, or a coded local failure. `textDelivered` = text is in the pane but
+   *  unsubmitted; don't resend. */
+  | ({ status: "error"; textDelivered?: boolean } & ClientError);
 
 export { draftCarriesSend, MIN_MATCH_CHARS } from "./draft-match";
 
@@ -213,6 +225,7 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
     // password means the operator needs one Enter, not a retry, and a retry would type a second copy.
     return {
       status: "stalled",
+      clientError: "reply_password_typed",
       error:
         "That's a password prompt — it shows nothing as you type, so the text can't be confirmed and nothing was submitted. What you typed is already in the pane.",
       noEcho: lastSeen,
@@ -220,6 +233,7 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
   }
   return {
     status: "stalled",
+    clientError: "reply_message_not_received",
     error:
       "Message didn't reach the input box — a dialog may be waiting, and if you were answering it by key that key likely landed. Nothing was submitted.",
   };
@@ -290,8 +304,15 @@ async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promi
     // ever work, because the evidence this guard needs is exactly what the prompt is refusing to show
     // (#103). Hand the prompt itself back so the caller can say so and offer "Type".
     const noEcho = detectNoEchoPrompt(seen);
-    if (noEcho !== null) return blind({ status: "blocked", error: NO_ECHO, noEcho });
-    return blind({ status: "blocked", error: NO_BOX });
+    if (noEcho !== null) {
+      return blind({
+        status: "blocked",
+        error: NO_ECHO,
+        clientError: "reply_password_blocked",
+        noEcho,
+      });
+    }
+    return blind({ status: "blocked", error: NO_BOX, clientError: "reply_no_input_box" });
   }
 
   // The region the read's `true` was true OF. Computed here, from the same parse `composerReady` just
@@ -324,6 +345,7 @@ async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promi
       }
       return {
         status: "blocked",
+        clientError: "reply_input_left_during_clear",
         error:
           "The agent's input box left the screen while its input line was being cleared — a menu or dialog is probably up. Your message wasn't typed.",
       };
@@ -359,6 +381,7 @@ async function submitOnly(args: GuardedReplyArgs): Promise<ReplyOutcome> {
     // the bridge's own partial-failure case. Tell the caller not to resend.
     return {
       status: "error",
+      clientError: "reply_submit_failed_after_typing",
       error: "typed into the pane but not submitted — check the pane before resending",
       textDelivered: true,
     };

@@ -132,7 +132,11 @@ export async function submitPreviewNote(
   // The input must be FOCUSED before anything else is sent — early keys are misrouted (verified).
   // On timeout we stop dead: a blind Escape could cancel the whole dialog if `n` never landed.
   if ((await pollDialog(target(args), editing)) !== "ok") {
-    return { status: "error", error: "Note input didn't open — check the pane" };
+    return {
+      status: "error",
+      error: "Note input didn't open — check the pane",
+      clientError: "note_input_not_open",
+    };
   }
 
   try {
@@ -149,7 +153,11 @@ export async function submitPreviewNote(
       if (
         (await pollDialog(target(args), (m) => editing(m) && m.note.text === "")) !== "ok"
       ) {
-        return { status: "error", error: "Couldn't clear the existing note — check the pane" };
+        return {
+          status: "error",
+          error: "Couldn't clear the existing note — check the pane",
+          clientError: "note_clear_failed",
+        };
       }
     }
     if (text.length > 0) {
@@ -162,7 +170,11 @@ export async function submitPreviewNote(
         (m) => editing(m) && m.note.text.length > 0 && text.endsWith(m.note.text),
       );
       if (landed !== "ok") {
-        return { status: "error", error: "Note text didn't arrive — check the pane" };
+        return {
+          status: "error",
+          error: "Note text didn't arrive — check the pane",
+          clientError: "note_not_received",
+        };
       }
     }
     // Blur, keeping the text. Verified (the swallowed-ESC hazard above). The ONLY safe reason to
@@ -181,7 +193,11 @@ export async function submitPreviewNote(
       if (blurred === "drifted") return { status: "changed" }; // no second Escape at a successor
       // "timeout": our dialog is still editing — the ESC was likely swallowed. Retry once.
     }
-    return { status: "error", error: "Note input didn't close — check the pane" };
+    return {
+      status: "error",
+      error: "Note input didn't close — check the pane",
+      clientError: "note_input_not_closed",
+    };
   } catch (e) {
     return { status: "error", error: e instanceof Error ? e.message : String(e) };
   }

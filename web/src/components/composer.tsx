@@ -8,6 +8,7 @@ import { Check, ImagePlus, Keyboard, Loader2, Send, Settings2, Slash, Terminal, 
 import type { DisplayPrefs } from "@/hooks/use-display-prefs";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { useDirectTyping } from "@/hooks/use-direct-typing";
+import { localizeClientError } from "@/lib/client-errors";
 import { setStatus } from "@/lib/status";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -283,10 +284,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // protecting, and over-guarding just trains you to double-tap through it reflexively.
   function requestDrawer(next: ComposerDrawer) {
     if (drawer === "keys" && next !== "keys" && queuedKeys > 0 && !discardConfirm.confirm("discard")) {
-      setStatus(
-        `Tap again to discard ${queuedKeys} queued key${queuedKeys === 1 ? "" : "s"}`,
-        "info",
-      );
+      setStatus(translate("composer.discardQueuedKeys", { count: queuedKeys }), "info");
       return;
     }
     discardConfirm.reset();
@@ -617,7 +615,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         // A password prompt gets the notice AND keeps the override: the notice explains the screen and
         // offers the control that works, the override stays for the case where the detection is wrong.
         noticeNoEcho(res.noEcho !== undefined ? { prompt: res.noEcho, typed: false } : null);
-        setStatus(translate("composer.typeAnywayHint", { error: res.error }), "error");
+        setStatus(
+          translate("composer.typeAnywayHint", { error: localizeClientError(res) }),
+          "error",
+        );
         return false;
       } else {
         // "stalled" = the text never reached the input box, so NO submit key was sent (a dialog was
@@ -634,7 +635,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             ? { prompt: res.noEcho, typed: true }
             : null,
         );
-        setStatus(res.error, "error");
+        setStatus(localizeClientError(res), "error");
         return false;
       }
     } catch (e) {

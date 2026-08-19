@@ -110,7 +110,9 @@ export async function submitPromptFeedback(
   const row = args.prompt.feedback;
   if (!row || row.focused || row.text !== "") return { status: "changed" };
   const text = sanitizeTypedText(args.text, FEEDBACK_MAX_LENGTH);
-  if (text.length === 0) return { status: "error", error: "Nothing to send" };
+  if (text.length === 0) {
+    return { status: "error", error: "Nothing to send", clientError: "feedback_empty" };
+  }
 
   const guarded = await guardDialog(target(args));
   if (!guarded.ok) return guarded.result;
@@ -131,7 +133,11 @@ export async function submitPromptFeedback(
   const focusedAndEmpty = (m: PromptModel) =>
     promptsSameIdentity(m, args.prompt) && (m.feedback?.focused ?? false) && m.feedback?.text === "";
   if ((await pollDialog(target(args), focusedAndEmpty)) !== "ok") {
-    return { status: "error", error: "The feedback box didn't open — check the pane" };
+    return {
+      status: "error",
+      error: "The feedback box didn't open — check the pane",
+      clientError: "feedback_input_not_open",
+    };
   }
 
   try {
@@ -147,7 +153,11 @@ export async function submitPromptFeedback(
       (m.feedback?.focused ?? false) &&
       m.feedback?.text === text;
     if ((await pollDialog(target(args), landed)) !== "ok") {
-      return { status: "error", error: "The feedback didn't arrive — nothing was submitted" };
+      return {
+        status: "error",
+        error: "The feedback didn't arrive — nothing was submitted",
+        clientError: "feedback_not_received",
+      };
     }
     // The Enter is the only irreversible write in this flow — it rejects a plan and puts words in the
     // agent's mouth — so it is also the one that must not go out unbound. Re-read, re-check, and hand

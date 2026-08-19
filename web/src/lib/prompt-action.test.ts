@@ -169,7 +169,7 @@ describe("submitPromptFeedback — digit → verify focus → type → verify te
       .mockResolvedValueOnce(paneWith(buffer({ focused: true })))
       .mockResolvedValue(paneWith(buffer({ focused: true, text: text.slice(0, -6), wrapAt: 30 })));
     const res = await submitPromptFeedback({ ...base, prompt: model(), text });
-    expect(res.status).toBe("error");
+    expect(res).toMatchObject({ status: "error", clientError: "feedback_not_received" });
     expect(mockSendKeys.mock.calls.map((c) => c[1])).toEqual([["3"]]); // no Enter
   });
 
@@ -233,7 +233,7 @@ describe("submitPromptFeedback — the states it refuses BEFORE touching the pan
 
   it("refuses empty text without sending anything", async () => {
     const res = await submitPromptFeedback({ ...base, prompt: model(), text: "   " });
-    expect(res.status).toBe("error");
+    expect(res).toMatchObject({ status: "error", clientError: "feedback_empty" });
     expect(mockSendKeys).not.toHaveBeenCalled();
   });
 
@@ -253,7 +253,7 @@ describe("submitPromptFeedback — the stopping points once it has started writi
       .mockResolvedValueOnce(paneWith(buffer())) // entry guard
       .mockResolvedValue(paneWith(buffer())); // focus never arrives
     const res = await submitPromptFeedback({ ...base, prompt: model(), text: "hi" });
-    expect(res.status).toBe("error");
+    expect(res).toMatchObject({ status: "error", clientError: "feedback_input_not_open" });
     expect(mockSendReply).not.toHaveBeenCalled();
     expect(mockSendKeys.mock.calls).toEqual([["w1:p1", ["3"], undefined, model().signature]]);
   });
@@ -265,7 +265,7 @@ describe("submitPromptFeedback — the stopping points once it has started writi
       .mockResolvedValueOnce(paneWith(buffer()))
       .mockResolvedValue(paneWith(buffer({ focused: true }))); // focused, but the box stays empty
     const res = await submitPromptFeedback({ ...base, prompt: model(), text: "hi" });
-    expect(res.status).toBe("error");
+    expect(res).toMatchObject({ status: "error", clientError: "feedback_not_received" });
     expect(mockSendReply).toHaveBeenCalledTimes(1);
     expect(mockSendKeys.mock.calls.map((c) => c[1])).toEqual([["3"]]); // no Enter
   });

@@ -11,16 +11,17 @@
 import { fetchPane } from "../api";
 import { parseAnsi } from "../ansi";
 import { splitLines, type StyledLine } from "../blocks";
+import type { ClientError } from "../client-errors";
 
 /**
  * The canonical result of a guarded action. `sent` = the keystrokes went through; `changed` = the
  * guard rejected the tap (the pane drifted underfoot) and the caller should refresh; `error` = a
- * transport/RPC failure the caller surfaces verbatim.
+ * transport/RPC failure surfaced verbatim, or a coded Collie-owned failure localized by the caller.
  */
 export type ActionResult =
   | { status: "sent" }
   | { status: "changed" }
-  | { status: "error"; error: string };
+  | ({ status: "error" } & ClientError);
 
 /**
  * What {@link entryGuard} returns. Discriminated on `ok`, the same shape the bridge side uses for
