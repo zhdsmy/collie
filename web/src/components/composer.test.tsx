@@ -1866,9 +1866,18 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
 });
 
 describe("Composer — display prefs behind the gear", () => {
-  it("keeps the Display gear inset from the panel edge", () => {
+  it("lets the labelled controls shrink so the Display gear stays inside the panel", () => {
     renderComposer();
-    expect(screen.getByRole("button", { name: "Display settings" })).toHaveClass("mr-1");
+    const gear = screen.getByRole("button", { name: "Display settings" });
+    const row = gear.parentElement;
+    expect(row).toHaveClass("min-w-0", "gap-1");
+    expect(gear).toHaveClass("mr-1", "shrink-0");
+    for (const button of Array.from(row!.querySelectorAll("button")).filter(
+      (button) => button !== gear,
+    )) {
+      expect(button).toHaveClass("min-w-0", "flex-auto", "shrink", "overflow-hidden");
+      expect(button.querySelector("span")).toHaveClass("min-w-0", "truncate");
+    }
   });
 
   it("the View row is gone; wrap/raw/font live behind the Display gear as labelled controls", async () => {

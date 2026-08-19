@@ -845,20 +845,23 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             keeping it narrow leaves the labelled buttons their width on a 390px phone. Compact
             keyboard mode yields the whole row while the software keyboard provides input controls. */}
         {!compactKeyboard && (
-          <div className="mb-2 flex items-center gap-2">
+          <div className="mb-2 flex min-w-0 items-center gap-1">
           {/* Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to open, tap
               again to close. aria-expanded ties each to the dock; secondary variant marks it pressed
               while open. Both share the single-valued `drawer`, so opening one closes the other. */}
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 flex-1 gap-1.5", drawer === "keys" ? CONTROL_ON : CONTROL_OFF)}
+              className={cn(
+                "h-8 min-w-0 flex-auto shrink gap-1 overflow-hidden px-0.5 text-xs",
+                drawer === "keys" ? CONTROL_ON : CONTROL_OFF,
+              )}
             disabled={locked}
             aria-expanded={drawer === "keys"}
             onClick={() => requestDrawer(drawer === "keys" ? null : "keys")}
           >
-            <Keyboard className="size-4" />
-            {translate("composer.keys")}
+              <Keyboard className="size-4 shrink-0" />
+              <span className="min-w-0 truncate">{translate("composer.keys")}</span>
           </Button>
           {/* "Type into terminal" lives HERE, beside Keys, rather than on the Send button.
               It is the same problem split in half: Keys exists because the phone keyboard cannot
@@ -874,7 +877,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 flex-1 gap-1.5", direct.active ? CONTROL_ON : CONTROL_OFF)}
+              className={cn(
+                "h-8 min-w-0 flex-auto shrink gap-1 overflow-hidden px-0.5 text-xs",
+                direct.active ? CONTROL_ON : CONTROL_OFF,
+              )}
             disabled={locked || sending}
             aria-pressed={direct.active}
             aria-label={translate("composer.directAction")}
@@ -890,30 +896,33 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               direct.activate();
             }}
           >
-            <Terminal className="size-4" />
-            {translate("composer.type")}
+              <Terminal className="size-4 shrink-0" />
+              <span className="min-w-0 truncate">{translate("composer.type")}</span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className={cn("h-8 flex-1 gap-1.5", drawer === "quick" ? CONTROL_ON : CONTROL_OFF)}
+              className={cn(
+                "h-8 min-w-0 flex-auto shrink gap-1 overflow-hidden px-0.5 text-xs",
+                drawer === "quick" ? CONTROL_ON : CONTROL_OFF,
+              )}
             disabled={locked}
             aria-expanded={drawer === "quick"}
             onClick={() => requestDrawer(drawer === "quick" ? null : "quick")}
           >
-            <Zap className="size-4" />
-            {translate("composer.quick")}
+              <Zap className="size-4 shrink-0" />
+              <span className="min-w-0 truncate">{translate("composer.quick")}</span>
           </Button>
           {commands.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 flex-1 gap-1.5 text-muted-foreground"
+                className="h-8 min-w-0 flex-auto shrink gap-1 overflow-hidden px-0.5 text-xs text-muted-foreground"
               disabled={locked}
               onClick={() => requestDrawer("cmd")}
             >
-              <Slash className="size-4" />
-              {translate("composer.agent")}
+                <Slash className="size-4 shrink-0" />
+                <span className="min-w-0 truncate">{translate("composer.agent")}</span>
             </Button>
           )}
           {/* Display prefs. Not gated on `locked`: wrap/font/raw-terminal are local view state, so a
