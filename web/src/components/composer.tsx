@@ -842,10 +842,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             commands). Display prefs used to sit on a second, permanent icon-only "View" row above
             this one; folding them behind the ⚙ gives the mirror that row back. The gear is icon-only
             and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
-            keeping it narrow leaves the labelled buttons their width on a 390px phone. At phone
-            widths the decorative action glyphs yield to the full labels, which keeps longer
-            translations readable without adding a second row. Compact keyboard mode yields the
-            whole row while the software keyboard provides input controls. */}
+            keeping it narrow leaves the labelled buttons their width on a 390px phone. The labelled
+            controls override Button's icon-aware padding as well as its regular padding; otherwise
+            `:has(>svg)` silently adds 20px per control and truncates longer translations. Compact
+            keyboard mode yields the whole row while the software keyboard provides input controls. */}
         {!compactKeyboard && (
           <div className="mb-2 flex min-w-0 items-center gap-1">
           {/* Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to open, tap
@@ -855,14 +855,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             variant="ghost"
             size="sm"
               className={cn(
-                "h-8 min-w-0 flex-auto shrink gap-1 overflow-hidden px-0.5 text-xs",
+                "h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs has-[>svg]:px-0",
                 drawer === "keys" ? CONTROL_ON : CONTROL_OFF,
               )}
             disabled={locked}
             aria-expanded={drawer === "keys"}
             onClick={() => requestDrawer(drawer === "keys" ? null : "keys")}
           >
-              <Keyboard className="size-4 shrink-0 [@media(max-width:480px)]:hidden" />
+              <Keyboard className="size-4 shrink-0" />
               <span className="min-w-0 truncate">{translate("composer.keys")}</span>
           </Button>
           {/* "Type into terminal" lives HERE, beside Keys, rather than on the Send button.
@@ -880,7 +880,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             variant="ghost"
             size="sm"
               className={cn(
-                "h-8 min-w-0 flex-auto shrink gap-1 overflow-hidden px-0.5 text-xs",
+                "h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs has-[>svg]:px-0",
                 direct.active ? CONTROL_ON : CONTROL_OFF,
               )}
             disabled={locked || sending}
@@ -898,32 +898,32 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               direct.activate();
             }}
           >
-              <Terminal className="size-4 shrink-0 [@media(max-width:480px)]:hidden" />
+              <Terminal className="size-4 shrink-0" />
               <span className="min-w-0 truncate">{translate("composer.type")}</span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
               className={cn(
-                "h-8 min-w-0 flex-auto shrink gap-1 overflow-hidden px-0.5 text-xs",
+                "h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs has-[>svg]:px-0",
                 drawer === "quick" ? CONTROL_ON : CONTROL_OFF,
               )}
             disabled={locked}
             aria-expanded={drawer === "quick"}
             onClick={() => requestDrawer(drawer === "quick" ? null : "quick")}
           >
-              <Zap className="size-4 shrink-0 [@media(max-width:480px)]:hidden" />
+              <Zap className="size-4 shrink-0" />
               <span className="min-w-0 truncate">{translate("composer.quick")}</span>
           </Button>
           {commands.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
-                className="h-8 min-w-0 flex-auto shrink gap-1 overflow-hidden px-0.5 text-xs text-muted-foreground"
+                className="h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs text-muted-foreground has-[>svg]:px-0"
               disabled={locked}
               onClick={() => requestDrawer("cmd")}
             >
-                <Slash className="size-4 shrink-0 [@media(max-width:480px)]:hidden" />
+                <Slash className="size-4 shrink-0" />
                 <span className="min-w-0 truncate">{translate("composer.agent")}</span>
             </Button>
           )}

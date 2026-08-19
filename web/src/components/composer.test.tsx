@@ -1866,7 +1866,7 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
 });
 
 describe("Composer — display prefs behind the gear", () => {
-  it("keeps full labels available at phone widths while the Display gear stays inside", () => {
+  it("keeps labelled icons compact so full labels and the Display gear fit inside", () => {
     renderComposer();
     const gear = screen.getByRole("button", { name: "Display settings" });
     const row = gear.parentElement;
@@ -1875,9 +1875,18 @@ describe("Composer — display prefs behind the gear", () => {
     for (const button of Array.from(row!.querySelectorAll("button")).filter(
       (button) => button !== gear,
     )) {
-      expect(button).toHaveClass("min-w-0", "flex-auto", "shrink", "overflow-hidden");
+      expect(button).toHaveClass(
+        "min-w-0",
+        "flex-auto",
+        "shrink",
+        "gap-0.5",
+        "overflow-hidden",
+        "px-0",
+        "has-[>svg]:px-0",
+      );
+      expect(button).not.toHaveClass("has-[>svg]:px-2.5");
       expect(button.querySelector("span")).toHaveClass("min-w-0", "truncate");
-      expect(button.querySelector("svg")).toHaveClass("[@media(max-width:480px)]:hidden");
+      expect(button.querySelector("svg")).toHaveClass("size-4", "shrink-0");
     }
   });
 
