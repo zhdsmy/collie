@@ -303,6 +303,29 @@ A pane your rows match shows only your rows (narrowest row wins,
 two-tap confirm. No restart — edits are live. Verify: open a pane, tap **/**, your rows are on the
 first screen. Syntax error? `journalctl --user -u collie -n 20` names the line.
 
+### Your own key presets
+
+The Keys tray's **Presets** row is yours to replace, in `keys.toml` next to `commands.toml`:
+
+```bash
+cp keys.toml.example "$(herdr plugin config-dir herdr.collie)/keys.toml"
+```
+
+```toml
+[[keys]]
+scope = "claude"             # optional; omit for every pane
+label = "Yes"
+keys = ["Down", "Enter"]     # several chords go out as one batch
+```
+
+A pane your rows match shows only your presets, in place of the shipped Ctrl C/D/U/R/L/Z
+([ADR 0018](./.adr/0018-operator-command-rows-replace-the-catalog.md)). Add `danger = true` for a
+two-tap confirm. The rest of the tray — Esc, arrows, Enter/Tab/Space, modifiers, digits, F1–F12 —
+is fixed and not configurable. Chords are herdr's spelling: `ctrl+c` (never `C-c`), `shift+tab`,
+`ctrl+F7`; `PageUp`/`Home`/`End`/`Delete` are not accepted. No restart — edits are live. Verify:
+open a pane, tap **Keys → Presets**, your buttons are there. Rejected row?
+`journalctl --user -u collie -n 20` names it and why.
+
 ### Multi-session
 
 `COLLIE_MULTI_SESSION=on` (the default) discovers and serves every named Herdr session under your
@@ -386,8 +409,18 @@ scripts/collie-ctl.sh update    # or: herdr plugin action invoke update --plugin
 
 It advances the checkout, rebuilds the UI and restarts the bridge (re-execing itself, so it's safe
 even when the update rewrites the script). Confirm via the footer build stamp. Pinned to a version
-with `--ref`? Keep refreshing with `herdr plugin install --ref …` — `update` always goes to the
-latest.
+with `--ref`? Keep refreshing with `herdr plugin install --ref …`.
+
+**`update` goes to the newest release of the major you are on, and never crosses one.** A major
+means you have to change something, so it is never inherited from a routine update: the command says
+a new major is out and names the one that takes it —
+
+```bash
+herdr plugin action invoke update-major --plugin herdr.collie   # or: scripts/collie-ctl.sh update --major
+```
+
+The flag is the whole consent; there is no prompt, because a Herdr action has no terminal to answer
+one on. The reasoning is [ADR 0020](./.adr/0020-a-major-upgrade-is-consented-by-flag.md).
 
 Fails with *"You are not currently on a branch"*? That's a GitHub install made before 0.23.1, and
 [Troubleshooting](#troubleshooting) has the one-time repair.
@@ -414,6 +447,18 @@ One command handles both ([ADR 0006](./.adr/0006-update-advances-the-checkout-he
 By hand: frontend (`web/`) → `collie-ctl.sh build` (live, no restart — served from disk); backend
 (`bridge/`) → `systemctl --user restart collie`. Run `scripts/install-hooks.sh` once to enable the
 repo's pre-commit / pre-push checks.
+
+## When 1.0 arrives
+
+Collie 1.0.0 will be a MAJOR release: something about your setup will need your attention before
+you take it. This release is the gatekeeper that makes that safe:
+
+- A routine `update` now follows release tags **within major 0** — it will never carry you into
+  1.0 on its own. (Older versions update straight to whatever the default branch holds; staying
+  below 0.32.0 means staying unprotected.)
+- When 1.0.0 is published, the update banner announces it separately from routine updates. Read
+  its release notes first, then consent to the crossing with:
+  `herdr plugin action invoke update-major --plugin herdr.collie`
 
 ### Surviving reboots
 

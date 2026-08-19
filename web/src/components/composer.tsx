@@ -20,7 +20,8 @@ import { DisplayPrefsContent } from "@/components/display-prefs";
 import { SectionLabel } from "@/components/ui/section-label";
 import * as api from "@/lib/api";
 import { commandsFor } from "@/lib/agent-commands";
-import { useOperatorCommands } from "@/lib/operator-commands";
+import { useOperatorCommands, useOperatorKeys } from "@/lib/operator-config";
+import { ctrlPresetsFor } from "@/lib/operator-keys";
 import { isDestructiveInput } from "@/lib/destructive";
 import { clearDraft, fitsDraftStore, loadDraft, saveDraft } from "@/lib/drafts";
 import { useHoldReload } from "@/lib/reload-guard";
@@ -467,6 +468,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // visibility test here and the palette's own list below (same call, same arguments).
   const operatorCommands = useOperatorCommands();
   const commands = commandsFor(agent, operatorCommands);
+  // The Keys tray's preset row, resolved the same way from the same one-shot read of /api/config.
+  const keyPresets = ctrlPresetsFor(agent, useOperatorKeys());
 
   function focusInputImmediately() {
     const el = inputRef.current;
@@ -813,7 +816,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             returns them with their state intact after the keyboard closes. */}
         {!compactKeyboard && drawer === "keys" && (
           <ComposerDock title={translate("composer.keys")} onClose={closeDrawer}>
-            <NavTray onSend={pressKeys} onQueueChange={setQueuedKeys} disabled={locked} />
+            <NavTray
+              onSend={pressKeys}
+              presets={keyPresets}
+              onQueueChange={setQueuedKeys}
+              disabled={locked}
+            />
           </ComposerDock>
         )}
         {!compactKeyboard && drawer === "quick" && (

@@ -24,7 +24,7 @@ export function shortCwd(cwd: string, max = 32): string {
 
   const kept = [last];
   let len = last.length + 1; // + the leading "…/"
-  for (const seg of segments.reverse()) {
+  for (const seg of segments.toReversed()) {
     if (len + seg.length + 1 > max) break;
     kept.unshift(seg);
     len += seg.length + 1;
@@ -71,4 +71,14 @@ export function timeAgo(ts: number, now: number = Date.now()): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return i18n.t("time.hourAgo", { count: hrs });
   return i18n.t("time.dayAgo", { count: Math.floor(hrs / 24) });
+}
+
+/**
+ * Wall-clock "HH:MM" in the phone's own locale and timezone — for "last seen 14:32" on a disconnected
+ * render. A clock time, not an age, because that is the question being answered: an age has to be
+ * recomputed to stay true, and a screen showing cached data may sit there for minutes without a
+ * re-render. `14:32` is still `14:32` an hour later.
+ */
+export function clockTime(ts: number): string {
+  return new Date(ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
