@@ -424,12 +424,18 @@ export function sendKeys(
   session?: string,
   expectedPrompt?: string,
 ): Promise<ActionResponse> {
+  // Herdr 0.8.0 acknowledges shift+Tab but writes a bare Tab byte (09) to the PTY. Expand the
+  // logical key to the legacy BackTab sequence instead; keeping it in this one keys request
+  // preserves the ordering and atomicity of composed queues.
+  const encodedKeys = keys.flatMap((key) =>
+    key.toLowerCase() === "shift+tab" ? ["Escape", "[", "Z"] : [key],
+  );
   return req<ActionResponse>(
     withSession(`/api/pane/${encodeURIComponent(paneId)}/keys`, session),
     {
       method: "POST",
       body: JSON.stringify({
-        keys,
+        keys: encodedKeys,
         ...(expectedPrompt !== undefined ? { expected_prompt: expectedPrompt } : {}),
       }),
     },

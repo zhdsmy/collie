@@ -126,11 +126,13 @@ describe("api client", () => {
     await sendReply("w1:p1", "hi", true, undefined, "Approve?\n1. Yes");
     await sendKeys("w1:p1", ["1"], undefined, "Approve?\n1. Yes");
     await sendKeys("w1:p1", ["Left"]);
+    await sendKeys("w1:p1", ["Left", "shift+Tab", "Enter"]);
 
     expect(bodies).toEqual([
       { text: "hi", submit: true, expected_prompt: "Approve?\n1. Yes" },
       { keys: ["1"], expected_prompt: "Approve?\n1. Yes" },
       { keys: ["Left"] },
+      { keys: ["Left", "Escape", "[", "Z", "Enter"] },
     ]);
   });
 

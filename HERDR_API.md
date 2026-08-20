@@ -147,7 +147,9 @@ against a real pane). Empirically enumerated against Herdr 0.7.0 — it is **NOT
   AskUserQuestion select.
 - **Modifier chords (join with `+`):** `ctrl+c`, `ctrl+u`, `ctrl+d`, `ctrl+l`, `ctrl+r`,
   `shift+tab`, `ctrl+left`, `alt+f`, … Modifiers: `ctrl` / `shift` / `alt` / `cmd` / `super`
-  (case-insensitive). This is the **same grammar as `config.toml [keys]`**.
+  (case-insensitive). This is the **same grammar as `config.toml [keys]`**. Herdr 0.8.0 accepts
+  `shift+tab` but emits bare Tab (`09`); Collie's web API expands that one chord to the equivalent
+  BackTab sequence `Escape`, `[`, `Z` (`1b 5b 5a`).
 - **Multi-modifier chords work, in any modifier order** (live-verified 2026-07-20 against 0.7.3 on
   a throwaway sandbox pane, with `PageUp` → `invalid_key` in the same run as proof the validator was
   active): `ctrl+shift+p` / `shift+ctrl+p`, `alt+shift+p` / `shift+alt+p`, triple

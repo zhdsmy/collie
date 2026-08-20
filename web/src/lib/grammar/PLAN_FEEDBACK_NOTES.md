@@ -178,9 +178,9 @@ Both were read back out of the agent's own transcript, not inferred from the scr
 
 ## Hazards for anyone automating this
 
-1. **`shift+tab` is approve-*with*-feedback, not approve.** It is also the key
-   [#89](https://github.com/AltanS/collie/issues/89) reports as not getting through, so only
-   deny-with-feedback is reachable from the phone today.
+1. **`shift+tab` is approve-*with*-feedback, not approve.** Herdr 0.8.0 acknowledges that logical
+   key but writes a bare Tab byte; Collie's API client expands it to the standard BackTab sequence
+   (`Escape`, `[`, `Z`) so it reaches the terminal (#89).
 2. **`Up` as a recovery keystroke is only verified on an empty / single-line field.** Whether it
    leaves a multi-line draft or merely moves the caret inside it was not measured — do not bake it
    into a keystroke plan on the strength of this document.
@@ -195,7 +195,7 @@ Both were read back out of the agent's own transcript, not inferred from the scr
 5. **Anything typed into the box that reads back as the placeholder reads as EMPTY.** Feedback whose
    text is exactly `Tell Claude what to change` would be typed, then fail its own read-back check and
    sit in the box unsubmitted. Fails safe; not worth a special case, but don't be surprised by it.
-6. **Approve-with-feedback is still out of reach.** `shift+tab` is the only key that keeps the plan
-   AND passes the note; until [#89](https://github.com/AltanS/collie/issues/89) clears, the phone can
-   only deny with feedback. Anyone adding the approve path should re-walk this document first — the
-   `Enter` and `shift+tab` results differ in the agent's transcript, not on screen.
+6. **Approve-with-feedback uses BackTab.** `shift+tab` is the only logical key that keeps the plan
+   AND passes the note. Collie's transport workaround expands it to `Escape`, `[`, `Z`; anyone
+   changing that path should re-walk this document because the `Enter` and BackTab results differ
+   in the agent's transcript, not on screen.
