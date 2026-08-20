@@ -25,7 +25,8 @@ interface DisplayPrefsContentProps {
   stepFontSize: (delta: number) => void;
   setRawTerminal: (raw: boolean) => void;
   setTapToFocus: (tapToFocus: boolean) => void;
-  setCompactKeyboard: (compactKeyboard: boolean) => void;
+  setKeepHeaderWhenTyping: (keepHeaderWhenTyping: boolean) => void;
+  setHideControlsWhenTyping: (hideControlsWhenTyping: boolean) => void;
 }
 
 // One settings row: name (+ optional explanation) on the left, control on the right. Module-level so
@@ -60,7 +61,8 @@ export function DisplayPrefsContent({
   stepFontSize,
   setRawTerminal,
   setTapToFocus,
-  setCompactKeyboard,
+  setKeepHeaderWhenTyping,
+  setHideControlsWhenTyping,
 }: DisplayPrefsContentProps) {
   const { t } = useTranslation();
   return (
@@ -92,15 +94,28 @@ export function DisplayPrefsContent({
         }
       />
       <Row
-        label={t("display.compactKeyboard")}
-        hint={t("display.compactKeyboardHint")}
-        htmlFor="pref-compact-keyboard"
+        label={t("display.keepHeaderWhenTyping")}
+        hint={t("display.keepHeaderWhenTypingHint")}
+        htmlFor="pref-keep-header-when-typing"
         control={
           <Switch
-            id="pref-compact-keyboard"
-            checked={prefs.compactKeyboard}
-            onCheckedChange={setCompactKeyboard}
-            aria-label={t("display.compactKeyboard")}
+            id="pref-keep-header-when-typing"
+            checked={prefs.keepHeaderWhenTyping}
+            onCheckedChange={setKeepHeaderWhenTyping}
+            aria-label={t("display.keepHeaderWhenTyping")}
+          />
+        }
+      />
+      <Row
+        label={t("display.hideControlsWhenTyping")}
+        hint={t("display.hideControlsWhenTypingHint")}
+        htmlFor="pref-hide-controls-when-typing"
+        control={
+          <Switch
+            id="pref-hide-controls-when-typing"
+            checked={prefs.hideControlsWhenTyping}
+            onCheckedChange={setHideControlsWhenTyping}
+            aria-label={t("display.hideControlsWhenTyping")}
           />
         }
       />

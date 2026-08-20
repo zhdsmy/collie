@@ -14,7 +14,8 @@ describe("useDisplayPrefs", () => {
       fontSize: 12,
       rawTerminal: false,
       tapToFocus: true,
-      compactKeyboard: true,
+      keepHeaderWhenTyping: true,
+      hideControlsWhenTyping: true,
     });
   });
 
@@ -40,7 +41,8 @@ describe("useDisplayPrefs", () => {
         fontSize: 14,
         rawTerminal: true,
         tapToFocus: false,
-        compactKeyboard: false,
+        keepHeaderWhenTyping: false,
+        hideControlsWhenTyping: true,
       }),
     );
     const { result } = renderHook(() => useDisplayPrefs());
@@ -49,7 +51,8 @@ describe("useDisplayPrefs", () => {
       fontSize: 14,
       rawTerminal: true,
       tapToFocus: false,
-      compactKeyboard: false,
+      keepHeaderWhenTyping: false,
+      hideControlsWhenTyping: true,
     });
   });
 
@@ -72,13 +75,31 @@ describe("useDisplayPrefs", () => {
     expect(reloaded.current.prefs.tapToFocus).toBe(false);
   });
 
-  it("persists compactKeyboard and reloads it on mount", () => {
+  it("persists keepHeaderWhenTyping and reloads it on mount", () => {
     const { result } = renderHook(() => useDisplayPrefs());
-    expect(result.current.prefs.compactKeyboard).toBe(true);
-    act(() => result.current.setCompactKeyboard(false));
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).compactKeyboard).toBe(false);
+    expect(result.current.prefs.keepHeaderWhenTyping).toBe(true);
+    act(() => result.current.setKeepHeaderWhenTyping(false));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).keepHeaderWhenTyping).toBe(false);
     const { result: reloaded } = renderHook(() => useDisplayPrefs());
-    expect(reloaded.current.prefs.compactKeyboard).toBe(false);
+    expect(reloaded.current.prefs.keepHeaderWhenTyping).toBe(false);
+    expect(reloaded.current.prefs.hideControlsWhenTyping).toBe(true);
+  });
+
+  it("persists hideControlsWhenTyping independently and reloads it on mount", () => {
+    const { result } = renderHook(() => useDisplayPrefs());
+    expect(result.current.prefs.hideControlsWhenTyping).toBe(true);
+    act(() => result.current.setHideControlsWhenTyping(false));
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).hideControlsWhenTyping).toBe(false);
+    const { result: reloaded } = renderHook(() => useDisplayPrefs());
+    expect(reloaded.current.prefs.keepHeaderWhenTyping).toBe(true);
+    expect(reloaded.current.prefs.hideControlsWhenTyping).toBe(false);
+  });
+
+  it("migrates the legacy compactKeyboard choice to both independent preferences", () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ compactKeyboard: false }));
+    const { result } = renderHook(() => useDisplayPrefs());
+    expect(result.current.prefs.keepHeaderWhenTyping).toBe(false);
+    expect(result.current.prefs.hideControlsWhenTyping).toBe(false);
   });
 
   // The storage key is deliberately not bumped for additive prefs: an older payload must keep every
@@ -91,7 +112,8 @@ describe("useDisplayPrefs", () => {
       fontSize: 15,
       rawTerminal: true,
       tapToFocus: true,
-      compactKeyboard: true,
+      keepHeaderWhenTyping: true,
+      hideControlsWhenTyping: true,
     });
   });
 
@@ -133,7 +155,8 @@ describe("useDisplayPrefs", () => {
       fontSize: 12,
       rawTerminal: false,
       tapToFocus: true,
-      compactKeyboard: true,
+      keepHeaderWhenTyping: true,
+      hideControlsWhenTyping: true,
     });
   });
 
@@ -145,7 +168,8 @@ describe("useDisplayPrefs", () => {
       fontSize: 12,
       rawTerminal: false,
       tapToFocus: true,
-      compactKeyboard: true,
+      keepHeaderWhenTyping: true,
+      hideControlsWhenTyping: true,
     });
   });
 });

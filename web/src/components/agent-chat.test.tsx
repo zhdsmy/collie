@@ -138,7 +138,7 @@ describe("AgentChat — header title block", () => {
   });
 });
 
-describe("AgentChat — compact keyboard layout", () => {
+describe("AgentChat — typing layout preferences", () => {
   afterEach(() => localStorage.clear());
 
   it("keeps the normal pane navigation and composer chrome when the keyboard is closed", () => {
@@ -167,10 +167,36 @@ describe("AgentChat — compact keyboard layout", () => {
     });
   });
 
-  it("leaves the header and input controls in their normal mode when the preference is off", () => {
+  it("can keep the header while leaving input controls visible", () => {
     localStorage.setItem(
       "collie:display-prefs:v4",
-      JSON.stringify({ compactKeyboard: false }),
+      JSON.stringify({ keepHeaderWhenTyping: true, hideControlsWhenTyping: false }),
+    );
+    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
+    renderChat({ tabs: fixtureTabs });
+
+    expect(screen.getByRole("banner")).toHaveClass("fixed");
+    expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
+  });
+
+  it("can hide input controls without keeping the header", () => {
+    localStorage.setItem(
+      "collie:display-prefs:v4",
+      JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: true }),
+    );
+    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
+    renderChat({ tabs: fixtureTabs });
+
+    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+    expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Keys" })).not.toBeInTheDocument();
+  });
+
+  it("leaves the header and input controls in their normal mode when both preferences are off", () => {
+    localStorage.setItem(
+      "collie:display-prefs:v4",
+      JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: false }),
     );
     vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
     renderChat({ tabs: fixtureTabs });
@@ -178,7 +204,7 @@ describe("AgentChat — compact keyboard layout", () => {
     expect(screen.getByRole("banner")).not.toHaveClass("fixed");
     expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
-    // Pane navigation still yields to the terminal independently of the compact chrome preference.
+    // Pane navigation still yields to the terminal independently of both chrome preferences.
     expect(screen.queryByText("Tabs")).not.toBeInTheDocument();
   });
 });

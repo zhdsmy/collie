@@ -125,10 +125,11 @@ export function AgentChat({
     stepFontSize,
     setRawTerminal,
     setTapToFocus,
-    setCompactKeyboard,
+    setKeepHeaderWhenTyping,
+    setHideControlsWhenTyping,
   } = useDisplayPrefs();
   const { open: keyboardOpen, offsetTop: keyboardViewportTop } = useKeyboardViewport();
-  const compactKeyboard = keyboardOpen && prefs.compactKeyboard;
+  const keepHeaderWhenTyping = keyboardOpen && prefs.keepHeaderWhenTyping;
   // Raw-terminal escape hatch: when on, every agent grammar is bypassed and the plain mirror shows,
   // so a mis-detected/mis-rendered dialog can always be driven by hand with the keys pad.
   const grammarsOn = !prefs.rawTerminal;
@@ -589,7 +590,7 @@ export function AgentChat({
         bridge={bridge}
         error={error}
         stalled={stalled}
-        fixed={compactKeyboard}
+        fixed={keepHeaderWhenTyping}
         fixedTop={keyboardViewportTop}
         onHome={onBack}
         override={
@@ -694,9 +695,9 @@ export function AgentChat({
         )}
       </AppHeader>
 
-      {/* A fixed keyboard-mode header leaves normal flow. Reserve the visual viewport's panned offset
+      {/* A fixed typing-mode header leaves normal flow. Reserve the visual viewport's panned offset
           plus the header's 60px + safe-area height so the visible terminal starts below it. */}
-      {compactKeyboard && (
+      {keepHeaderWhenTyping && (
         <div
           aria-hidden="true"
           data-testid="keyboard-header-spacer"
@@ -918,7 +919,8 @@ export function AgentChat({
             stepFontSize={stepFontSize}
             setRawTerminal={setRawTerminal}
             setTapToFocus={setTapToFocus}
-            setCompactKeyboard={setCompactKeyboard}
+            setKeepHeaderWhenTyping={setKeepHeaderWhenTyping}
+            setHideControlsWhenTyping={setHideControlsWhenTyping}
             onSent={onSent}
           />
         </div>

@@ -38,7 +38,7 @@ export interface ComposerHandle {
 }
 
 interface ComposerProps {
-  /** Shared keyboard state from AgentChat; controls compact chrome and safe-area geometry. */
+  /** Shared keyboard state from AgentChat; controls typing chrome and safe-area geometry. */
   keyboardOpen?: boolean;
   paneId: string;
   /** The session the pane lives in (undefined = primary) — scopes every write to the right Herdr. */
@@ -71,7 +71,8 @@ interface ComposerProps {
   stepFontSize: (delta: number) => void;
   setRawTerminal: (raw: boolean) => void;
   setTapToFocus: (tapToFocus: boolean) => void;
-  setCompactKeyboard: (compactKeyboard: boolean) => void;
+  setKeepHeaderWhenTyping: (keepHeaderWhenTyping: boolean) => void;
+  setHideControlsWhenTyping: (hideControlsWhenTyping: boolean) => void;
   /** Snap the mirror to the live tail (follow + revalidate + scroll) after a successful send. */
   onSent: () => void;
 }
@@ -177,14 +178,15 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     stepFontSize,
     setRawTerminal,
     setTapToFocus,
-    setCompactKeyboard,
+    setKeepHeaderWhenTyping,
+    setHideControlsWhenTyping,
     onSent,
   },
   ref,
 ) {
   const { t: translate } = useTranslation();
   const revalidator = useRevalidator();
-  const compactKeyboard = keyboardOpen && prefs.compactKeyboard;
+  const hideControlsWhenTyping = keyboardOpen && prefs.hideControlsWhenTyping;
   // Every write affordance is off when the pane is gone OR this device is read-only.
   const locked = gone || readOnly;
   // …and a ref alongside it, for the ONE caller that reads it after an await. `send()` checks
@@ -812,9 +814,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             mutually exclusive drawers is active renders here via the shared ComposerDock chrome. Keys
             mounts the NavTray (unmounts on close, so tab/queue reset each open); Quick mounts the two
             one-tap reply grids; Display mounts the labelled mirror prefs. Agent stays a covering
-            BottomSheet below (it's a palette, not a pad). Compact keyboard mode pauses the docks and
-            returns them with their state intact after the keyboard closes. */}
-        {!compactKeyboard && drawer === "keys" && (
+            BottomSheet below (it's a palette, not a pad). The hide-controls preference pauses the
+            docks and returns them with their state intact after the keyboard closes. */}
+        {!hideControlsWhenTyping && drawer === "keys" && (
           <ComposerDock title={translate("composer.keys")} onClose={closeDrawer}>
             <NavTray
               onSend={pressKeys}
@@ -824,7 +826,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
-        {!compactKeyboard && drawer === "quick" && (
+        {!hideControlsWhenTyping && drawer === "quick" && (
           <ComposerDock title={translate("composer.quick")} onClose={closeDrawer}>
             <QuickActionsContent
               onSend={(t) => send(t, false)}
@@ -835,7 +837,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
-        {!compactKeyboard && drawer === "display" && (
+        {!hideControlsWhenTyping && drawer === "display" && (
           <ComposerDock title={translate("composer.display")} onClose={closeDrawer}>
             <DisplayPrefsContent
               prefs={prefs}
@@ -843,7 +845,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               stepFontSize={stepFontSize}
               setRawTerminal={setRawTerminal}
               setTapToFocus={setTapToFocus}
-              setCompactKeyboard={setCompactKeyboard}
+              setKeepHeaderWhenTyping={setKeepHeaderWhenTyping}
+              setHideControlsWhenTyping={setHideControlsWhenTyping}
             />
           </ComposerDock>
         )}
@@ -853,9 +856,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
             keeping it narrow leaves the labelled buttons their width on a 390px phone. The labelled
             controls override Button's icon-aware padding as well as its regular padding; otherwise
-            `:has(>svg)` silently adds 20px per control and truncates longer translations. Compact
-            keyboard mode yields the whole row while the software keyboard provides input controls. */}
-        {!compactKeyboard && (
+            `:has(>svg)` silently adds 20px per control and truncates longer translations. The
+            hide-controls preference yields the whole row while the software keyboard provides input
+            controls. */}
+        {!hideControlsWhenTyping && (
           <div className="mb-2 flex min-w-0 items-center gap-1">
           {/* Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to open, tap
               again to close. aria-expanded ties each to the dock; secondary variant marks it pressed

@@ -30,8 +30,10 @@ export interface DisplayPrefs {
    * that IS ours to give.
    */
   tapToFocus: boolean;
-  /** Keep the pane header visible and hide composer controls while the software keyboard is open. */
-  compactKeyboard: boolean;
+  /** Keep the pane header visible while the software keyboard is open. */
+  keepHeaderWhenTyping: boolean;
+  /** Hide composer controls while the software keyboard is open. */
+  hideControlsWhenTyping: boolean;
 }
 
 // NOT bumped for additive prefs: loadPrefs defaults each field independently, so an older v4 payload
@@ -44,7 +46,8 @@ const DEFAULTS: DisplayPrefs = {
   fontSize: 12,
   rawTerminal: false,
   tapToFocus: true,
-  compactKeyboard: true,
+  keepHeaderWhenTyping: true,
+  hideControlsWhenTyping: true,
 };
 
 function clampFont(n: number): number {
@@ -58,13 +61,21 @@ function loadPrefs(): DisplayPrefs {
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed !== "object" || parsed === null) return DEFAULTS;
     const p = parsed as Record<string, unknown>;
+    const legacyCompactKeyboard =
+      typeof p.compactKeyboard === "boolean" ? p.compactKeyboard : undefined;
     return {
       wrap: typeof p.wrap === "boolean" ? p.wrap : DEFAULTS.wrap,
       fontSize: typeof p.fontSize === "number" ? clampFont(p.fontSize) : DEFAULTS.fontSize,
       rawTerminal: typeof p.rawTerminal === "boolean" ? p.rawTerminal : DEFAULTS.rawTerminal,
       tapToFocus: typeof p.tapToFocus === "boolean" ? p.tapToFocus : DEFAULTS.tapToFocus,
-      compactKeyboard:
-        typeof p.compactKeyboard === "boolean" ? p.compactKeyboard : DEFAULTS.compactKeyboard,
+      keepHeaderWhenTyping:
+        typeof p.keepHeaderWhenTyping === "boolean"
+          ? p.keepHeaderWhenTyping
+          : (legacyCompactKeyboard ?? DEFAULTS.keepHeaderWhenTyping),
+      hideControlsWhenTyping:
+        typeof p.hideControlsWhenTyping === "boolean"
+          ? p.hideControlsWhenTyping
+          : (legacyCompactKeyboard ?? DEFAULTS.hideControlsWhenTyping),
     };
   } catch {
     return DEFAULTS;
@@ -93,8 +104,10 @@ export interface UseDisplayPrefsReturn {
   setRawTerminal: (raw: boolean) => void;
   /** Toggle or explicitly set whether a mirror tap focuses the composer. */
   setTapToFocus: (tapToFocus: boolean) => void;
-  /** Toggle or explicitly set compact keyboard chrome. */
-  setCompactKeyboard: (compactKeyboard: boolean) => void;
+  /** Toggle or explicitly set whether the pane header stays visible while typing. */
+  setKeepHeaderWhenTyping: (keepHeaderWhenTyping: boolean) => void;
+  /** Toggle or explicitly set whether composer controls hide while typing. */
+  setHideControlsWhenTyping: (hideControlsWhenTyping: boolean) => void;
 }
 
 export function useDisplayPrefs(): UseDisplayPrefsReturn {
@@ -140,9 +153,17 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     });
   }, []);
 
-  const setCompactKeyboard = useCallback((compactKeyboard: boolean) => {
+  const setKeepHeaderWhenTyping = useCallback((keepHeaderWhenTyping: boolean) => {
     setPrefs((p) => {
-      const next: DisplayPrefs = { ...p, compactKeyboard };
+      const next: DisplayPrefs = { ...p, keepHeaderWhenTyping };
+      savePrefs(next);
+      return next;
+    });
+  }, []);
+
+  const setHideControlsWhenTyping = useCallback((hideControlsWhenTyping: boolean) => {
+    setPrefs((p) => {
+      const next: DisplayPrefs = { ...p, hideControlsWhenTyping };
       savePrefs(next);
       return next;
     });
@@ -155,6 +176,7 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     stepFontSize,
     setRawTerminal,
     setTapToFocus,
-    setCompactKeyboard,
+    setKeepHeaderWhenTyping,
+    setHideControlsWhenTyping,
   };
 }
