@@ -228,7 +228,7 @@ transcript above the dialog" is not available as corroborating evidence the way 
 omp's `agent_status` stays `idle` while a picker is up; only the `ask` tool flips it to `blocked`.
 **Nothing may gate on `blocked`.**
 
-## Codex chrome corpus (captured 2026-08-18, Codex CLI 0.147.0)
+## Codex chrome corpus (captured 2026-08-18 and 2026-08-21)
 
 These captures are Base64-encoded so their ANSI styling and CRLF bytes remain exact in Git.
 
@@ -236,6 +236,7 @@ These captures are Base64-encoded so their ANSI styling and CRLF bytes remain ex
 |---|---|---|
 | `codex--working-tail.ansi.b64` | Empty composer with a dim rotating prompt, followed by the styled model / `Working` / context status row | `working` |
 | `codex--idle-tail.ansi.b64` | Empty composer with a dim rotating prompt, followed by the styled model / `Ready` / approval / context / tasks status row | `idle` |
+| `codex--backgroundless-working-tail.ansi.b64` | macOS Codex 0.148.0 removed the composer's background fill and clips the narrow status suffix to `Context N…`; empty prompt + live styled row | `working` |
 
 ## Lessons already encoded here (don't re-learn them)
 

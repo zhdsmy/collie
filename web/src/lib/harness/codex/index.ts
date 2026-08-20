@@ -1,7 +1,7 @@
 import { lineText, type Block, type StyledLine } from "../../blocks";
 import { draftCarriesSend as textDraftCarriesSend } from "../../draft-match";
 import type { HarnessAdapter } from "../types";
-import { extractInputDraft, extractStatusLines, stripChrome } from "./chrome";
+import { extractInputDraft, extractStatusLines, hasComposer, stripChrome } from "./chrome";
 
 const COMPLETION_SUMMARY = /^─+\s+Worked for\b/;
 const DECORATIVE_RULE = /^─{40,}$/;
@@ -89,6 +89,9 @@ export const codexAdapter: HarnessAdapter = {
   buildBlocks: codexBuildBlocks,
   extractStatusLines,
   extractInputDraft,
+  // The reply path's pre-flight and post-type verifier now share the same captured Codex composer
+  // shape. A modal without that tail refuses message bytes before they can land in the wrong UI.
+  composerReady: hasComposer,
   // Codex consumes image paths and renders `[Image #N]`, so the generic literal verifier cannot
   // see the original send. Verify replacement tokens against this send's paths and caption.
   draftCarriesSend: imageDraftCarriesSend,

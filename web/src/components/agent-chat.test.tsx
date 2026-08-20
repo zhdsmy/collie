@@ -327,6 +327,16 @@ const STATUS_TEXT = [
   "  [Opus 4.8] ~/webapp · main",
   "  ← for agents",
 ].join("\n");
+const CODEX_STATUS_TEXT = [
+  "Welcome back!",
+  " ",
+  "\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m",
+  " ",
+  "  \x1b[38;2;246;226;183mgpt-5.6-sol xhigh\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;171;223;167m~/Documents/GitHub/zhdsmy/collie\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;200;169;238mReady\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;242;181;144mContext 100…\x1b[0m",
+].join("\n");
 
 // A minimal multi-question wizard tail (stepper header + current question) — enough for the REAL
 // wizard detector to lift it into the native WizardBlock inside AgentChat's mirror.
@@ -439,11 +449,9 @@ describe("AgentChat — prompt-select race guard wiring (frozen {text, revision}
   });
 });
 
-// The block grammars are provably scoped to the pane's own adapter (spec T8): an agent with no
-// adapter gets the plain raw mirror — no prompt-select buttons, no chrome stripping, no re-surfaced
-// status strip — because running Claude-tuned matchers on an unverified TUI could mis-lift or
-// mis-strip its output. codex is such an agent; omp has an adapter but lifts no dialog kind at all.
-describe("AgentChat — block-grammar scoping (an agent with no adapter)", () => {
+// The block grammars are provably scoped to the pane's own adapter (spec T8). Feeding one harness's
+// chrome to another stays raw, because cross-running matchers could mis-lift or mis-strip output.
+describe("AgentChat — block-grammar adapter scoping", () => {
   // A codex agent sharing the Claude fixture's ids, so only the agent kind differs from the default.
   const codexAgent = { ...fixtureAgents[0]!, agent: "codex" };
 
@@ -468,6 +476,16 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
     expect(row(second)).not.toBe(row(strip));
     expect(row(second)?.parentElement).toBe(row(strip)?.parentElement);
     expect(screen.queryByText(/❯/)).toBeNull(); // the input box was stripped off the mirror
+  });
+
+  it("re-surfaces the backgroundless macOS Codex statusline outside the terminal mirror", () => {
+    renderChat({ text: CODEX_STATUS_TEXT, agent: codexAgent });
+
+    const status = screen.getByText((_, element) =>
+      Boolean(element?.classList.contains("truncate") && element.textContent?.includes("Context 100…")),
+    );
+    expect(status.closest("pre")).toBeNull();
+    expect(screen.queryByText(/Ask Codex to do anything/)).toBeNull();
   });
 
   it("leaves a codex input-box buffer fully raw — no status strip, box kept in the mirror", () => {

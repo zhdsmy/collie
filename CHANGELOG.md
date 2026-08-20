@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.2] - 2026-08-21
+
+### Fixed
+
+- **macOS Codex 0.148 composer input works again and its statusline sits above Collie's composer.** Codex removed the native input area's background and clips narrow context text to `Context N…`; Collie now recognises that captured shape without weakening the plain-output fallback.
+
 ## [0.32.1] - 2026-08-20
 
 ### Fixed

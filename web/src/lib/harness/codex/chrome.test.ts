@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { parseAnsi } from "../../ansi";
 import { lineText, splitLines, type StyledLine } from "../../blocks";
 import { adapterFor, hasBlockGrammar } from "../registry";
-import { extractInputDraft, extractStatusLines, stripChrome } from "./chrome";
+import { extractInputDraft, extractStatusLines, hasComposer, stripChrome } from "./chrome";
 import { codexAdapter, codexBuildBlocks, imageDraftCarriesSend } from ".";
 
 const PANES_DIR = join(import.meta.dirname, "..", "..", "..", "fixtures", "panes");
@@ -39,6 +39,16 @@ function composerBuffer(
   return lines(["earlier output", painted(" ".repeat(20)), prompt, ...continuation, bottom, status].join("\n"));
 }
 
+function backgroundlessComposerBuffer(draft: string, continuation: string[] = []): StyledLine[] {
+  const prompt = `\x1b[1m›\x1b[0m ${draft}`;
+  const status =
+    "  \x1b[38;2;246;226;183mgpt-5.6-sol xhigh\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;171;223;167m~/Documents/GitHub/zhdsmy/collie\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;200;169;238mReady\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;242;181;144mContext 100…\x1b[0m";
+  return lines(["earlier output", " ", prompt, ...continuation, " ", status].join("\n"));
+}
+
 describe("Codex chrome", () => {
   it.each([
     ["codex--working-tail.ansi.b64", "Working", "Context 73% left"],
@@ -56,10 +66,31 @@ describe("Codex chrome", () => {
     expect(extractInputDraft(captured)).toBeNull();
   });
 
+  it("strips the captured macOS 0.148 borderless composer with clipped context", () => {
+    const captured = lines(
+      `earlier output\n \n${fixture("codex--backgroundless-working-tail.ansi.b64")}`,
+    );
+
+    expect(stripChrome(captured).map(lineText)).toEqual(["earlier output"]);
+    expect(extractStatusLines(captured).map(lineText)).toEqual([
+      expect.stringContaining("Context 6…"),
+    ]);
+    expect(hasComposer(captured)).toBe(true);
+    expect(extractInputDraft(captured)).toBeNull();
+  });
+
   it("extracts a typed draft and joins wrapped composer rows", () => {
     expect(extractInputDraft(composerBuffer("修复", { continuation: ["这个问题"] }))).toBe(
       "修复 这个问题",
     );
+  });
+
+  it("extracts a wrapped draft from the borderless macOS composer", () => {
+    const captured = backgroundlessComposerBuffer("修复", ["这个问题"]);
+
+    expect(extractInputDraft(captured)).toBe("修复 这个问题");
+    expect(hasComposer(captured)).toBe(true);
+    expect(stripChrome(captured).map(lineText)).toEqual(["earlier output"]);
   });
 
   it.each([
@@ -167,12 +198,14 @@ describe("Codex chrome", () => {
       ),
     );
     expect(stripChrome(lookalike)).toBe(lookalike);
+    expect(hasComposer(lookalike)).toBe(false);
   });
 
   it("registers Codex's raw-only block pipeline", () => {
     const captured = lines(`earlier output\n${fixture("codex--idle-tail.ansi.b64")}`);
     expect(adapterFor("codex")).toBe(codexAdapter);
     expect(hasBlockGrammar("codex")).toBe(true);
+    expect(codexAdapter.composerReady?.(captured)).toBe(true);
     expect(codexBuildBlocks(captured)).toEqual([
       { kind: "raw", lines: [expect.objectContaining({ segments: expect.any(Array) })] },
     ]);

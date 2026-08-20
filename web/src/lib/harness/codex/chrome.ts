@@ -3,7 +3,7 @@ import { isBlank, lineText, trimTrailingBlank, type StyledLine } from "../../blo
 
 const PROMPT_MARKER = "›";
 const MAX_COMPOSER_LINES = 100;
-const CONTEXT_FIELD = /(?:^|\s)Context \d+% left(?:\s|$)/;
+const CONTEXT_FIELD = /(?:^|\s)Context \d+(?:% left|…)(?:\s|$)/;
 const QUEUE_HINT = /^tab to queue message$/i;
 const QUEUE_CONTEXT = /^\d+% context left$/i;
 const QUEUE_STATUS = /^tab to queue message\s+\d+% context left$/i;
@@ -31,6 +31,28 @@ function uniformBackground(line: StyledLine): string | null {
 
 function startsWithPrompt(line: StyledLine): boolean {
   return lineText(line).trimStart().startsWith(PROMPT_MARKER);
+}
+
+function hasBoldPromptMarker(line: StyledLine): boolean {
+  let offset = 0;
+  const marker = lineText(line).search(/\S/);
+  if (marker === -1) return false;
+
+  for (const segment of line.segments) {
+    const end = offset + segment.text.length;
+    if (marker < end) {
+      return segment.text[marker - offset] === PROMPT_MARKER && segment.bold === true;
+    }
+    offset = end;
+  }
+
+  return false;
+}
+
+function coloredFieldCount(line: StyledLine): number {
+  return line.segments.filter(
+    (segment) => segment.text.trim().length > 0 && segment.fg !== undefined,
+  ).length;
 }
 
 function isRichStatusLine(line: StyledLine): boolean {
@@ -71,7 +93,37 @@ function locateComposer(lines: StyledLine[]): ComposerMatch | null {
 
   const bottom = statusStart - 1;
   const background = uniformBackground(lines[bottom]!);
-  if (background === null || !isBlank(lineText(lines[bottom]!))) return null;
+  if (!isBlank(lineText(lines[bottom]!))) return null;
+
+  // Codex <=0.147 painted the whole composer with one background colour. Codex 0.148 on macOS
+  // removed that fill: the same shape is now a bold `›` between blank rows, followed by the styled
+  // status line. Keep the painted path exact, and require all three independent style/position
+  // anchors on the borderless path so ordinary output ending in similar words stays raw.
+  if (background === null) {
+    const richStatus = lines.slice(statusStart, end).find(isRichStatusLine);
+    if (richStatus !== undefined && coloredFieldCount(richStatus) < 2) return null;
+
+    const first = Math.max(1, bottom - MAX_COMPOSER_LINES);
+    for (let prompt = bottom - 1; prompt >= first; prompt--) {
+      if (!startsWithPrompt(lines[prompt]!) || !hasBoldPromptMarker(lines[prompt]!)) continue;
+
+      const top = prompt - 1;
+      if (!isBlank(lineText(lines[top]!)) || uniformBackground(lines[top]!) !== null) continue;
+      if (
+        lines
+          .slice(prompt, bottom)
+          .some(
+            (line, index) =>
+              uniformBackground(line) !== null || (index > 0 && startsWithPrompt(line)),
+          )
+      ) {
+        continue;
+      }
+
+      return { top, prompt, bottom, statusStart, statusEnd: end };
+    }
+    return null;
+  }
 
   let top = bottom;
   while (
@@ -124,6 +176,11 @@ export function stripChrome(lines: StyledLine[]): StyledLine[] {
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   const match = locateComposer(lines);
   return match === null ? [] : lines.slice(match.statusStart, match.statusEnd);
+}
+
+/** Whether Codex's own free-text composer is the live tail keyboard target. */
+export function hasComposer(lines: StyledLine[]): boolean {
+  return locateComposer(lines) !== null;
 }
 
 /** Return the visible Codex draft, excluding its dim rotating placeholder. */
