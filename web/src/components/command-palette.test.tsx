@@ -32,6 +32,11 @@ describe("CommandPalette", () => {
     expect(screen.queryByText("/doctor")).toBeNull();
   });
 
+  it("does not repeat the agent identity beneath the dock title", () => {
+    setup({ agent: "claude" });
+    expect(screen.queryByText("claude", { exact: true })).not.toBeInTheDocument();
+  });
+
   it("filters across the full catalog as you type", async () => {
     const user = userEvent.setup();
     setup();

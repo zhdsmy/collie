@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.10] - 2026-08-21
+
+### Fixed
+
+- **Agent command dock now has one title.** The redundant agent identity row beneath the shared dock header was removed, reclaiming vertical space for commands.
+
 ## [0.32.9] - 2026-08-21
 
 ### Changed

@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { CornerDownLeft, Pencil, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { AgentIcon } from "@/components/agent-icon";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { commandsFor, type AgentCommand } from "@/lib/agent-commands";
 import type { OperatorCommand } from "@/lib/types";
@@ -59,15 +58,8 @@ export function CommandPalette({
 
   return (
     <div className="flex h-full min-h-0 flex-col" data-testid="command-palette">
-      {agent && (
-        <div className="flex shrink-0 items-center gap-2 px-3 pt-2 pb-1">
-          <AgentIcon agent={agent} className="size-5" />
-          <span className="text-sm font-medium">{agent}</span>
-        </div>
-      )}
-
       {!q && (
-        <p className="shrink-0 px-3 pb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+        <p className="shrink-0 px-3 pt-2 pb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
           {t("commands.commonHint", { count: all.length })}
         </p>
       )}
