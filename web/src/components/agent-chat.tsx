@@ -16,7 +16,8 @@ import { ChatMessageList, type ChatMessageListHandle } from "@/components/ui/cha
 import { BottomSheet } from "@/components/ui/sheet";
 import { AppHeader } from "@/components/app-header";
 import { AnsiOutput } from "@/components/ansi-output";
-import { MIRROR_SPACE, MIRROR_INVERT, styleFor } from "@/components/mirror-space";
+import { MIRROR_SPACE, MIRROR_INVERT } from "@/components/mirror-space";
+import { StatuslineSegment } from "@/components/statusline-segment";
 import { cn } from "@/lib/utils";
 import { parseAnsi } from "@/lib/ansi";
 import { splitLines } from "@/lib/blocks";
@@ -891,11 +892,9 @@ export function AgentChat({
           style={{ overflowWrap: "anywhere" }}
         >
                   {row.segments.map((s, si) => (
-                    // Text nodes only — colour and weight come from the ANSI parse, never markup.
-                    // Same XSS boundary as the mirror.
-                    <span key={si} style={styleFor(s, agent?.agent)}>
-                      {s.text}
-                    </span>
+                    // Codex's known compact fields gain semantic icons; every unknown field and every
+                    // other harness remains a plain React text node. ANSI still owns colour/weight.
+                    <StatuslineSegment key={si} agent={agent?.agent} segment={s} />
                   ))}
                 </div>
               ))}

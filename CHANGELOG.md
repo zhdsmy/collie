@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.8] - 2026-08-21
+
+### Changed
+
+- **Codex statusline uses compact semantic icons for activity, context, approval, Fast, and tasks.** Working is an hourglass, Ready is a circular check, Context is a live remaining-capacity ring, and Fast on/off uses solid/outline lightning; model and directory remain readable text.
+
 ## [0.32.7] - 2026-08-21
 
 ### Fixed

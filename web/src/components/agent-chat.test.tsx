@@ -484,15 +484,13 @@ describe("AgentChat — block-grammar adapter scoping", () => {
   it("re-surfaces the backgroundless macOS Codex statusline outside the terminal mirror", () => {
     renderChat({ text: CODEX_STATUS_TEXT, agent: codexAgent });
 
-    const status = screen.getByText((_, element) =>
-      Boolean(
-        element?.classList.contains("statusline-row") &&
-          element.textContent?.includes("Ctx 19%") &&
-          element.textContent?.includes("Approve") &&
-        element.textContent?.includes("Fast:off") &&
-        element.textContent?.includes("Tasks 3/3"),
-      ),
-    );
+    const status = screen.getByLabelText("Fast off").closest(".statusline-row");
+    expect(screen.getByLabelText("Ready")).toBeInTheDocument();
+    expect(screen.getByLabelText("Context 19% left")).toBeInTheDocument();
+    expect(screen.getByLabelText("Approve for me")).toBeInTheDocument();
+    expect(screen.getByLabelText("Tasks 3/3")).toBeInTheDocument();
+    expect(status).not.toBeNull();
+    if (!status) throw new Error("Codex statusline row not found");
     expect(status.closest("pre")).toBeNull();
     expect(status).toHaveClass("whitespace-normal", "break-words");
     expect(status).not.toHaveClass("truncate");
