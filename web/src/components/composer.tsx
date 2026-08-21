@@ -840,10 +840,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           </ComposerDock>
         )}
         {drawer === "cmd" && (
+          // Three command rows plus the pinned search field: enough to scan without letting the
+          // dock dominate the terminal, and still responsive to the keyboard-shrunken viewport.
           <ComposerDock
             title={translate("commands.title")}
             onClose={closeDrawer}
-            bodyClassName="h-[min(45dvh,22rem)] overflow-hidden"
+            bodyClassName="h-[min(40dvh,17rem)] overflow-hidden"
           >
             <CommandPalette
               onClose={closeDrawer}

@@ -1911,7 +1911,7 @@ describe("Composer — Agent command dock", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(list.closest(".fixed")).toBeNull();
-    expect(palette.parentElement).toHaveClass("h-[min(45dvh,22rem)]", "overflow-hidden");
+    expect(palette.parentElement).toHaveClass("h-[min(40dvh,17rem)]", "overflow-hidden");
     expect(list).toHaveClass("min-h-0", "flex-1", "overflow-y-auto");
     expect(list.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(screen.getByRole("button", { name: "Close Agent commands" })).toBeInTheDocument();
