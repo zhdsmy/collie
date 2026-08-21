@@ -130,8 +130,8 @@ export function AgentChat({
     setHideControlsWhenTyping,
   } = useDisplayPrefs();
   const { open: keyboardOpen, offsetTop: keyboardViewportTop } = useKeyboardViewport();
-  const [keysDockOpen, setKeysDockOpen] = useState(false);
-  const headerInputActive = keyboardOpen || keysDockOpen;
+  const [composerDockOpen, setComposerDockOpen] = useState(false);
+  const headerInputActive = keyboardOpen || composerDockOpen;
   const keepHeaderDuringInput = headerInputActive && prefs.keepHeaderWhenTyping;
   const hideHeaderDuringInput = headerInputActive && !prefs.keepHeaderWhenTyping;
   // Raw-terminal escape hatch: when on, every agent grammar is bypassed and the plain mirror shows,
@@ -704,8 +704,8 @@ export function AgentChat({
       )}
 
       {/* A fixed input-mode header leaves normal flow. Reserve the visual viewport's panned offset
-          plus the header's 60px + safe-area height so the visible terminal starts below it. Keys
-          mode has no viewport pan, so its offset is naturally zero. */}
+          plus the header's 60px + safe-area height so the visible terminal starts below it. Composer
+          docks have no viewport pan, so their offset is naturally zero. */}
       {keepHeaderDuringInput && (
         <div
           aria-hidden="true"
@@ -914,7 +914,7 @@ export function AgentChat({
           <Composer
             ref={composerRef}
             keyboardOpen={keyboardOpen}
-            onKeysDockOpenChange={setKeysDockOpen}
+            onDockOpenChange={setComposerDockOpen}
             paneId={paneId}
             session={session}
             agent={agent?.agent}

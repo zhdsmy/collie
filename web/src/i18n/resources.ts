@@ -422,7 +422,7 @@ const en = {
   display: {
     keepHeaderWhenTyping: "Keep pane header while typing",
     keepHeaderWhenTypingHint:
-      "Pins the pane title while the software keyboard or Keys dock is open; turn off to hide it.",
+      "Pins the pane title while the software keyboard or any input panel is open; turn off to hide it.",
     hideControlsWhenTyping: "Hide input controls while typing",
     hideControlsWhenTypingHint:
       "Hides Keys, Quick, and Display controls while the software keyboard is open.",
@@ -915,7 +915,7 @@ const zhCN = {
   },
   display: {
     keepHeaderWhenTyping: "输入时保留窗格标题栏",
-    keepHeaderWhenTypingHint: "软键盘或按键面板展开时固定窗格标题栏；关闭后隐藏标题栏。",
+    keepHeaderWhenTypingHint: "软键盘或任一输入面板展开时固定窗格标题栏；关闭后隐藏标题栏。",
     hideControlsWhenTyping: "输入时隐藏控制栏",
     hideControlsWhenTypingHint: "软键盘展开时隐藏按键、快捷和显示控制。",
     decreaseFont: "减小字号",
@@ -1399,7 +1399,7 @@ const zhTW = {
   },
   display: {
     keepHeaderWhenTyping: "輸入時保留窗格標題列",
-    keepHeaderWhenTypingHint: "軟體鍵盤或按鍵面板展開時固定窗格標題列；關閉後隱藏標題列。",
+    keepHeaderWhenTypingHint: "軟體鍵盤或任一輸入面板展開時固定窗格標題列；關閉後隱藏標題列。",
     hideControlsWhenTyping: "輸入時隱藏控制列",
     hideControlsWhenTypingHint: "軟體鍵盤展開時隱藏按鍵、快速操作和顯示控制。",
     decreaseFont: "縮小字型",

@@ -210,40 +210,46 @@ describe("AgentChat — typing layout preferences", () => {
     expect(screen.queryByText("Tabs")).not.toBeInTheDocument();
   });
 
-  it("pins the pane header while the Keys dock is open when retention is enabled", async () => {
-    const user = userEvent.setup();
-    renderChat({ tabs: fixtureTabs });
+  it.each(["Keys", "Quick", "Agent", "Display settings"])(
+    "pins the pane header while the %s dock is open when retention is enabled",
+    async (buttonName) => {
+      const user = userEvent.setup();
+      renderChat({ tabs: fixtureTabs });
 
-    const keys = screen.getByRole("button", { name: "Keys" });
-    await user.click(keys);
+      const dockButton = screen.getByRole("button", { name: buttonName });
+      await user.click(dockButton);
 
-    expect(screen.getByRole("banner")).toHaveClass("fixed");
-    expect(screen.getByRole("banner")).toHaveStyle({ top: "0px" });
-    expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
+      expect(screen.getByRole("banner")).toHaveClass("fixed");
+      expect(screen.getByRole("banner")).toHaveStyle({ top: "0px" });
+      expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
 
-    await user.click(keys);
-    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
-    expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
-  });
+      await user.click(dockButton);
+      expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+      expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
+    },
+  );
 
-  it("hides the pane header while the Keys dock is open when retention is disabled", async () => {
-    localStorage.setItem(
-      "collie:display-prefs:v4",
-      JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: false }),
-    );
-    const user = userEvent.setup();
-    renderChat({ tabs: fixtureTabs });
+  it.each(["Keys", "Quick", "Agent", "Display settings"])(
+    "hides the pane header while the %s dock is open when retention is disabled",
+    async (buttonName) => {
+      localStorage.setItem(
+        "collie:display-prefs:v4",
+        JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: false }),
+      );
+      const user = userEvent.setup();
+      renderChat({ tabs: fixtureTabs });
 
-    const keys = screen.getByRole("button", { name: "Keys" });
-    await user.click(keys);
-    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
-    expect(screen.getByTestId("hidden-header-safe-area")).toBeInTheDocument();
+      const dockButton = screen.getByRole("button", { name: buttonName });
+      await user.click(dockButton);
+      expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
+      expect(screen.getByTestId("hidden-header-safe-area")).toBeInTheDocument();
 
-    await user.click(keys);
-    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
-    expect(screen.queryByTestId("hidden-header-safe-area")).not.toBeInTheDocument();
-  });
+      await user.click(dockButton);
+      expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+      expect(screen.queryByTestId("hidden-header-safe-area")).not.toBeInTheDocument();
+    },
+  );
 });
 
 describe("AgentChat — read-only device", () => {
