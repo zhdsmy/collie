@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.7] - 2026-08-21
+
+### Fixed
+
+- **Search mode keeps the Agent command palette clear of the iOS input accessory bar.** The keyboard-open sheet is shorter and leaves its header visible while the command list remains scrollable.
+
 ## [0.32.6] - 2026-08-21
 
 ### Fixed

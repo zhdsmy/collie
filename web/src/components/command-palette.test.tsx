@@ -7,6 +7,7 @@ import type { OperatorCommand } from "@/lib/types";
 
 function setup(overrides?: {
   agent?: string | null;
+  keyboardOpen?: boolean;
   mine?: OperatorCommand[];
   keyboardBottomInset?: number;
 }) {
@@ -226,11 +227,12 @@ describe("CommandPalette", () => {
   });
 
   it("lifts the palette above an overlaid software keyboard", () => {
-    setup({ keyboardBottomInset: 280 });
+    setup({ keyboardOpen: true, keyboardBottomInset: 280 });
     const panel = screen.getByRole("dialog").querySelector<HTMLElement>(".relative.z-10");
 
     expect(panel).not.toBeNull();
     if (!panel) throw new Error("BottomSheet panel not found");
-    expect(panel).toHaveStyle({ marginBottom: "280px" });
+    expect(panel).toHaveClass("h-[min(64dvh,30rem)]");
+    expect(panel).toHaveStyle({ marginBottom: "336px" });
   });
 });

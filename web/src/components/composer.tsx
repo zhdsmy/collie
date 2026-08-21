@@ -1138,6 +1138,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         open={drawer === "cmd"}
         onClose={closeDrawer}
         agent={agent}
+        keyboardOpen={keyboardOpen}
         keyboardBottomInset={keyboardBottomInset}
         mine={operatorCommands}
         onInsert={insertCommand}

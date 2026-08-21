@@ -13,6 +13,7 @@ interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
   agent: string | undefined | null;
+  keyboardOpen?: boolean;
   keyboardBottomInset?: number;
   /** The operator's own rows (`commands.toml`); they replace the catalog on panes they address. */
   mine?: readonly OperatorCommand[];
@@ -26,6 +27,7 @@ export function CommandPalette({
   open,
   onClose,
   agent,
+  keyboardOpen = false,
   keyboardBottomInset = 0,
   mine,
   onInsert,
@@ -70,14 +72,21 @@ export function CommandPalette({
     onClose();
   }
 
+  // iOS leaves a small input accessory bar above the software keyboard. Keep the sheet clear of it
+  // and shorten the panel while typing so its header remains visible instead of being panned away.
+  const keyboardAccessoryOffset = keyboardOpen ? 56 : 0;
+
   return (
     <BottomSheet
       open={open}
       onClose={onClose}
       title={t("commands.title")}
       scrollBody
-      bottomOffset={keyboardBottomInset}
-      className="h-[min(72dvh,36rem)] min-h-0"
+      bottomOffset={keyboardBottomInset + keyboardAccessoryOffset}
+      className={cn(
+        keyboardOpen ? "h-[min(64dvh,30rem)]" : "h-[min(72dvh,36rem)]",
+        "min-h-0",
+      )}
       bodyClassName="flex min-h-0 flex-1 flex-col"
     >
       {agent && (
