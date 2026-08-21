@@ -4,7 +4,9 @@ import type { HarnessAdapter } from "../types";
 import { extractInputDraft, extractStatusLines, hasComposer, stripChrome } from "./chrome";
 
 const COMPLETION_SUMMARY = /^─+\s+Worked for\b/;
+const COMMAND_SUMMARY = /^•\s+Ran\s+\d+\s+commands\b/;
 const DECORATIVE_RULE = /^─{40,}$/;
+const RESIDUAL_RULE = /^─$/;
 const UPLOAD_IMAGE_PATH =
   /(?:^|\s)(\/(?:[^\s/]+\/)*uploads\/[^\s/]+\.(?:gif|jpe?g|png|webp))(?=\s|$)/gi;
 const IMAGE_PLACEHOLDER = /(?:^|\s)\[\s*Image\s+#\d+\s*\]/g;
@@ -17,11 +19,47 @@ function isCompletionSummary(line: StyledLine): boolean {
   return visible.length > 0 && visible.every((segment) => segment.dim === true);
 }
 
+function isCommandSummary(line: StyledLine): boolean {
+  return COMMAND_SUMMARY.test(lineText(line).trim());
+}
+
+/**
+ * Codex 0.149 emits its command-boundary rule as dim output. On narrow panes the
+ * same rule can leave a final single-glyph row behind, so keep both shapes tied to
+ * a preceding command summary instead of removing ordinary terminal rules.
+ */
+function isCommandBoundaryRule(line: StyledLine): boolean {
+  const text = lineText(line).trim();
+  if (!DECORATIVE_RULE.test(text) && !RESIDUAL_RULE.test(text)) return false;
+  const visible = line.segments.filter((segment) => segment.text.trim().length > 0);
+  return visible.length > 0 && visible.every((segment) => segment.dim === true);
+}
+
 function normalizeCompletionSummaries(lines: StyledLine[]): StyledLine[] {
   let normalized: StyledLine[] | undefined;
+  let awaitingCommandBoundary = false;
+  let skippingCommandBoundary = false;
 
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index]!;
+
+    if (isCommandSummary(line)) {
+      awaitingCommandBoundary = true;
+      skippingCommandBoundary = false;
+    } else if (
+      (awaitingCommandBoundary || skippingCommandBoundary) &&
+      isCommandBoundaryRule(line)
+    ) {
+      // Keep looking across blank rows: 0.149 can emit the long rule and its
+      // one-glyph residue as separate rows.
+      normalized ??= lines.slice(0, index);
+      skippingCommandBoundary = true;
+      continue;
+    } else if (skippingCommandBoundary && lineText(line).trim().length > 0) {
+      awaitingCommandBoundary = false;
+      skippingCommandBoundary = false;
+    }
+
     if (!isCompletionSummary(line)) {
       normalized?.push(line);
       continue;

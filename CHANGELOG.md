@@ -6,6 +6,13 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.3] - 2026-08-21
+
+### Fixed
+
+- **Codex 0.149 command separators no longer leave long rules or single-glyph remnants in the mirror.**
+- **Completed Codex panes retain their conversation-history affordance while Herdr briefly omits the session reference.**
+
 ## [0.32.2] - 2026-08-21
 
 ### Fixed

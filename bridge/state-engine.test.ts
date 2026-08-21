@@ -533,6 +533,47 @@ describe("StateEngine — pane capability fields", () => {
     expect(engine.current().agents[0]!.agentSession).toEqual({ kind: "id", value: "abc-123" });
   });
 
+  test("retains a session ref while a live pane omits it after finishing", async () => {
+    const { herdr, engine, poll } = makeEngine();
+    const p = pane("w1:p1", "w1", "working", "codex");
+    p.agent_session = { agent: "codex", kind: "id", value: "abc-123" };
+    herdr.panes = [p];
+    await poll();
+
+    herdr.panes = [{ ...p, agent_status: "done", agent_session: undefined }];
+    await poll();
+
+    expect(engine.current().agents[0]!.agentSession).toEqual({ kind: "id", value: "abc-123" });
+  });
+
+  test("drops a cached session ref when the pane changes agent", async () => {
+    const { herdr, engine, poll } = makeEngine();
+    const p = pane("w1:p1", "w1", "working", "codex");
+    p.agent_session = { agent: "codex", kind: "id", value: "abc-123" };
+    herdr.panes = [p];
+    await poll();
+
+    herdr.panes = [{ ...p, agent: "claude", agent_session: undefined }];
+    await poll();
+
+    expect(engine.current().agents[0]!.agentSession).toBeUndefined();
+  });
+
+  test("drops a cached session ref when a pane disappears before its id is reused", async () => {
+    const { herdr, engine, poll } = makeEngine();
+    const p = pane("w1:p1", "w1", "working", "codex");
+    p.agent_session = { agent: "codex", kind: "id", value: "abc-123" };
+    herdr.panes = [p];
+    await poll();
+
+    herdr.panes = [];
+    await poll();
+    herdr.panes = [{ ...p, agent_status: "done", agent_session: undefined }];
+    await poll();
+
+    expect(engine.current().agents[0]!.agentSession).toBeUndefined();
+  });
+
   // The regression that kept pi journal-less: pi's herdr integration reports `agent_session_path`
   // in preference to an id, and this mapper used to keep ONLY kind "id" — so a pi pane arrived with
   // no session at all and its history could never be offered. Which kinds are meaningful is the

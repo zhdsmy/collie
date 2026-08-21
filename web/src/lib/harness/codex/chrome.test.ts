@@ -165,6 +165,44 @@ describe("Codex chrome", () => {
     ]);
   });
 
+  it("removes Codex 0.149 command-boundary rules and their single-glyph residue", () => {
+    const commandSummary = "• Ran 4 commands · ctrl + t to view transcript";
+    const longRule = "─".repeat(133);
+    const captured = lines(
+      [
+        "command output",
+        commandSummary,
+        "",
+        `\x1b[2;37m${longRule}\x1b[0m`,
+        "",
+        "\x1b[2;37m─\x1b[0m",
+        "",
+        "following answer",
+      ].join("\n"),
+    );
+    const block = codexBuildBlocks(captured)[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([
+      "command output",
+      commandSummary,
+      "",
+      "",
+      "",
+      "following answer",
+    ]);
+  });
+
+  it("keeps dim terminal rules when no command summary precedes them", () => {
+    const rule = "─".repeat(133);
+    const block = codexBuildBlocks(
+      lines(`terminal output\n\x1b[2;37m${rule}\x1b[0m\nmore output`),
+    )[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual(["terminal output", rule, "more output"]);
+  });
+
   it("does not remove unrelated terminal rules", () => {
     const rule = "─".repeat(80);
     const composer = composerBuffer("");

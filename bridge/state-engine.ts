@@ -1,5 +1,6 @@
 import { meaningfulTabLabel, meaningfulTerminalTitle } from "./activity.ts";
 import type { HerdrClient } from "./herdr-client.ts";
+import type { AgentSessionRef } from "./journal/types.ts";
 import {
   type AgentStatus,
   type AgentView,
@@ -75,6 +76,11 @@ type TransitionListener = (agent: AgentView, from: AgentStatus, to: AgentStatus)
 type RemoveListener = (paneId: string) => void;
 type UpdateListener = (snap: EngineSnapshot) => void;
 
+interface CachedSessionRef {
+  agent: string;
+  ref: AgentSessionRef;
+}
+
 export class StateEngine {
   private agents: AgentView[] = [];
   private shellPanes: AgentView[] = [];
@@ -86,6 +92,9 @@ export class StateEngine {
   // when a pane momentarily hides its input box (a dialog / working spinner) — only cleared when the
   // pane itself vanishes (see the removal loop). Enriched from pane text each poll (see enrichSessionNames).
   private readonly sessionNames = new Map<string, string>();
+  // Herdr can briefly omit `agent_session` after Codex reaches `done`. Keep the
+  // last valid ref for the same live pane/agent so history remains available.
+  private readonly sessionRefs = new Map<string, CachedSessionRef>();
   private readonly transitionListeners = new Set<TransitionListener>();
   private readonly removeListeners = new Set<RemoveListener>();
   private readonly updateListeners = new Set<UpdateListener>();
@@ -206,6 +215,43 @@ export class StateEngine {
       const wsById = new Map(workspaces.map((w) => [w.workspace_id, w]));
       const tabById = new Map(tabs.map((t) => [t.tab_id, t]));
 
+      const sessionRefForPane = (
+        p: (typeof panes)[number],
+        agent: string,
+      ): AgentSessionRef | undefined => {
+        const cached = this.sessionRefs.get(p.pane_id);
+        if (cached !== undefined && cached.agent !== agent) {
+          this.sessionRefs.delete(p.pane_id);
+        }
+
+        const session = p.agent_session;
+        const directRef: AgentSessionRef | undefined =
+          session !== undefined &&
+          session !== null &&
+          (session.kind === "id" || session.kind === "path") &&
+          typeof session.value === "string" &&
+          session.value !== "" &&
+          (typeof session.agent !== "string" ||
+            session.agent === "" ||
+            session.agent === agent)
+            ? { kind: session.kind, value: session.value }
+            : undefined;
+        if (directRef !== undefined) {
+          const ref = directRef;
+          this.sessionRefs.set(p.pane_id, { agent, ref });
+          return ref;
+        }
+
+        // An omitted/null field is the transient Herdr shape seen when Codex
+        // finishes. An explicitly invalid or foreign ref invalidates the cache
+        // so a different harness never inherits the old transcript.
+        if (session !== undefined && session !== null) {
+          this.sessionRefs.delete(p.pane_id);
+          return undefined;
+        }
+        return this.sessionRefs.get(p.pane_id)?.ref;
+      };
+
       const toView = (
         p: (typeof panes)[number],
         agent: string,
@@ -224,6 +270,7 @@ export class StateEngine {
           agent,
           workspaceLabel,
         );
+        const agentSession = sessionRefForPane(p, agent);
         return {
           paneId: p.pane_id,
           workspaceId: p.workspace_id,
@@ -253,14 +300,7 @@ export class StateEngine {
           // that would hand pi's adapter a Claude uuid; harmless today (it resolves to nothing) but
           // only by luck. `agent_session.agent` is compared when Herdr reports it, and absence stays
           // permissive so an older server that omits the field still works.
-          ...((p.agent_session?.kind === "id" || p.agent_session?.kind === "path") &&
-          typeof p.agent_session.value === "string" &&
-          p.agent_session.value !== "" &&
-          (typeof p.agent_session.agent !== "string" ||
-            p.agent_session.agent === "" ||
-            p.agent_session.agent === agent)
-            ? { agentSession: { kind: p.agent_session.kind, value: p.agent_session.value } }
-            : {}),
+          ...(agentSession ? { agentSession } : {}),
           // Scrollback depth + viewport = what a `recent` read can yield. Omitted when the server
           // predates `scroll`, so an older Herdr simply reads as "unknown" rather than "zero".
           ...(p.scroll
@@ -325,6 +365,7 @@ export class StateEngine {
         if (live.has(id)) continue;
         this.prevStatus.delete(id);
         this.sessionNames.delete(id); // drop the cached name so a reused pane id starts clean
+        this.sessionRefs.delete(id);
         for (const fn of this.removeListeners) fn(id);
       }
 
