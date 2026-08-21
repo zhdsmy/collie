@@ -7,7 +7,12 @@ import { parseAnsi } from "../../ansi";
 import { lineText, splitLines, type StyledLine } from "../../blocks";
 import { adapterFor, hasBlockGrammar } from "../registry";
 import { extractInputDraft, extractStatusLines, hasComposer, stripChrome } from "./chrome";
-import { codexAdapter, codexBuildBlocks, imageDraftCarriesSend } from ".";
+import {
+  codexAdapter,
+  codexBuildBlocks,
+  compactCodexStatusLines,
+  imageDraftCarriesSend,
+} from ".";
 
 const PANES_DIR = join(import.meta.dirname, "..", "..", "..", "fixtures", "panes");
 const BACKGROUND = "57;57;71";
@@ -77,6 +82,25 @@ describe("Codex chrome", () => {
     ]);
     expect(hasComposer(captured)).toBe(true);
     expect(extractInputDraft(captured)).toBeNull();
+  });
+
+  it("compacts Codex status labels without changing their ANSI styling", () => {
+    const captured = lines(
+      "  " +
+        "\x1b[38;2;246;226;183mgpt-5.6-sol xhigh\x1b[0m\x1b[2m · \x1b[0m" +
+        "\x1b[38;2;242;181;144mContext 19% left\x1b[0m\x1b[2m · \x1b[0m" +
+        "\x1b[38;2;200;169;238mApprove for me\x1b[0m\x1b[2m · \x1b[0m" +
+        "\x1b[38;2;171;223;167mFast off\x1b[0m",
+    );
+    const compacted = compactCodexStatusLines(captured);
+
+    expect(lineText(compacted[0]!)).toBe("  gpt-5.6-sol xhigh·Ctx 19%·Approve·Fast:off");
+    expect(compacted[0]!.segments.find((segment) => segment.text === "Ctx 19%")?.fg).toBe(
+      "rgb(242,181,144)",
+    );
+    expect(compacted[0]!.segments.find((segment) => segment.text === "·")?.dim).toBe(true);
+    expect(lineText(captured[0]!)).toContain("Context 19% left");
+    expect(lineText(captured[0]!)).toContain("Approve for me");
   });
 
   it("extracts a typed draft and joins wrapped composer rows", () => {

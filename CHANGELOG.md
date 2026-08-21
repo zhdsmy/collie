@@ -6,6 +6,10 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.4] - 2026-08-21
+### Added
+- **Codex statusline labels are compacted in Collie's app strip**, keeping more model, context, approval, and speed fields visible on narrow screens while preserving the original terminal data for parsing.
+
 ## [0.32.3] - 2026-08-21
 
 ### Fixed

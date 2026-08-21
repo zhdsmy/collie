@@ -186,11 +186,13 @@ export function AgentChat({
   // the agent, a menu is up, or no box at the tail, in which case the strip is hidden. A second parse
   // of `display`, but memoised on it, so it only recomputes when the buffer content changes — off the
   // render hot path.
-  const statusLines = useMemo(
-    () =>
-      grammarsOn ? adapterFor(agent?.agent)?.extractStatusLines(splitLines(parseAnsi(display))) ?? [] : [],
-    [display, agent?.agent, grammarsOn],
-  );
+  const statusLines = useMemo(() => {
+    if (!grammarsOn) return [];
+
+    const adapter = adapterFor(agent?.agent);
+    const lines = adapter?.extractStatusLines(splitLines(parseAnsi(display))) ?? [];
+    return adapter?.compactStatusLines?.(lines) ?? lines;
+  }, [display, agent?.agent, grammarsOn]);
 
   // A user draft stranded on the input box's "❯" line — a message queued while the agent was busy
   // then recalled, which persists across turns. stripChrome peels the box off the mirror so it goes

@@ -25,6 +25,8 @@ export interface HarnessAdapter {
    *  readable at a glance. Empty = no box at the tail (a menu is up, or a foreign/torn buffer), so
    *  nothing to surface. */
   extractStatusLines(lines: StyledLine[]): StyledLine[];
+  /** Optional display-only compaction for status rows; parsing and mirror output stay unchanged. */
+  compactStatusLines?(lines: StyledLine[]): StyledLine[];
   /** Re-surface a user draft stranded on the input box's prompt line (null = no box / empty / a
    *  known placeholder). */
   extractInputDraft(lines: StyledLine[]): string | null;

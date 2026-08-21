@@ -35,6 +35,25 @@ function isCommandBoundaryRule(line: StyledLine): boolean {
   return visible.length > 0 && visible.every((segment) => segment.dim === true);
 }
 
+function compactStatusSegment(text: string): string {
+  return text
+    .replace(/\s+·\s+/g, "·")
+    .replace(/^Context\s+(\d+)(?:% left|…)?$/, "Ctx $1%")
+    .replace(/^Approve(?: for)? me$/, "Approve")
+    .replace(/^Fast off$/, "Fast:off");
+}
+
+/** Compact only the Codex status strip; the captured line remains untouched for parsing. */
+export function compactCodexStatusLines(lines: StyledLine[]): StyledLine[] {
+  return lines.map((line) => ({
+    ...line,
+    segments: line.segments.map((segment) => ({
+      ...segment,
+      text: compactStatusSegment(segment.text),
+    })),
+  }));
+}
+
 function normalizeCompletionSummaries(lines: StyledLine[]): StyledLine[] {
   let normalized: StyledLine[] | undefined;
   let awaitingCommandBoundary = false;
@@ -126,6 +145,7 @@ export const codexAdapter: HarnessAdapter = {
   agent: "codex",
   buildBlocks: codexBuildBlocks,
   extractStatusLines,
+  compactStatusLines: compactCodexStatusLines,
   extractInputDraft,
   // The reply path's pre-flight and post-type verifier now share the same captured Codex composer
   // shape. A modal without that tail refuses message bytes before they can land in the wrong UI.

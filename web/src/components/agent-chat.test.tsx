@@ -335,7 +335,9 @@ const CODEX_STATUS_TEXT = [
   "  \x1b[38;2;246;226;183mgpt-5.6-sol xhigh\x1b[0m\x1b[2m · \x1b[0m" +
     "\x1b[38;2;171;223;167m~/Documents/GitHub/zhdsmy/collie\x1b[0m\x1b[2m · \x1b[0m" +
     "\x1b[38;2;200;169;238mReady\x1b[0m\x1b[2m · \x1b[0m" +
-    "\x1b[38;2;242;181;144mContext 100…\x1b[0m",
+    "\x1b[38;2;200;169;238mApprove for me\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;242;181;144mContext 19% left\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;171;223;167mFast off\x1b[0m",
 ].join("\n");
 
 // A minimal multi-question wizard tail (stepper header + current question) — enough for the REAL
@@ -482,7 +484,12 @@ describe("AgentChat — block-grammar adapter scoping", () => {
     renderChat({ text: CODEX_STATUS_TEXT, agent: codexAgent });
 
     const status = screen.getByText((_, element) =>
-      Boolean(element?.classList.contains("truncate") && element.textContent?.includes("Context 100…")),
+      Boolean(
+        element?.classList.contains("truncate") &&
+          element.textContent?.includes("Ctx 19%") &&
+          element.textContent?.includes("Approve") &&
+          element.textContent?.includes("Fast:off"),
+      ),
     );
     expect(status.closest("pre")).toBeNull();
     expect(screen.queryByText(/Ask Codex to do anything/)).toBeNull();
