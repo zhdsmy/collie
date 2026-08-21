@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -91,17 +92,21 @@ export function TabStrip({
         </button>
       </div>
 
-      {actionsEnabled && (
-        <TabActionsSheet
-          open={sheetTab !== null}
-          onClose={() => setSheetTab(null)}
-          tab={sheetTab}
-          session={session}
-          readOnly={readOnly}
-          onRenamed={onRenamed}
-          onClosed={onClosed}
-        />
-      )}
+      {/* Pane chrome can hide when this sheet's input opens the keyboard. Keep the modal at the
+          viewport root so hiding the strip does not hide the active rename flow. */}
+      {actionsEnabled &&
+        createPortal(
+          <TabActionsSheet
+            open={sheetTab !== null}
+            onClose={() => setSheetTab(null)}
+            tab={sheetTab}
+            session={session}
+            readOnly={readOnly}
+            onRenamed={onRenamed}
+            onClosed={onClosed}
+          />,
+          document.body,
+        )}
     </>
   );
 }

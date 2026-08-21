@@ -54,8 +54,7 @@ function renderChat(overrides: Partial<ComponentProps<typeof AgentChat>> = {}) {
     ...overrides,
   };
   const router = createMemoryRouter([{ path: "/", element: <AgentChat {...props} /> }]);
-  render(<RouterProvider router={router} />);
-  return props;
+  return { ...render(<RouterProvider router={router} />), router };
 }
 
 describe("AgentChat — reply flow", () => {
@@ -156,6 +155,32 @@ describe("AgentChat — typing layout preferences", () => {
     expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
   });
 
+  it("keeps the tab rename input mounted when its keyboard hides unpinned pane chrome", async () => {
+    localStorage.setItem(
+      "collie:display-prefs:v4",
+      JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: false }),
+    );
+    const user = userEvent.setup();
+    const view = renderChat({ tabs: fixtureTabs });
+
+    await user.click(screen.getByText("1").closest("button")!);
+    await user.click(screen.getByRole("button", { name: "Rename" }));
+    const input = screen.getByPlaceholderText("name this tab");
+    expect(input).toHaveFocus();
+
+    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
+    await act(async () => {
+      await view.router.navigate("/?keyboard=open");
+    });
+
+    expect(screen.getByPlaceholderText("name this tab")).toHaveFocus();
+    const chrome = screen.getByTestId("pane-chrome");
+    const sheet = screen.getByRole("dialog");
+    expect(chrome).not.toBeVisible();
+    expect(sheet).toBeVisible();
+    expect(chrome).not.toContainElement(sheet);
+  });
+
   it("pins the title and attached tab row while giving pane and composer chrome back to the terminal", () => {
     vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
     renderChat({ tabs: fixtureTabs });
@@ -216,7 +241,7 @@ describe("AgentChat — typing layout preferences", () => {
     expect(screen.getByTestId("hidden-header-safe-area")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
     // Pane navigation still yields to the terminal independently of both chrome preferences.
-    expect(screen.queryByText("Tabs")).not.toBeInTheDocument();
+    expect(screen.getByText("Tabs")).not.toBeVisible();
   });
 
   it.each(["Keys", "Quick", "Agent", "Display settings"])(

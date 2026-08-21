@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.17] - 2026-08-22
+
+### Fixed
+
+- **Tab rename stays open when its keyboard hides pane chrome.** The title and Tab row retain their state while visually hidden, and the rename sheet remains viewport-bound.
+
 ## [0.32.0+collie.16] - 2026-08-22
 
 ### Changed

@@ -624,20 +624,22 @@ export function AgentChat({
             : undefined
         }
       >
-      {/* The title and tab row are one chrome unit: they fix, hide, or move with the pane together. */}
-      {!hideHeaderForKeyboard && (
-        <div
-          data-testid="pane-chrome"
-          style={keepHeaderDuringInput ? { top: keyboardViewportTop } : undefined}
-          className={cn(
-            "shrink-0 bg-background",
-            releasePaneForDock
-              ? "relative z-20"
-              : keepHeaderDuringInput
-                ? "fixed inset-x-0 z-40"
-                : "sticky top-0 z-20",
-          )}
-        >
+      {/* The title and tab row are one chrome unit: they fix, hide, or move with the pane together.
+          Keep it mounted while hidden so a portaled tab action sheet survives its rename input
+          opening the software keyboard. */}
+      <div
+        data-testid="pane-chrome"
+        hidden={hideHeaderForKeyboard}
+        style={keepHeaderDuringInput ? { top: keyboardViewportTop } : undefined}
+        className={cn(
+          "shrink-0 bg-background",
+          releasePaneForDock
+            ? "relative z-20"
+            : keepHeaderDuringInput
+              ? "fixed inset-x-0 z-40"
+              : "sticky top-0 z-20",
+        )}
+      >
           <AppHeader
             bridge={bridge}
             error={error}
@@ -765,8 +767,7 @@ export function AgentChat({
             }
           />
         )}
-        </div>
-      )}
+      </div>
 
       {/* Fixed pane chrome leaves normal flow. Reserve both attached rows plus the viewport pan. */}
       {keepHeaderDuringInput && (
