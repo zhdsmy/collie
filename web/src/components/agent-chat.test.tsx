@@ -180,7 +180,7 @@ describe("AgentChat — typing layout preferences", () => {
     expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
   });
 
-  it("can hide input controls without keeping the header", () => {
+  it("can hide input controls and the header while typing", () => {
     localStorage.setItem(
       "collie:display-prefs:v4",
       JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: true }),
@@ -188,12 +188,13 @@ describe("AgentChat — typing layout preferences", () => {
     vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
     renderChat({ tabs: fixtureTabs });
 
-    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
     expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
+    expect(screen.getByTestId("hidden-header-safe-area")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Keys" })).not.toBeInTheDocument();
   });
 
-  it("leaves the header and input controls in their normal mode when both preferences are off", () => {
+  it("hides the header but leaves input controls visible when only header retention is off", () => {
     localStorage.setItem(
       "collie:display-prefs:v4",
       JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: false }),
@@ -201,11 +202,47 @@ describe("AgentChat — typing layout preferences", () => {
     vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
     renderChat({ tabs: fixtureTabs });
 
-    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
     expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
+    expect(screen.getByTestId("hidden-header-safe-area")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
     // Pane navigation still yields to the terminal independently of both chrome preferences.
     expect(screen.queryByText("Tabs")).not.toBeInTheDocument();
+  });
+
+  it("pins the pane header while the Keys dock is open when retention is enabled", async () => {
+    const user = userEvent.setup();
+    renderChat({ tabs: fixtureTabs });
+
+    const keys = screen.getByRole("button", { name: "Keys" });
+    await user.click(keys);
+
+    expect(screen.getByRole("banner")).toHaveClass("fixed");
+    expect(screen.getByRole("banner")).toHaveStyle({ top: "0px" });
+    expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
+
+    await user.click(keys);
+    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+    expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
+  });
+
+  it("hides the pane header while the Keys dock is open when retention is disabled", async () => {
+    localStorage.setItem(
+      "collie:display-prefs:v4",
+      JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: false }),
+    );
+    const user = userEvent.setup();
+    renderChat({ tabs: fixtureTabs });
+
+    const keys = screen.getByRole("button", { name: "Keys" });
+    await user.click(keys);
+    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
+    expect(screen.getByTestId("hidden-header-safe-area")).toBeInTheDocument();
+
+    await user.click(keys);
+    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+    expect(screen.queryByTestId("hidden-header-safe-area")).not.toBeInTheDocument();
   });
 });
 

@@ -41,14 +41,14 @@ interface AppHeaderProps {
    *  content while it's up — the find bar owns the row one-handed, exactly as before — but it still
    *  lives inside this one shell so the sticky/safe-area/zinc bar is never copy-pasted. */
   override?: ReactNode;
-  /** Pin the header to the visual viewport while a software keyboard has panned the layout viewport. */
+  /** Pin the header during pane input mode. */
   fixed?: boolean;
   /** Visual viewport top relative to the layout viewport; non-zero when iOS pans for the keyboard. */
   fixedTop?: number;
 }
 
 // The single header shell every screen mounts: the safe-area-aware zinc bar (sticky normally, fixed
-// while a pane's software keyboard is open) with the Collie mark on the left, an optional route
+// during pane input mode) with the Collie mark on the left, an optional route
 // breadcrumb in the middle, and the caller's right cluster. The mark's connection animation is baked
 // in here (not a slot), so no caller can forget it: it gallops on
 // sustained trouble and rests muted once lost, computed from the SAME shared clock as the top

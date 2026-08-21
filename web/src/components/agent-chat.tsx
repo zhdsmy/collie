@@ -130,7 +130,10 @@ export function AgentChat({
     setHideControlsWhenTyping,
   } = useDisplayPrefs();
   const { open: keyboardOpen, offsetTop: keyboardViewportTop } = useKeyboardViewport();
-  const keepHeaderWhenTyping = keyboardOpen && prefs.keepHeaderWhenTyping;
+  const [keysDockOpen, setKeysDockOpen] = useState(false);
+  const headerInputActive = keyboardOpen || keysDockOpen;
+  const keepHeaderDuringInput = headerInputActive && prefs.keepHeaderWhenTyping;
+  const hideHeaderDuringInput = headerInputActive && !prefs.keepHeaderWhenTyping;
   // Raw-terminal escape hatch: when on, every agent grammar is bypassed and the plain mirror shows,
   // so a mis-detected/mis-rendered dialog can always be driven by hand with the keys pad.
   const grammarsOn = !prefs.rawTerminal;
@@ -589,14 +592,15 @@ export function AgentChat({
           identical on every screen (no hand-rolled bar to drift). The pane's own bits ride in via
           slots: the `space › tab` breadcrumb as the center, the agent StatusBadge as the right-cluster
           lead, and the find bar as the full-row takeover while searching. */}
-      <AppHeader
-        bridge={bridge}
-        error={error}
-        stalled={stalled}
-        fixed={keepHeaderWhenTyping}
-        fixedTop={keyboardViewportTop}
-        onHome={onBack}
-        override={
+      {!hideHeaderDuringInput && (
+        <AppHeader
+          bridge={bridge}
+          error={error}
+          stalled={stalled}
+          fixed={keepHeaderDuringInput}
+          fixedTop={keyboardViewportTop}
+          onHome={onBack}
+          override={
           findOpen ? (
             <FindBar
               query={findQuery}
@@ -696,11 +700,13 @@ export function AgentChat({
             <span className="truncate font-semibold">{t("chat.agentGone")}</span>
           </div>
         )}
-      </AppHeader>
+        </AppHeader>
+      )}
 
-      {/* A fixed typing-mode header leaves normal flow. Reserve the visual viewport's panned offset
-          plus the header's 60px + safe-area height so the visible terminal starts below it. */}
-      {keepHeaderWhenTyping && (
+      {/* A fixed input-mode header leaves normal flow. Reserve the visual viewport's panned offset
+          plus the header's 60px + safe-area height so the visible terminal starts below it. Keys
+          mode has no viewport pan, so its offset is naturally zero. */}
+      {keepHeaderDuringInput && (
         <div
           aria-hidden="true"
           data-testid="keyboard-header-spacer"
@@ -708,6 +714,14 @@ export function AgentChat({
           style={{
             height: `calc(env(safe-area-inset-top) + 3.75rem + ${keyboardViewportTop}px)`,
           }}
+        />
+      )}
+      {hideHeaderDuringInput && (
+        <div
+          aria-hidden="true"
+          data-testid="hidden-header-safe-area"
+          className="shrink-0"
+          style={{ height: `calc(env(safe-area-inset-top) + ${keyboardViewportTop}px)` }}
         />
       )}
 
@@ -900,6 +914,7 @@ export function AgentChat({
           <Composer
             ref={composerRef}
             keyboardOpen={keyboardOpen}
+            onKeysDockOpenChange={setKeysDockOpen}
             paneId={paneId}
             session={session}
             agent={agent?.agent}

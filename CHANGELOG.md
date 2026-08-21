@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.12] - 2026-08-21
+
+### Changed
+
+- **Pane-header input preference now covers the Keys dock.** Opening Keys fixes the pane title when retention is enabled and hides it when disabled, matching software-keyboard input mode.
+
 ## [0.32.11] - 2026-08-21
 
 ### Changed

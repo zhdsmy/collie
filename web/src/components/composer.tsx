@@ -40,6 +40,8 @@ export interface ComposerHandle {
 interface ComposerProps {
   /** Shared keyboard state from AgentChat; controls typing chrome and safe-area geometry. */
   keyboardOpen?: boolean;
+  /** Reports whether the Keys dock is open so pane-level chrome can follow input-mode prefs. */
+  onKeysDockOpenChange?: (open: boolean) => void;
   paneId: string;
   /** The session the pane lives in (undefined = primary) — scopes every write to the right Herdr. */
   session?: string;
@@ -165,6 +167,7 @@ function ComposerDock({
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
   {
     keyboardOpen = false,
+    onKeysDockOpenChange,
     paneId,
     session,
     agent,
@@ -270,6 +273,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const [previewLatched, setPreviewLatched] = useState(false);
   // Composer sheets are mutually exclusive — at most one open (Keys / Quick / Agent / Display).
   const [drawer, setDrawer] = useState<ComposerDrawer>(null);
+  useEffect(() => {
+    onKeysDockOpenChange?.(drawer === "keys");
+    return () => onKeysDockOpenChange?.(false);
+  }, [drawer, onKeysDockOpenChange]);
   // Keys staged in the (unmounted-on-close) NavTray, pushed up so leaving the Keys dock can guard a
   // composed sequence. See requestDrawer.
   const [queuedKeys, setQueuedKeys] = useState(0);
