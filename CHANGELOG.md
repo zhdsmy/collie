@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.13] - 2026-08-21
+
+### Changed
+
+- **Pane-header input preference now covers every Composer panel.** Keys, Quick, Agent, and Display all pin or hide the pane title consistently while open. (583eb88)
+
 ## [0.32.12] - 2026-08-21
 
 ### Changed
