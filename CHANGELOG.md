@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.14] - 2026-08-21
+
+### Fixed
+
+- **Pane tabs stay attached to the title without squeezing the terminal.** Opening an unpinned Composer panel shifts the intact header, tabs, and terminal stage upward instead of shrinking the terminal. (bd73c00)
+
 ## [0.32.13] - 2026-08-21
 
 ### Changed
