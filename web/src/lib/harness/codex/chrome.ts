@@ -3,6 +3,7 @@ import { isBlank, lineText, trimTrailingBlank, type StyledLine } from "../../blo
 
 const PROMPT_MARKER = "›";
 const MAX_COMPOSER_LINES = 100;
+const SLASH_COMMAND = /^\/[a-z][a-z0-9-]*$/i;
 const CONTEXT_FIELD = /(?:^|\s)Context \d+(?:% left|…)(?:\s|$)/;
 const STATUS_ITEM_FIELD =
   /(?:gpt-\S+|(?:^|\s)[~/]\S*|\b(?:Ready|Working|Approve(?: for)? me|Fast(?: on| off)|Tasks \d+\/\d+)\b)/;
@@ -103,17 +104,45 @@ function locateStatusStart(lines: StyledLine[], end: number): number | null {
   return null;
 }
 
+function promptDraft(line: StyledLine): string {
+  const text = lineText(line).trimStart();
+  return text.startsWith(PROMPT_MARKER) ? text.slice(PROMPT_MARKER.length).trim() : "";
+}
+
+function isSlashSuggestion(line: StyledLine, command: string): boolean {
+  if (!SLASH_COMMAND.test(command)) return false;
+  const escapedCommand = command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return (
+    uniformBackground(line) === null &&
+    coloredFieldCount(line) > 0 &&
+    new RegExp(`^${escapedCommand}\\s+\\S`).test(lineText(line).trim())
+  );
+}
+
 function locateComposer(lines: StyledLine[]): ComposerMatch | null {
   let end = lines.length;
-  while (end > 0 && isBlank(lineText(lines[end - 1]!)) && uniformBackground(lines[end - 1]!) === null) {
+  while (
+    end > 0 &&
+    isBlank(lineText(lines[end - 1]!)) &&
+    uniformBackground(lines[end - 1]!) === null
+  ) {
     end--;
   }
   if (end < 4) return null;
 
-  const statusStart = locateStatusStart(lines, end);
-  if (statusStart === null) return null;
+  // Codex 0.149 temporarily replaces the statusline with one coloured autocomplete row after a
+  // complete slash command. Treat that row as chrome only after the composer itself is pinned below.
+  const nativeStatusStart = locateStatusStart(lines, end);
+  const suggestion = nativeStatusStart === null ? lines[end - 1]! : null;
+  const bottom = (nativeStatusStart ?? end - 1) - 1;
+  const statusStart = nativeStatusStart ?? end;
+  const finish = (top: number, prompt: number): ComposerMatch | null => {
+    if (suggestion !== null && !isSlashSuggestion(suggestion, promptDraft(lines[prompt]!))) {
+      return null;
+    }
+    return { top, prompt, bottom, statusStart, statusEnd: end };
+  };
 
-  const bottom = statusStart - 1;
   const background = uniformBackground(lines[bottom]!);
   if (!isBlank(lineText(lines[bottom]!))) return null;
 
@@ -142,7 +171,7 @@ function locateComposer(lines: StyledLine[]): ComposerMatch | null {
         continue;
       }
 
-      return { top, prompt, bottom, statusStart, statusEnd: end };
+      return finish(top, prompt);
     }
     return null;
   }
@@ -165,7 +194,7 @@ function locateComposer(lines: StyledLine[]): ComposerMatch | null {
     if (startsWithPrompt(lines[i]!)) return null;
   }
 
-  return { top, prompt, bottom, statusStart, statusEnd: end };
+  return finish(top, prompt);
 }
 
 function draftSegments(line: StyledLine): AnsiSegment[] {

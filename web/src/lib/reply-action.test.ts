@@ -28,7 +28,10 @@ const codexPaneWithDraft = (
   ].join("\n");
 
 /** Record every reply POST, and let the fake pane's screen be swapped per test. */
-function harness(screen: () => string) {
+function harness(
+  screen: () => string,
+  onReply?: (body: { text: string; submit: boolean }) => void,
+) {
   const calls: Array<{ text: string; submit: boolean }> = [];
   server.use(
     http.get(/\/api\/pane\/[^/]+$/, () =>
@@ -37,6 +40,7 @@ function harness(screen: () => string) {
     http.post(/\/api\/pane\/[^/]+\/reply$/, async ({ request }) => {
       const body = (await request.json()) as { text: string; submit: boolean };
       calls.push(body);
+      onReply?.(body);
       return HttpResponse.json({ ok: true });
     }),
   );
@@ -196,6 +200,36 @@ describe("draftCarriesSend", () => {
 });
 
 describe("sendGuardedReply", () => {
+  it("submits a short Codex slash command after its suggestion replaces the statusline", async () => {
+    let pane = codexPaneWithDraft("");
+    const suggestion = [
+      "some output",
+      codexPaint(" ".repeat(40)),
+      `${codexPaint("› ", "1;")}${codexPaint("/diff")}${codexPaint(" ".repeat(12))}`,
+      codexPaint(" ".repeat(40)),
+      "  \x1b[38;2;6;182;212m/diff   show git diff (including untracked files)\x1b[0m",
+    ].join("\n");
+    const calls = harness(
+      () => pane,
+      (body) => {
+        pane = body.submit ? codexPaneWithDraft("") : suggestion;
+      },
+    );
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: "/diff",
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: "/diff", submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
   it("types, verifies the text on the input line, then submits", async () => {
     const calls = harness(() => paneWithDraft("ship it please"));
 

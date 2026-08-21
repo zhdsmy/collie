@@ -1897,6 +1897,54 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
 });
 
 describe("Composer — Agent command dock", () => {
+  it("types then submits a no-argument Codex command while autocomplete is visible", async () => {
+    const user = userEvent.setup();
+    const calls: Array<{ text: string; submit: boolean }> = [];
+    const paint = (text: string, style = "") =>
+      `\x1b[${style}48;2;65;69;76m${text}\x1b[0m`;
+    const pane = (draft: string, suggestion = false) =>
+      [
+        "some output",
+        paint(" ".repeat(40)),
+        `${paint("› ", "1;")}${paint(draft)}${paint(" ".repeat(12))}`,
+        paint(" ".repeat(40)),
+        ...(suggestion
+          ? ["  \x1b[38;2;6;182;212m/diff   show git diff (including untracked files)\x1b[0m"]
+          : [
+              "  \x1b[38;2;246;226;183mgpt-5.6-sol high\x1b[0m · Ready · Context 91% left",
+            ]),
+      ].join("\n");
+    let terminal = pane("");
+    server.use(
+      http.get(/\/api\/pane\/[^/]+$/, () =>
+        HttpResponse.json({
+          paneId: "w1:p1",
+          text: terminal,
+          truncated: false,
+          revision: calls.length,
+        }),
+      ),
+      http.post(/\/api\/pane\/[^/]+\/reply$/, async ({ request }) => {
+        const body = (await request.json()) as { text: string; submit: boolean };
+        calls.push(body);
+        terminal = body.submit ? pane("") : pane(body.text, true);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const props = renderComposer({ agent: "codex" });
+
+    await user.click(screen.getByRole("button", { name: "Agent" }));
+    await user.click(screen.getByText("/diff"));
+
+    await waitFor(() =>
+      expect(calls).toEqual([
+        { text: "/diff", submit: false },
+        { text: "", submit: true },
+      ]),
+    );
+    expect(props.onSent).toHaveBeenCalledOnce();
+  });
+
   it("uses the shared in-flow Agent dock with search below the scrolling command list", async () => {
     const user = userEvent.setup();
     renderComposer({ agent: "codex" });

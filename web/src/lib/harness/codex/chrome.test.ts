@@ -148,6 +148,28 @@ describe("Codex chrome", () => {
     expect(stripChrome(captured).map(lineText)).toEqual(["earlier output"]);
   });
 
+  it("recognises a complete slash command while Codex 0.149 shows its suggestion", () => {
+    const captured = lines(`earlier output\n${fixture("codex--slash-command-suggestion.ansi.b64")}`);
+
+    expect(hasComposer(captured)).toBe(true);
+    expect(extractInputDraft(captured)).toBe("/diff");
+    expect(extractStatusLines(captured)).toEqual([]);
+    expect(stripChrome(captured).map(lineText)).toEqual(["earlier output"]);
+  });
+
+  it("does not treat an unrelated coloured tail as Codex slash autocomplete", () => {
+    const composer = fixture("codex--slash-command-suggestion.ansi.b64");
+    const unrelated = composer.replace(
+      "/diff   show git diff (including untracked files)",
+      "/status   unrelated command",
+    );
+    const captured = lines(`earlier output\n${unrelated}`);
+
+    expect(hasComposer(captured)).toBe(false);
+    expect(extractInputDraft(captured)).toBeNull();
+    expect(stripChrome(captured)).toBe(captured);
+  });
+
   it.each([
     [["  tab to queue message", "26% context left"]],
     [["  tab to queue message     26% context left"]],
