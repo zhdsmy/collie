@@ -147,24 +147,25 @@ describe("AgentChat — typing layout preferences", () => {
   it("keeps the normal pane navigation and composer chrome when the keyboard is closed", () => {
     renderChat({ tabs: fixtureTabs });
 
-    expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+    const chrome = screen.getByTestId("pane-chrome");
+    expect(chrome).toHaveClass("sticky");
     expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
-    expect(screen.getByText("Tabs")).toBeInTheDocument();
-    expect(screen.getByRole("banner").nextElementSibling).toContainElement(
-      screen.getByText("Tabs"),
-    );
+    expect(chrome).toContainElement(screen.getByRole("banner"));
+    expect(chrome).toContainElement(screen.getByText("Tabs"));
     expect(screen.getByRole("button", { name: "Switch pane" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
   });
 
-  it("pins the title and gives navigation and composer chrome back to the terminal", () => {
+  it("pins the title and attached tab row while giving pane and composer chrome back to the terminal", () => {
     vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
     renderChat({ tabs: fixtureTabs });
 
-    expect(screen.getByRole("banner")).toHaveClass("fixed");
-    expect(screen.getByRole("banner")).toHaveStyle({ top: "184px" });
+    const chrome = screen.getByTestId("pane-chrome");
+    expect(chrome).toHaveClass("fixed");
+    expect(chrome).toHaveStyle({ top: "184px" });
+    expect(chrome).toContainElement(screen.getByRole("banner"));
+    expect(chrome).toContainElement(screen.getByText("Tabs"));
     expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
-    expect(screen.queryByText("Tabs")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Switch pane" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Keys" })).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText(/type a reply/i)).toHaveStyle({
@@ -181,7 +182,9 @@ describe("AgentChat — typing layout preferences", () => {
     vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
     renderChat({ tabs: fixtureTabs });
 
-    expect(screen.getByRole("banner")).toHaveClass("fixed");
+    const chrome = screen.getByTestId("pane-chrome");
+    expect(chrome).toHaveClass("fixed");
+    expect(chrome).toContainElement(screen.getByText("Tabs"));
     expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
   });
@@ -225,14 +228,16 @@ describe("AgentChat — typing layout preferences", () => {
       const dockButton = screen.getByRole("button", { name: buttonName });
       await user.click(dockButton);
 
-      expect(screen.getByRole("banner")).toHaveClass("fixed");
-      expect(screen.getByRole("banner")).toHaveStyle({ top: "0px" });
+      const chrome = screen.getByTestId("pane-chrome");
+      expect(chrome).toHaveClass("fixed");
+      expect(chrome).toHaveStyle({ top: "0px" });
+      expect(chrome).toContainElement(screen.getByRole("banner"));
+      expect(chrome).toContainElement(screen.getByText("Tabs"));
       const spacer = screen.getByTestId("keyboard-header-spacer");
       expect(spacer).toBeInTheDocument();
-      expect(spacer.nextElementSibling).toContainElement(screen.getByText("Tabs"));
 
       await user.click(dockButton);
-      expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+      expect(screen.getByTestId("pane-chrome")).toHaveClass("sticky");
       expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
     },
   );

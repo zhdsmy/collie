@@ -5,6 +5,11 @@ import { extractInputDraft, extractStatusLines, hasComposer, stripChrome } from 
 
 const COMPLETION_SUMMARY = /^─+\s+Worked for\b/;
 const COMMAND_SUMMARY = /^•\s+Ran\s+\d+\s+commands\b/;
+const COMMAND_EVENT =
+  /^•\s+(?:Called|Edited|Explored|Ran|Read|Running|Searched|Viewed|Working|You have)(?:\s|$)/;
+const ANSWER_LEAD = /^•\s+\S/;
+const ANSWER_CONTINUATION = /^ {2}\S/;
+const NESTED_ROW = /^ {2}(?:(?:[-+*•]|\d+[.)])(?:\s|$)|[│└┌┐┘┬├┤┼])/;
 const DECORATIVE_RULE = /^─{40,}$/;
 const RESIDUAL_RULE = /^─$/;
 const UPLOAD_IMAGE_PATH =
@@ -42,6 +47,81 @@ function compactStatusSegment(text: string): string {
     .replace(/\bContext\s+(\d+)(?:% left|…)/g, "Ctx $1%")
     .replace(/\bApprove(?: for)? me\b/g, "Approve")
     .replace(/\bFast (on|off)\b/g, "Fast:$1");
+}
+
+function withoutContinuationIndent(line: StyledLine, joiner: string): StyledLine["segments"] {
+  let remaining = 2;
+  let prefixed = false;
+  const segments: StyledLine["segments"] = [];
+  for (const segment of line.segments) {
+    let text = segment.text;
+    if (remaining > 0) {
+      const drop = Math.min(remaining, text.length);
+      text = text.slice(drop);
+      remaining -= drop;
+    }
+    if (!text) continue;
+    if (!prefixed) {
+      text = joiner + text;
+      prefixed = true;
+    }
+    segments.push({ ...segment, text });
+  }
+  return segments;
+}
+
+function answerJoiner(previous: string, continuation: string): string {
+  const before = previous.at(-1) ?? "";
+  const after = continuation.trimStart().at(0) ?? "";
+  return /[A-Za-z0-9]/.test(before) && /[A-Za-z0-9]/.test(after) ? " " : "";
+}
+
+/**
+ * Codex hard-wraps its rendered answer paragraphs to the host PTY and prefixes continuation rows
+ * with two spaces. The phone then wraps those rows a second time, leaving short fragments and
+ * hanging indents. Rejoin only answer-bullet continuations; tool events, nested rows, and painted
+ * code/diffs keep their terminal rows verbatim.
+ */
+function normalizeWrappedAnswers(lines: StyledLine[]): StyledLine[] {
+  let normalized: StyledLine[] | undefined;
+
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]!;
+    const text = lineText(line);
+    const answerLead =
+      ANSWER_LEAD.test(text) &&
+      !COMMAND_EVENT.test(text) &&
+      line.segments.every((segment) => segment.bg === undefined);
+    if (!answerLead) {
+      normalized?.push(line);
+      continue;
+    }
+
+    let merged = line;
+    while (index + 1 < lines.length) {
+      const next = lines[index + 1]!;
+      const nextText = lineText(next);
+      if (
+        !ANSWER_CONTINUATION.test(nextText) ||
+        NESTED_ROW.test(nextText) ||
+        next.segments.some((segment) => segment.bg !== undefined)
+      ) {
+        break;
+      }
+      normalized ??= lines.slice(0, index);
+      merged = {
+        ...merged,
+        segments: [
+          ...merged.segments,
+          ...withoutContinuationIndent(next, answerJoiner(lineText(merged), nextText)),
+        ],
+      };
+      index++;
+    }
+    normalized?.push(merged);
+  }
+
+  return normalized ?? lines;
 }
 
 /** Compact only the Codex status strip; the captured line remains untouched for parsing. */
@@ -116,14 +196,21 @@ export function imageDraftCarriesSend(sent: string, draft: string): boolean {
   if (sentPaths.length === 0) return false;
 
   const unmatchedPaths = [...sentPaths];
-  for (const path of uploadPaths(draft)) {
+  const draftPaths = uploadPaths(draft);
+  for (const path of draftPaths) {
     const index = unmatchedPaths.indexOf(path);
     if (index === -1) return false;
     unmatchedPaths.splice(index, 1);
   }
 
   const placeholderCount = [...draft.matchAll(IMAGE_PLACEHOLDER)].length;
-  if (placeholderCount === 0 || placeholderCount > unmatchedPaths.length) return false;
+  if (placeholderCount === 0) {
+    // A long multi-image draft can window out both the caption and Codex's converted placeholders.
+    // Two distinct exact upload paths still identify this send strongly enough to submit; one path
+    // remains ambiguous and deliberately fails closed.
+    return new Set(draftPaths).size >= 2;
+  }
+  if (placeholderCount > unmatchedPaths.length) return false;
 
   const sentCaption = captionWithoutImages(sent);
   const draftCaption = captionWithoutImages(draft);
@@ -137,7 +224,12 @@ export function imageDraftCarriesSend(sent: string, draft: string): boolean {
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
-  return [{ kind: "raw", lines: normalizeCompletionSummaries(stripChrome(lines)) }];
+  return [
+    {
+      kind: "raw",
+      lines: normalizeCompletionSummaries(normalizeWrappedAnswers(stripChrome(lines))),
+    },
+  ];
 }
 
 export { extractInputDraft, extractStatusLines };

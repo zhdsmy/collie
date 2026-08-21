@@ -624,132 +624,158 @@ export function AgentChat({
             : undefined
         }
       >
-      {/* Header — the SAME AppHeader shell the dashboard and space mount, so the Collie mark is
-          identical on every screen (no hand-rolled bar to drift). The pane's own bits ride in via
-          slots: the `space › tab` breadcrumb as the center, the agent StatusBadge as the right-cluster
-          lead, and the find bar as the full-row takeover while searching. */}
+      {/* The title and tab row are one chrome unit: they fix, hide, or move with the pane together. */}
       {!hideHeaderForKeyboard && (
-        <AppHeader
-          bridge={bridge}
-          error={error}
-          stalled={stalled}
-          fixed={keepHeaderDuringInput}
-          fixedTop={keyboardViewportTop}
-          staticPosition={releasePaneForDock}
-          onHome={onBack}
-          override={
-          findOpen ? (
-            <FindBar
-              query={findQuery}
-              onQueryChange={setFindQuery}
-              count={matchCount}
-              current={currentMatch}
-              onPrev={() => gotoMatch(-1)}
-              onNext={() => gotoMatch(1)}
-              onClose={closeFind}
-            />
-          ) : undefined
-        }
-        // Right cluster, in reading order: Find, History, then the agent status pill. The pill is the
-        // rightmost item on every pane screen (it's the thing you glance at), so the buttons sit to
-        // its LEFT rather than trailing it. All ride in `rightLead` because AppHeader renders
-        // `rightLead` before `rightTrail` — the order here IS the on-screen order.
-        //
-        // Find lives HERE, not in the composer, because the find bar it opens takes over this very
-        // header row (see `override` above) — trigger and surface in the same place. It sat in the
-        // composer's old View row, which put the button at the bottom of the screen and its UI at the
-        // top. Offered only when there's buffered output to search; opening it freezes the tail.
-        //
-        // History opens the agent's own transcript, the only real conversation history a Claude pane
-        // has: its terminal runs on the alternate screen, so the mirror below can never show more
-        // than the visible viewport. Offered only when the pane reported an agent session id (i.e. a
-        // transcript can exist at all), so the button never leads to an empty screen.
-        //
-        // The status pill is dimmed while the connection isn't live, so a frozen "working"/"idle"
-        // from the last snapshot doesn't masquerade as current. A bare shell shows a muted "shell" tag.
-        rightLead={
-          agent ? (
-            <>
-              {display && (
-                <button
-                  type="button"
-                  onClick={openFind}
-                  aria-label={t("chat.findOutput")}
-                  className="-mr-1 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
-                >
-                  <Search className="size-4" />
-                </button>
-              )}
-              {agent.hasSession && (
-                <button
-                  type="button"
-                  onClick={() => navigate(historyPath(paneId, session))}
-                  aria-label={t("chat.conversationHistory")}
-                  className="-mr-1 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
-                >
-                  <ScrollText className="size-4" />
-                </button>
-              )}
+        <div
+          data-testid="pane-chrome"
+          style={keepHeaderDuringInput ? { top: keyboardViewportTop } : undefined}
+          className={cn(
+            "shrink-0 bg-background",
+            releasePaneForDock
+              ? "relative z-20"
+              : keepHeaderDuringInput
+                ? "fixed inset-x-0 z-40"
+                : "sticky top-0 z-20",
+          )}
+        >
+          <AppHeader
+            bridge={bridge}
+            error={error}
+            stalled={stalled}
+            staticPosition
+            onHome={onBack}
+            override={
+            findOpen ? (
+              <FindBar
+                query={findQuery}
+                onQueryChange={setFindQuery}
+                count={matchCount}
+                current={currentMatch}
+                onPrev={() => gotoMatch(-1)}
+                onNext={() => gotoMatch(1)}
+                onClose={closeFind}
+              />
+            ) : undefined
+          }
+          // Right cluster, in reading order: Find, History, then the agent status pill. The pill is the
+          // rightmost item on every pane screen (it's the thing you glance at), so the buttons sit to
+          // its LEFT rather than trailing it. All ride in `rightLead` because AppHeader renders
+          // `rightLead` before `rightTrail` — the order here IS the on-screen order.
+          //
+          // Find lives HERE, not in the composer, because the find bar it opens takes over this very
+          // header row (see `override` above) — trigger and surface in the same place. It sat in the
+          // composer's old View row, which put the button at the bottom of the screen and its UI at the
+          // top. Offered only when there's buffered output to search; opening it freezes the tail.
+          //
+          // History opens the agent's own transcript, the only real conversation history a Claude pane
+          // has: its terminal runs on the alternate screen, so the mirror below can never show more
+          // than the visible viewport. Offered only when the pane reported an agent session id (i.e. a
+          // transcript can exist at all), so the button never leads to an empty screen.
+          //
+          // The status pill is dimmed while the connection isn't live, so a frozen "working"/"idle"
+          // from the last snapshot doesn't masquerade as current. A bare shell shows a muted "shell" tag.
+          rightLead={
+            agent ? (
+              <>
+                {display && (
+                  <button
+                    type="button"
+                    onClick={openFind}
+                    aria-label={t("chat.findOutput")}
+                    className="-mr-1 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
+                  >
+                    <Search className="size-4" />
+                  </button>
+                )}
+                {agent.hasSession && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(historyPath(paneId, session))}
+                    aria-label={t("chat.conversationHistory")}
+                    className="-mr-1 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
+                  >
+                    <ScrollText className="size-4" />
+                  </button>
+                )}
+                {isShell ? (
+                  <ShellBadge stale={connecting} />
+                ) : (
+                  <StatusBadge status={agent.status} stale={connecting} />
+                )}
+              </>
+            ) : undefined
+          }
+        >
+          {/* Title block: the space › tab leads, with the agent's brand logo to its left (the agent
+              name would just repeat the icon, so it's dropped), and the working directory on the
+              subline. Tapping it leaves the pane for the space overview (all its tabs + panes). */}
+          {agent ? (
+            <button
+              type="button"
+              onClick={() => openSpace(agent.workspaceId)}
+              aria-label={t("chat.openSpaceOverview", { space: agent.workspaceLabel })}
+              className="-mx-1 flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-0.5 text-left transition-colors active:bg-muted/60"
+            >
               {isShell ? (
-                <ShellBadge stale={connecting} />
+                <div className="flex size-6 shrink-0 items-center justify-center rounded-full border bg-muted">
+                  <TerminalSquare className="size-3 text-muted-foreground" />
+                </div>
               ) : (
-                <StatusBadge status={agent.status} stale={connecting} />
+                // Deliberately smaller than the size-8 Collie mark beside it — the agent logo is the
+                // pane's subject, not a second brand competing with Collie's for the header.
+                <AgentIcon agent={agent.agent} className="size-6" />
               )}
-            </>
-          ) : undefined
-        }
-      >
-        {/* Title block: the space › tab leads, with the agent's brand logo to its left (the agent
-            name would just repeat the icon, so it's dropped), and the working directory on the
-            subline. Tapping it leaves the pane for the space overview (all its tabs + panes). */}
-        {agent ? (
-          <button
-            type="button"
-            onClick={() => openSpace(agent.workspaceId)}
-            aria-label={t("chat.openSpaceOverview", { space: agent.workspaceLabel })}
-            className="-mx-1 flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-0.5 text-left transition-colors active:bg-muted/60"
-          >
-            {isShell ? (
-              <div className="flex size-6 shrink-0 items-center justify-center rounded-full border bg-muted">
-                <TerminalSquare className="size-3 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                {/* A user-set pane label leads when present (the identifier they chose), then Claude's
+                    own /rename session name, otherwise the default space › tab. The cwd subline keeps
+                    context either way. */}
+                <div className="truncate font-semibold leading-tight">
+                  {agent.paneLabel ??
+                    agent.sessionName ??
+                    `${agent.workspaceLabel}${tabLabel ? ` › ${tabLabel}` : ""}`}
+                </div>
+                <div className="truncate font-mono text-xs leading-tight text-muted-foreground">
+                  {shortCwd(agent.cwd)}
+                </div>
               </div>
-            ) : (
-              // Deliberately smaller than the size-8 Collie mark beside it — the agent logo is the
-              // pane's subject, not a second brand competing with Collie's for the header.
-              <AgentIcon agent={agent.agent} className="size-6" />
-            )}
+            </button>
+          ) : (
             <div className="min-w-0 flex-1">
-              {/* A user-set pane label leads when present (the identifier they chose), then Claude's
-                  own /rename session name, otherwise the default space › tab. The cwd subline keeps
-                  context either way. */}
-              <div className="truncate font-semibold leading-tight">
-                {agent.paneLabel ??
-                  agent.sessionName ??
-                  `${agent.workspaceLabel}${tabLabel ? ` › ${tabLabel}` : ""}`}
-              </div>
-              <div className="truncate font-mono text-xs leading-tight text-muted-foreground">
-                {shortCwd(agent.cwd)}
-              </div>
+              <span className="truncate font-semibold">{t("chat.agentGone")}</span>
             </div>
-          </button>
-        ) : (
-          <div className="min-w-0 flex-1">
-            <span className="truncate font-semibold">{t("chat.agentGone")}</span>
-          </div>
+          )}
+          </AppHeader>
+
+        {agent && (
+          <TabStrip
+            workspaceId={agent.workspaceId}
+            tabs={tabs}
+            agents={agents}
+            selected={agent.tabId}
+            onSelect={(id) => id && goToTab(id)}
+            onNewTab={newTab}
+            allowAll={false}
+            session={session}
+            readOnly={readOnly}
+            onRenamed={() => revalidator.revalidate()}
+            // Closing the tab this pane lives in kills the pane too — leave for Home the same way
+            // pane-close does (onBack); closing any other tab just revalidates so it drops out.
+            onClosed={(tabId) =>
+              agent?.tabId === tabId ? onBack() : revalidator.revalidate()
+            }
+          />
         )}
-        </AppHeader>
+        </div>
       )}
 
-      {/* A fixed input-mode header leaves normal flow. Reserve the visual viewport's panned offset
-          plus the header's 60px + safe-area height so the visible terminal starts below it. Composer
-          docks have no viewport pan, so their offset is naturally zero. */}
+      {/* Fixed pane chrome leaves normal flow. Reserve both attached rows plus the viewport pan. */}
       {keepHeaderDuringInput && (
         <div
           aria-hidden="true"
           data-testid="keyboard-header-spacer"
           className="shrink-0"
           style={{
-            height: `calc(env(safe-area-inset-top) + 3.75rem + ${keyboardViewportTop}px)`,
+            height: `calc(env(safe-area-inset-top) + 6.75rem + ${keyboardViewportTop}px)`,
           }}
         />
       )}
@@ -759,28 +785,6 @@ export function AgentChat({
           data-testid="hidden-header-safe-area"
           className="shrink-0"
           style={{ height: `calc(env(safe-area-inset-top) + ${keyboardViewportTop}px)` }}
-        />
-      )}
-
-      {/* In-pane tabs are the header's second row, not terminal content. Keeping them adjacent makes
-          the two navigation levels move together when an unpinned Composer dock releases the pane. */}
-      {agent && !keyboardOpen && (
-        <TabStrip
-          workspaceId={agent.workspaceId}
-          tabs={tabs}
-          agents={agents}
-          selected={agent.tabId}
-          onSelect={(id) => id && goToTab(id)}
-          onNewTab={newTab}
-          allowAll={false}
-          session={session}
-          readOnly={readOnly}
-          onRenamed={() => revalidator.revalidate()}
-          // Closing the tab this pane lives in kills the pane too — leave for Home the same way
-          // pane-close does (onBack); closing any other tab just revalidates so it drops out.
-          onClosed={(tabId) =>
-            agent?.tabId === tabId ? onBack() : revalidator.revalidate()
-          }
         />
       )}
 

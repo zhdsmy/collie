@@ -242,6 +242,45 @@ describe("Codex chrome", () => {
     ]);
   });
 
+  it("reflows Codex answer continuations without joining tools, lists, or code", () => {
+    const captured = lines(
+      [
+        "• 我会把修复限制在 Codex 对命令草稿的识",
+        "  别，不放宽通用 Enter 安全门。",
+        "",
+        "• This explanation ends with one",
+        "  more word after the terminal wraps it.",
+        "",
+        "• Running a deliberately long command",
+        "  must stay on its own terminal row",
+        "",
+        "• 下面保留列表：",
+        "  - first item",
+        "  - second item",
+        "\x1b[42m+const longLine = true;\x1b[0m",
+        "\x1b[42m  continued code\x1b[0m",
+      ].join("\n"),
+    );
+
+    const block = codexBuildBlocks(captured)[0]!;
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([
+      "• 我会把修复限制在 Codex 对命令草稿的识别，不放宽通用 Enter 安全门。",
+      "",
+      "• This explanation ends with one more word after the terminal wraps it.",
+      "",
+      "• Running a deliberately long command",
+      "  must stay on its own terminal row",
+      "",
+      "• 下面保留列表：",
+      "  - first item",
+      "  - second item",
+      "+const longLine = true;",
+      "  continued code",
+    ]);
+    expect(block.lines.at(-1)!.segments).toEqual(captured.at(-1)!.segments);
+  });
+
   it("removes Codex 0.149 command-boundary rules and their single-glyph residue", () => {
     const commandSummary = "• Ran 4 commands · ctrl + t to view transcript";
     const longRule = "─".repeat(133);
@@ -363,12 +402,23 @@ describe("Codex image draft verification", () => {
     expect(imageDraftCarriesSend(sent, `[Image #1] ${question}`)).toBe(true);
   });
 
+  it("accepts two exact upload paths when a long multi-image draft windows out the caption", () => {
+    const first = "/Users/michael/.local/state/collie/uploads/w1_p2-mt33qyrc-ff74f768.jpg";
+    const second = "/Users/michael/.local/state/collie/uploads/w1_p2-mt33r1ko-bcb0f9ee.jpg";
+    const third = "/Users/michael/.local/state/collie/uploads/w1_p2-mt33s7qo-9de56008.png";
+    const sent = `${first} ${second}\n正文区中英文换行位置很奇怪\n${third}\n点击 Tab 重命名没有输入框弹出`;
+
+    expect(imageDraftCarriesSend(sent, `${first}\n${second}`)).toBe(true);
+    expect(imageDraftCarriesSend(sent, first)).toBe(false);
+  });
+
   it("rejects mismatched tokens, captions, and ambiguous image-only drafts", () => {
     expect(imageDraftCarriesSend(`${upload} 请检查终端布局是否正常`, "请检查终端布局是否正常")).toBe(false);
     expect(imageDraftCarriesSend(`${upload} 请检查终端布局是否正常`, "[Image #1] 请删除终端里的所有内容")).toBe(
       false,
     );
     expect(imageDraftCarriesSend(upload, "[Image #1]")).toBe(false);
+    expect(imageDraftCarriesSend(`${upload} ${upload} 请看截图`, `${upload}\n${upload}`)).toBe(false);
     expect(imageDraftCarriesSend("请检查终端布局是否正常", "[Image #1] 请检查终端布局是否正常")).toBe(false);
     expect(imageDraftCarriesSend(`${upload} echo a b`, "[Image #1] echo ab")).toBe(false);
     const second = "/test-state/uploads/second.png";

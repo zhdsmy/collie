@@ -66,7 +66,10 @@ describe("TabActionsSheet — rename", () => {
     const user = userEvent.setup();
     renderSheet();
     await user.click(screen.getByRole("button", { name: "Rename" }));
-    await waitFor(() => expect(screen.getByPlaceholderText("name this tab")).toHaveFocus());
+    const input = screen.getByPlaceholderText("name this tab");
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(input).toHaveClass("text-base");
+    expect(input).not.toHaveClass("text-sm");
   });
 
   it("Back returns to the action list without saving", async () => {
