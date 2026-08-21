@@ -862,18 +862,9 @@ export function AgentChat({
             </button>
           )}
 
-          {/* The agent's statusline, re-surfaced as app chrome (its branch/model/ctx/permission mode
-              would otherwise vanish with the stripped input box). Sits directly above the composer,
-              as it did in the TUI. Verbatim text — React text nodes, so no XSS surface.
-
-              STACKED, one row per line, each truncated — deliberately, over the two alternatives:
-              joining the rows with a separator would put ~150 chars on a strip that fits ~55 at this
-              size on a phone, truncating away exactly the fields (branch, permission mode) this
-              exists to surface; wrapping makes the strip's height depend on the pane width and turns
-              a column-aligned statusline into ragged prose. Stacking also preserves the shape the
-              user themselves configured in the TUI, so it reads as the same thing they know.
-              Height is bounded upstream (MAX_STATUS_LINES caps the run stripChrome will claim), so
-              there is no second cap here; the mirror is a flex child that shrinks, never pushed off. */}
+          {/* Agent status is re-surfaced as app chrome because input-box chrome is stripped from the mirror.
+              Keep every captured status row and allow long rows to wrap: Codex can wrap one statusline across
+              terminal rows, and a narrow phone must not hide its trailing items. */}
           {statusLines.length > 0 && (
             <div
               className={cn(
@@ -890,7 +881,11 @@ export function AgentChat({
               {statusLines.map((row, i) => (
                 // Index key: these rows are a positional snapshot of the pane tail, re-derived on
                 // every poll — there is no identity to preserve across renders.
-                <div key={i} className="truncate">
+        <div
+          key={i}
+          className="statusline-row whitespace-normal break-words"
+          style={{ overflowWrap: "anywhere" }}
+        >
                   {row.segments.map((s, si) => (
                     // Text nodes only — colour and weight come from the ANSI parse, never markup.
                     // Same XSS boundary as the mirror.

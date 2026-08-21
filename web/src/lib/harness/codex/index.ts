@@ -37,10 +37,11 @@ function isCommandBoundaryRule(line: StyledLine): boolean {
 
 function compactStatusSegment(text: string): string {
   return text
-    .replace(/\s+·\s+/g, "·")
-    .replace(/^Context\s+(\d+)(?:% left|…)?$/, "Ctx $1%")
-    .replace(/^Approve(?: for)? me$/, "Approve")
-    .replace(/^Fast off$/, "Fast:off");
+    // Keep one trailing space after separators so the display strip can wrap between items.
+    .replace(/\s+·\s+/g, "· ")
+    .replace(/\bContext\s+(\d+)(?:% left|…)/g, "Ctx $1%")
+    .replace(/\bApprove(?: for)? me\b/g, "Approve")
+    .replace(/\bFast (on|off)\b/g, "Fast:$1");
 }
 
 /** Compact only the Codex status strip; the captured line remains untouched for parsing. */

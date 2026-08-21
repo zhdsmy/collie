@@ -4,6 +4,8 @@ import { isBlank, lineText, trimTrailingBlank, type StyledLine } from "../../blo
 const PROMPT_MARKER = "›";
 const MAX_COMPOSER_LINES = 100;
 const CONTEXT_FIELD = /(?:^|\s)Context \d+(?:% left|…)(?:\s|$)/;
+const STATUS_ITEM_FIELD =
+  /(?:gpt-\S+|(?:^|\s)[~/]\S*|\b(?:Ready|Working|Approve(?: for)? me|Fast(?: on| off)|Tasks \d+\/\d+)\b)/;
 const QUEUE_HINT = /^tab to queue message$/i;
 const QUEUE_CONTEXT = /^\d+% context left$/i;
 const QUEUE_STATUS = /^tab to queue message\s+\d+% context left$/i;
@@ -57,13 +59,33 @@ function coloredFieldCount(line: StyledLine): number {
 
 function isRichStatusLine(line: StyledLine): boolean {
   const text = lineText(line).trim();
-  return CONTEXT_FIELD.test(text) && text.split("·").length >= 3 && uniformBackground(line) === null;
+  return (
+    CONTEXT_FIELD.test(text) &&
+    (text.split("·").length >= 3 || coloredFieldCount(line) > 0) &&
+    uniformBackground(line) === null
+  );
+}
+
+function isStatusContinuationLine(line: StyledLine): boolean {
+  const text = lineText(line).trim();
+  return (
+    text.length > 0 &&
+    uniformBackground(line) === null &&
+    coloredFieldCount(line) > 0 &&
+    STATUS_ITEM_FIELD.test(text)
+  );
 }
 
 function locateStatusStart(lines: StyledLine[], end: number): number | null {
   const last = lines[end - 1]!;
   const lastText = lineText(last).trim();
-  if (isRichStatusLine(last) || (QUEUE_STATUS.test(lastText) && uniformBackground(last) === null)) {
+  if (isRichStatusLine(last)) {
+    let start = end - 1;
+    while (start > 0 && isStatusContinuationLine(lines[start - 1]!)) start--;
+    return start;
+  }
+
+  if (QUEUE_STATUS.test(lastText) && uniformBackground(last) === null) {
     return end - 1;
   }
 

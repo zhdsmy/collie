@@ -337,7 +337,8 @@ const CODEX_STATUS_TEXT = [
     "\x1b[38;2;200;169;238mReady\x1b[0m\x1b[2m · \x1b[0m" +
     "\x1b[38;2;200;169;238mApprove for me\x1b[0m\x1b[2m · \x1b[0m" +
     "\x1b[38;2;242;181;144mContext 19% left\x1b[0m\x1b[2m · \x1b[0m" +
-    "\x1b[38;2;171;223;167mFast off\x1b[0m",
+    "\x1b[38;2;171;223;167mFast off\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;200;169;238mTasks 3/3\x1b[0m",
 ].join("\n");
 
 // A minimal multi-question wizard tail (stepper header + current question) — enough for the REAL
@@ -474,7 +475,7 @@ describe("AgentChat — block-grammar adapter scoping", () => {
     expect(second.closest("pre")).toBeNull();
     // Stacked in the one strip. Compared at the ROW level: each row renders one <span> per ANSI
     // segment (colour is carried through now), so the text node's own parent is a span, not the row.
-    const row = (el: HTMLElement) => el.closest("div.truncate");
+    const row = (el: HTMLElement) => el.closest("div.statusline-row");
     expect(row(second)).not.toBe(row(strip));
     expect(row(second)?.parentElement).toBe(row(strip)?.parentElement);
     expect(screen.queryByText(/❯/)).toBeNull(); // the input box was stripped off the mirror
@@ -485,13 +486,17 @@ describe("AgentChat — block-grammar adapter scoping", () => {
 
     const status = screen.getByText((_, element) =>
       Boolean(
-        element?.classList.contains("truncate") &&
+        element?.classList.contains("statusline-row") &&
           element.textContent?.includes("Ctx 19%") &&
           element.textContent?.includes("Approve") &&
-          element.textContent?.includes("Fast:off"),
+        element.textContent?.includes("Fast:off") &&
+        element.textContent?.includes("Tasks 3/3"),
       ),
     );
     expect(status.closest("pre")).toBeNull();
+    expect(status).toHaveClass("whitespace-normal", "break-words");
+    expect(status).not.toHaveClass("truncate");
+    expect(status).toHaveStyle({ overflowWrap: "anywhere" });
     expect(screen.queryByText(/Ask Codex to do anything/)).toBeNull();
   });
 

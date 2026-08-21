@@ -94,13 +94,44 @@ describe("Codex chrome", () => {
     );
     const compacted = compactCodexStatusLines(captured);
 
-    expect(lineText(compacted[0]!)).toBe("  gpt-5.6-sol xhigh·Ctx 19%·Approve·Fast:off");
+    expect(lineText(compacted[0]!)).toBe("  gpt-5.6-sol xhigh· Ctx 19%· Approve· Fast:off");
     expect(compacted[0]!.segments.find((segment) => segment.text === "Ctx 19%")?.fg).toBe(
       "rgb(242,181,144)",
     );
-    expect(compacted[0]!.segments.find((segment) => segment.text === "·")?.dim).toBe(true);
+    expect(compacted[0]!.segments.find((segment) => segment.text.startsWith("·"))?.dim).toBe(true);
     expect(lineText(captured[0]!)).toContain("Context 19% left");
     expect(lineText(captured[0]!)).toContain("Approve for me");
+  });
+
+  it("keeps every Codex status item visible when the terminal wraps the statusline", () => {
+    const captured = lines(
+      [
+        "earlier output",
+        " ",
+        "\x1b[1m›\x1b[0m Ask Codex to do anything",
+        " ",
+        "\x1b[38;2;246;226;183mgpt-5.6-sol xhigh\x1b[0m\x1b[2m · \x1b[0m" +
+          "\x1b[38;2;171;223;167m~/Documents/GitHub/zhdsmy/collie\x1b[0m",
+        "\x1b[2m· \x1b[0m" +
+          "\x1b[38;2;200;169;238mReady\x1b[0m\x1b[2m · \x1b[0m" +
+          "\x1b[38;2;200;169;238mApprove for me\x1b[0m\x1b[2m · \x1b[0m" +
+          "\x1b[38;2;242;181;144mContext 100% left\x1b[0m\x1b[2m · \x1b[0m" +
+          "\x1b[38;2;171;223;167mFast off\x1b[0m",
+      ].join("\n"),
+    );
+
+    expect(extractStatusLines(captured).map(lineText)).toEqual([
+      expect.stringContaining("gpt-5.6-sol xhigh"),
+      expect.stringContaining("Context 100% left"),
+    ]);
+    expect(stripChrome(captured).map(lineText)).toEqual(["earlier output"]);
+  });
+
+  it("leaves already-compact model, cwd, state, and task items readable", () => {
+    const captured = lines(`gpt-5.6-sol max · ~/project · Ready · Tasks 3/3 · Context 100% left`);
+    const compacted = compactCodexStatusLines(captured);
+
+    expect(lineText(compacted[0]!)).toBe("gpt-5.6-sol max· ~/project· Ready· Tasks 3/3· Ctx 100%");
   });
 
   it("extracts a typed draft and joins wrapped composer rows", () => {
