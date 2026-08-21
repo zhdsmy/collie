@@ -9,9 +9,8 @@ describe("mobile composer chrome", () => {
     const composer = read("src/components/composer.tsx");
     const agentChat = read("src/components/agent-chat.tsx");
     const messageList = read("src/components/ui/chat/chat-message-list.tsx");
-    expect(agentChat).toContain(
-      "const { open: keyboardOpen, offsetTop: keyboardViewportTop } = useKeyboardViewport()",
-    );
+    expect(agentChat).toContain("open: keyboardOpen");
+    expect(agentChat).toContain("offsetTop: keyboardViewportTop");
     expect(composer).toContain("keyboardOpen = false");
     expect(composer).toContain('? "mb-2 pb-2"');
     expect(composer).toContain(

@@ -13,6 +13,7 @@ interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
   agent: string | undefined | null;
+  keyboardBottomInset?: number;
   /** The operator's own rows (`commands.toml`); they replace the catalog on panes they address. */
   mine?: readonly OperatorCommand[];
   /** Insert "/cmd " into the composer for the user to complete (arg-taking commands). */
@@ -25,6 +26,7 @@ export function CommandPalette({
   open,
   onClose,
   agent,
+  keyboardBottomInset = 0,
   mine,
   onInsert,
   onSubmit,
@@ -73,7 +75,10 @@ export function CommandPalette({
       open={open}
       onClose={onClose}
       title={t("commands.title")}
-      className="max-h-[85dvh]"
+      scrollBody
+      bottomOffset={keyboardBottomInset}
+      className="h-[min(72dvh,36rem)] min-h-0"
+      bodyClassName="flex min-h-0 flex-1 flex-col"
     >
       {agent && (
         <div className="mb-3 flex items-center gap-2">
@@ -103,52 +108,54 @@ export function CommandPalette({
         </p>
       )}
 
-      <div className="flex flex-col gap-1">
-        {list.length === 0 && (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {t("commands.noMatch", { query })}
-          </p>
-        )}
-        {list.map((c) => {
-          const isPending = pending === c.command;
-          return (
-            <button
-              key={c.command}
-              type="button"
-              onClick={() => pick(c)}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors active:scale-[0.99]",
-                isPending ? "bg-destructive/10" : "hover:bg-accent",
-              )}
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={cn(
-                      "font-mono text-sm font-semibold",
-                      c.dangerous ? "text-destructive" : "text-foreground",
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain -mx-1 px-1">
+        <div className="flex flex-col gap-1">
+          {list.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {t("commands.noMatch", { query })}
+            </p>
+          )}
+          {list.map((c) => {
+            const isPending = pending === c.command;
+            return (
+              <button
+                key={c.command}
+                type="button"
+                onClick={() => pick(c)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors active:scale-[0.99]",
+                  isPending ? "bg-destructive/10" : "hover:bg-accent",
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "font-mono text-sm font-semibold",
+                        c.dangerous ? "text-destructive" : "text-foreground",
+                      )}
+                    >
+                      {c.command}
+                    </span>
+                    {c.takesArg && (
+                      <span className="font-mono text-[11px] text-muted-foreground">{c.argHint}</span>
                     )}
-                  >
-                    {c.command}
-                  </span>
-                  {c.takesArg && (
-                    <span className="font-mono text-[11px] text-muted-foreground">{c.argHint}</span>
-                  )}
+                  </div>
+                  <p className="truncate text-xs text-muted-foreground">{descriptionFor(c)}</p>
                 </div>
-                <p className="truncate text-xs text-muted-foreground">{descriptionFor(c)}</p>
-              </div>
-              {isPending ? (
-                <span className="shrink-0 text-xs font-medium text-destructive">
-                  {t("commands.confirm")}
-                </span>
-              ) : c.takesArg ? (
-                <Pencil className="size-4 shrink-0 text-muted-foreground" />
-              ) : (
-                <CornerDownLeft className="size-4 shrink-0 text-muted-foreground" />
-              )}
-            </button>
-          );
-        })}
+                {isPending ? (
+                  <span className="shrink-0 text-xs font-medium text-destructive">
+                    {t("commands.confirm")}
+                  </span>
+                ) : c.takesArg ? (
+                  <Pencil className="size-4 shrink-0 text-muted-foreground" />
+                ) : (
+                  <CornerDownLeft className="size-4 shrink-0 text-muted-foreground" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </BottomSheet>
   );

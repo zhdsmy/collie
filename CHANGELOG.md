@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.6] - 2026-08-21
+
+### Fixed
+
+- **Agent command palette stays within a compact fixed-height sheet.** Its command list scrolls independently, and search mode lifts the sheet above an overlaid mobile keyboard.
+
 ## [0.32.5] - 2026-08-21
 ### Changed
 - **Codex statusline items are now preserved across terminal wrapping and allowed to wrap in Collie's app strip.** Long labels are compacted selectively (`Context`/approval/Fast), while model, cwd, state, and task counts stay readable.

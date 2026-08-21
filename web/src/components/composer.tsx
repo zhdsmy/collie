@@ -40,6 +40,8 @@ export interface ComposerHandle {
 interface ComposerProps {
   /** Shared keyboard state from AgentChat; controls typing chrome and safe-area geometry. */
   keyboardOpen?: boolean;
+  /** Pixels occupied below the visual viewport by an overlaid software keyboard. */
+  keyboardBottomInset?: number;
   paneId: string;
   /** The session the pane lives in (undefined = primary) — scopes every write to the right Herdr. */
   session?: string;
@@ -163,6 +165,7 @@ function ComposerDock({
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
   {
     keyboardOpen = false,
+    keyboardBottomInset = 0,
     paneId,
     session,
     agent,
@@ -1135,6 +1138,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         open={drawer === "cmd"}
         onClose={closeDrawer}
         agent={agent}
+        keyboardBottomInset={keyboardBottomInset}
         mine={operatorCommands}
         onInsert={insertCommand}
         onSubmit={(t) => send(t, false)}

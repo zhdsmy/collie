@@ -16,7 +16,7 @@ vi.mock("@/lib/wizard-action", () => ({
   submitWizardKeys: vi.fn(),
 }));
 vi.mock("@/hooks/use-keyboard", () => ({
-  useKeyboardViewport: vi.fn(() => ({ open: false, offsetTop: 0 })),
+  useKeyboardViewport: vi.fn(() => ({ open: false, offsetTop: 0, bottomInset: 0 })),
 }));
 
 import { server } from "@/test/setup";
@@ -37,7 +37,7 @@ beforeAll(() => {
 });
 beforeEach(() => {
   clearStatus();
-  vi.mocked(useKeyboardViewport).mockReturnValue({ open: false, offsetTop: 0 });
+  vi.mocked(useKeyboardViewport).mockReturnValue({ open: false, offsetTop: 0, bottomInset: 0 });
 });
 
 function renderChat(overrides: Partial<ComponentProps<typeof AgentChat>> = {}) {
@@ -152,7 +152,7 @@ describe("AgentChat — typing layout preferences", () => {
   });
 
   it("pins the title and gives navigation and composer chrome back to the terminal", () => {
-    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
+    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184, bottomInset: 0 });
     renderChat({ tabs: fixtureTabs });
 
     expect(screen.getByRole("banner")).toHaveClass("fixed");
@@ -172,7 +172,7 @@ describe("AgentChat — typing layout preferences", () => {
       "collie:display-prefs:v4",
       JSON.stringify({ keepHeaderWhenTyping: true, hideControlsWhenTyping: false }),
     );
-    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
+    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184, bottomInset: 0 });
     renderChat({ tabs: fixtureTabs });
 
     expect(screen.getByRole("banner")).toHaveClass("fixed");
@@ -185,7 +185,7 @@ describe("AgentChat — typing layout preferences", () => {
       "collie:display-prefs:v4",
       JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: true }),
     );
-    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
+    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184, bottomInset: 0 });
     renderChat({ tabs: fixtureTabs });
 
     expect(screen.getByRole("banner")).not.toHaveClass("fixed");
@@ -198,7 +198,7 @@ describe("AgentChat — typing layout preferences", () => {
       "collie:display-prefs:v4",
       JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: false }),
     );
-    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184 });
+    vi.mocked(useKeyboardViewport).mockReturnValue({ open: true, offsetTop: 184, bottomInset: 0 });
     renderChat({ tabs: fixtureTabs });
 
     expect(screen.getByRole("banner")).not.toHaveClass("fixed");

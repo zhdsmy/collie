@@ -128,7 +128,11 @@ export function AgentChat({
     setKeepHeaderWhenTyping,
     setHideControlsWhenTyping,
   } = useDisplayPrefs();
-  const { open: keyboardOpen, offsetTop: keyboardViewportTop } = useKeyboardViewport();
+  const {
+    open: keyboardOpen,
+    offsetTop: keyboardViewportTop,
+    bottomInset: keyboardBottomInset,
+  } = useKeyboardViewport();
   const keepHeaderWhenTyping = keyboardOpen && prefs.keepHeaderWhenTyping;
   // Raw-terminal escape hatch: when on, every agent grammar is bypassed and the plain mirror shows,
   // so a mis-detected/mis-rendered dialog can always be driven by hand with the keys pad.
@@ -901,6 +905,7 @@ export function AgentChat({
           <Composer
             ref={composerRef}
             keyboardOpen={keyboardOpen}
+            keyboardBottomInset={keyboardBottomInset}
             paneId={paneId}
             session={session}
             agent={agent?.agent}

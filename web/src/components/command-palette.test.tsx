@@ -5,7 +5,11 @@ import { CommandPalette } from "./command-palette";
 import { i18n } from "@/i18n";
 import type { OperatorCommand } from "@/lib/types";
 
-function setup(overrides?: { agent?: string | null; mine?: OperatorCommand[] }) {
+function setup(overrides?: {
+  agent?: string | null;
+  mine?: OperatorCommand[];
+  keyboardBottomInset?: number;
+}) {
   const props = {
     open: true,
     onClose: vi.fn(),
@@ -207,5 +211,26 @@ describe("CommandPalette", () => {
     expect(screen.getByText("Confirm?")).toBeInTheDocument();
     await user.click(screen.getByText("Deploy staging"));
     expect(props.onSubmit).toHaveBeenCalledExactlyOnceWith("/deploy");
+  });
+
+  it("keeps the palette at a fixed height with an independently scrolling command list", () => {
+    setup();
+    const panel = screen.getByRole("dialog").querySelector<HTMLElement>(".relative.z-10");
+
+    expect(panel).not.toBeNull();
+    if (!panel) throw new Error("BottomSheet panel not found");
+    const list = panel.querySelector(".overflow-y-auto");
+    expect(panel).toHaveClass("h-[min(72dvh,36rem)]", "min-h-0", "flex", "flex-col", "overflow-hidden");
+    expect(list).not.toBeNull();
+    expect(list).toHaveClass("min-h-0", "flex-1", "overflow-y-auto");
+  });
+
+  it("lifts the palette above an overlaid software keyboard", () => {
+    setup({ keyboardBottomInset: 280 });
+    const panel = screen.getByRole("dialog").querySelector<HTMLElement>(".relative.z-10");
+
+    expect(panel).not.toBeNull();
+    if (!panel) throw new Error("BottomSheet panel not found");
+    expect(panel).toHaveStyle({ marginBottom: "280px" });
   });
 });

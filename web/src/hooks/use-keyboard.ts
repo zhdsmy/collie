@@ -29,10 +29,15 @@ export function keyboardLikelyOpen(
 interface KeyboardViewport {
   open: boolean;
   offsetTop: number;
+  bottomInset: number;
 }
 
 export function useKeyboardViewport(): KeyboardViewport {
-  const [viewport, setViewport] = useState<KeyboardViewport>({ open: false, offsetTop: 0 });
+  const [viewport, setViewport] = useState<KeyboardViewport>({
+    open: false,
+    offsetTop: 0,
+    bottomInset: 0,
+  });
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -42,10 +47,15 @@ export function useKeyboardViewport(): KeyboardViewport {
       // iOS pans the visual viewport to keep the focused textarea above the keyboard. A CSS-fixed
       // header remains at the layout viewport's top unless we carry this offset into its position.
       const offsetTop = open ? Math.max(0, vv.offsetTop) : 0;
+      // On browsers where the keyboard overlays the layout viewport, lift bottom sheets above it.
+      // With `interactive-widget=resizes-content`, the two heights converge and this is naturally 0.
+      const bottomInset = open ? Math.max(0, window.innerHeight - (vv.offsetTop + vv.height)) : 0;
       setViewport((current) =>
-        current.open === open && current.offsetTop === offsetTop
+        current.open === open &&
+        current.offsetTop === offsetTop &&
+        current.bottomInset === bottomInset
           ? current
-          : { open, offsetTop },
+          : { open, offsetTop, bottomInset },
       );
     };
     const update = () => {

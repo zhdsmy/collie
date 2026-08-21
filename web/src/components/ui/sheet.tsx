@@ -27,9 +27,24 @@ interface BottomSheetProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
+  /** Optional content wrapper classes for sheets whose body owns its own scroll region. */
+  bodyClassName?: string;
+  /** Make the panel a fixed-height flex column and let the body, rather than the panel, scroll. */
+  scrollBody?: boolean;
+  /** Lift the sheet above an overlaid software keyboard. */
+  bottomOffset?: number;
 }
 
-export function BottomSheet({ open, onClose, title, children, className }: BottomSheetProps) {
+export function BottomSheet({
+  open,
+  onClose,
+  title,
+  children,
+  className,
+  bodyClassName,
+  scrollBody = false,
+  bottomOffset = 0,
+}: BottomSheetProps) {
   const { t } = useTranslation();
   const panelRef = React.useRef<HTMLDivElement>(null);
   const drag = React.useRef({ startY: 0, atTop: false, engaged: false, dy: 0 });
@@ -140,9 +155,11 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         style={{
           transform: dragY ? `translateY(${dragY}px)` : undefined,
           transition: drag.current.engaged ? "none" : "transform 0.2s ease-out",
+          marginBottom: bottomOffset > 0 ? `${bottomOffset}px` : undefined,
         }}
         className={cn(
-          "relative z-10 max-h-[82dvh] w-full overflow-y-auto overscroll-contain rounded-t-2xl border-t border-border bg-background shadow-2xl duration-200 animate-in slide-in-from-bottom",
+          "relative z-10 max-h-[82dvh] w-full overscroll-contain rounded-t-2xl border-t border-border bg-background shadow-2xl duration-200 animate-in slide-in-from-bottom",
+          scrollBody ? "flex min-h-0 flex-col overflow-hidden" : "overflow-y-auto",
           "pb-[calc(env(safe-area-inset-bottom)_+_1rem)]",
           className,
         )}
@@ -167,7 +184,9 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
             </Button>
           </div>
         </div>
-        <div className="px-4 py-3">{children}</div>
+        <div className={cn(scrollBody && "min-h-0 flex-1 overflow-hidden", "px-4 py-3", bodyClassName)}>
+          {children}
+        </div>
       </div>
     </div>
   );
