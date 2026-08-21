@@ -6,6 +6,14 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.15] - 2026-08-21
+
+### Fixed
+
+- **Codex slash commands submit while autocomplete is visible.** Complete commands such as `/diff`
+  are verified against Codex 0.149's matching suggestion row before Collie sends Enter, while
+  unrelated terminal tails and dialogs remain blocked.
+
 ## [0.32.14] - 2026-08-21
 
 ### Fixed
