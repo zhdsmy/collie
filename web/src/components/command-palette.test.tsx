@@ -7,12 +7,9 @@ import type { OperatorCommand } from "@/lib/types";
 
 function setup(overrides?: {
   agent?: string | null;
-  keyboardOpen?: boolean;
   mine?: OperatorCommand[];
-  keyboardBottomInset?: number;
 }) {
   const props = {
-    open: true,
     onClose: vi.fn(),
     agent: "claude" as string | null | undefined,
     onInsert: vi.fn(),
@@ -85,7 +82,7 @@ describe("CommandPalette", () => {
     expect(props.onClose).toHaveBeenCalledOnce();
   });
 
-  it("renders nothing for an unknown agent (empty catalog → sheet still opens but no commands)", () => {
+  it("renders no command rows for an unknown agent with an empty catalog", () => {
     setup({ agent: "gemini" });
     expect(screen.queryByText("/status")).toBeNull();
     expect(screen.queryByText("/compact")).toBeNull();
@@ -140,7 +137,7 @@ describe("CommandPalette", () => {
       ],
     });
     expect(screen.getByText("/fork-in-herdr")).toBeInTheDocument();
-    // The sheet is the operator's shortcuts now — no searching past ten rows nobody picked.
+    // The dock is the operator's shortcuts now — no searching past ten rows nobody picked.
     expect(screen.queryByText("/compact")).toBeNull();
   });
 
@@ -149,7 +146,6 @@ describe("CommandPalette", () => {
     const user = userEvent.setup();
     const { unmount } = render(
       <CommandPalette
-        open
         onClose={() => {}}
         agent="claude"
         onInsert={() => {}}
@@ -214,25 +210,15 @@ describe("CommandPalette", () => {
     expect(props.onSubmit).toHaveBeenCalledExactlyOnceWith("/deploy");
   });
 
-  it("keeps the palette at a fixed height with an independently scrolling command list", () => {
+  it("keeps the command list scrollable and places search below it", () => {
     setup();
-    const panel = screen.getByRole("dialog").querySelector<HTMLElement>(".relative.z-10");
+    const palette = screen.getByTestId("command-palette");
+    const list = screen.getByTestId("command-list");
+    const search = screen.getByTestId("command-search");
 
-    expect(panel).not.toBeNull();
-    if (!panel) throw new Error("BottomSheet panel not found");
-    const list = panel.querySelector(".overflow-y-auto");
-    expect(panel).toHaveClass("h-[min(72dvh,36rem)]", "min-h-0", "flex", "flex-col", "overflow-hidden");
-    expect(list).not.toBeNull();
+    expect(palette).toHaveClass("flex", "h-full", "min-h-0", "flex-col");
     expect(list).toHaveClass("min-h-0", "flex-1", "overflow-y-auto");
-  });
-
-  it("lifts the palette above an overlaid software keyboard", () => {
-    setup({ keyboardOpen: true, keyboardBottomInset: 280 });
-    const panel = screen.getByRole("dialog").querySelector<HTMLElement>(".relative.z-10");
-
-    expect(panel).not.toBeNull();
-    if (!panel) throw new Error("BottomSheet panel not found");
-    expect(panel).toHaveClass("h-[min(64dvh,30rem)]");
-    expect(panel).toHaveStyle({ marginBottom: "336px" });
+    expect(search.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_PRECEDING).not.toBe(0);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

@@ -40,8 +40,6 @@ export interface ComposerHandle {
 interface ComposerProps {
   /** Shared keyboard state from AgentChat; controls typing chrome and safe-area geometry. */
   keyboardOpen?: boolean;
-  /** Pixels occupied below the visual viewport by an overlaid software keyboard. */
-  keyboardBottomInset?: number;
   paneId: string;
   /** The session the pane lives in (undefined = primary) — scopes every write to the right Herdr. */
   session?: string;
@@ -127,19 +125,21 @@ function translatedDestructiveReason(reason: string, translate: TFunction): stri
   return key ? translate(key) : reason;
 }
 
-// Shared in-flow dock chrome for Keys/Quick — an IN-FLOW panel (never an overlay), so the terminal
+// Shared in-flow dock chrome for Keys/Quick/Agent/Display — an IN-FLOW panel (never an overlay), so the terminal
 // mirror's flex-1 box shrinks and its tail stays visible while the dock is open (a covering sheet
 // hid exactly the prompt you were driving). The inset grouped surface + capped height keep the
 // composer hierarchy clear without crowding the mirror. The fixed header keeps its Close X
 // reachable; only the body below it scrolls (max-h + overflow), even on a short
-// viewport with a tall tray. One wrapper so Keys and Quick can't drift apart.
+// viewport with a tall tray. One wrapper so all four surfaces can't drift apart.
 function ComposerDock({
   title,
   onClose,
+  bodyClassName,
   children,
 }: {
   title: string;
   onClose: () => void;
+  bodyClassName?: string;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -157,7 +157,7 @@ function ComposerDock({
           <X className="size-4" />
         </Button>
       </div>
-      <div className="max-h-[45dvh] min-h-0 overflow-y-auto">{children}</div>
+      <div className={cn("max-h-[45dvh] min-h-0 overflow-y-auto", bodyClassName)}>{children}</div>
     </div>
   );
 }
@@ -165,7 +165,6 @@ function ComposerDock({
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
   {
     keyboardOpen = false,
-    keyboardBottomInset = 0,
     paneId,
     session,
     agent,
@@ -812,13 +811,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             below (always visible, not gated behind the keyboard-open quick keys); structural commands
             (New tab/space, Kill) and Stop (Esc, in the Keys dock) live elsewhere. */}
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickImage} />
-        {/* Keys / Quick / Display dock — a single in-flow site ABOVE the Controls row (so the toggle
+        {/* Keys / Quick / Agent / Display dock — a single in-flow site ABOVE the Controls row (so the toggle
             you tapped stays put and the panel grows over the mirror, not the input). Whichever of the
             mutually exclusive drawers is active renders here via the shared ComposerDock chrome. Keys
             mounts the NavTray (unmounts on close, so tab/queue reset each open); Quick mounts the two
-            one-tap reply grids; Display mounts the labelled mirror prefs. Agent stays a covering
-            BottomSheet below (it's a palette, not a pad). The hide-controls preference pauses the
-            docks and returns them with their state intact after the keyboard closes. */}
+            one-tap reply grids; Agent mounts its scrolling command list with search pinned below;
+            Display mounts the labelled mirror prefs. The hide-controls preference pauses the other
+            docks, but Agent stays mounted while its own search field owns the software keyboard. */}
         {!hideControlsWhenTyping && drawer === "keys" && (
           <ComposerDock title={translate("composer.keys")} onClose={closeDrawer}>
             <NavTray
@@ -837,6 +836,21 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               agent={agent}
               isShell={isShell}
               disabled={locked || sending}
+            />
+          </ComposerDock>
+        )}
+        {drawer === "cmd" && (
+          <ComposerDock
+            title={translate("commands.title")}
+            onClose={closeDrawer}
+            bodyClassName="h-[min(45dvh,22rem)] overflow-hidden"
+          >
+            <CommandPalette
+              onClose={closeDrawer}
+              agent={agent}
+              mine={operatorCommands}
+              onInsert={insertCommand}
+              onSubmit={(t) => send(t, false)}
             />
           </ComposerDock>
         )}
@@ -935,9 +949,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             <Button
               variant="ghost"
               size="sm"
-                className="h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs text-muted-foreground has-[>svg]:px-0"
+              className="h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs text-muted-foreground has-[>svg]:px-0"
               disabled={locked}
-              onClick={() => requestDrawer("cmd")}
+              aria-expanded={drawer === "cmd"}
+              onClick={() => requestDrawer(drawer === "cmd" ? null : "cmd")}
             >
                 <Slash className="size-4 shrink-0" />
                 <span className="min-w-0 truncate">{translate("composer.agent")}</span>
@@ -1133,17 +1148,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         </div>
       </div>
 
-      {/* Slash-command palette */}
-      <CommandPalette
-        open={drawer === "cmd"}
-        onClose={closeDrawer}
-        agent={agent}
-        keyboardOpen={keyboardOpen}
-        keyboardBottomInset={keyboardBottomInset}
-        mine={operatorCommands}
-        onInsert={insertCommand}
-        onSubmit={(t) => send(t, false)}
-      />
     </>
   );
 });

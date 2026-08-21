@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.9] - 2026-08-21
+
+### Changed
+
+- **Agent commands now use the same in-flow Composer dock as Keys, Quick, and Display.** The compact-height command list scrolls above a bottom-pinned search field, and the dock stays mounted while its search field opens the software keyboard.
+
 ## [0.32.8] - 2026-08-21
 
 ### Changed

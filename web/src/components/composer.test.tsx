@@ -1896,6 +1896,82 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
   });
 });
 
+describe("Composer — Agent command dock", () => {
+  it("uses the shared in-flow Agent dock with search below the scrolling command list", async () => {
+    const user = userEvent.setup();
+    renderComposer({ agent: "codex" });
+
+    const toggle = screen.getByRole("button", { name: "Agent" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await user.click(toggle);
+
+    const palette = screen.getByTestId("command-palette");
+    const list = screen.getByTestId("command-list");
+    const search = screen.getByPlaceholderText(/Search \d+ commands/);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(list.closest(".fixed")).toBeNull();
+    expect(palette.parentElement).toHaveClass("h-[min(45dvh,22rem)]", "overflow-hidden");
+    expect(list).toHaveClass("min-h-0", "flex-1", "overflow-y-auto");
+    expect(list.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(screen.getByRole("button", { name: "Close Agent commands" })).toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByTestId("command-palette")).not.toBeInTheDocument();
+  });
+
+  it("keeps the Agent dock mounted when its search keyboard hides other controls", async () => {
+    const user = userEvent.setup();
+    let setKeyboardOpen: ((open: boolean) => void) | undefined;
+
+    function Harness() {
+      const [keyboardOpen, setOpen] = useState(false);
+      setKeyboardOpen = setOpen;
+      return (
+        <Composer
+          keyboardOpen={keyboardOpen}
+          paneId="w1:p1"
+          agent="codex"
+          isShell={false}
+          gone={false}
+          readOnly={false}
+          dialogPresent={false}
+          text="pane output"
+          terminalDraft={null}
+          rawTerminalDraft={null}
+          prefs={{
+            wrap: true,
+            fontSize: 11,
+            rawTerminal: false,
+            tapToFocus: true,
+            keepHeaderWhenTyping: true,
+            hideControlsWhenTyping: true,
+          }}
+          setWrap={vi.fn()}
+          stepFontSize={vi.fn()}
+          setRawTerminal={vi.fn()}
+          setTapToFocus={vi.fn()}
+          setKeepHeaderWhenTyping={vi.fn()}
+          setHideControlsWhenTyping={vi.fn()}
+          onSent={vi.fn()}
+        />
+      );
+    }
+
+    const router = createMemoryRouter([{ path: "/", element: <Harness /> }]);
+    render(<RouterProvider router={router} />);
+
+    await user.click(screen.getByRole("button", { name: "Agent" }));
+    expect(screen.getByTestId("command-palette")).toBeInTheDocument();
+
+    act(() => setKeyboardOpen?.(true));
+    expect(screen.getByTestId("command-palette")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Search \d+ commands/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Agent" })).not.toBeInTheDocument();
+  });
+});
+
 describe("Composer — display prefs behind the gear", () => {
   it("keeps labelled icons compact so full labels and the Display gear fit inside", () => {
     renderComposer();

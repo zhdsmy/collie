@@ -80,8 +80,8 @@ interface AgentChatProps {
   onSelect: (paneId: string) => void;
 }
 
-// At most one drawer/sheet is open at a time; null = none. (The composer's own Keys/Quick/Agent
-// sheets are separate and live inside <Composer>.)
+// At most one page-level drawer/sheet is open at a time; null = none. The composer's own
+// Keys/Quick/Agent/Display docks are separate and live inside <Composer>.
 type Drawer = "switcher" | null;
 
 // The detail view mirrors a terminal pane, NOT a chat thread. The pane's output comes from the
@@ -129,11 +129,7 @@ export function AgentChat({
     setKeepHeaderWhenTyping,
     setHideControlsWhenTyping,
   } = useDisplayPrefs();
-  const {
-    open: keyboardOpen,
-    offsetTop: keyboardViewportTop,
-    bottomInset: keyboardBottomInset,
-  } = useKeyboardViewport();
+  const { open: keyboardOpen, offsetTop: keyboardViewportTop } = useKeyboardViewport();
   const keepHeaderWhenTyping = keyboardOpen && prefs.keepHeaderWhenTyping;
   // Raw-terminal escape hatch: when on, every agent grammar is bypassed and the plain mirror shows,
   // so a mis-detected/mis-rendered dialog can always be driven by hand with the keys pad.
@@ -904,7 +900,6 @@ export function AgentChat({
           <Composer
             ref={composerRef}
             keyboardOpen={keyboardOpen}
-            keyboardBottomInset={keyboardBottomInset}
             paneId={paneId}
             session={session}
             agent={agent?.agent}

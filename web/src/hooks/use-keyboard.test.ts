@@ -38,27 +38,19 @@ describe("useKeyboardViewport", () => {
       visualViewport.offsetTop = 184;
       visualViewport.dispatchEvent(new Event("resize"));
     });
-    expect(result.current).toEqual({
-      open: true,
-      offsetTop: 184,
-      bottomInset: Math.max(0, window.innerHeight - (184 + 480)),
-    });
+    expect(result.current).toEqual({ open: true, offsetTop: 184 });
 
     act(() => {
       visualViewport.offsetTop = 196;
       visualViewport.dispatchEvent(new Event("scroll"));
     });
-    expect(result.current).toEqual({
-      open: true,
-      offsetTop: 196,
-      bottomInset: Math.max(0, window.innerHeight - (196 + 480)),
-    });
+    expect(result.current).toEqual({ open: true, offsetTop: 196 });
 
     act(() => {
       visualViewport.height = 800;
       visualViewport.offsetTop = 0;
       visualViewport.dispatchEvent(new Event("resize"));
     });
-    expect(result.current).toEqual({ open: false, offsetTop: 0, bottomInset: 0 });
+    expect(result.current).toEqual({ open: false, offsetTop: 0 });
   });
 });
