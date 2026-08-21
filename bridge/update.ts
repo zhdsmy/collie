@@ -8,7 +8,7 @@ import type { UpdateStatus } from "./types.ts";
 // independent questions the running plugin can answer about itself:
 //
 //   • releaseAvailable — is a newer Collie RELEASE published upstream? We read the repo's git tags
-//     over anonymous HTTPS (the repo is public) and compare the newest `vX.Y.Z` to the running
+//     over anonymous HTTPS (the repo is public) and compare newest `vX.Y.Z[+collie.N]` to the running
 //     version. No `git` subprocess (the SSH origin has no agent under systemd --user, and a
 //     non-git install has no origin at all), no auth (the 60/hr anonymous limit is irrelevant at a
 //     few-hours cadence), and the fetch is trivially injectable for `bun test`.
@@ -21,7 +21,7 @@ import type { UpdateStatus } from "./types.ts";
 // unit-tested; the network + filesystem live behind injected seams on {@link UpdateMonitor}, matching
 // the NotificationCoordinator/Snooze injection style.
 
-const SEMVER_TAG = /^v(\d+)\.(\d+)\.(\d+)$/;
+const RELEASE_TAG = /^v(\d+)\.(\d+)\.(\d+)(?:\+collie\.([1-9]\d*))?$/;
 // The upstream tag check is bounded — a hung request must never wedge the monitor's timer.
 const TAGS_TIMEOUT_MS = 10_000;
 // bridgeStale is read on every snapshot poll; recompute the on-disk stamp at most this often so a
@@ -30,21 +30,31 @@ const STALE_TTL_MS = 5_000;
 
 // ── Pure helpers (unit-tested) ────────────────────────────────────────────────
 
-/** Parse a strict `vX.Y.Z` tag into its numeric parts, or null (prereleases like `v1.0.0-rc` and any
- *  non-release ref are rejected by the anchor). Remote ref names are untrusted input. */
+/** Parse a release `vX.Y.Z[+collie.N]` tag into its upstream numeric parts, or null. Prereleases and
+ *  any other build metadata are rejected by the anchor. Remote ref names are untrusted input. */
 export function parseSemverTag(tag: string): [number, number, number] | null {
-  const m = SEMVER_TAG.exec(tag.trim());
+  const m = RELEASE_TAG.exec(tag.trim());
   return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
 }
 
-/** The numeric triple of a dotted version, with any `-prerelease` / `+build` tail dropped. The tail
- *  is reported separately because a prerelease sorts BELOW the release it leads to. */
+type VersionParts = {
+  triple: readonly [number, number, number];
+  prerelease: boolean;
+  collieRevision: number;
+};
+
+/** Numeric upstream triple plus the downstream revision. Generic build metadata remains SemVer-equal;
+ *  `+collie.N` is the one project extension that orders Collie's releases on the same upstream base. */
 function versionParts(v: string) {
-  const m = /^(\d+)\.(\d+)\.(\d+)(?:-([^+]*))?/.exec(v.trim());
-  if (!m) return { triple: [0, 0, 0] as const, prerelease: false };
+  const m = /^(\d+)\.(\d+)\.(\d+)(?:-([^+]*))?(?:\+([0-9A-Za-z.-]+))?$/.exec(v.trim());
+  if (!m) {
+    return { triple: [0, 0, 0], prerelease: false, collieRevision: 0 } as VersionParts;
+  }
+  const revision = /^collie\.([1-9]\d*)$/.exec(m[5] ?? "");
   return {
     triple: [Number(m[1]), Number(m[2]), Number(m[3])] as const,
     prerelease: m[4] !== undefined && m[4] !== "",
+    collieRevision: revision ? Number(revision[1]) : 0,
   };
 }
 
@@ -52,8 +62,8 @@ function versionParts(v: string) {
  * Compare two dotted `X.Y.Z` versions (no leading `v`). Returns -1 / 0 / 1.
  *
  * The running version can be a PRERELEASE (`1.0.0-beta.5`) while every tag we compare it against is
- * strict, so the tail is parsed rather than fed to `Number` — and `1.0.0-beta.5` sorts below
- * `1.0.0`, which is what makes the release that follows a beta read as an upgrade.
+ * a release, so prereleases sort below their release. Collie's `+collie.N` metadata is then compared
+ * as a downstream revision; other build metadata remains SemVer-equal.
  */
 export function compareSemver(a: string, b: string): number {
   const pa = versionParts(a);
@@ -65,8 +75,26 @@ export function compareSemver(a: string, b: string): number {
   ] as const) {
     if (x !== y) return x < y ? -1 : 1;
   }
-  if (pa.prerelease === pb.prerelease) return 0;
-  return pa.prerelease ? -1 : 1;
+  if (pa.prerelease !== pb.prerelease) return pa.prerelease ? -1 : 1;
+  if (pa.collieRevision === pb.collieRevision) return 0;
+  return pa.collieRevision < pb.collieRevision ? -1 : 1;
+}
+
+/** Whether a selected release is newer than a running version. A downstream candidate makes a
+ *  same-line flat current patch (`0.32.13`) readable as its legacy revision (`0.32.0+collie.13`). */
+function releaseIsNewer(candidate: string, current: string): boolean {
+  const next = versionParts(candidate);
+  const running = versionParts(current);
+  if (
+    next.collieRevision > 0 &&
+    running.collieRevision === 0 &&
+    next.triple[0] === running.triple[0] &&
+    next.triple[1] === running.triple[1]
+  ) {
+    if (next.triple[2] !== 0) return true;
+    return next.collieRevision > running.triple[2];
+  }
+  return compareSemver(candidate, current) > 0;
 }
 
 /** The major of a dotted version (`1.0.0-beta.5` → 1), or null when it names none (`unknown`). */
@@ -92,15 +120,26 @@ export function latestReleaseAboveMajor(tags: string[], major: number): string |
   );
 }
 
-/** The newest release among `tags`, as a dotted `X.Y.Z` (leading `v` stripped to match
- *  package.json's `version`), or null if none parse as a strict release tag. */
+/** The newest release among `tags`, without its leading `v`, or null. Once a downstream tag exists
+ *  on an X.Y line it supersedes that line's legacy flat patch tags; other X.Y lines remain eligible. */
 export function latestReleaseTag(tags: string[]): string | null {
+  const releases = tags.flatMap((tag) => {
+    const trimmed = tag.trim();
+    const match = RELEASE_TAG.exec(trimmed);
+    if (!match) return [];
+    return [{
+      version: trimmed.slice(1),
+      line: `${match[1]}.${match[2]}`,
+      downstream: match[4] !== undefined,
+    }];
+  });
+  const downstreamLines = new Set(
+    releases.filter((release) => release.downstream).map((release) => release.line),
+  );
   let best: string | null = null;
-  for (const tag of tags) {
-    const parts = parseSemverTag(tag);
-    if (!parts) continue;
-    const v = parts.join(".");
-    if (best === null || compareSemver(v, best) > 0) best = v;
+  for (const release of releases) {
+    if (!release.downstream && downstreamLines.has(release.line)) continue;
+    if (best === null || compareSemver(release.version, best) > 0) best = release.version;
   }
   return best;
 }
@@ -114,7 +153,7 @@ export function shouldNotify(a: {
   lastNotified: string | null;
 }): boolean {
   if (!a.latest) return false;
-  if (compareSemver(a.latest, a.current) <= 0) return false;
+  if (!releaseIsNewer(a.latest, a.current)) return false;
   return a.latest !== a.lastNotified;
 }
 
@@ -154,8 +193,8 @@ export function bridgeStampSync(bridgeDir: string, rootDir: string): string {
   return stampOf(entries);
 }
 
-/** The GitHub release page for a version, e.g. `…/releases/tag/v0.12.0`. Collie tags are `vX.Y.Z`
- *  (the versioning convention), so the `v` prefix is reconstructed from the bare version. GitHub
+/** The GitHub release page for a version, e.g. `…/releases/tag/v0.32.0+collie.16`. Collie tags use a
+ *  `v` prefix reconstructed from the bare version. GitHub
  *  serves the tag page even when there's no formal release attached, so this is always a live link. */
 export function githubReleaseUrl(repo: string, version: string): string {
   return `https://github.com/${repo}/releases/tag/v${version}`;
@@ -315,7 +354,7 @@ export class UpdateMonitor {
       current,
       latest: this.latest,
       latestUrl: this.latest ? githubReleaseUrl(this.deps.repo, this.latest) : null,
-      releaseAvailable: this.latest !== null && compareSemver(this.latest, current) > 0,
+      releaseAvailable: this.latest !== null && releaseIsNewer(this.latest, current),
       majorAvailable: this.majorAvailable,
       majorUrl:
         this.majorAvailable === null

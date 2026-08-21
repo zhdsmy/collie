@@ -75,6 +75,7 @@ A superseded ADR is never deleted or edited into agreement with the present. Mar
 | [0017](./0017-recognising-a-password-prompt-changes-what-collie-says.md) | Recognising a password prompt changes what Collie says, never what it sends | Accepted |
 | [0018](./0018-operator-command-rows-replace-the-catalog.md) | The operator's command rows replace the catalog, never merge into it | Accepted |
 | [0020](./0020-a-major-upgrade-is-consented-by-flag.md) | A major upgrade is consented by flag; routine update follows tags within the major | Accepted |
+| [0021](./0021-downstream-revisions-preserve-the-upstream-base.md) | Downstream revisions preserve the upstream base | Accepted |
 
 **0011–0016 and 0019 are not missing** — they are the pack/federation and lint-gate decisions,
 accepted on the `v1`

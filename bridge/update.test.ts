@@ -32,6 +32,13 @@ describe("compareSemver", () => {
     expect(compareSemver("1.0.0-beta.5", "0.31.1")).toBe(1);
     expect(compareSemver("1.0.0-beta.5+ab12cd3", "1.0.1")).toBe(-1);
   });
+
+  it("orders Collie downstream revisions on the same upstream base", () => {
+    expect(compareSemver("0.32.0+collie.16", "0.32.0+collie.15")).toBe(1);
+    expect(compareSemver("0.32.0+collie.16", "0.32.0")).toBe(1);
+    expect(compareSemver("0.32.1", "0.32.0+collie.16")).toBe(1);
+    expect(compareSemver("0.32.0+sha.abc", "0.32.0")).toBe(0);
+  });
 });
 
 describe("majorOf / latestReleaseInMajor / latestReleaseAboveMajor", () => {
@@ -57,16 +64,27 @@ describe("majorOf / latestReleaseInMajor / latestReleaseAboveMajor", () => {
 });
 
 describe("parseSemverTag / latestReleaseTag", () => {
-  it("accepts strict vX.Y.Z, rejects prereleases and junk", () => {
+  it("accepts release tags including Collie revisions, rejects prereleases and junk", () => {
     expect(parseSemverTag("v0.11.0")).toEqual([0, 11, 0]);
     expect(parseSemverTag(" v1.2.3 ")).toEqual([1, 2, 3]);
+    expect(parseSemverTag("v0.32.0+collie.16")).toEqual([0, 32, 0]);
     expect(parseSemverTag("v1.0.0-rc.1")).toBeNull();
+    expect(parseSemverTag("v0.32.0+other.16")).toBeNull();
     expect(parseSemverTag("0.11.0")).toBeNull(); // no leading v
     expect(parseSemverTag("latest")).toBeNull();
   });
 
   it("picks the max release and strips the leading v", () => {
     expect(latestReleaseTag(["v0.10.3", "v0.11.0", "v0.9.0"])).toBe("0.11.0");
+    expect(
+      latestReleaseTag([
+        "v0.32.1",
+        "v0.32.13",
+        "v0.32.0+collie.15",
+        "v0.32.0+collie.16",
+      ]),
+    ).toBe("0.32.0+collie.16");
+    expect(latestReleaseTag(["v0.32.0+collie.16", "v0.33.0"])).toBe("0.33.0");
     // Non-release refs and prereleases are ignored, not chosen.
     expect(latestReleaseTag(["v0.11.0", "v0.12.0-beta.1", "nightly"])).toBe("0.11.0");
     expect(latestReleaseTag([])).toBeNull();
@@ -86,6 +104,23 @@ describe("shouldNotify", () => {
     expect(shouldNotify({ current, latest: "0.11.0", lastNotified: null })).toBe(false);
     expect(shouldNotify({ current, latest: "0.10.0", lastNotified: null })).toBe(false);
     expect(shouldNotify({ current, latest: null, lastNotified: null })).toBe(false);
+  });
+
+  it("migrates a legacy flat patch to a newer downstream revision", () => {
+    expect(
+      shouldNotify({
+        current: "0.32.13",
+        latest: "0.32.0+collie.16",
+        lastNotified: null,
+      }),
+    ).toBe(true);
+    expect(
+      shouldNotify({
+        current: "0.32.16",
+        latest: "0.32.0+collie.16",
+        lastNotified: null,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -185,7 +220,7 @@ describe("UpdateMonitor", () => {
     });
   });
 
-  it("githubReleaseUrl reconstructs the vX.Y.Z tag page", () => {
+  it("githubReleaseUrl reconstructs the version tag page", () => {
     expect(githubReleaseUrl("AltanS/collie", "0.10.3")).toBe(
       "https://github.com/AltanS/collie/releases/tag/v0.10.3",
     );

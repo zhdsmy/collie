@@ -5,7 +5,7 @@
 #   - herdr-plugin.toml   (canonical — this is what Herdr reads)
 #   - package.json        (bridge / Bun server)
 #   - web/package.json    (PWA frontend)
-#   - CHANGELOG.md        (newest "## [x.y.z]" heading)
+#   - CHANGELOG.md        (newest "## [UPSTREAM+collie.REVISION]" heading)
 #
 # Exits non-zero with a clear message on any mismatch. Run by `collie-ctl.sh build` and the
 # pre-commit hook. See CLAUDE.md → "Versioning" for the policy.
@@ -22,6 +22,11 @@ fail=0
 note() { printf '  %-18s %s\n' "$1" "$2"; }
 
 if [ -z "$toml_v" ]; then echo "✗ could not read version from herdr-plugin.toml" >&2; exit 1; fi
+
+if [[ ! "$toml_v" =~ ^[0-9]+\.[0-9]+\.[0-9]+[+]collie\.[1-9][0-9]*$ ]]; then
+  echo "✗ version must be UPSTREAM+collie.REVISION (for example 0.32.0+collie.16)" >&2
+  exit 1
+fi
 
 if [ "$pkg_v" != "$toml_v" ] || [ "$web_v" != "$toml_v" ] || [ "$log_v" != "$toml_v" ]; then
   fail=1

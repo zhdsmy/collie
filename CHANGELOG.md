@@ -2,9 +2,21 @@
 
 All notable changes to Collie are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses
-[Semantic Versioning](https://semver.org/). The newest `## [x.y.z]` heading **must** match the
+[Semantic Versioning](https://semver.org/). The newest `## [upstream+collie.revision]` heading **must** match the
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
+
+## [0.32.0+collie.16] - 2026-08-22
+
+### Changed
+
+- **Downstream releases now preserve their upstream base.** `0.32.0+collie.16` means the 16th local release based on upstream `0.32.0`; the updater recognizes its revision while retaining old `0.32.x` Release history.
+
+### Fixed
+
+- **Long Codex multi-image replies submit in one tap.** Two distinct upload paths from the current send now prove a windowed draft reached Codex even before its image placeholders and caption scroll into view; single-path and mismatched drafts still fail closed.
+- **Tab rename no longer zooms or detaches pane chrome on iOS.** Shared rename fields use a 16px input, and the title plus Tab row now fix, hide, and move as one unit while the keyboard or Composer docks are open.
+- **Codex answer paragraphs reflow cleanly on phones.** Host-width answer continuations are joined before mobile wrapping, while tool events, nested lists, code, and diffs keep their original terminal rows.
 
 ## [0.32.15] - 2026-08-21
 

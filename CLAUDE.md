@@ -25,22 +25,16 @@ This plugin is **SemVer**ed, and the version is **enforced**, so it never silent
 
 **The version lives in three files that must always agree, plus a matching CHANGELOG entry:**
 `herdr-plugin.toml` (canonical — Herdr reads it) · `package.json` · `web/package.json` ·
-newest `## [x.y.z]` heading in `CHANGELOG.md`.
+newest `## [UPSTREAM+collie.REVISION]` heading in `CHANGELOG.md`.
 
 **Before committing any functional change** (anything under `bridge/`, `web/src/`, `scripts/`, or the
 manifest) you MUST:
 
-1. **Bump** the version in all three files to the same number. The axis is **what the operator has
-   to do**, not how visible the change is:
-   - **PATCH** (`0.2.0 → 0.2.1`): the code now does what it was always meant to do — bug fixes and
-     internal refactors. A fix may well change what you see; that alone never promotes it. When the
-     correction is big enough that someone should read the notes, say so loudly in the CHANGELOG
-     entry rather than inflating the bump.
-   - **MINOR** (`0.2.0 → 0.3.0`): something is there that wasn't — a new capability, setting,
-     surface, or action. Existing setups keep working untouched.
-   - **MAJOR** (`0.2.0 → 1.0.0`): the operator must change something — a config key renamed or
-     removed, a contract broken, a workflow that used to work and now doesn't.
-2. **Add a `CHANGELOG.md` entry** under a new `## [x.y.z] - YYYY-MM-DD` heading (Added / Changed /
+1. **Bump** `REVISION` in all three files. The canonical form is `UPSTREAM+collie.REVISION`, where
+   `UPSTREAM` is the exact imported source release and `REVISION` is a positive local release
+   counter. Keep `UPSTREAM` fixed until that source release is actually imported; then reset
+   `REVISION` to `1`. See [ADR 0021](./.adr/0021-downstream-revisions-preserve-the-upstream-base.md).
+2. **Add a `CHANGELOG.md` entry** under a new `## [UPSTREAM+collie.REVISION] - YYYY-MM-DD` heading (Added / Changed /
    Fixed). Use the real date. **Style: super crisp and short** — one line per change, no prose
    paragraphs, and cite the feature's short commit hash at the end of the line (`… (abc1234)`).
    Land features as their own commits first, then cut the release commit so the entry can cite them.
@@ -67,9 +61,10 @@ line — do it as part of the change, not after**:
   Escape hatch for a single commit: `SKIP_VERSION_CHECK=1 git commit …`.
 
 **Tag the release when you push it.** Cutting a release means the three version files + the newest
-`CHANGELOG.md` heading agree on `x.y.z` (steps 1–3). When that release lands on `main` and you push,
-**always push a matching annotated git tag with it** — `git tag -a vX.Y.Z -m "Collie X.Y.Z" && git
-push origin vX.Y.Z` (or `git push --follow-tags` so the tag ships *with* the release). One `v<x.y.z>`
+`CHANGELOG.md` heading agree on `UPSTREAM+collie.REVISION` (steps 1–3). When that release lands on
+`main` and you push, **always push a matching annotated git tag with it** — for example,
+`git tag -a 'v0.32.0+collie.16' -m 'Collie 0.32.0+collie.16'` followed by
+`git push --follow-tags`. One matching `v<version>`
 tag per shipped version on the remote. Not hook-enforced — it's on you. (Adding/adjusting this note is
 a doc-only change and needs no version bump.)
 

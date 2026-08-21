@@ -1000,6 +1000,20 @@ test_update_targets_the_highest_release_in_the_major() {
   assert_contains "$out" "update-major --plugin herdr.collie"
 }
 
+test_update_prefers_downstream_revisions_to_legacy_patch_tags() {
+  setup_case update-downstream-revision
+  stage_origin
+  origin_release 0.32.13
+  local root; root="$(stage_managed_at 'refs/tags/v0.32.13')"
+  origin_release 0.32.0+collie.15
+  origin_release 0.32.0+collie.16 -a
+
+  local out; out="$(run_update_checkout "$root")" || fail "downstream update failed: $out"
+  assert_contains "$out" "detach onto v0.32.0+collie.16"
+  assert_eq "$(git -C "$root" rev-parse HEAD)" "$(git -C "$ORIGIN_DIR" rev-parse 'v0.32.0+collie.16^{commit}')"
+  assert_eq "$(cat "${root}/VERSION")" "0.32.0+collie.16"
+}
+
 # At the top of its major with a major out: nothing to take, said out loud, and nothing moved. This
 # is the state every 0.x install in the field lands in the day 1.0 ships.
 test_update_holds_at_a_major_boundary() {
@@ -1257,6 +1271,7 @@ test_update_advances_a_herdr_managed_checkout
 test_update_fast_forwards_a_linked_clone
 test_update_reports_a_non_git_checkout
 test_update_targets_the_highest_release_in_the_major
+test_update_prefers_downstream_revisions_to_legacy_patch_tags
 test_update_holds_at_a_major_boundary
 test_update_major_crosses_exactly_one_major
 test_update_falls_back_loudly_without_a_readable_version

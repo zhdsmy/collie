@@ -87,12 +87,16 @@ const pkgVersion = (
 ).version;
 const buildSha = gitSha();
 const buildTime = new Date().toISOString();
-const stampedVersion = isReleaseBuild(pkgVersion) ? pkgVersion : `${pkgVersion}-dev`;
+const [pkgCore, pkgMetadata] = pkgVersion.split("+", 2);
+const stampedVersion = isReleaseBuild(pkgVersion)
+  ? pkgVersion
+  : `${pkgCore}-dev${pkgMetadata ? `+${pkgMetadata}` : ""}`;
+const buildMetadataSeparator = stampedVersion.includes("+") ? "." : "+";
 const BUILD_INFO = {
   version: stampedVersion,
   sha: buildSha,
   time: buildTime,
-  id: `${stampedVersion}+${buildSha}.${Math.floor(Date.parse(buildTime) / 1000)}`,
+  id: `${stampedVersion}${buildMetadataSeparator}${buildSha}.${Math.floor(Date.parse(buildTime) / 1000)}`,
 };
 
 // Emit dist/build-info.json so the bridge can read the current build id. Kept out of the SW precache

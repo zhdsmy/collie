@@ -590,16 +590,26 @@ version_gt() {
     function pre(v) { return (v ~ /^[0-9]+\.[0-9]+\.[0-9]+-./) ? 1 : 0 }
     function num(v, i,   p, core) { core = v; sub(/[-+].*$/, "", core); split(core, p, "."); return p[i] + 0 }
     BEGIN {
+      if (A !~ /[+]collie\.[1-9][0-9]*$/) rev_a = 0
+      else { rev_a = A; sub(/^.*[+]collie\./, "", rev_a) }
+      if (B !~ /[+]collie\.[1-9][0-9]*$/) rev_b = 0
+      else { rev_b = B; sub(/^.*[+]collie\./, "", rev_b) }
+      # On migration, candidate +collie.16 makes installed flat patch .13 its legacy revision.
+      if (rev_a > 0 && rev_b == 0 && num(A, 1) == num(B, 1) && num(A, 2) == num(B, 2)) {
+        if (num(A, 3) != 0) exit 0
+        exit !((rev_a + 0) > num(B, 3))
+      }
       for (i = 1; i <= 3; i++) if (num(A, i) != num(B, i)) exit !(num(A, i) > num(B, i))
-      exit !(pre(A) == 0 && pre(B) == 1)
+      if (pre(A) != pre(B)) exit !(pre(A) == 0 && pre(B) == 1)
+      exit !((rev_a + 0) > (rev_b + 0))
     }'
 }
 
 # Strict release tags out of `git ls-remote --tags origin` (read on STDIN), one per line as
-# "<major> <minor> <patch> <tag> <commit>".
+# "<major> <minor> <patch> <revision> <tag> <commit>".
 #
 # Prereleases and every non-release ref are dropped by the same anchor the banner uses
-# (bridge/update.ts's SEMVER_TAG), so the verb can never land on something the banner would not have
+# (bridge/update.ts's RELEASE_TAG), so the verb can never land on something the banner would not have
 # announced. Remote ref names are untrusted input.
 #
 # An ANNOTATED tag is listed twice — once at the tag object, once peeled (`^{}`) at the commit. The
@@ -613,18 +623,29 @@ release_tags() {
       if (length(name) > 3 && substr(name, length(name) - 2) == "^{}") {
         peeled = 1; name = substr(name, 1, length(name) - 3)
       }
-      if (name !~ /^v[0-9]+\.[0-9]+\.[0-9]+$/) next
+      if (name !~ /^v[0-9]+\.[0-9]+\.[0-9]+([+]collie\.[1-9][0-9]*)?$/) next
       if ((name in was) && was[name] == 1 && peeled == 0) next
       was[name] = peeled; at[name] = sha
     }
     END {
-      for (n in at) { split(substr(n, 2), p, "."); print p[1], p[2], p[3], n, at[n] }
+      for (n in at) {
+        version = substr(n, 2); split(version, build, "+"); split(build[1], p, ".")
+        revision = 0
+        if (build[2] ~ /^collie\.[1-9][0-9]*$/) { split(build[2], r, "."); revision = r[2] }
+        print p[1], p[2], p[3], revision, n, at[n]
+      }
     }'
 }
 
 # The highest release inside major $1 — the target of a routine update. Tag lines on STDIN.
 release_in_major() {
-  awk -v m="$1" '$1 == m' | sort -k1,1n -k2,2n -k3,3n | tail -1
+  awk -v m="$1" '
+    $1 == m {
+      row[++n] = $0; line[n] = $1 "." $2; downstream[n] = ($5 ~ /[+]collie\./)
+      if (downstream[n]) has_downstream[line[n]] = 1
+    }
+    END { for (i = 1; i <= n; i++) if (downstream[i] || !has_downstream[line[i]]) print row[i] }
+  ' | sort -k1,1n -k2,2n -k3,3n -k4,4n | tail -1
 }
 
 # The highest release of the NEXT major that has one — the target of `update --major`. Tag lines on
@@ -633,13 +654,24 @@ release_in_major() {
 # The next major, not the highest: an install two majors behind crosses one at a time, so each
 # crossing is the one the operator consented to and its release notes are the ones that apply.
 next_major_release() {
-  awk -v m="$1" '$1 > m' | sort -k1,1n -k2,2n -k3,3n | awk 'NR == 1 { n = $1 } $1 == n' | tail -1
+  awk -v m="$1" '
+    $1 > m {
+      row[++n] = $0; major[n] = $1; line[n] = $1 "." $2; downstream[n] = ($5 ~ /[+]collie\./)
+      if (next_major == "" || $1 < next_major) next_major = $1
+      if (downstream[n]) has_downstream[line[n]] = 1
+    }
+    END {
+      for (i = 1; i <= n; i++) {
+        if (major[i] == next_major && (downstream[i] || !has_downstream[line[i]])) print row[i]
+      }
+    }
+  ' | sort -k1,1n -k2,2n -k3,3n -k4,4n | tail -1
 }
 
 # Fields of one tag line, so no caller has to know the column order.
-tag_name()    { printf '%s' "${1-}" | awk '{ print $4 }'; }
-tag_version() { printf '%s' "${1-}" | awk '{ print substr($4, 2) }'; }
-tag_commit()  { printf '%s' "${1-}" | awk '{ print $5 }'; }
+tag_name()    { printf '%s' "${1-}" | awk '{ print $5 }'; }
+tag_version() { printf '%s' "${1-}" | awk '{ print substr($5, 2) }'; }
+tag_commit()  { printf '%s' "${1-}" | awk '{ print $6 }'; }
 
 # Say a higher major is out, and name the one command that takes it. Never acts.
 announce_major() {
