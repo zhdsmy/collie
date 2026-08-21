@@ -139,7 +139,10 @@ describe("AgentChat — header title block", () => {
 });
 
 describe("AgentChat — typing layout preferences", () => {
-  afterEach(() => localStorage.clear());
+  afterEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
 
   it("keeps the normal pane navigation and composer chrome when the keyboard is closed", () => {
     renderChat({ tabs: fixtureTabs });
@@ -147,6 +150,9 @@ describe("AgentChat — typing layout preferences", () => {
     expect(screen.getByRole("banner")).not.toHaveClass("fixed");
     expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
     expect(screen.getByText("Tabs")).toBeInTheDocument();
+    expect(screen.getByRole("banner").nextElementSibling).toContainElement(
+      screen.getByText("Tabs"),
+    );
     expect(screen.getByRole("button", { name: "Switch pane" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
   });
@@ -221,7 +227,9 @@ describe("AgentChat — typing layout preferences", () => {
 
       expect(screen.getByRole("banner")).toHaveClass("fixed");
       expect(screen.getByRole("banner")).toHaveStyle({ top: "0px" });
-      expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
+      const spacer = screen.getByTestId("keyboard-header-spacer");
+      expect(spacer).toBeInTheDocument();
+      expect(spacer.nextElementSibling).toContainElement(screen.getByText("Tabs"));
 
       await user.click(dockButton);
       expect(screen.getByRole("banner")).not.toHaveClass("fixed");
@@ -241,15 +249,42 @@ describe("AgentChat — typing layout preferences", () => {
 
       const dockButton = screen.getByRole("button", { name: buttonName });
       await user.click(dockButton);
-      expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+      const paneStage = screen.getByTestId("pane-stage");
+      const banner = screen.getByRole("banner");
+      expect(banner).not.toHaveClass("fixed", "sticky");
+      expect(paneStage).toHaveClass("h-full", "flex-none");
+      expect(paneStage.parentElement).toHaveClass("justify-end", "overflow-y-clip");
+      expect(paneStage).toContainElement(banner);
+      expect(paneStage).toContainElement(screen.getByText("Tabs"));
+      expect(paneStage).toContainElement(screen.getByText("recent pane output"));
       expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
-      expect(screen.getByTestId("hidden-header-safe-area")).toBeInTheDocument();
+      expect(screen.queryByTestId("hidden-header-safe-area")).not.toBeInTheDocument();
 
       await user.click(dockButton);
       expect(screen.getByRole("banner")).not.toHaveClass("fixed");
+      expect(paneStage).toHaveClass("flex-1");
       expect(screen.queryByTestId("hidden-header-safe-area")).not.toBeInTheDocument();
     },
   );
+
+  it("preserves the resting pane height while an unpinned dock is open", async () => {
+    localStorage.setItem(
+      "collie:display-prefs:v4",
+      JSON.stringify({ keepHeaderWhenTyping: false, hideControlsWhenTyping: false }),
+    );
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.getAttribute("data-testid") === "pane-stage") return new DOMRect(0, 0, 390, 640);
+      return originalRect.call(this);
+    });
+    const user = userEvent.setup();
+    renderChat({ tabs: fixtureTabs });
+
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+    expect(screen.getByTestId("pane-stage")).toHaveStyle({ height: "640px" });
+  });
 });
 
 describe("AgentChat — read-only device", () => {

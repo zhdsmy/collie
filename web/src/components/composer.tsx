@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import type { ChangeEvent, ClipboardEvent, ReactNode } from "react";
 import type { TFunction } from "i18next";
 import { useRevalidator } from "react-router";
@@ -273,7 +273,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const [previewLatched, setPreviewLatched] = useState(false);
   // Composer sheets are mutually exclusive — at most one open (Keys / Quick / Agent / Display).
   const [drawer, setDrawer] = useState<ComposerDrawer>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     onDockOpenChange?.(drawer !== null);
     return () => onDockOpenChange?.(false);
   }, [drawer, onDockOpenChange]);

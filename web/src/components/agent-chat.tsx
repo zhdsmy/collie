@@ -133,7 +133,25 @@ export function AgentChat({
   const [composerDockOpen, setComposerDockOpen] = useState(false);
   const headerInputActive = keyboardOpen || composerDockOpen;
   const keepHeaderDuringInput = headerInputActive && prefs.keepHeaderWhenTyping;
-  const hideHeaderDuringInput = headerInputActive && !prefs.keepHeaderWhenTyping;
+  const hideHeaderForKeyboard = keyboardOpen && !prefs.keepHeaderWhenTyping;
+  const releasePaneForDock = composerDockOpen && !keyboardOpen && !prefs.keepHeaderWhenTyping;
+  const paneStageRef = useRef<HTMLDivElement>(null);
+  const [restingPaneHeight, setRestingPaneHeight] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (composerDockOpen) return;
+    const stage = paneStageRef.current;
+    if (!stage) return;
+
+    const rememberHeight = () => {
+      const height = stage.getBoundingClientRect().height;
+      if (height > 0) setRestingPaneHeight((current) => (current === height ? current : height));
+    };
+    rememberHeight();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(rememberHeight);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [composerDockOpen]);
   // Raw-terminal escape hatch: when on, every agent grammar is bypassed and the plain mirror shows,
   // so a mis-detected/mis-rendered dialog can always be driven by hand with the keys pad.
   const grammarsOn = !prefs.rawTerminal;
@@ -587,18 +605,37 @@ export function AgentChat({
     // `clip`, unlike `hidden`, does not force overflow-y to `auto`. The composer can therefore paint
     // its closed-keyboard background into the bottom safe area without making this shell a competing
     // vertical scroller; the mirror's own scrollport still clips terminal overflow below.
-    <div className="flex min-h-0 w-full min-w-0 max-w-[100dvw] flex-1 flex-col overflow-x-clip">
+    <div
+      className={cn(
+        "flex min-h-0 w-full min-w-0 max-w-[100dvw] flex-1 flex-col overflow-x-clip",
+        releasePaneForDock && "justify-end overflow-y-clip",
+      )}
+    >
+      <div
+        ref={paneStageRef}
+        data-testid="pane-stage"
+        className={cn(
+          "flex min-h-0 min-w-0 flex-col",
+          releasePaneForDock ? "h-full flex-none" : "flex-1",
+        )}
+        style={
+          releasePaneForDock && restingPaneHeight !== null
+            ? { height: `${restingPaneHeight}px` }
+            : undefined
+        }
+      >
       {/* Header — the SAME AppHeader shell the dashboard and space mount, so the Collie mark is
           identical on every screen (no hand-rolled bar to drift). The pane's own bits ride in via
           slots: the `space › tab` breadcrumb as the center, the agent StatusBadge as the right-cluster
           lead, and the find bar as the full-row takeover while searching. */}
-      {!hideHeaderDuringInput && (
+      {!hideHeaderForKeyboard && (
         <AppHeader
           bridge={bridge}
           error={error}
           stalled={stalled}
           fixed={keepHeaderDuringInput}
           fixedTop={keyboardViewportTop}
+          staticPosition={releasePaneForDock}
           onHome={onBack}
           override={
           findOpen ? (
@@ -716,7 +753,7 @@ export function AgentChat({
           }}
         />
       )}
-      {hideHeaderDuringInput && (
+      {hideHeaderForKeyboard && (
         <div
           aria-hidden="true"
           data-testid="hidden-header-safe-area"
@@ -725,7 +762,29 @@ export function AgentChat({
         />
       )}
 
-      {/* Content region below the header — the mirror inside is the scroller. */}
+      {/* In-pane tabs are the header's second row, not terminal content. Keeping them adjacent makes
+          the two navigation levels move together when an unpinned Composer dock releases the pane. */}
+      {agent && !keyboardOpen && (
+        <TabStrip
+          workspaceId={agent.workspaceId}
+          tabs={tabs}
+          agents={agents}
+          selected={agent.tabId}
+          onSelect={(id) => id && goToTab(id)}
+          onNewTab={newTab}
+          allowAll={false}
+          session={session}
+          readOnly={readOnly}
+          onRenamed={() => revalidator.revalidate()}
+          // Closing the tab this pane lives in kills the pane too — leave for Home the same way
+          // pane-close does (onBack); closing any other tab just revalidates so it drops out.
+          onClosed={(tabId) =>
+            agent?.tabId === tabId ? onBack() : revalidator.revalidate()
+          }
+        />
+      )}
+
+      {/* Content region below the attached header rows — the mirror inside is the scroller. */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Status line — a slim row pinned directly below the header (NOT the scrolling mirror), so a
             "Sent" / "changed" notice reads at the top instead of floating over the terminal tail
@@ -736,26 +795,6 @@ export function AgentChat({
         {/* Read-only notice when this device isn't allowlisted (the composer below is disabled too). */}
         <ReadOnlyBanner device={device} />
 
-        {/* In-pane tab bar: the current space's tabs above the mirror — switch tab without leaving the
-            pane, or create one with +. No "All" here (you're always in a specific tab). Hidden while
-            the keyboard is open; the fixed title still identifies the pane and the mirror keeps the row. */}
-        {agent && !keyboardOpen && (
-          <TabStrip
-            workspaceId={agent.workspaceId}
-            tabs={tabs}
-            agents={agents}
-            selected={agent.tabId}
-            onSelect={(id) => id && goToTab(id)}
-            onNewTab={newTab}
-            allowAll={false}
-            session={session}
-            readOnly={readOnly}
-            onRenamed={() => revalidator.revalidate()}
-            // Closing the tab this pane lives in kills the pane too — leave for Home the same way a
-            // pane-close does (onBack); closing any other tab just revalidates so it drops out.
-            onClosed={(tabId) => (agent?.tabId === tabId ? onBack() : revalidator.revalidate())}
-          />
-        )}
 
         {/* Pane switcher: the panes that share this tab (space › tab › pane). Mobile shows them as a
             tabbed row rather than tiling the panes; hidden with the tab bar while the keyboard is open. */}
@@ -852,13 +891,15 @@ export function AgentChat({
                 {t("chat.noRecentOutput")}
               </div>
             )}
-          </ChatMessageList>
-        </div>
+        </ChatMessageList>
+      </div>
+      </div>
+      </div>
 
         {/* Bottom region: the pane-switch handle + composer. The status line USED to float here as an
             overlay just above the composer, but it covered the terminal tail (the prompt/cursor and
             up-levelled prompt buttons) — it now lives as a slim row just below the header. */}
-        <div className="relative">
+      <div className="relative shrink-0">
 
           {/* Swipe-up / tap handle for the quick pane switcher — the sheet that switches AND closes
               panes (each row has a ✕). A tall, full-width hit area so the swipe is easy to land (and a
@@ -935,7 +976,6 @@ export function AgentChat({
             onSent={onSent}
           />
         </div>
-      </div>
 
       {/* Swipe-up quick switcher — just the panes (agents + shells), reached by the thumb gesture.
           Switch-only: pane closing lives in the pane pill's long-press sheet, not here. */}

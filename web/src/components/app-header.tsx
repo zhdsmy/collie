@@ -45,6 +45,8 @@ interface AppHeaderProps {
   fixed?: boolean;
   /** Visual viewport top relative to the layout viewport; non-zero when iOS pans for the keyboard. */
   fixedTop?: number;
+  /** Keep the header in ordinary flow so a parent pane stage can move it with adjacent navigation. */
+  staticPosition?: boolean;
 }
 
 // The single header shell every screen mounts: the safe-area-aware zinc bar (sticky normally, fixed
@@ -66,6 +68,7 @@ export function AppHeader({
   override,
   fixed,
   fixedTop = 0,
+  staticPosition,
 }: AppHeaderProps) {
   useAndroidHeaderThemeColor();
   // The same two shared-clock signals the ConnectionBanner reads, so the dog and the bar agree by
@@ -78,7 +81,11 @@ export function AppHeader({
       style={fixed ? { top: fixedTop } : undefined}
       className={cn(
         "app-header flex items-center gap-2 border-b border-border/60 bg-muted pl-4 pr-2 py-2 [padding-top:calc(env(safe-area-inset-top)_+_0.5rem)]",
-        fixed ? "fixed inset-x-0 z-40" : "sticky top-0 z-20",
+        staticPosition
+          ? "relative z-20"
+          : fixed
+            ? "fixed inset-x-0 z-40"
+            : "sticky top-0 z-20",
       )}
     >
       {override ?? (
