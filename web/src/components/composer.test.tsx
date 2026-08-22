@@ -574,7 +574,7 @@ describe("Composer — send", () => {
 });
 
 describe("Composer — typing into the terminal", () => {
-  /** The entry point: the named "Type" toggle in the Controls row, beside Keys. */
+  /** The entry point: the named "Type" toggle in the Controls row. */
   function startDirectTyping() {
     fireEvent.click(screen.getByRole("button", { name: /^type into terminal$/i }));
     return screen.getByPlaceholderText(/type into the terminal/i);
@@ -586,24 +586,232 @@ describe("Composer — typing into the terminal", () => {
     expect(startDirectTyping()).toHaveFocus();
   });
 
-  // The entry point must be a deliberate press and nothing else: it sits in a row of dock toggles,
-  // so it must not send, and it must not leave a half-open dock covering the keyboard it needs.
-  it("arms from the Controls row without sending, and closes an open dock", async () => {
+  // The old Keys drawer is gone: direct input is the one keyboard surface, with the navigation
+  // accessory appearing only after the operator deliberately arms it.
+  it("arms the navigation accessory without sending and has no standalone Keys control", () => {
     let replyCalls = 0;
     server.use(replyHandler(() => replyCalls++));
     renderComposer();
-    fireEvent.click(screen.getByRole("button", { name: /^keys$/i }));
-    expect(screen.getByRole("button", { name: /close keys/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^keys$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Escape" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /^type into terminal$/i }));
 
     expect(screen.getByPlaceholderText(/type into the terminal/i)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /close keys/i })).toBeNull();
+    expect(screen.getByRole("button", { name: "Escape" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show function keys" })).toBeInTheDocument();
     expect(replyCalls).toBe(0);
     expect(screen.getByRole("button", { name: /^type into terminal$/i })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
+  });
+
+  it("switches one fixed accessory rail between navigation and F1-F12", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    startDirectTyping();
+
+    const switcher = screen.getByRole("button", { name: "Show function keys" });
+    expect(screen.getByRole("button", { name: "Escape" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "F12" })).not.toBeInTheDocument();
+
+    await user.click(switcher);
+    expect(screen.queryByRole("button", { name: "Escape" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "F1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "F12" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show navigation keys" }));
+    expect(screen.getByRole("button", { name: "Escape" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "F12" })).not.toBeInTheDocument();
+  });
+
+  it("cycles each modifier through one-shot, locked, and off", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    startDirectTyping();
+
+    const ctrl = screen.getByRole("button", { name: "Ctrl" });
+    expect(ctrl).toHaveAttribute("data-mode", "off");
+    expect(ctrl).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(ctrl);
+    expect(ctrl).toHaveAttribute("data-mode", "once");
+    expect(ctrl).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(ctrl);
+    expect(ctrl).toHaveAttribute("data-mode", "locked");
+    expect(ctrl.querySelector("svg")).toBeInTheDocument();
+
+    await user.click(ctrl);
+    expect(ctrl).toHaveAttribute("data-mode", "off");
+    expect(ctrl).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("combines accessory modifiers with phone-keyboard characters in canonical order", async () => {
+    const user = userEvent.setup();
+    const keyCalls: string[][] = [];
+    server.use(
+      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        keyCalls.push(((await request.json()) as { keys: string[] }).keys);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    renderComposer();
+    const box = startDirectTyping();
+
+    // Tap order is deliberately reversed; the wire order stays Ctrl -> Alt -> Shift -> base.
+    await user.click(screen.getByRole("button", { name: "Shift" }));
+    await user.click(screen.getByRole("button", { name: "Ctrl" }));
+    fireEvent.change(box, { target: { value: "A" } });
+
+    await waitFor(() => expect(keyCalls.flat()).toEqual(["ctrl+shift+a"]));
+    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
+    expect(screen.getByRole("button", { name: "Shift" })).toHaveAttribute("data-mode", "off");
+  });
+
+  it("applies a one-shot modifier only to the first valid key in a paste", async () => {
+    const user = userEvent.setup();
+    const keyCalls: string[][] = [];
+    server.use(
+      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        keyCalls.push(((await request.json()) as { keys: string[] }).keys);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    renderComposer();
+    const box = startDirectTyping();
+
+    await user.click(screen.getByRole("button", { name: "Ctrl" }));
+    fireEvent.change(box, { target: { value: "abc" } });
+
+    await waitFor(() => expect(keyCalls.flat()).toEqual(["ctrl+a", "b", "c"]));
+    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
+  });
+
+  it("does not turn an IME commit into an invalid modifier chord", async () => {
+    const user = userEvent.setup();
+    const keyCalls: string[][] = [];
+    server.use(
+      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        keyCalls.push(((await request.json()) as { keys: string[] }).keys);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    renderComposer();
+    const box = startDirectTyping();
+    const ctrl = screen.getByRole("button", { name: "Ctrl" });
+
+    await user.click(ctrl);
+    fireEvent.compositionStart(box);
+    fireEvent.compositionEnd(box, { data: "你" });
+    await waitFor(() => expect(keyCalls.flat()).toEqual(["你"]));
+    expect(ctrl).toHaveAttribute("data-mode", "once");
+
+    fireEvent.change(box, { target: { value: "c" } });
+    await waitFor(() => expect(keyCalls.flat()).toEqual(["你", "ctrl+c"]));
+    expect(ctrl).toHaveAttribute("data-mode", "off");
+  });
+
+  it("combines modifiers with accessory special keys", async () => {
+    const user = userEvent.setup();
+    const keyCalls: string[][] = [];
+    server.use(
+      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        keyCalls.push(((await request.json()) as { keys: string[] }).keys);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    renderComposer();
+    startDirectTyping();
+
+    await user.click(screen.getByRole("button", { name: "Shift" }));
+    await user.click(screen.getByRole("button", { name: "Tab" }));
+
+    // api.sendKeys expands logical shift+Tab to the PTY's BackTab escape sequence.
+    await waitFor(() => expect(keyCalls.flat()).toEqual(["Escape", "[", "Z"]));
+  });
+
+  it("keeps modifiers across row switching and combines them with function keys", async () => {
+    const user = userEvent.setup();
+    const keyCalls: string[][] = [];
+    server.use(
+      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        keyCalls.push(((await request.json()) as { keys: string[] }).keys);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    renderComposer();
+    startDirectTyping();
+
+    await user.click(screen.getByRole("button", { name: "Ctrl" }));
+    await user.click(screen.getByRole("button", { name: "Show function keys" }));
+    expect(keyCalls).toEqual([]); // switching rows is display-only
+    await user.click(screen.getByRole("button", { name: "F5" }));
+
+    await waitFor(() => expect(keyCalls.flat()).toEqual(["ctrl+F5"]));
+  });
+
+  it("sends accessory navigation and function keys immediately", async () => {
+    const user = userEvent.setup();
+    const keyCalls: string[][] = [];
+    server.use(
+      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        keyCalls.push(((await request.json()) as { keys: string[] }).keys);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    renderComposer();
+    startDirectTyping();
+
+    await user.click(screen.getByRole("button", { name: "Escape" }));
+    await user.click(screen.getByRole("button", { name: "Tab" }));
+    await user.click(screen.getByRole("button", { name: "Left" }));
+    await user.click(screen.getByRole("button", { name: "Show function keys" }));
+    await user.click(screen.getByRole("button", { name: "F12" }));
+
+    await waitFor(() =>
+      expect(keyCalls.flat()).toEqual(["Escape", "Tab", "Left", "F12"]),
+    );
+  });
+
+  it("resets modifiers and the selected row when direct input exits", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    startDirectTyping();
+
+    await user.click(screen.getByRole("button", { name: "Ctrl" }));
+    await user.click(screen.getByRole("button", { name: "Show function keys" }));
+    await user.click(screen.getByRole("button", { name: /^stop$/i }));
+    startDirectTyping();
+
+    expect(screen.getByRole("button", { name: "Escape" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "F12" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
+  });
+
+  it("keeps locked modifiers for later keys but spends one-shot modifiers", async () => {
+    const user = userEvent.setup();
+    const keyCalls: string[][] = [];
+    server.use(
+      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        keyCalls.push(((await request.json()) as { keys: string[] }).keys);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    renderComposer();
+    const box = startDirectTyping();
+    const alt = screen.getByRole("button", { name: "Alt" });
+
+    await user.click(alt);
+    await user.click(alt); // locked
+    fireEvent.change(box, { target: { value: "b" } });
+    await waitFor(() => expect(keyCalls.flat()).toEqual(["alt+b"]));
+    expect(alt).toHaveAttribute("data-mode", "locked");
+
+    fireEvent.change(box, { target: { value: "f" } });
+    await waitFor(() => expect(keyCalls.flat()).toEqual(["alt+b", "alt+f"]));
+    expect(alt).toHaveAttribute("data-mode", "locked");
   });
 
   it("shows the armed strip and stops from it", async () => {
@@ -1683,7 +1891,7 @@ describe("Composer — quick keys / image attach", () => {
     await user.click(attach); // clickable without throwing (opens the hidden file input)
   });
 
-  it("does not render digit shortcut buttons in the composer (they live on the Keys dock's 123 tab)", () => {
+  it("does not render digit shortcut buttons because the phone keyboard already supplies them", () => {
     renderComposer();
     for (const d of ["1", "2", "3", "4", "5"]) {
       expect(screen.queryByRole("button", { name: d })).not.toBeInTheDocument();
@@ -1718,63 +1926,6 @@ describe("Composer — clipboard image paste", () => {
   });
 });
 
-describe("Composer — keys dock (in-flow, not an overlay)", () => {
-  it("tapping Keys docks the NavTray in the normal flow (no fixed overlay) and toggles it closed", async () => {
-    const user = userEvent.setup();
-    renderComposer();
-
-    const keys = screen.getByRole("button", { name: "Keys" });
-    expect(keys).toHaveAttribute("aria-expanded", "false");
-    // Closed by default — the tray isn't mounted.
-    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
-
-    await user.click(keys);
-    expect(keys).toHaveAttribute("aria-expanded", "true");
-
-    // The NavTray is now mounted (its Esc key is a good witness)…
-    const esc = screen.getByRole("button", { name: "Esc" });
-    expect(esc).toBeInTheDocument();
-    // …and it is IN-FLOW, not inside a fixed overlay/dialog (the BottomSheet's covering role="dialog").
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(esc.closest('[aria-modal="true"]')).toBeNull();
-    expect(esc.closest(".fixed")).toBeNull();
-
-    // Tapping Keys again closes the dock (single-valued drawer toggle).
-    await user.click(keys);
-    expect(keys).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
-  });
-
-  it("the dock's own X close button dismisses it", async () => {
-    const user = userEvent.setup();
-    renderComposer();
-
-    await user.click(screen.getByRole("button", { name: "Keys" }));
-    expect(screen.getByRole("button", { name: "Esc" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Close Keys" }));
-    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
-  });
-
-  it("routes a docked key press through pane.send_keys", async () => {
-    const user = userEvent.setup();
-    let sentKeys: string[] | null = null;
-    server.use(
-      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-        const body = (await request.json()) as { keys: string[] };
-        sentKeys = body.keys;
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    renderComposer();
-
-    await user.click(screen.getByRole("button", { name: "Keys" }));
-    await user.click(screen.getByRole("button", { name: "Esc" }));
-
-    await waitFor(() => expect(sentKeys).toEqual(["Escape"]));
-  });
-});
-
 describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
   it("tapping Quick docks the reply grids in the normal flow (no fixed overlay) and toggles it closed", async () => {
     const user = userEvent.setup();
@@ -1800,19 +1951,6 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
     await user.click(quick);
     expect(quick).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("button", { name: "yes" })).not.toBeInTheDocument();
-  });
-
-  it("opening Quick closes an open Keys dock (shared single-valued drawer)", async () => {
-    const user = userEvent.setup();
-    renderComposer();
-
-    await user.click(screen.getByRole("button", { name: "Keys" }));
-    expect(screen.getByRole("button", { name: "Esc" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Quick" }));
-    // Keys unmounts, Quick mounts — only one dock at the single placement site.
-    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "yes" })).toBeInTheDocument();
   });
 
   it("the dock's own X close button dismisses it", async () => {
@@ -2075,113 +2213,26 @@ describe("Composer — display prefs behind the gear", () => {
     expect(props.setHideControlsWhenTyping).toHaveBeenCalledWith(false);
   });
 
-  it("the Display dock shares the single drawer slot with Keys", async () => {
+  it("the Display dock shares the single drawer slot with Quick", async () => {
     const user = userEvent.setup();
     renderComposer();
 
-    await user.click(screen.getByRole("button", { name: "Display settings" }));
-    expect(screen.getByRole("switch", { name: "Wrap lines" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Quick" }));
+    expect(screen.getByRole("button", { name: "yes" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Keys" }));
-    expect(screen.queryByRole("switch", { name: "Wrap lines" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Esc" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Display settings" }));
+    expect(screen.queryByRole("button", { name: "yes" })).not.toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Wrap lines" })).toBeInTheDocument();
   });
 
   it("display prefs stay reachable on a read-only device", async () => {
     const user = userEvent.setup();
     renderComposer({ readOnly: true });
 
-    // Keys/Quick are write affordances and lock; the gear is local view state and must not.
-    expect(screen.getByRole("button", { name: "Keys" })).toBeDisabled();
+    // Type/Quick are write affordances and lock; the gear is local view state and must not.
+    expect(screen.getByRole("button", { name: "Type into terminal" })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Display settings" }));
     expect(screen.getByRole("switch", { name: "Wrap lines" })).toBeInTheDocument();
-  });
-});
-
-describe("Composer — a composed key queue is guarded on the way out", () => {
-  /** Open Keys and stage one chord, so the queue is genuinely dirty. */
-  async function stageAKey(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(screen.getByRole("button", { name: "Keys" }));
-    await user.click(screen.getByRole("button", { name: "Ctrl" }));
-    await user.click(screen.getByRole("button", { name: "Tab" }));
-    expect(screen.getByRole("button", { name: "Remove Ctrl Tab" })).toBeInTheDocument();
-  }
-
-  it("the dock's X needs a second tap while keys are staged", async () => {
-    const user = userEvent.setup();
-    renderComposerWithStatus();
-    await stageAKey(user);
-
-    await user.click(screen.getByRole("button", { name: "Close Keys" }));
-    // Still open — the composed sequence is not thrown away on one tap.
-    expect(screen.getByRole("button", { name: "Remove Ctrl Tab" })).toBeInTheDocument();
-    expect(screen.getByTestId("status")).toHaveTextContent(/discard 1 queued key/i);
-
-    await user.click(screen.getByRole("button", { name: "Close Keys" }));
-    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
-  });
-
-  // The ✕ is not the only exit — the Keys toggle and the other drawer buttons unmount the tray just
-  // as effectively, which is why the guard lives on the drawer transition rather than the button.
-  // The Controls row's "Keys" toggle and the tray's own "Keys" segmented tab share an accessible
-  // name; only the toggle carries aria-expanded, which is what ties it to the dock.
-  const controlsToggle = (name: string) =>
-    screen
-      .getAllByRole("button", { name })
-      .find((b) => b.hasAttribute("aria-expanded")) as HTMLElement;
-
-  it.each([
-    ["the Keys toggle", () => controlsToggle("Keys")],
-    ["the Quick toggle", () => controlsToggle("Quick")],
-    ["the Display gear", () => screen.getByRole("button", { name: "Display settings" })],
-  ])("%s also needs a second tap while keys are staged", async (_label, getButton) => {
-    const user = userEvent.setup();
-    renderComposerWithStatus();
-    await stageAKey(user);
-
-    await user.click(getButton());
-    expect(screen.getByRole("button", { name: "Remove Ctrl Tab" })).toBeInTheDocument();
-
-    await user.click(getButton());
-    expect(screen.queryByRole("button", { name: "Remove Ctrl Tab" })).not.toBeInTheDocument();
-  });
-
-  // Over-guarding trains you to double-tap through the confirm reflexively, which kills its value
-  // where it matters. One tap of setup is not work worth protecting.
-  it("an armed modifier with NO staged keys closes on the first tap", async () => {
-    const user = userEvent.setup();
-    renderComposer();
-
-    await user.click(screen.getByRole("button", { name: "Keys" }));
-    await user.click(screen.getByRole("button", { name: "Ctrl" })); // armed, but nothing staged
-    await user.click(screen.getByRole("button", { name: "Close Keys" }));
-
-    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
-  });
-
-  it("a clean Keys dock closes on the first tap", async () => {
-    const user = userEvent.setup();
-    renderComposer();
-
-    await user.click(screen.getByRole("button", { name: "Keys" }));
-    await user.click(screen.getByRole("button", { name: "Close Keys" }));
-
-    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
-  });
-
-  // The count must not outlive the tray: a stale value would arm a phantom confirm on a later,
-  // perfectly clean close.
-  it("does not arm a phantom confirm on a later clean open", async () => {
-    const user = userEvent.setup();
-    renderComposer();
-    await stageAKey(user);
-
-    await user.click(screen.getByRole("button", { name: "Close Keys" })); // arm
-    await user.click(screen.getByRole("button", { name: "Close Keys" })); // discard
-
-    await user.click(screen.getByRole("button", { name: "Keys" })); // reopen, empty
-    await user.click(screen.getByRole("button", { name: "Close Keys" }));
-    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
   });
 });
 

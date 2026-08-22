@@ -66,7 +66,7 @@ A superseded ADR is never deleted or edited into agreement with the present. Mar
 | [0002](./0002-invert-the-light-terminal-mirror.md) | The light terminal mirror is inverted, not re-themed | Accepted |
 | [0003](./0003-one-shared-seen.md) | "Seen" is one shared fact, and only Collie's own reads count | Accepted |
 | [0004](./0004-the-statusline-run-is-bounded.md) | The statusline run is bounded, but the bound guards less than it looks | Accepted |
-| [0005](./0005-a-composed-key-queue-never-outlives-its-dock.md) | A composed key queue never outlives its dock | Accepted |
+| [0005](./0005-a-composed-key-queue-never-outlives-its-dock.md) | A composed key queue never outlives its dock | Superseded by 0022 |
 | [0006](./0006-update-advances-the-checkout-herdr-installed.md) | `update` advances the checkout Herdr installed, and never re-links it | Accepted |
 | [0007](./0007-the-idle-lock-is-a-pause-not-a-gate.md) | The idle lock is a pause, not a gate | Accepted |
 | [0008](./0008-collie-does-not-run-a-terminal-emulator.md) | Collie does not run a terminal emulator | Accepted |
@@ -76,6 +76,7 @@ A superseded ADR is never deleted or edited into agreement with the present. Mar
 | [0018](./0018-operator-command-rows-replace-the-catalog.md) | The operator's command rows replace the catalog, never merge into it | Accepted |
 | [0020](./0020-a-major-upgrade-is-consented-by-flag.md) | A major upgrade is consented by flag; routine update follows tags within the major | Accepted |
 | [0021](./0021-downstream-revisions-preserve-the-upstream-base.md) | Downstream revisions preserve the upstream base | Accepted |
+| [0022](./0022-direct-input-owns-the-phone-keyboard-accessory.md) | Direct input owns the phone keyboard accessory | Accepted |
 
 **0011–0016 and 0019 are not missing** — they are the pack/federation and lint-gate decisions,
 accepted on the `v1`

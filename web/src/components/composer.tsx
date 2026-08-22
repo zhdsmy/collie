@@ -13,15 +13,13 @@ import { setStatus } from "@/lib/status";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChatInput } from "@/components/ui/chat/chat-input";
-import { NavTray } from "@/components/nav-tray";
 import { CommandPalette } from "@/components/command-palette";
 import { QuickActionsContent } from "@/components/quick-actions";
 import { DisplayPrefsContent } from "@/components/display-prefs";
 import { SectionLabel } from "@/components/ui/section-label";
 import * as api from "@/lib/api";
 import { commandsFor } from "@/lib/agent-commands";
-import { useOperatorCommands, useOperatorKeys } from "@/lib/operator-config";
-import { ctrlPresetsFor } from "@/lib/operator-keys";
+import { useOperatorCommands } from "@/lib/operator-config";
 import { isDestructiveInput } from "@/lib/destructive";
 import { clearDraft, fitsDraftStore, loadDraft, saveDraft } from "@/lib/drafts";
 import { useHoldReload } from "@/lib/reload-guard";
@@ -30,6 +28,7 @@ import { adapterFor } from "@/lib/harness";
 import { sendGuardedReply } from "@/lib/reply-action";
 import { TerminalDraftPreview } from "@/components/terminal-draft-preview";
 import { DirectTypingStrip } from "@/components/direct-typing-strip";
+import { DirectKeyboardAccessory } from "@/components/direct-keyboard-accessory";
 import { NoEchoNotice } from "@/components/no-echo-notice";
 
 export interface ComposerHandle {
@@ -79,12 +78,10 @@ interface ComposerProps {
   onSent: () => void;
 }
 
-// The composer cluster at the bottom of the pane view — everything a phone keyboard can't do on its
-// own: quick actions, an agent-aware slash-command palette, an inline key tray (via
-// `pane.send_keys`), image upload, display prefs, and the reply Send (with a destructive-command
-// two-tap guard). Its state (draft, sending, upload, pending preview, its own Keys/Quick/Agent
-// sheets) is entirely local; it reaches AgentChat only through `onSent` (to re-follow the tail) and
-// exposes `focusInput` so the mirror tap can bring up the keyboard.
+// The composer cluster at the bottom of the pane view: quick actions, an agent-aware slash-command
+// palette, direct terminal typing, image upload, display prefs, and the reply Send (with a
+// destructive-command two-tap guard). Its state is entirely local; it reaches AgentChat only
+// through `onSent` and exposes `focusInput` so the mirror tap can bring up the keyboard.
 //
 // "display" joined the drawer union when the permanent icon-only View row was retired: wrap / raw
 // terminal / font size are settings you touch once, so they cost a whole row of a phone viewport for
@@ -92,7 +89,7 @@ interface ComposerProps {
 // decode. They now live behind the ⚙ on the single Controls row, as labelled rows in the same
 // in-flow dock (they change how the mirror LOOKS, so the mirror has to stay visible while you flip
 // them). Find moved the other way — to the header, where its find bar already takes over the row.
-type ComposerDrawer = "quick" | "cmd" | "keys" | "display" | null;
+type ComposerDrawer = "quick" | "cmd" | "display" | null;
 
 // The Controls row's "on" look, authored once so an open dock and an armed mode can never drift
 // apart. `hover:` is pinned to the same tint: without it, hovering an already-on control repaints it
@@ -127,7 +124,7 @@ function translatedDestructiveReason(reason: string, translate: TFunction): stri
   return key ? translate(key) : reason;
 }
 
-// Shared in-flow dock chrome for Keys/Quick/Agent/Display — an IN-FLOW panel (never an overlay), so the terminal
+// Shared in-flow dock chrome for Quick/Agent/Display — an IN-FLOW panel (never an overlay), so the terminal
 // mirror's flex-1 box shrinks and its tail stays visible while the dock is open (a covering sheet
 // hid exactly the prompt you were driving). The inset grouped surface + capped height keep the
 // composer hierarchy clear without crowding the mirror. The fixed header keeps its Close X
@@ -271,35 +268,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // below).
   const [handledKey, setHandledKey] = useState<string | null>(null);
   const [previewLatched, setPreviewLatched] = useState(false);
-  // Composer sheets are mutually exclusive — at most one open (Keys / Quick / Agent / Display).
+  // Composer sheets are mutually exclusive — at most one open (Quick / Agent / Display).
   const [drawer, setDrawer] = useState<ComposerDrawer>(null);
   useLayoutEffect(() => {
     onDockOpenChange?.(drawer !== null);
     return () => onDockOpenChange?.(false);
   }, [drawer, onDockOpenChange]);
-  // Keys staged in the (unmounted-on-close) NavTray, pushed up so leaving the Keys dock can guard a
-  // composed sequence. See requestDrawer.
-  const [queuedKeys, setQueuedKeys] = useState(0);
-  // Two-tap guard for discarding that sequence. Separate from sendConfirm so an armed "Really send?"
-  // and an armed discard can't clobber each other.
-  const discardConfirm = usePendingConfirm();
-
-  // The SINGLE choke point for every drawer transition. Closing the Keys dock destroys the composed
-  // queue (NavTray unmounts, useKeyQueue resets) — deliberate, because a queue that survived into a
-  // later open would let Send fire yesterday's chord sequence into today's TUI state, and this
-  // surface's whole safety story is "you review exactly what is about to go on the wire". So the fix
-  // for a mis-tap is a confirm, not persistence.
-  //
-  // Routed through here rather than guarding the dock's ✕ alone: the Keys toggle and the Quick /
-  // Agent / Display buttons all unmount the tray just as effectively. An armed-but-EMPTY queue (a
-  // lone `once` modifier, no chips) does not arm the confirm — one tap of setup isn't work worth
-  // protecting, and over-guarding just trains you to double-tap through it reflexively.
   function requestDrawer(next: ComposerDrawer) {
-    if (drawer === "keys" && next !== "keys" && queuedKeys > 0 && !discardConfirm.confirm("discard")) {
-      setStatus(translate("composer.discardQueuedKeys", { count: queuedKeys }), "info");
-      return;
-    }
-    discardConfirm.reset();
     setDrawer(next);
   }
   const closeDrawer = () => requestDrawer(null);
@@ -479,9 +454,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // visibility test here and the palette's own list below (same call, same arguments).
   const operatorCommands = useOperatorCommands();
   const commands = commandsFor(agent, operatorCommands);
-  // The Keys tray's preset row, resolved the same way from the same one-shot read of /api/config.
-  const keyPresets = ctrlPresetsFor(agent, useOperatorKeys());
-
   function focusInputImmediately() {
     const el = inputRef.current;
     if (!el) return;
@@ -813,28 +785,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           </div>
         )}
 
-        {/* File input stays mounted here (not inside the keyboard-only key row) so the picker
-            callback survives the keyboard collapsing. Attach-image fires it from the reply-input row
-            below (always visible, not gated behind the keyboard-open quick keys); structural commands
-            (New tab/space, Kill) and Stop (Esc, in the Keys dock) live elsewhere. */}
+        {/* File input stays mounted here so its picker callback survives the keyboard collapsing.
+            Attach-image fires it from the always-visible reply-input row below. */}
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickImage} />
-        {/* Keys / Quick / Agent / Display dock — a single in-flow site ABOVE the Controls row (so the toggle
-            you tapped stays put and the panel grows over the mirror, not the input). Whichever of the
-            mutually exclusive drawers is active renders here via the shared ComposerDock chrome. Keys
-            mounts the NavTray (unmounts on close, so tab/queue reset each open); Quick mounts the two
-            one-tap reply grids; Agent mounts its scrolling command list with search pinned below;
-            Display mounts the labelled mirror prefs. The hide-controls preference pauses the other
-            docks, but Agent stays mounted while its own search field owns the software keyboard. */}
-        {!hideControlsWhenTyping && drawer === "keys" && (
-          <ComposerDock title={translate("composer.keys")} onClose={closeDrawer}>
-            <NavTray
-              onSend={pressKeys}
-              presets={keyPresets}
-              onQueueChange={setQueuedKeys}
-              disabled={locked}
-            />
-          </ComposerDock>
-        )}
+        {/* Quick / Agent / Display share one in-flow site above the Controls row, so the toggle stays
+            put while the panel grows over the mirror rather than covering the input. Agent remains
+            mounted while its own search field owns the software keyboard. */}
         {!hideControlsWhenTyping && drawer === "quick" && (
           <ComposerDock title={translate("composer.quick")} onClose={closeDrawer}>
             <QuickActionsContent
@@ -876,7 +832,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
-        {/* The action row: Keys · Quick · Agent · ⚙ (Agent only when the pane's agent has
+        {/* The action row: Type · Quick · Agent · ⚙ (Agent only when the pane's agent has
             commands). Display prefs used to sit on a second, permanent icon-only "View" row above
             this one; folding them behind the ⚙ gives the mirror that row back. The gear is icon-only
             and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
@@ -887,34 +843,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             controls. */}
         {!hideControlsWhenTyping && (
           <div className="mb-2 flex min-w-0 items-center gap-1">
-          {/* Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to open, tap
-              again to close. aria-expanded ties each to the dock; secondary variant marks it pressed
-              while open. Both share the single-valued `drawer`, so opening one closes the other. */}
-          <Button
-            variant="ghost"
-            size="sm"
-              className={cn(
-                "h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs has-[>svg]:px-0",
-                drawer === "keys" ? CONTROL_ON : CONTROL_OFF,
-              )}
-            disabled={locked}
-            aria-expanded={drawer === "keys"}
-            onClick={() => requestDrawer(drawer === "keys" ? null : "keys")}
-          >
-              <Keyboard className="size-4 shrink-0" />
-              <span className="min-w-0 truncate">{translate("composer.keys")}</span>
-          </Button>
-          {/* "Type into terminal" lives HERE, beside Keys, rather than on the Send button.
-              It is the same problem split in half: Keys exists because the phone keyboard cannot
-              send Esc/Tab/arrows/chords, this exists because it cannot send bare printable letters —
-              so someone who wants to press `b` looks in this row first. It is also used in bursts
-              (a picker, a y/n prompt) and then not for days, which is the wrong shape for a
-              permanent fixture on the app's most-used control: a split Send button cost a third of
-              the primary action's width every day to serve a mode used on a few of them.
-              Unlike its neighbours this toggles state instead of opening a dock — the armed strip
-              above the input is what makes that visible. Arming is still an explicit NAMED choice,
-              which is what keeps an accidental touch from quietly wiring the keyboard to a live
-              terminal; see use-direct-typing.ts for the rest of that argument. */}
+          {/* Direct input is the single keyboard surface: once armed, its accessory supplies every
+              key the phone keyboard lacks. Keeping the named toggle makes activation deliberate;
+              see use-direct-typing.ts for the lifecycle and safety rules. */}
           <Button
             variant="ghost"
             size="sm"
@@ -931,8 +862,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 return;
               }
               // Close whatever dock is open first: the mode needs the phone keyboard, and a dock
-              // holding half the viewport is the thing in its way. Routed through requestDrawer so a
-              // staged key queue still gets its discard confirm (ADR 0005).
+              // holding half the viewport is in its way.
               requestDrawer(null);
               direct.activate();
             }}
@@ -1025,6 +955,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         {/* Armed indicator for direct typing. In the same in-flow slot as the "You sent:" strip,
             deliberately NOT only on the button and textarea — see the component. */}
         {direct.active && <DirectTypingStrip onStop={() => direct.deactivate()} />}
+        {direct.active && (
+          <DirectKeyboardAccessory
+            row={direct.row}
+            modifiers={direct.modifiers}
+            disabled={locked}
+            onToggleRow={direct.toggleRow}
+            onToggleModifier={direct.toggleModifier}
+            onSendKeys={direct.sendAccessoryKeys}
+          />
+        )}
         {/* A draft too large for the disk tier (lib/drafts.ts). It survives a pane switch — the
             memory tier holds it whole — but not the app closing, and that difference is invisible
             without saying so: the old behaviour silently restored an OLDER, SHORTER draft instead.

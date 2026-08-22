@@ -1,6 +1,6 @@
 # 0005 — A composed key queue never outlives its dock
 
-Status: **Accepted** (2026-08-03)
+Status: **Superseded by [0022](./0022-direct-input-owns-the-phone-keyboard-accessory.md)** (2026-08-22)
 
 ## Context
 

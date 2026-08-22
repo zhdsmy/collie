@@ -1,6 +1,4 @@
-// How an operator-declared row says WHICH panes it addresses — shared verbatim by `commands.toml`
-// (agent-commands.ts) and `keys.toml` (operator-keys.ts), so the two files can never grow two
-// different answers to "does this row apply here?".
+// How an operator-declared `commands.toml` row says which panes it addresses.
 //
 // The rule and its reasoning are ADR 0018's; this module is only where it is computed.
 

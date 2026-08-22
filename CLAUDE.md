@@ -122,18 +122,14 @@ the unit name; the Herdr action runs from anywhere.
   still-mounted router (unmounting it ate in-progress composer drafts) and pauses polling through
   `lib/idle.ts`. Don't restore it as a security control or re-describe it as one
   ([ADR 0007](./.adr/0007-the-idle-lock-is-a-pause-not-a-gate.md)).
-- **"Type into terminal" is armed by a named choice and dies with the pane view.** Long-pressing Send
-  opens a menu; the hold never arms it alone. It disarms on a pane switch, a composer lock (gone pane,
-  read-only, idle pause), a hidden page, and a failed batch — never persisted, never restored. Don't
-  lift it, and don't add the reply guard's `composerReady` pre-flight to it; the reasoning for both
-  sits in `web/src/components/send-mode-menu.tsx`'s header.
+- **"Type into terminal" owns the phone keyboard accessory and dies with the pane view.** Its fixed
+  switch selects exactly two one-line rails: Ctrl/Alt/Shift plus navigation, or F1–F12. Modifier
+  state survives only the row switch; direct exit, pane switch, composer lock, hidden page, or a
+  failed key batch clears it and restores navigation. Don't add a third preset/digit rail or lift
+  the state outside `useDirectTyping` ([ADR 0022](./.adr/0022-direct-input-owns-the-phone-keyboard-accessory.md)).
 - **The operator's rows in `commands.toml` replace the shipped command catalog on the panes they
   address, never merge into it** ([ADR 0018](./.adr/0018-operator-command-rows-replace-the-catalog.md));
   the bridge re-reads the file behind an mtime check, so edits are live and need no restart.
-- **`keys.toml` is `commands.toml`'s sibling** — the operator's rows replace the Keys tray's shipped
-  Ctrl presets on the panes they address (ADR 0018 again), and only those presets: the tray's
-  keyboard is fixed. Both files share one reader (`bridge/operator-file.ts`) and one scope ladder
-  (`web/src/lib/operator-scope.ts`); teach both, never one.
 - **PWA** via `vite-plugin-pwa` (`web/vite.config.ts`): manifest + `sw.js`, registered manually
   from `virtual:pwa-register` in `main.tsx` (bundled = CSP-safe). Install/SW need a **secure
   context** — over plain HTTP they no-op silently (Chrome insecure-origin flag, or HTTPS, to test).
@@ -182,10 +178,6 @@ the unit name; the Herdr action runs from anywhere.
   (`harness/claude/menu.ts`) runs LAST, after every specific detector declines, and an unrecognised
   modal refuses composer typing via the adapter's `composerReady` pre-flight
   ([ADR 0009](./.adr/0009-a-generic-menu-is-driven-by-the-keys-it-names.md)).
-- **A composed key queue never outlives its dock** — closing Keys discards it (guarded by a two-tap
-  confirm on the drawer transition, not the ✕). Don't lift or persist it: a queue surviving into a
-  later open would let Send fire a stale sequence into a pane that has moved on
-  ([ADR 0005](./.adr/0005-a-composed-key-queue-never-outlives-its-dock.md)).
 - **The statusline-run bound in `chrome.ts` guards less than it looks** — a dialog below the box is
   refused by the border/prompt checks and by the blank line Claude paints above its footer hint, never
   by the row count. Size it up if a real statusline needs more rows; don't delete it, and don't credit

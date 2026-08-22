@@ -152,7 +152,7 @@ describe("AgentChat — typing layout preferences", () => {
     expect(chrome).toContainElement(screen.getByRole("banner"));
     expect(chrome).toContainElement(screen.getByText("Tabs"));
     expect(screen.getByRole("button", { name: "Switch pane" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Type into terminal" })).toBeInTheDocument();
   });
 
   it("keeps the tab rename input mounted when its keyboard hides unpinned pane chrome", async () => {
@@ -192,7 +192,7 @@ describe("AgentChat — typing layout preferences", () => {
     expect(chrome).toContainElement(screen.getByText("Tabs"));
     expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Switch pane" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Keys" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Type into terminal" })).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText(/type a reply/i)).toHaveStyle({
       maxHeight: "5.75rem",
       overflowY: "auto",
@@ -211,7 +211,7 @@ describe("AgentChat — typing layout preferences", () => {
     expect(chrome).toHaveClass("fixed");
     expect(chrome).toContainElement(screen.getByText("Tabs"));
     expect(screen.getByTestId("keyboard-header-spacer")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Type into terminal" })).toBeInTheDocument();
   });
 
   it("can hide input controls and the header while typing", () => {
@@ -225,7 +225,7 @@ describe("AgentChat — typing layout preferences", () => {
     expect(screen.queryByRole("banner")).not.toBeInTheDocument();
     expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
     expect(screen.getByTestId("hidden-header-safe-area")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Keys" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Type into terminal" })).not.toBeInTheDocument();
   });
 
   it("hides the header but leaves input controls visible when only header retention is off", () => {
@@ -239,12 +239,12 @@ describe("AgentChat — typing layout preferences", () => {
     expect(screen.queryByRole("banner")).not.toBeInTheDocument();
     expect(screen.queryByTestId("keyboard-header-spacer")).not.toBeInTheDocument();
     expect(screen.getByTestId("hidden-header-safe-area")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Keys" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Type into terminal" })).toBeInTheDocument();
     // Pane navigation still yields to the terminal independently of both chrome preferences.
     expect(screen.getByText("Tabs")).not.toBeVisible();
   });
 
-  it.each(["Keys", "Quick", "Agent", "Display settings"])(
+  it.each(["Quick", "Agent", "Display settings"])(
     "pins the pane header while the %s dock is open when retention is enabled",
     async (buttonName) => {
       const user = userEvent.setup();
@@ -267,7 +267,7 @@ describe("AgentChat — typing layout preferences", () => {
     },
   );
 
-  it.each(["Keys", "Quick", "Agent", "Display settings"])(
+  it.each(["Quick", "Agent", "Display settings"])(
     "hides the pane header while the %s dock is open when retention is disabled",
     async (buttonName) => {
       localStorage.setItem(
@@ -312,7 +312,7 @@ describe("AgentChat — typing layout preferences", () => {
     const user = userEvent.setup();
     renderChat({ tabs: fixtureTabs });
 
-    await user.click(screen.getByRole("button", { name: "Keys" }));
+    await user.click(screen.getByRole("button", { name: "Quick" }));
     expect(screen.getByTestId("pane-stage")).toHaveStyle({ height: "640px" });
   });
 });

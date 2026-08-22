@@ -30,11 +30,11 @@ export function nextModMode(m: ModMode): ModMode {
 // `(["shift"],"Tab") → "shift+Tab"`, `(["ctrl"],"g") → "ctrl+g"` — because those are the exact
 // strings the tray has always sent and Herdr verified (keys are case-insensitive on the wire, so we
 // don't rewrite what already works). Modifiers are ordered + de-duped by MODIFIER_ORDER so the wire
-// string is stable regardless of tap order. A base that already carries a "+" is a preset chord
-// (`ctrl+c`, `shift+tab`) and passes through untouched, so we never stack modifiers onto a preset.
-// Empty modifiers returns the base unchanged.
+// string is stable regardless of tap order. A multi-token base that already carries a "+" is a
+// precomposed chord (`ctrl+c`, `shift+tab`) and passes through untouched; a lone "+" remains a real
+// base key, producing Herdr's `ctrl++` spelling. Empty modifiers returns the base unchanged.
 export function composeKey(mods: readonly Modifier[], base: string): string {
-  if (base.includes("+")) return base;
+  if (base !== "+" && base.includes("+")) return base;
   if (mods.length === 0) return base;
   const ordered = MODIFIER_ORDER.filter((m) => mods.includes(m));
   return `${ordered.join("+")}+${base}`;

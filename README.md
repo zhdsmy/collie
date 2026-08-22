@@ -61,7 +61,7 @@ a tap, switch between herds, and pick up a push notification the moment an agent
   </tr>
   <tr>
     <td align="center" width="50%"><img src="assets/space-detail.png" alt="A space's tabs and panes" width="250"><br><sub><b>Space</b> — its tabs and panes, deep-linkable</sub></td>
-    <td align="center" width="50%"><img src="assets/keys.png" alt="The special-keys pad — arrows, Esc, Tab, Ctrl, Alt, Shift" width="250"><br><sub><b>Keys</b> — the special-keys pad, no chords to remember</sub></td>
+    <td align="center" width="50%"><img src="assets/keys.png" alt="Direct terminal input with its one-line modifier and navigation accessory" width="250"><br><sub><b>Type</b> — phone input and terminal keys in one surface</sub></td>
   </tr>
   <tr>
     <td align="center" width="50%"><img src="assets/session-switcher.png" alt="Session switcher" width="250"><br><sub><b>Session switcher</b> — one bridge, every herd</sub></td>
@@ -302,29 +302,6 @@ A pane your rows match shows only your rows (narrowest row wins,
 [ADR 0018](./.adr/0018-operator-command-rows-replace-the-catalog.md)). Add `confirm = true` for a
 two-tap confirm. No restart — edits are live. Verify: open a pane, tap **/**, your rows are on the
 first screen. Syntax error? `journalctl --user -u collie -n 20` names the line.
-
-### Your own key presets
-
-The Keys tray's **Presets** row is yours to replace, in `keys.toml` next to `commands.toml`:
-
-```bash
-cp keys.toml.example "$(herdr plugin config-dir herdr.collie)/keys.toml"
-```
-
-```toml
-[[keys]]
-scope = "claude"             # optional; omit for every pane
-label = "Yes"
-keys = ["Down", "Enter"]     # several chords go out as one batch
-```
-
-A pane your rows match shows only your presets, in place of the shipped Ctrl C/D/U/R/L/Z
-([ADR 0018](./.adr/0018-operator-command-rows-replace-the-catalog.md)). Add `danger = true` for a
-two-tap confirm. The rest of the tray — Esc, arrows, Enter/Tab/Space, modifiers, digits, F1–F12 —
-is fixed and not configurable. Chords are herdr's spelling: `ctrl+c` (never `C-c`), `shift+tab`,
-`ctrl+F7`; `PageUp`/`Home`/`End`/`Delete` are not accepted. No restart — edits are live. Verify:
-open a pane, tap **Keys → Presets**, your buttons are there. Rejected row?
-`journalctl --user -u collie -n 20` names it and why.
 
 ### Multi-session
 

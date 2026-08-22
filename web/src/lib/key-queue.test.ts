@@ -43,6 +43,10 @@ describe("composeKey", () => {
     expect(composeKey(["ctrl", "shift"], "ctrl+c")).toBe("ctrl+c");
     expect(composeKey([], "shift+tab")).toBe("shift+tab");
   });
+
+  it("treats a lone '+' as a base key rather than a precomposed chord", () => {
+    expect(composeKey(["ctrl"], "+")).toBe("ctrl++");
+  });
 });
 
 describe("keyLabel", () => {

@@ -15,7 +15,7 @@ import { FONT_MAX, FONT_MIN } from "@/hooks/use-display-prefs";
 // ever shows; nobody could tell what it did. Behind the ⚙ each pref gets a real name and, where it
 // isn't self-evident, a sentence.
 //
-// It rides the same in-flow ComposerDock as Keys/Quick rather than a covering sheet, deliberately:
+// It rides the same in-flow ComposerDock as Quick/Agent rather than a covering sheet, deliberately:
 // every control here changes how the mirror LOOKS, so you have to be able to see the mirror while
 // you flip it.
 

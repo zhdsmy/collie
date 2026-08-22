@@ -81,7 +81,7 @@ interface AgentChatProps {
 }
 
 // At most one page-level drawer/sheet is open at a time; null = none. The composer's own
-// Keys/Quick/Agent/Display docks are separate and live inside <Composer>.
+// Quick/Agent/Display docks are separate and live inside <Composer>.
 type Drawer = "switcher" | null;
 
 // The detail view mirrors a terminal pane, NOT a chat thread. The pane's output comes from the

@@ -8,7 +8,14 @@ import type {
 
 import { i18n } from "@/i18n";
 import { useOrderedKeySender } from "@/hooks/use-ordered-key-sender";
-import { textToKeySequence } from "@/lib/key-queue";
+import type { Modifier, ModMode } from "@/lib/key-queue";
+import {
+  MODIFIER_ORDER,
+  composeKey,
+  nextModMode,
+  normalizeBaseChar,
+  textToKeySequence,
+} from "@/lib/key-queue";
 import { setStatus } from "@/lib/status";
 
 // Physical-keyboard events that do not change a textarea value still need wire names. Printable
@@ -21,6 +28,27 @@ const SPECIAL_KEYS: Readonly<Record<string, string>> = {
   ArrowLeft: "Left",
   ArrowRight: "Right",
 };
+
+export type DirectKeyRow = "navigation" | "function";
+export type DirectModifierState = Record<Modifier, ModMode>;
+
+const ALL_MODIFIERS_OFF: DirectModifierState = { ctrl: "off", alt: "off", shift: "off" };
+const COMPOSABLE_SPECIAL_KEYS = new Set([
+  "Backspace",
+  "Enter",
+  "Escape",
+  "Tab",
+  "Space",
+  "Up",
+  "Down",
+  "Left",
+  "Right",
+  ...Array.from({ length: 12 }, (_, index) => `F${index + 1}`),
+]);
+
+function isComposableKey(key: string): boolean {
+  return normalizeBaseChar(key) !== null || COMPOSABLE_SPECIAL_KEYS.has(key);
+}
 
 function keyForInputType(inputType: string): string | null {
   if (inputType === "deleteContentBackward") return "Backspace";
@@ -58,7 +86,7 @@ interface DirectTypingOptions {
 // Herdr writes.
 //
 // It does NOT own the entry point. Arming is an explicit NAMED choice — the "Type" toggle in the
-// composer's Controls row, beside Keys.
+// composer's Controls row.
 //
 // WHY A NAMED CHOICE AND NOT A GESTURE. The submitted version of this feature armed the mode on a
 // bare long press of the Send button. That reads as a saving of one tap, but the tap is priced per
@@ -93,6 +121,9 @@ export function useDirectTyping({
 }: DirectTypingOptions) {
   const [active, setActive] = useState(false);
   const [value, setValue] = useState("");
+  const [row, setRow] = useState<DirectKeyRow>("navigation");
+  const [modifiers, setModifiers] = useState<DirectModifierState>(ALL_MODIFIERS_OFF);
+  const modifiersRef = useRef<DirectModifierState>(ALL_MODIFIERS_OFF);
   // Live read for the visibility listener below, which outlives any one armed session. Written at
   // the transitions themselves, not during render: the listener fires between renders, and a ref
   // that only catches up on the next one would let it misread which state it is reporting on.
@@ -108,6 +139,76 @@ export function useDirectTyping({
     dropKeyboard();
   });
 
+  function resetAccessory() {
+    modifiersRef.current = ALL_MODIFIERS_OFF;
+    setModifiers(ALL_MODIFIERS_OFF);
+    setRow("navigation");
+  }
+
+  function toggleModifier(modifier: Modifier) {
+    const next = {
+      ...modifiersRef.current,
+      [modifier]: nextModMode(modifiersRef.current[modifier]),
+    };
+    // Update the live value in the gesture itself. A software-keyboard input can arrive before
+    // React renders the filled button, and must still see the modifier the operator just tapped.
+    modifiersRef.current = next;
+    setModifiers(next);
+  }
+
+  function toggleRow() {
+    setRow((current) => (current === "navigation" ? "function" : "navigation"));
+  }
+
+  function settleOneShotModifiers() {
+    const current = modifiersRef.current;
+    const next: DirectModifierState = {
+      ctrl: current.ctrl === "once" ? "off" : current.ctrl,
+      alt: current.alt === "once" ? "off" : current.alt,
+      shift: current.shift === "once" ? "off" : current.shift,
+    };
+    if (
+      next.ctrl === current.ctrl &&
+      next.alt === current.alt &&
+      next.shift === current.shift
+    ) {
+      return;
+    }
+    modifiersRef.current = next;
+    setModifiers(next);
+  }
+
+  /**
+   * Apply the currently armed chord to at most one valid key in this input event. A paste or an IME
+   * commit can contain many characters; turning all of them into modifier chords would make one
+   * phone action explode into a different command sequence. Locked modifiers remain armed for the
+   * next event, while one-shot modifiers are spent only after a composable base actually appears.
+   */
+  function enqueueWithModifiers(keys: string[], normalizePrintable = false) {
+    if (keys.length === 0) return;
+    const activeModifiers = MODIFIER_ORDER.filter(
+      (modifier) => modifiersRef.current[modifier] !== "off",
+    );
+    if (activeModifiers.length === 0) {
+      sender.enqueue(keys);
+      return;
+    }
+
+    let composed = false;
+    const sequence = keys.map((key) => {
+      if (composed || !isComposableKey(key)) return key;
+      composed = true;
+      const base = normalizePrintable ? (normalizeBaseChar(key) ?? key) : key;
+      return composeKey(activeModifiers, base);
+    });
+    sender.enqueue(sequence);
+    if (composed) settleOneShotModifiers();
+  }
+
+  function sendAccessoryKeys(keys: string[]) {
+    enqueueWithModifiers(keys);
+  }
+
   function activate() {
     if (!canActivate()) return;
     // A buffered reply and live keystrokes cannot safely share one field. Keep the durable draft
@@ -121,6 +222,7 @@ export function useDirectTyping({
     // and this cancellation is what keeps it from landing on the session that replaced it.
     cancelPendingBlur();
     setValue("");
+    resetAccessory();
     composing.current = false;
     committedComposition.current = null;
     activeRef.current = true;
@@ -141,6 +243,7 @@ export function useDirectTyping({
     setValue("");
     composing.current = false;
     committedComposition.current = null;
+    resetAccessory();
   }
 
   function clearMode() {
@@ -257,7 +360,7 @@ export function useDirectTyping({
       // the terminal. Gboard commonly marks that insertParagraph event as composing.
       if (event.isComposing && key === "Backspace") return;
       event.preventDefault();
-      sender.enqueue([key]);
+      enqueueWithModifiers([key]);
     };
     inputEl.addEventListener("beforeinput", onBeforeInput);
     return () => inputEl.removeEventListener("beforeinput", onBeforeInput);
@@ -276,13 +379,15 @@ export function useDirectTyping({
     if (committed !== null) {
       committedComposition.current = null;
       const remainder = next.startsWith(committed) ? next.slice(committed.length) : next;
-      if (remainder.length > 0) sender.enqueue(textToKeySequence(remainder));
+      if (remainder.length > 0) {
+        enqueueWithModifiers(textToKeySequence(remainder), true);
+      }
       setValue("");
       return;
     }
 
     if (next.length === 0) return;
-    sender.enqueue(textToKeySequence(next));
+    enqueueWithModifiers(textToKeySequence(next), true);
     setValue("");
   }
 
@@ -296,7 +401,7 @@ export function useDirectTyping({
     const committed = event.currentTarget.value || event.data;
     if (committed.length === 0) return;
     committedComposition.current = committed;
-    sender.enqueue(textToKeySequence(committed));
+    enqueueWithModifiers(textToKeySequence(committed), true);
     setValue("");
   }
 
@@ -304,16 +409,21 @@ export function useDirectTyping({
     const key = keyForKeyDown(event.key);
     if (key === undefined) return;
     event.preventDefault();
-    sender.enqueue([key]);
+    enqueueWithModifiers([key]);
   }
 
   return {
     active,
     value,
+    row,
+    modifiers,
     busy: sender.busy,
     activate,
     deactivate,
     deactivateSilently,
+    toggleModifier,
+    toggleRow,
+    sendAccessoryKeys,
     onChange,
     onCompositionStart,
     onCompositionEnd,
