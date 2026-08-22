@@ -6,6 +6,14 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.21] - 2026-08-22
+
+### Fixed
+
+- **Wide Codex tool-output frames no longer wrap into stacked rules on phones.** Dim, paired box
+  borders are clipped to one mobile row while collapsed-line counts and Ctrl+C hints remain visible.
+  (45baa97)
+
 ## [0.32.0+collie.20] - 2026-08-22
 
 ### Changed
