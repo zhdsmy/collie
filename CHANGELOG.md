@@ -6,6 +6,17 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.20] - 2026-08-22
+
+### Changed
+
+- **Codex goal status now uses compact semantic icons for every 0.149 state.** Active, paused,
+  stalled, usage-limited, budget-limited, abandoned, and achieved labels retain useful usage and
+  elapsed-time details without consuming a full statusline item. (196e1b2)
+- **Composer actions and direct-input keys now use consistent sizing.** Type, Quick, Agent, and
+  Settings share the action row evenly; Settings has a visible label, every accessory key is 40px,
+  and Ctrl/Alt/Shift use familiar macOS symbols. (196e1b2)
+
 ## [0.32.0+collie.19] - 2026-08-22
 
 ### Changed
