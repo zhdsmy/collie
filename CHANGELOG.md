@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.22] - 2026-08-22
+
+### Fixed
+
+- **Codex submitted queries keep their input surface and reflow naturally on phones.** Backgroundless 0.149 history rows regain a unified background, while host-width Chinese and English continuations collapse without changing lists, code, or image captions. (fba2a54)
+
 ## [0.32.0+collie.21] - 2026-08-22
 
 ### Fixed
