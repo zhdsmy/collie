@@ -1897,7 +1897,7 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
 });
 
 describe("Composer — Agent command dock", () => {
-  it("types then submits a no-argument Codex command while autocomplete is visible", async () => {
+  it("types then submits a no-argument Codex command with multiple autocomplete rows", async () => {
     const user = userEvent.setup();
     const calls: Array<{ text: string; submit: boolean }> = [];
     const paint = (text: string, style = "") =>
@@ -1909,7 +1909,13 @@ describe("Composer — Agent command dock", () => {
         `${paint("› ", "1;")}${paint(draft)}${paint(" ".repeat(12))}`,
         paint(" ".repeat(40)),
         ...(suggestion
-          ? ["  \x1b[38;2;6;182;212m/diff   show git diff (including untracked files)\x1b[0m"]
+          ? [
+              "  \x1b[38;2;6;182;212m/status     show current session configuration and token usage\x1b[0m",
+              "  \x1b[38;2;6;182;212m/statusline configure items that appear in the status line\x1b[0m",
+              "  \x1b[38;2;6;182;212m/skills     list available skills\x1b[0m",
+              "  \x1b[38;2;6;182;212m/settings   open settings\x1b[0m",
+              "  \x1b[38;2;6;182;212m/stats      show usage statistics\x1b[0m",
+            ]
           : [
               "  \x1b[38;2;246;226;183mgpt-5.6-sol high\x1b[0m · Ready · Context 91% left",
             ]),
@@ -1934,11 +1940,11 @@ describe("Composer — Agent command dock", () => {
     const props = renderComposer({ agent: "codex" });
 
     await user.click(screen.getByRole("button", { name: "Agent" }));
-    await user.click(screen.getByText("/diff"));
+    await user.click(screen.getByText("/status"));
 
     await waitFor(() =>
       expect(calls).toEqual([
-        { text: "/diff", submit: false },
+        { text: "/status", submit: false },
         { text: "", submit: true },
       ]),
     );

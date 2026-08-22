@@ -4,6 +4,7 @@ import { isBlank, lineText, trimTrailingBlank, type StyledLine } from "../../blo
 const PROMPT_MARKER = "›";
 const MAX_COMPOSER_LINES = 100;
 const SLASH_COMMAND = /^\/[a-z][a-z0-9-]*$/i;
+const SLASH_SUGGESTION = /^\/[a-z][a-z0-9-]*\s+\S/i;
 const CONTEXT_FIELD = /(?:^|\s)Context \d+(?:% left|…)(?:\s|$)/;
 const STATUS_ITEM_FIELD =
   /(?:gpt-\S+|(?:^|\s)[~/]\S*|\b(?:Ready|Working|Approve(?: for)? me|Fast(?: on| off)|Tasks \d+\/\d+)\b)/;
@@ -109,14 +110,18 @@ function promptDraft(line: StyledLine): string {
   return text.startsWith(PROMPT_MARKER) ? text.slice(PROMPT_MARKER.length).trim() : "";
 }
 
-function isSlashSuggestion(line: StyledLine, command: string): boolean {
-  if (!SLASH_COMMAND.test(command)) return false;
-  const escapedCommand = command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function isSlashSuggestionRow(line: StyledLine): boolean {
   return (
     uniformBackground(line) === null &&
     coloredFieldCount(line) > 0 &&
-    new RegExp(`^${escapedCommand}\\s+\\S`).test(lineText(line).trim())
+    SLASH_SUGGESTION.test(lineText(line).trim())
   );
+}
+
+function isSlashSuggestion(line: StyledLine, command: string): boolean {
+  if (!SLASH_COMMAND.test(command) || !isSlashSuggestionRow(line)) return false;
+  const escapedCommand = command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${escapedCommand}\\s+\\S`).test(lineText(line).trim());
 }
 
 function locateComposer(lines: StyledLine[]): ComposerMatch | null {
@@ -130,14 +135,25 @@ function locateComposer(lines: StyledLine[]): ComposerMatch | null {
   }
   if (end < 4) return null;
 
-  // Codex 0.149 temporarily replaces the statusline with one coloured autocomplete row after a
-  // complete slash command. Treat that row as chrome only after the composer itself is pinned below.
+  // Codex 0.149 temporarily replaces the statusline with a slash autocomplete run. Treat the whole
+  // run as chrome only when a structurally valid composer immediately precedes it.
   const nativeStatusStart = locateStatusStart(lines, end);
-  const suggestion = nativeStatusStart === null ? lines[end - 1]! : null;
-  const bottom = (nativeStatusStart ?? end - 1) - 1;
+  let suggestionStart = end;
+  if (nativeStatusStart === null) {
+    while (suggestionStart > 0 && isSlashSuggestionRow(lines[suggestionStart - 1]!)) {
+      suggestionStart--;
+    }
+    if (suggestionStart === end) return null;
+  }
+  const bottom = (nativeStatusStart ?? suggestionStart) - 1;
   const statusStart = nativeStatusStart ?? end;
   const finish = (top: number, prompt: number): ComposerMatch | null => {
-    if (suggestion !== null && !isSlashSuggestion(suggestion, promptDraft(lines[prompt]!))) {
+    if (
+      nativeStatusStart === null &&
+      !lines
+        .slice(suggestionStart, end)
+        .some((line) => isSlashSuggestion(line, promptDraft(lines[prompt]!)))
+    ) {
       return null;
     }
     return { top, prompt, bottom, statusStart, statusEnd: end };

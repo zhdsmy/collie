@@ -200,14 +200,18 @@ describe("draftCarriesSend", () => {
 });
 
 describe("sendGuardedReply", () => {
-  it("submits a short Codex slash command after its suggestion replaces the statusline", async () => {
+  it("submits a Codex slash command when autocomplete shows multiple suggestions", async () => {
     let pane = codexPaneWithDraft("");
     const suggestion = [
       "some output",
       codexPaint(" ".repeat(40)),
-      `${codexPaint("› ", "1;")}${codexPaint("/diff")}${codexPaint(" ".repeat(12))}`,
+      `${codexPaint("› ", "1;")}${codexPaint("/status")}${codexPaint(" ".repeat(12))}`,
       codexPaint(" ".repeat(40)),
-      "  \x1b[38;2;6;182;212m/diff   show git diff (including untracked files)\x1b[0m",
+      "  \x1b[38;2;6;182;212m/status     show current session configuration and token usage\x1b[0m",
+      "  \x1b[38;2;6;182;212m/statusline configure items that appear in the status line\x1b[0m",
+      "  \x1b[38;2;6;182;212m/skills     list available skills\x1b[0m",
+      "  \x1b[38;2;6;182;212m/settings   open settings\x1b[0m",
+      "  \x1b[38;2;6;182;212m/stats      show usage statistics\x1b[0m",
     ].join("\n");
     const calls = harness(
       () => pane,
@@ -218,14 +222,14 @@ describe("sendGuardedReply", () => {
 
     const out = await sendGuardedReply({
       paneId: "w1:p1",
-      text: "/diff",
+      text: "/status",
       agent: "codex",
       ...instant,
     });
 
     expect(out).toEqual({ status: "sent" });
     expect(calls).toEqual([
-      { text: "/diff", submit: false },
+      { text: "/status", submit: false },
       { text: "", submit: true },
     ]);
   });

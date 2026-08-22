@@ -157,6 +157,65 @@ describe("Codex chrome", () => {
     expect(stripChrome(captured).map(lineText)).toEqual(["earlier output"]);
   });
 
+  it("recognises a complete slash command among multiple Codex suggestions", () => {
+    const captured = lines(
+      [
+        "earlier output",
+        " ",
+        "\x1b[1m›\x1b[0m /status",
+        " ",
+        "  \x1b[38;2;6;182;212m/status     show current session configuration and token usage\x1b[0m",
+        "  \x1b[38;2;6;182;212m/statusline configure items that appear in the status line\x1b[0m",
+        "  \x1b[38;2;6;182;212m/skills     list available skills\x1b[0m",
+        "  \x1b[38;2;6;182;212m/settings   open settings\x1b[0m",
+        "  \x1b[38;2;6;182;212m/stats      show usage statistics\x1b[0m",
+      ].join("\n"),
+    );
+
+    expect(hasComposer(captured)).toBe(true);
+    expect(extractInputDraft(captured)).toBe("/status");
+    expect(extractStatusLines(captured)).toEqual([]);
+    expect(stripChrome(captured).map(lineText)).toEqual(["earlier output"]);
+  });
+
+  it("rejects multiple slash suggestions when none exactly matches the draft", () => {
+    const captured = lines(
+      [
+        "earlier output",
+        " ",
+        "\x1b[1m›\x1b[0m /status",
+        " ",
+        "  \x1b[38;2;6;182;212m/statusline configure items that appear in the status line\x1b[0m",
+        "  \x1b[38;2;6;182;212m/stats     show usage statistics\x1b[0m",
+        "  \x1b[38;2;6;182;212m/skills    list available skills\x1b[0m",
+        "  \x1b[38;2;6;182;212m/settings  open settings\x1b[0m",
+        "  \x1b[38;2;6;182;212m/resume    open session picker\x1b[0m",
+      ].join("\n"),
+    );
+
+    expect(hasComposer(captured)).toBe(false);
+    expect(extractInputDraft(captured)).toBeNull();
+    expect(stripChrome(captured)).toBe(captured);
+  });
+
+  it("rejects a slash autocomplete tail containing a malformed row", () => {
+    const captured = lines(
+      [
+        "earlier output",
+        " ",
+        "\x1b[1m›\x1b[0m /status",
+        " ",
+        "  \x1b[38;2;6;182;212m/status show current session configuration\x1b[0m",
+        "  \x1b[38;2;6;182;212mnot a slash suggestion\x1b[0m",
+        "  \x1b[38;2;6;182;212m/statusline configure status line items\x1b[0m",
+      ].join("\n"),
+    );
+
+    expect(hasComposer(captured)).toBe(false);
+    expect(extractInputDraft(captured)).toBeNull();
+    expect(stripChrome(captured)).toBe(captured);
+  });
+
   it("does not treat an unrelated coloured tail as Codex slash autocomplete", () => {
     const composer = fixture("codex--slash-command-suggestion.ansi.b64");
     const unrelated = composer.replace(
