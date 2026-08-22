@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.19] - 2026-08-22
+
+### Changed
+
+- **Direct input now owns one compact two-row terminal accessory.** A fixed left switch alternates Ctrl/Alt/Shift plus navigation with F1–F12 while preserving modifier state. (0237f08)
+
 ## [0.32.0+collie.18] - 2026-08-22
 
 ### Fixed
