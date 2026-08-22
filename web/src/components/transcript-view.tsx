@@ -131,14 +131,12 @@ function Turn({
   agent,
   showHeader,
   query,
-  variant,
 }: {
   entry: TranscriptEntry;
   agent?: string;
   /** False for a turn continuing the same speaker's run — see the grouping note in TranscriptView. */
   showHeader: boolean;
   query: string;
-  variant: "history" | "live";
 }) {
   const { t, i18n } = useTranslation();
   const time = clockTime(entry.ts, i18n.resolvedLanguage ?? i18n.language);
@@ -161,21 +159,9 @@ function Turn({
   }
 
   const isUser = entry.role === "user";
-  const live = variant === "live";
   return (
-    <div
-      data-turn-role={entry.role}
-      className={
-        isUser
-          ? live
-            ? "ml-auto max-w-[94%] rounded-2xl bg-sky-700 px-3 py-2.5 text-sky-50 shadow-sm dark:bg-sky-800"
-            : "rounded-lg border bg-muted/50 px-3 py-2"
-          : live
-            ? "max-w-full px-1"
-            : "px-1"
-      }
-    >
-      {showHeader && !live && (
+    <div className={isUser ? "rounded-lg border bg-muted/50 px-3 py-2" : "px-1"}>
+      {showHeader && (
         <div className="mb-1 flex items-center gap-1.5">
           {isUser ? (
             <User className="size-3.5 text-muted-foreground" />
@@ -188,7 +174,7 @@ function Turn({
           {time && <span className="text-[11px] text-muted-foreground">{time}</span>}
         </div>
       )}
-      <div className={live ? "space-y-3" : "space-y-1.5"}>
+      <div className="space-y-1.5">
         {entry.parts.map((part, i) => (
           <Part key={i} part={part} query={query} />
         ))}
@@ -202,7 +188,6 @@ export function TranscriptView({
   agent,
   query = "",
   focusedUuid,
-  variant = "history",
 }: {
   entries: TranscriptEntry[];
   /** The pane's agent name, for the per-turn brand icon. */
@@ -211,8 +196,6 @@ export function TranscriptView({
   query?: string;
   /** The turn a find/jump landed on; ringed so you can see where you were sent. */
   focusedUuid?: string;
-  /** Live detail view uses message bubbles and omits repeated role/timestamp chrome. */
-  variant?: "history" | "live";
 }) {
   const { i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? i18n.language;
@@ -223,7 +206,7 @@ export function TranscriptView({
   let lastDay = "";
   let lastRole = "";
   return (
-    <div data-transcript-variant={variant} className={variant === "live" ? "space-y-4" : "space-y-3"}>
+    <div className="space-y-3">
       {entries.map((entry) => {
         const day = dayKey(entry.ts, locale);
         const newDay = day !== "" && day !== lastDay;
@@ -234,20 +217,20 @@ export function TranscriptView({
           <div
             key={entry.uuid}
             data-turn={entry.uuid}
-            className={`${showHeader && variant === "history" ? "space-y-3 pt-1" : "space-y-3"} ${
+            className={`${showHeader ? "space-y-3 pt-1" : "space-y-3"} ${
               entry.uuid === focusedUuid
                 ? "rounded-lg ring-2 ring-primary/60 ring-offset-2 ring-offset-background"
                 : ""
             }`}
           >
-            {newDay && variant === "history" && (
+            {newDay && (
               <div className="flex items-center gap-2 pt-1">
                 <div className="h-px flex-1 bg-border" />
                 <span className="text-[11px] font-medium text-muted-foreground">{day}</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
             )}
-            <Turn entry={entry} agent={agent} showHeader={showHeader} query={query} variant={variant} />
+            <Turn entry={entry} agent={agent} showHeader={showHeader} query={query} />
           </div>
         );
       })}

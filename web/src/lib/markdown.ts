@@ -33,24 +33,15 @@ export type MdSpan =
   | { kind: "code"; text: string }
   | { kind: "bold"; spans: MdSpan[] }
   | { kind: "italic"; spans: MdSpan[] }
-  | { kind: "strike"; spans: MdSpan[] }
   /** `href` is already scheme-checked; anything unsafe never becomes a link (see `safeHref`). */
   | { kind: "link"; href: string; spans: MdSpan[] };
-
-export interface MdListItem {
-  spans: MdSpan[];
-  /** Present only for GFM task-list items. */
-  checked?: boolean;
-  /** One level of nested block content, kept finite for compact mobile rendering. */
-  children?: MdBlock[];
-}
 
 export type MdBlock =
   | { kind: "heading"; level: number; spans: MdSpan[] }
   | { kind: "paragraph"; spans: MdSpan[] }
   /** Fenced code. `text` is verbatim — never inline-parsed. */
   | { kind: "code"; lang: string; text: string }
-  | { kind: "list"; ordered: boolean; items: MdListItem[] }
+  | { kind: "list"; ordered: boolean; items: MdSpan[][] }
   | { kind: "quote"; spans: MdSpan[] }
   /**
    * GFM table. `align` is one entry per column (null = unaligned), and every row is padded or
@@ -76,15 +67,14 @@ export function safeHref(raw: string): string | null {
   return SAFE_SCHEME.test(href) ? href : null;
 }
 
-// Ordered so the greedier delimiters win: ``code`` before **bold** before ~~strike~~ before *italic*.
+// Ordered so the greedier delimiters win: ``code`` before **bold** before *italic*.
 // Emphasis bodies forbid a leading/trailing space (see the glob note above) and can't span a newline.
 const INLINE_RE = new RegExp(
   [
     "(`+)([^`]+?)\\1", // 1,2  inline code
     "\\*\\*(\\S(?:[^\\n]*?\\S)?)\\*\\*", // 3    bold
-    "~~(\\S(?:[^\\n]*?\\S)?)~~", // 4    strike
-    "\\*(\\S(?:[^\\n*]*?\\S)?)\\*", // 5    italic
-    "\\[([^\\]\\n]*)\\]\\(([^)\\s]+)\\)", // 6,7  link
+    "\\*(\\S(?:[^\\n*]*?\\S)?)\\*", // 4    italic
+    "\\[([^\\]\\n]*)\\]\\(([^)\\s]+)\\)", // 5,6  link
   ].join("|"),
   "g",
 );
@@ -116,12 +106,11 @@ export function parseInline(text: string, depth = 0): MdSpan[] {
     push({ kind: "text", text: text.slice(last, m.index) });
     if (m[2] !== undefined) push({ kind: "code", text: m[2] }); // leaf: content is verbatim
     else if (m[3] !== undefined) push({ kind: "bold", spans: parseInline(m[3], depth + 1) });
-    else if (m[4] !== undefined) push({ kind: "strike", spans: parseInline(m[4], depth + 1) });
-    else if (m[5] !== undefined) push({ kind: "italic", spans: parseInline(m[5], depth + 1) });
-    else if (m[6] !== undefined && m[7] !== undefined) {
-      const href = safeHref(m[7]);
+    else if (m[4] !== undefined) push({ kind: "italic", spans: parseInline(m[4], depth + 1) });
+    else if (m[5] !== undefined && m[6] !== undefined) {
+      const href = safeHref(m[6]);
       // An unsafe target keeps its literal Markdown, so nothing silently disappears from the text.
-      if (href) push({ kind: "link", href, spans: parseInline(m[6] || href, depth + 1) });
+      if (href) push({ kind: "link", href, spans: parseInline(m[5] || href, depth + 1) });
       else push({ kind: "text", text: m[0] });
     }
     last = m.index + m[0].length;
@@ -133,34 +122,9 @@ export function parseInline(text: string, depth = 0): MdSpan[] {
 const HEADING = /^(#{1,6})\s+(.*)$/;
 const FENCE = /^\s*(?:```|~~~)\s*(\S*)/;
 const RULE = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/;
-const LIST_ITEM = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/;
+const UL_ITEM = /^\s*[-*+]\s+(.*)$/;
+const OL_ITEM = /^\s*\d+[.)]\s+(.*)$/;
 const QUOTE = /^\s*>\s?(.*)$/;
-const TASK_ITEM = /^\[([ xX])\]\s+(.*)$/;
-
-interface ListMarker {
-  indent: number;
-  ordered: boolean;
-  text: string;
-}
-
-function listMarker(line: string): ListMarker | null {
-  const match = LIST_ITEM.exec(line);
-  if (!match) return null;
-  return {
-    indent: (match[1] ?? "").replace(/\t/g, "  ").length,
-    ordered: /^\d/.test(match[2] ?? ""),
-    text: match[3] ?? "",
-  };
-}
-
-function listItem(text: string): MdListItem {
-  const task = TASK_ITEM.exec(text);
-  if (!task) return { spans: parseInline(text) };
-  return {
-    checked: task[1]!.toLowerCase() === "x",
-    spans: parseInline(task[2] ?? ""),
-  };
-}
 
 // A table is recognised by its DELIMITER row, never by the header alone: a line of prose containing
 // a pipe is common, `| --- | :-: |` under it is not. Both spellings agents emit are accepted —
@@ -288,11 +252,19 @@ export function parseMarkdown(source: string): MdBlock[] {
       continue;
     }
 
-    const firstItem = listMarker(line);
+    const isItem = (l: string) => UL_ITEM.exec(l) ?? OL_ITEM.exec(l);
+    const firstItem = isItem(line);
     if (firstItem) {
-      const parsed = parseList(lines, i, firstItem.indent);
-      blocks.push(parsed.block);
-      i = parsed.next;
+      const ordered = OL_ITEM.test(line);
+      const items: MdSpan[][] = [];
+      while (i < lines.length) {
+        const item = isItem(lines[i]!);
+        // A run stays one list only while its marker kind holds — a switch starts a new block.
+        if (!item || OL_ITEM.test(lines[i]!) !== ordered) break;
+        items.push(parseInline(item[1] ?? ""));
+        i++;
+      }
+      blocks.push({ kind: "list", ordered, items });
       continue;
     }
 
@@ -327,7 +299,7 @@ export function parseMarkdown(source: string): MdBlock[] {
         FENCE.test(l) ||
         RULE.test(l) ||
         QUOTE.test(l) ||
-      listMarker(l) ||
+        isItem(l) ||
         startsTable(l, lines[i + 1])
       )
         break;
@@ -338,43 +310,4 @@ export function parseMarkdown(source: string): MdBlock[] {
   }
 
   return blocks;
-}
-
-/** Parse one compact list level and attach indented child lists to the preceding item. */
-function parseList(
-  lines: string[],
-  start: number,
-  baseIndent: number,
-): { block: Extract<MdBlock, { kind: "list" }>; next: number } {
-  const first = listMarker(lines[start]!);
-  if (!first) throw new Error("parseList called without a list marker");
-  const items: MdListItem[] = [];
-  let i = start;
-
-  while (i < lines.length) {
-    const marker = listMarker(lines[i]!);
-    if (!marker || marker.indent < baseIndent) break;
-    if (marker.indent > baseIndent) {
-      const previous = items[items.length - 1];
-      if (!previous) break;
-      const nested = parseList(lines, i, marker.indent);
-      previous.children = [...(previous.children ?? []), nested.block];
-      i = nested.next;
-      continue;
-    }
-    if (marker.ordered !== first.ordered) break;
-
-    const item = listItem(marker.text);
-    items.push(item);
-    i++;
-    while (i < lines.length) {
-      const child = listMarker(lines[i]!);
-      if (!child || child.indent <= baseIndent) break;
-      const nested = parseList(lines, i, child.indent);
-      item.children = [...(item.children ?? []), nested.block];
-      i = nested.next;
-    }
-  }
-
-  return { block: { kind: "list", ordered: first.ordered, items }, next: i };
 }

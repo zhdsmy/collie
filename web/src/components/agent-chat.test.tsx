@@ -723,31 +723,6 @@ describe("AgentChat — history affordance", () => {
     // Node.compareDocumentPosition: FOLLOWING (4) means the pill comes after History in the DOM.
     expect(history.compareDocumentPosition(pill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
-
-  it("defaults an agent session to live Markdown and toggles back to the terminal mirror", async () => {
-    const agent = { ...fixtureAgents[0]!, hasSession: true };
-    const user = userEvent.setup();
-    const view = renderChat({ agent, agents: [agent] });
-
-    await waitFor(() => expect(view.container.querySelector('[data-transcript-variant="live"]')).toBeInTheDocument());
-    expect(screen.getByText("what changed today?")).toBeInTheDocument();
-    const toggle = screen.getByRole("button", { name: /terminal view/i });
-    await user.click(toggle);
-    await waitFor(() =>
-      expect(view.container.querySelector('[data-transcript-variant="live"]')).not.toBeInTheDocument(),
-    );
-    expect(screen.getByText(/recent pane output/)).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /markdown conversation/i }));
-    await waitFor(() => expect(view.container.querySelector('[data-transcript-variant="live"]')).toBeInTheDocument());
-  });
-
-  it("never offers Markdown for a shell pane", () => {
-    const shell = { ...fixtureAgents[0]!, kind: "shell" as const, hasSession: true };
-    renderChat({ agent: shell, agents: [shell] });
-    expect(screen.queryByTestId("transcript-variant-live")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /markdown conversation|terminal view/i })).not.toBeInTheDocument();
-  });
 });
 
 // The top-of-mirror affordance. This block previously rendered on NO pane at all: it was gated on
