@@ -25,6 +25,7 @@ import {
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks } from "@/lib/links";
 import { displayClusters } from "@/lib/text-width";
+import { PURE_HORIZONTAL_RULE_GLYPH_CLASS } from "@/lib/rule-glyphs";
 import { PromptSelectBlock, type PromptBlockAction } from "@/components/prompt-select-block";
 import { WizardBlock } from "@/components/wizard-block";
 import { PreviewSelectBlock, type PreviewBlockAction } from "@/components/preview-select-block";
@@ -154,6 +155,28 @@ function preClass(wrap: boolean, className?: string): string {
         "min-w-0 w-full max-w-full shrink-0 whitespace-pre overflow-x-auto overscroll-x-contain [touch-action:pan-x_pan-y]",
     className,
   );
+}
+
+// A terminal table is wider than a phone, but wrapping its padded columns makes the rows
+// unreadable. Keep only rows adjacent to a horizontal rule horizontally scrollable; prose still
+// follows the normal narrow-screen wrapping path.
+const TABLE_RULE = new RegExp(`^[${PURE_HORIZONTAL_RULE_GLYPH_CLASS}]+$`);
+
+function tableLineFlags(lines: StyledLine[]): boolean[] {
+  const rules = lines.map((line) => {
+    const text = lineText(line).trim();
+    const compact = text.replace(/\s/g, "");
+    return line.noWrap || (compact.length >= 20 && /\s/.test(text) && TABLE_RULE.test(compact));
+  });
+  const flags = [...rules];
+  for (let i = 0; i < lines.length; i++) {
+    if (!rules[i]) continue;
+    for (const neighbor of [i - 1, i + 1]) {
+      if (neighbor < 0 || neighbor >= lines.length || isBlank(lineText(lines[neighbor]!))) continue;
+      if (/\S\s{2,}\S/.test(lineText(lines[neighbor]!))) flags[neighbor] = true;
+    }
+  }
+  return flags;
 }
 
 // A real terminal paints backgrounds cell-by-cell across its fixed-width grid. In the wrapped web
@@ -380,12 +403,14 @@ export const AnsiOutput = memo(function AnsiOutput({
   const renderBlock = (block: RawBlock, bi: number) => {
     if (bi > 0) offset += 1; // the "\n" separating this block from the previous
     const backgrounds = lineBackgrounds(block.lines);
+    const tableLines = tableLineFlags(block.lines);
     return (
       <Fragment key={bi}>
         {bi > 0 ? <span className="hidden">{"\n"}</span> : null}
         {block.lines.map((line, li) => {
           if (li > 0) offset += 1; // the "\n" separating this line from the previous
           const background = backgrounds[li];
+          const keepSingleRow = wrap && tableLines[li];
           const segNodes = line.segments.map((s, si) => {
             const segStart = offset;
             offset += s.text.length;
@@ -399,8 +424,10 @@ export const AnsiOutput = memo(function AnsiOutput({
               </span>
             );
           });
-          const content = line.noWrap && wrap ? (
-            <span className="inline-block max-w-full overflow-hidden align-bottom whitespace-pre break-normal">{segNodes}</span>
+          const content = keepSingleRow ? (
+            <span className="block max-w-full overflow-x-auto overscroll-x-contain whitespace-pre [touch-action:pan-x_pan-y]">
+              {segNodes}
+            </span>
           ) : (
             segNodes
           );
@@ -411,6 +438,7 @@ export const AnsiOutput = memo(function AnsiOutput({
                 data-terminal-line
                 className={cn(
                   "block min-h-[1.25em]",
+                  keepSingleRow && "terminal-table-line",
                   wrap ? "w-full" : "min-w-full w-max",
                 )}
                 style={

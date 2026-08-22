@@ -172,21 +172,18 @@ describe("mirror line wrapping", () => {
     expect(container.querySelector("pre")!.textContent).toBe("中文 prose");
   });
 
-  it("keeps a marked ANSI border to one clipped row without changing its text, styles, links, or find offsets", () => {
+  it("keeps a marked ANSI border on one horizontal rail without changing its text, styles, links, or find offsets", () => {
     const border = `  ${"─".repeat(20)}  `;
     const text = `ordinary prose\n${ESC}[41m${border.slice(0, 12)}${ESC}[44m${border.slice(12)}${ESC}[0m\nsee https://herdr.dev/docs\n`;
     const { container } = render(<AnsiOutput text={text} query="───" />);
     const pre = container.querySelector("pre")!;
-    const clipped = pre.querySelector("span.inline-block")!;
+    const line = pre.querySelector("[data-terminal-line].terminal-table-line")!;
+    const clipped = line.querySelector("span")!;
 
     expect(clipped.className).toContain("max-w-full");
-    expect(clipped.className).toContain("overflow-hidden");
-    // `overflow-hidden` gives an inline-block a bottom-edge baseline; align it to the line box's
-    // bottom so the border keeps the terminal grid's one-row line advance.
-    expect(clipped.className).toContain("align-bottom");
+    expect(clipped.className).toContain("overflow-x-auto");
+    expect(clipped.className).toContain("block");
     expect(clipped.className).toContain("whitespace-pre");
-    expect(clipped.className).not.toContain("whitespace-nowrap");
-    expect(clipped.className).toContain("break-normal");
     expect(clipped.textContent).toBe(border);
     expect(clipped.children).toHaveLength(2);
     expect((clipped.children[0] as HTMLElement).style.backgroundColor).toBe("var(--ansi-1)");
@@ -196,21 +193,44 @@ describe("mirror line wrapping", () => {
     expect(pre.textContent).toBe(`ordinary prose\n${border}\nsee https://herdr.dev/docs\n`);
   });
 
-  it("clips a plain border only while wrapping, leaving ordinary output and wrap-off panning alone", () => {
+  it("keeps a plain border on one rail while wrapping, leaving ordinary output and wrap-off panning alone", () => {
     const border = `  ${"─".repeat(20)}  `;
     const { container: plain } = render(<AnsiOutput text={`${border}\n`} />);
-    expect(plain.querySelector("span.inline-block")?.textContent).toBe(border);
+    expect(plain.querySelector(".terminal-table-line span")?.textContent).toBe(border);
 
     const { container: wrapped } = render(<AnsiOutput text={`unbroken-${"x".repeat(40)}\n`} />);
     const wrappedPre = wrapped.querySelector("pre")!;
     expect(wrappedPre.className).toContain("break-words");
-    expect(wrappedPre.querySelector("span.inline-block")).toBeNull();
+    expect(wrappedPre.querySelector(".terminal-table-line")).toBeNull();
 
     const { container: panned } = render(<AnsiOutput text={`${border}\n`} wrap={false} />);
     const pannedPre = panned.querySelector("pre")!;
     expect(pannedPre.className).toContain("overflow-x-auto");
-    expect(pannedPre.querySelector("span.inline-block")).toBeNull();
+    expect(pannedPre.querySelector(".terminal-table-line")).toBeNull();
     expect(pannedPre.textContent).toBe(`${border}\n`);
+  });
+
+  it("keeps padded rows beside terminal table rules on one horizontal rail", () => {
+    const text = [
+      "ordinary prose that should still wrap normally",
+      "按键     reply 模式行为",
+      "─".repeat(24),
+      "方向键   移动输入框光标，必要时本地处理",
+    ].join("\n");
+    const { container } = render(<AnsiOutput text={text} />);
+    const lines = [...container.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
+
+    expect(lines.map((line) => line.classList.contains("terminal-table-line"))).toEqual([
+      false,
+      true,
+      true,
+      true,
+    ]);
+    expect(
+      lines
+        .slice(1)
+        .every((line) => line.querySelector("span")?.className.includes("overflow-x-auto")),
+    ).toBe(true);
   });
 });
 
