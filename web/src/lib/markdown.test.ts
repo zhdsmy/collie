@@ -164,12 +164,59 @@ describe("parseMarkdown", () => {
       {
         kind: "list",
         ordered: false,
-        items: [[{ kind: "text", text: "one" }], [{ kind: "text", text: "two" }]],
+      items: [
+        { spans: [{ kind: "text", text: "one" }] },
+        { spans: [{ kind: "text", text: "two" }] },
+      ],
       },
     ]);
     const ol = parseMarkdown("1. first\n2. second");
     expect(ol[0]).toMatchObject({ kind: "list", ordered: true });
     expect((ol[0] as { items: unknown[] }).items).toHaveLength(2);
+  });
+
+  it("parses strike and task-list items", () => {
+    expect(parseInline("keep ~~old~~ and **new**")).toEqual([
+      { kind: "text", text: "keep " },
+      { kind: "strike", spans: [{ kind: "text", text: "old" }] },
+      { kind: "text", text: " and " },
+      { kind: "bold", spans: [{ kind: "text", text: "new" }] },
+    ]);
+    expect(parseMarkdown("- [x] done\n- [ ] next")).toEqual([
+      {
+        kind: "list",
+        ordered: false,
+        items: [
+          { checked: true, spans: [{ kind: "text", text: "done" }] },
+          { checked: false, spans: [{ kind: "text", text: "next" }] },
+        ],
+      },
+    ]);
+  });
+
+  it("keeps one indented child list under its parent", () => {
+    expect(parseMarkdown("- parent\n  - child\n  - child two\n- sibling")).toEqual([
+      {
+        kind: "list",
+        ordered: false,
+        items: [
+          {
+            spans: [{ kind: "text", text: "parent" }],
+            children: [
+              {
+                kind: "list",
+                ordered: false,
+                items: [
+                  { spans: [{ kind: "text", text: "child" }] },
+                  { spans: [{ kind: "text", text: "child two" }] },
+                ],
+              },
+            ],
+          },
+          { spans: [{ kind: "text", text: "sibling" }] },
+        ],
+      },
+    ]);
   });
 
   it("switching marker kind starts a new list, not one mixed block", () => {

@@ -24,6 +24,38 @@ export function searchableText(entry: TranscriptEntry): string {
   return parts.join(" ");
 }
 
+/** One entry index for every visible occurrence, so a find bar can both count and focus matches. */
+export function matchingEntryIndices(entries: TranscriptEntry[], query: string): number[] {
+  const needle = query.trim();
+  if (needle === "") return [];
+  const indices: number[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i]!;
+    const visible: string[] = [];
+    for (const part of entry.parts) {
+      if (part.kind === "tool") visible.push(part.name, part.summary);
+      else visible.push(part.text);
+    }
+    for (const text of visible) {
+      let at = 0;
+      const haystack = text.toLowerCase();
+      const lowerNeedle = needle.toLowerCase();
+      while (at < haystack.length) {
+        const found = haystack.indexOf(lowerNeedle, at);
+        if (found === -1) break;
+        indices.push(i);
+        at = found + lowerNeedle.length;
+      }
+    }
+  }
+  return indices;
+}
+
+/** Occurrence count for the live conversation view, excluding collapsed tool result bodies. */
+export function matchingOccurrences(entries: TranscriptEntry[], query: string): number {
+  return matchingEntryIndices(entries, query).length;
+}
+
 /**
  * Indices of entries matching `query`, oldest-first. Case-insensitive substring — not a regex, since
  * this is a phone find bar and a stray `(` shouldn't throw or silently match nothing.

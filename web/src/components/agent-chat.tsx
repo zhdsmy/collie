@@ -2,7 +2,14 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useNavigate, useRevalidator } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowUpToLine, Loader2, ScrollText, Search, TerminalSquare } from "lucide-react";
+import {
+  ArrowUpToLine,
+  Loader2,
+  MessageSquareText,
+  ScrollText,
+  Search,
+  TerminalSquare,
+} from "lucide-react";
 import { useSwipeUp } from "@/hooks/use-swipe";
 import { useSpaceActions } from "@/hooks/use-spaces";
 import { useDashPrefs, openForCount } from "@/hooks/use-dash-prefs";
@@ -12,6 +19,7 @@ import { useStableTerminalDraft } from "@/hooks/use-terminal-draft";
 import { localizeClientError } from "@/lib/client-errors";
 import { isConnecting } from "@/lib/connection";
 import { setStatus } from "@/lib/status";
+import { fetchHistory } from "@/lib/api";
 import { ChatMessageList, type ChatMessageListHandle } from "@/components/ui/chat/chat-message-list";
 import { BottomSheet } from "@/components/ui/sheet";
 import { AppHeader } from "@/components/app-header";
@@ -24,6 +32,7 @@ import { splitLines } from "@/lib/blocks";
 import { adapterFor } from "@/lib/harness";
 import { FindBar } from "@/components/find-bar";
 import { Composer, type ComposerHandle } from "@/components/composer";
+import { TranscriptView } from "@/components/transcript-view";
 import { ThreadSidebar } from "@/components/agent-sidebar";
 import { AgentIcon } from "@/components/agent-icon";
 import { TabStrip } from "@/components/tab-strip";
@@ -43,7 +52,8 @@ import { canGrowRequestedLines, growRequestedLines } from "@/lib/loaders";
 import { shortCwd } from "@/lib/format";
 import { historyPath, spacePath } from "@/lib/nav";
 import { isReadOnly } from "@/lib/types";
-import type { AgentView, BridgeStatus, DeviceAuth, TabView } from "@/lib/types";
+import type { AgentView, BridgeStatus, DeviceAuth, TabView, TranscriptEntry } from "@/lib/types";
+import { matchingEntryIndices, matchingOccurrences } from "@/lib/transcript-search";
 import type {
   MenuModel,
   MultiSelectModel,
@@ -84,12 +94,12 @@ interface AgentChatProps {
 // Quick/Agent/Display docks are separate and live inside <Composer>.
 type Drawer = "switcher" | null;
 
-// The detail view mirrors a terminal pane, NOT a chat thread. The pane's output comes from the
-// route loader (`text`); polling revalidates it. Replies/keys are confirmed via the header status
-// line (`setStatus`), then a revalidation pulls the fresh output.
+// The detail view can show either the agent's transcript or a faithful terminal mirror. The latter's
+// output comes from the route loader (`text`); polling revalidates it. Replies/keys are confirmed via
+// the header status line (`setStatus`), then a revalidation pulls fresh pane output and transcript.
 //
 // This shell owns the pane frame: the header (the find bar takes it over while find is open), the
-// terminal mirror (freeze, find highlighting, load-older scrollback), and navigation (the nav hub +
+// conversation/terminal surface (freeze, find highlighting, load-older scrollback), and navigation (the nav hub +
 // swipe-up switcher). The composer cluster — draft, send, keys, quick actions, slash-commands, image
 // upload, display prefs, and the find-in-output trigger — lives in <Composer>; it reaches back here
 // only to re-follow the tail after a send, focus on a mirror tap, and open find (which freezes the tail).
@@ -156,6 +166,33 @@ export function AgentChat({
   // so a mis-detected/mis-rendered dialog can always be driven by hand with the keys pad.
   const grammarsOn = !prefs.rawTerminal;
   const isShell = agent?.kind === "shell";
+  // Agent panes default to the conversation view when a transcript exists. The terminal view remains
+  // one tap away for TUI inspection, while raw-terminal remains the adapter escape hatch.
+  const [viewMode, setViewMode] = useState<"markdown" | "terminal">("markdown");
+  useEffect(() => setViewMode("markdown"), [paneId]);
+  const markdownRequested =
+    !isShell && viewMode === "markdown" && !prefs.rawTerminal && Boolean(agent?.hasSession);
+  const [conversationEntries, setConversationEntries] = useState<TranscriptEntry[] | null>(null);
+  useEffect(() => {
+    if (!markdownRequested) {
+      setConversationEntries(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    fetchHistory(paneId, { limit: 240 }, session, controller.signal)
+      .then((response) => {
+        if (controller.signal.aborted) return;
+        setConversationEntries(response.available ? response.entries : null);
+      })
+      .catch(() => {
+        // Keep the last good conversation during a transient bridge failure. On the first request the
+        // terminal mirror remains visible until a usable transcript arrives.
+      });
+    return () => controller.abort();
+  }, [markdownRequested, paneId, revision, session]);
+  const showMarkdown =
+    markdownRequested && conversationEntries !== null && conversationEntries.length > 0;
   // This device isn't allowlisted to type into agents: the backend rejects every write, so the
   // composer drops to read-only (and shows a banner). The mirror still polls (reading is fine).
   const readOnly = isReadOnly(device);
@@ -267,6 +304,17 @@ export function AgentChat({
     setMatchCount(n);
     setCurrentMatch((c) => (n === 0 ? 0 : Math.min(c, n - 1)));
   }, []);
+  const transcriptMatchEntries = useMemo(
+    () => (showMarkdown && conversationEntries ? matchingEntryIndices(conversationEntries, findQuery) : []),
+    [conversationEntries, findQuery, showMarkdown],
+  );
+  useEffect(() => {
+    if (showMarkdown) handleMatchCount(matchingOccurrences(conversationEntries ?? [], findQuery));
+  }, [conversationEntries, findQuery, handleMatchCount, showMarkdown]);
+  const focusedTranscriptUuid =
+    showMarkdown && conversationEntries && transcriptMatchEntries.length > 0
+      ? conversationEntries[transcriptMatchEntries[Math.min(currentMatch, transcriptMatchEntries.length - 1)]!]?.uuid
+      : undefined;
   function gotoMatch(delta: number) {
     if (matchCount === 0) return;
     setFollowing(false); // freeze the tail so scroll-into-view doesn't fight the live re-pin
@@ -699,6 +747,21 @@ export function AgentChat({
                     <ScrollText className="size-4" />
                   </button>
                 )}
+                {agent.hasSession && !isShell && !prefs.rawTerminal && (
+                  <button
+                    type="button"
+                    onClick={() => setViewMode((mode) => (mode === "markdown" ? "terminal" : "markdown"))}
+                    aria-label={t(viewMode === "markdown" ? "chat.terminalView" : "chat.markdownView")}
+                    aria-pressed={viewMode === "markdown"}
+                    className="-mr-1 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
+                  >
+                    {viewMode === "markdown" ? (
+                      <TerminalSquare className="size-4" />
+                    ) : (
+                      <MessageSquareText className="size-4" />
+                    )}
+                  </button>
+                )}
                 {isShell ? (
                   <ShellBadge stale={connecting} />
                 ) : (
@@ -830,7 +893,7 @@ export function AgentChat({
         <div className="min-h-0 min-w-0 flex-1 border-t border-border/40" onClick={focusFromMirror}>
           <ChatMessageList
             ref={listRef}
-            dep={display}
+            dep={showMarkdown ? conversationEntries?.[conversationEntries.length - 1]?.uuid : display}
             onAtBottomChange={setFollowing}
             hasNew={hasNew}
             className="px-2 py-3"
@@ -875,21 +938,31 @@ export function AgentChat({
                     {loadingOlder ? t("chat.loading") : t("chat.loadOlder")}
                   </button>
                 ) : null}
-                <AnsiOutput
-                  text={display}
-                  wrap={prefs.wrap}
-                  fontSize={prefs.fontSize}
-                  query={findOpen ? findQuery : ""}
-                  currentMatch={findOpen ? currentMatch : -1}
-                  onMatchCount={findOpen ? handleMatchCount : undefined}
-                  agent={grammarsOn ? agent?.agent : undefined}
-                  onPromptAction={handlePromptAction}
-                  onWizardAction={handleWizardAction}
-                  onPreviewAction={handlePreviewAction}
-                  onMultiSelectAction={handleMultiSelectAction}
-                  onMenuAction={handleMenuAction}
-                  promptDisabled={readOnly || gone}
-                />
+                {showMarkdown ? (
+                  <TranscriptView
+                    entries={conversationEntries ?? []}
+                    agent={agent?.agent}
+                    query={findOpen ? findQuery : ""}
+                    focusedUuid={findOpen ? focusedTranscriptUuid : undefined}
+                    variant="live"
+                  />
+                ) : (
+                  <AnsiOutput
+                    text={display}
+                    wrap={prefs.wrap}
+                    fontSize={prefs.fontSize}
+                    query={findOpen ? findQuery : ""}
+                    currentMatch={findOpen ? currentMatch : -1}
+                    onMatchCount={findOpen ? handleMatchCount : undefined}
+                    agent={grammarsOn ? agent?.agent : undefined}
+                    onPromptAction={handlePromptAction}
+                    onWizardAction={handleWizardAction}
+                    onPreviewAction={handlePreviewAction}
+                    onMultiSelectAction={handleMultiSelectAction}
+                    onMenuAction={handleMenuAction}
+                    promptDisabled={readOnly || gone}
+                  />
+                )}
               </>
             ) : (
               <div className="py-16 text-center text-sm text-muted-foreground">

@@ -165,6 +165,37 @@ describe("TranscriptView", () => {
     expect(container.querySelector("code")).toHaveTextContent("code");
   });
 
+  it("uses compact live bubbles and exposes code-copy affordance", () => {
+    const { container } = render(
+      <TranscriptView
+        variant="live"
+        entries={[
+          turn({ role: "user", parts: [{ kind: "text", text: "run this" }] }),
+          turn({
+            uuid: "a1",
+            role: "assistant",
+            parts: [{ kind: "text", text: "~~old~~\n\n```ts\nconst answer = 42;\n```" }],
+          }),
+        ]}
+      />,
+    );
+    expect(container.querySelector('[data-transcript-variant="live"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-turn-role="user"]')).toHaveClass("bg-sky-700");
+    expect(container.querySelector("del")).toHaveTextContent("old");
+    expect(screen.getByRole("button", { name: "Copy code" })).toBeInTheDocument();
+  });
+
+  it("renders task items as read-only checkboxes", () => {
+    const { container } = render(
+      <TranscriptView entries={[turn({ parts: [{ kind: "text", text: "- [x] shipped\n- [ ] pending" }] })]} />,
+    );
+    const boxes = container.querySelectorAll('input[type="checkbox"]');
+    expect(boxes).toHaveLength(2);
+    expect(boxes[0]).toBeChecked();
+    expect(boxes[1]).not.toBeChecked();
+    expect(boxes[0]).toBeDisabled();
+  });
+
   it("tool output is NOT markdown-parsed — it's command output, kept verbatim", async () => {
     render(
       <TranscriptView

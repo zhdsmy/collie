@@ -1,4 +1,6 @@
 import {
+  matchingEntryIndices,
+  matchingOccurrences,
   matchingEntries,
   searchableText,
   splitHighlight,
@@ -68,6 +70,26 @@ describe("matchingEntries", () => {
     expect(() => matchingEntries(withParen, "foo(")).not.toThrow();
     expect(matchingEntries(withParen, "foo(")).toEqual([0]);
     expect(matchingEntries(withParen, ".*")).toEqual([]); // literal, so no match
+  });
+});
+
+describe("live transcript occurrence matching", () => {
+  it("returns one entry index per visible occurrence", () => {
+    const entries = [
+      entry({ parts: [{ kind: "text", text: "guard guard" }] }),
+      entry({ parts: [{ kind: "tool", name: "Read", summary: "guard" }] }),
+    ];
+    expect(matchingEntryIndices(entries, "guard")).toEqual([0, 0, 1]);
+    expect(matchingOccurrences(entries, "guard")).toBe(3);
+  });
+
+  it("does not count collapsed tool results", () => {
+    const entries = [
+      entry({
+        parts: [{ kind: "tool", name: "Read", summary: "/a", result: { text: "guard guard" } }],
+      }),
+    ];
+    expect(matchingOccurrences(entries, "guard")).toBe(0);
   });
 });
 

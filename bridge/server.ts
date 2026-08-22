@@ -277,7 +277,10 @@ export function startServer(opts: {
         // known set, so the only way to reach here unrouted is a method mismatch (a GET at /reply, a
         // POST at /history) — which 405s. Without this a malformed request still marked the pane seen.
         const routed = isRead ? req.method === "GET" : req.method === "POST";
-        if (routed && marksPaneSeen(req, action)) activity.noteSeen(session, paneId);
+        if (routed && marksPaneSeen(req, action)) {
+          activity.noteSeen(session, paneId);
+          rt.notifications.onSeen(paneId);
+        }
         // Every action is a write; attribute it to the authorised device for the audit trail.
         // `history` is a read, so it gets no device attribution (nothing is written to attribute).
         const device = isRead ? null : deviceAuth(req, cfg).device;

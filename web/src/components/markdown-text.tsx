@@ -1,4 +1,6 @@
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
+import { Check, Copy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { parseMarkdown, type MdBlock, type MdSpan } from "@/lib/markdown";
 import { splitHighlight } from "@/lib/transcript-search";
@@ -52,6 +54,12 @@ function Span({ span }: { span: MdSpan }) {
           <Spans spans={span.spans} />
         </em>
       );
+    case "strike":
+      return (
+        <del className="text-muted-foreground">
+          <Spans spans={span.spans} />
+        </del>
+      );
     case "code":
       return (
         <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.9em] break-all">
@@ -76,6 +84,42 @@ function Span({ span }: { span: MdSpan }) {
   }
 }
 
+function CodeBlock({ lang, text }: { lang: string; text: string }) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+
+  async function copyCode() {
+    try {
+      if (!navigator.clipboard) return;
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      // Clipboard permission is optional; the code remains readable when it is unavailable.
+    }
+  }
+
+  return (
+    <div className="overflow-hidden rounded-md border bg-muted/50">
+      <div className="flex min-h-7 items-center justify-between border-b px-2 text-[10px] text-muted-foreground">
+        <span className="font-mono">{lang || t("transcript.codeBlock")}</span>
+        <button
+          type="button"
+          onClick={copyCode}
+          aria-label={copied ? t("transcript.codeCopied") : t("transcript.copyCode")}
+          title={copied ? t("transcript.codeCopied") : t("transcript.copyCode")}
+          className="grid size-7 place-items-center rounded text-muted-foreground transition-colors hover:bg-background/70 hover:text-foreground"
+        >
+          {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+        </button>
+      </div>
+      <pre className="overflow-x-auto px-2 py-1.5 font-mono text-[11px] leading-snug">
+        <Hit text={text} />
+      </pre>
+    </div>
+  );
+}
+
 const Spans = ({ spans }: { spans: MdSpan[] }) => (
   <>
     {spans.map((span, i) => (
@@ -97,6 +141,7 @@ const ALIGN_CLASS: Record<string, string> = {
 };
 
 function Block({ block }: { block: MdBlock }) {
+  const { t } = useTranslation();
   switch (block.kind) {
     case "heading": {
       // Levels 4-6 are rare in agent prose and don't earn another size step on a phone.
@@ -108,11 +153,7 @@ function Block({ block }: { block: MdBlock }) {
       );
     }
     case "code":
-      return (
-        <pre className="overflow-x-auto rounded-md border bg-muted/50 px-2 py-1.5 font-mono text-[11px] leading-snug">
-          <Hit text={block.text} />
-        </pre>
-      );
+      return <CodeBlock lang={block.lang} text={block.text} />;
     case "list": {
       const Tag = block.ordered ? "ol" : "ul";
       return (
@@ -120,8 +161,24 @@ function Block({ block }: { block: MdBlock }) {
           className={`ml-4 space-y-0.5 ${block.ordered ? "list-decimal" : "list-disc"} marker:text-muted-foreground`}
         >
           {block.items.map((item, i) => (
-            <li key={i} className="pl-0.5">
-              <Spans spans={item} />
+            <li key={i} className={item.checked === undefined ? "pl-0.5" : "list-none"}>
+              {item.checked !== undefined && (
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  readOnly
+                  disabled
+                  tabIndex={-1}
+                  aria-label={item.checked ? t("transcript.completedTask") : t("transcript.openTask")}
+                  className="mr-1.5 align-[-0.15em] accent-primary"
+                />
+              )}
+              <Spans spans={item.spans} />
+              {item.children?.map((child, childIndex) => (
+                <div key={childIndex} className="mt-1">
+                  <Block block={child} />
+                </div>
+              ))}
             </li>
           ))}
         </Tag>

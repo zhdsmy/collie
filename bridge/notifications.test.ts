@@ -179,6 +179,23 @@ describe("NotificationCoordinator — coalescing", () => {
 });
 
 describe("NotificationCoordinator — retraction", () => {
+  test("seeing a pane before delivery cancels its pending alert", () => {
+    const { clock, sink, coord } = setup();
+    coord.onTransition(agent("p1", "blocked"), "working", "blocked");
+    coord.onSeen("p1");
+    clock.fireAll();
+    expect(sink.events).toEqual([]);
+    expect(clock.armed).toBe(0);
+  });
+
+  test("seeing a pane retracts its delivered alert", () => {
+    const { clock, sink, coord } = setup();
+    coord.onTransition(agent("p1", "done"), "working", "done");
+    clock.fireAll();
+    coord.onSeen("p1");
+    expect(sink.events.at(-1)).toEqual({ kind: "clear" });
+  });
+
   test("clears the herd once the last outstanding agent resolves", () => {
     const { clock, sink, coord } = setup();
     coord.onTransition(agent("p1", "blocked"), "working", "blocked");

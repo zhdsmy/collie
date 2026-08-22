@@ -142,6 +142,11 @@ export class NotificationCoordinator<H = unknown> {
     this.resolve(paneId);
   }
 
+  /** Opening or driving a pane through Collie acknowledges its pending or delivered alert. */
+  onSeen(paneId: string): void {
+    this.resolve(paneId);
+  }
+
   /**
    * Re-evaluate every pending + outstanding alert against the current prefs after they change,
    * dropping any whose kind is now disabled: cancel a still-debouncing timer, retract a delivered
