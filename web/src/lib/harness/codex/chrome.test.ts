@@ -387,6 +387,44 @@ describe("Codex chrome", () => {
     ]);
   });
 
+  it("clips wide dim tool-output box borders to one mobile row", () => {
+    const top = `╭${"─".repeat(120)}╮`;
+    const bottom = `╰${"─".repeat(120)}╯`;
+    const prefixed = `└ ${top}`;
+    const captured = lines(
+      [
+        "• Running long-lived command",
+        `\x1b[2;37m${prefixed}\x1b[0m`,
+        "    … +38 lines (ctrl + t to view transcript)",
+        "    Press Ctrl+C to stop.",
+        `\x1b[2;37m${bottom}\x1b[0m`,
+      ].join("\n"),
+    );
+    const block = codexBuildBlocks(captured)[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([
+      "• Running long-lived command",
+      prefixed,
+      "    … +38 lines (ctrl + t to view transcript)",
+      "    Press Ctrl+C to stop.",
+      bottom,
+    ]);
+    expect(block.lines[1]).toEqual({ ...captured[1], noWrap: true });
+    expect(block.lines[4]).toEqual({ ...captured[4], noWrap: true });
+  });
+
+  it("leaves short or non-dim box borders unchanged", () => {
+    const short = `╭${"─".repeat(20)}╮`;
+    const wide = `╭${"─".repeat(120)}╮`;
+    const captured = lines(`${short}\n${wide}`);
+    const block = codexBuildBlocks(captured)[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([short, wide]);
+    expect(block.lines.every((line) => line.noWrap === undefined)).toBe(true);
+  });
+
   it("keeps dim terminal rules when no command summary precedes them", () => {
     const rule = "─".repeat(133);
     const block = codexBuildBlocks(

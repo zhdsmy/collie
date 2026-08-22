@@ -12,6 +12,9 @@ const ANSWER_CONTINUATION = /^ {2}\S/;
 const NESTED_ROW = /^ {2}(?:(?:[-+*•]|\d+[.)])(?:\s|$)|[│└┌┐┘┬├┤┼])/;
 const DECORATIVE_RULE = /^─{40,}$/;
 const RESIDUAL_RULE = /^─$/;
+// Codex dims command output; paired wide edges inside it are decoration, not terminal tables.
+const TOOL_BOX_BORDER =
+  /^(?:└\s+)?(?:╭[─━═]{38,}╮|╰[─━═]{38,}╯|┌[─━═]{38,}┐|└[─━═]{38,}┘)$/;
 const UPLOAD_IMAGE_PATH =
   /(?:^|\s)(\/(?:[^\s/]+\/)*uploads\/[^\s/]+\.(?:gif|jpe?g|png|webp))(?=\s|$)/gi;
 const IMAGE_PLACEHOLDER = /(?:^|\s)\[\s*Image\s+#\d+\s*\]/g;
@@ -36,6 +39,12 @@ function isCommandSummary(line: StyledLine): boolean {
 function isCommandBoundaryRule(line: StyledLine): boolean {
   const text = lineText(line).trim();
   if (!DECORATIVE_RULE.test(text) && !RESIDUAL_RULE.test(text)) return false;
+  const visible = line.segments.filter((segment) => segment.text.trim().length > 0);
+  return visible.length > 0 && visible.every((segment) => segment.dim === true);
+}
+
+function isToolBoxBorder(line: StyledLine): boolean {
+  if (!TOOL_BOX_BORDER.test(lineText(line).trim())) return false;
   const visible = line.segments.filter((segment) => segment.text.trim().length > 0);
   return visible.length > 0 && visible.every((segment) => segment.dim === true);
 }
@@ -149,6 +158,12 @@ function normalizeCompletionSummaries(lines: StyledLine[]): StyledLine[] {
 
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index]!;
+
+    if (isToolBoxBorder(line)) {
+      normalized ??= lines.slice(0, index);
+      normalized.push({ ...line, noWrap: true });
+      continue;
+    }
 
     if (isCommandSummary(line)) {
       awaitingCommandBoundary = true;
