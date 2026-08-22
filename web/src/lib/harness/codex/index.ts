@@ -9,6 +9,9 @@ const COMMAND_EVENT =
   /^•\s+(?:Called|Edited|Explored|Ran|Read|Running|Searched|Viewed|Working|You have)(?:\s|$)/;
 const ANSWER_LEAD = /^•\s+\S/;
 const ANSWER_CONTINUATION = /^ {2}\S/;
+const SUBMITTED_QUERY_LEAD = /^›(?:\s|$)/;
+const SUBMITTED_QUERY_ROW = /^ {2}/;
+const SUBMITTED_QUERY_CONTINUATION = /^ {2}\S/;
 const NESTED_ROW = /^ {2}(?:(?:[-+*•]|\d+[.)])(?:\s|$)|[│└┌┐┘┬├┤┼])/;
 const DECORATIVE_RULE = /^─{40,}$/;
 const RESIDUAL_RULE = /^─$/;
@@ -20,6 +23,9 @@ const UPLOAD_IMAGE_PATH =
 const IMAGE_PLACEHOLDER = /(?:^|\s)\[\s*Image\s+#\d+\s*\]/g;
 const MIN_CAPTION_CHARS = 4;
 const MIN_WINDOWED_CAPTION_CHARS = 8;
+// Codex 0.149 no longer paints submitted queries on macOS. Use the same dark-space colour older
+// Codex versions emitted so mirrorBackground() keeps one semantic input surface across versions.
+const SUBMITTED_QUERY_BACKGROUND = "rgb(57,57,71)";
 
 function isCompletionSummary(line: StyledLine): boolean {
   if (!COMPLETION_SUMMARY.test(lineText(line).trim())) return false;
@@ -86,10 +92,102 @@ function withoutContinuationIndent(line: StyledLine, joiner: string): StyledLine
   return segments;
 }
 
-function answerJoiner(previous: string, continuation: string): string {
+function wrappedJoiner(previous: string, continuation: string): string {
   const before = previous.at(-1) ?? "";
   const after = continuation.trimStart().at(0) ?? "";
-  return /[A-Za-z0-9]/.test(before) && /[A-Za-z0-9]/.test(after) ? " " : "";
+  const bothWordCharacters = /[\p{L}\p{N}]/u.test(before) && /[\p{L}\p{N}]/u.test(after);
+  const crossesAsciiWord = /[A-Za-z0-9]/.test(before) || /[A-Za-z0-9]/.test(after);
+  return bothWordCharacters && crossesAsciiWord ? " " : "";
+}
+
+function isSubmittedQueryLead(line: StyledLine): boolean {
+  if (!SUBMITTED_QUERY_LEAD.test(lineText(line))) return false;
+  const marker = line.segments.find((segment) => segment.text.includes("›"));
+  return marker?.dim === true || line.segments.some((segment) => segment.bg !== undefined);
+}
+
+function paintSubmittedQuery(line: StyledLine, background: string): StyledLine {
+  return {
+    ...line,
+    segments: line.segments.map((segment) => ({
+      ...segment,
+      bg: background,
+      style: { ...segment.style, backgroundColor: background },
+    })),
+  };
+}
+
+/**
+ * Codex history keeps submitted queries as host-width terminal rows. Codex 0.149 also dropped their
+ * ANSI background on macOS. Rejoin only plain continuation rows inside a styled `›` history entry,
+ * retain deliberate lists/code/blank lines, and restore the input surface on every non-blank row.
+ */
+function normalizeSubmittedQueries(lines: StyledLine[]): StyledLine[] {
+  let normalized: StyledLine[] | undefined;
+
+  for (let index = 0; index < lines.length; index++) {
+    const lead = lines[index]!;
+    if (!isSubmittedQueryLead(lead)) {
+      normalized?.push(lead);
+      continue;
+    }
+
+    normalized ??= lines.slice(0, index);
+    const background = lead.segments.find((segment) => segment.bg !== undefined)?.bg
+      ?? SUBMITTED_QUERY_BACKGROUND;
+    const queryLines = [lead];
+
+    while (index + 1 < lines.length) {
+      const next = lines[index + 1]!;
+      const nextText = lineText(next);
+      if (SUBMITTED_QUERY_ROW.test(nextText)) {
+        queryLines.push(next);
+        index++;
+        continue;
+      }
+      if (
+        nextText.length === 0 &&
+        index + 2 < lines.length &&
+        SUBMITTED_QUERY_ROW.test(lineText(lines[index + 2]!))
+      ) {
+        queryLines.push(next);
+        index++;
+        continue;
+      }
+      break;
+    }
+
+    let merged: StyledLine | undefined;
+    for (const queryLine of queryLines) {
+      const text = lineText(queryLine);
+      if (text.length === 0) {
+        if (merged) normalized.push(paintSubmittedQuery(merged, background));
+        merged = undefined;
+        normalized.push(queryLine);
+        continue;
+      }
+      if (
+        merged &&
+        SUBMITTED_QUERY_CONTINUATION.test(text) &&
+        !NESTED_ROW.test(text) &&
+        !NESTED_ROW.test(lineText(merged))
+      ) {
+        merged = {
+          ...merged,
+          segments: [
+          ...merged.segments,
+            ...withoutContinuationIndent(queryLine, wrappedJoiner(lineText(merged), text)),
+          ],
+        };
+        continue;
+      }
+      if (merged) normalized.push(paintSubmittedQuery(merged, background));
+      merged = queryLine;
+    }
+    if (merged) normalized.push(paintSubmittedQuery(merged, background));
+  }
+
+  return normalized ?? lines;
 }
 
 /**
@@ -129,7 +227,7 @@ function normalizeWrappedAnswers(lines: StyledLine[]): StyledLine[] {
         ...merged,
         segments: [
           ...merged.segments,
-          ...withoutContinuationIndent(next, answerJoiner(lineText(merged), nextText)),
+          ...withoutContinuationIndent(next, wrappedJoiner(lineText(merged), nextText)),
         ],
       };
       index++;
@@ -246,10 +344,13 @@ export function imageDraftCarriesSend(sent: string, draft: string): boolean {
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
+  const content = stripChrome(lines);
   return [
     {
       kind: "raw",
-      lines: normalizeCompletionSummaries(normalizeWrappedAnswers(stripChrome(lines))),
+      lines: normalizeCompletionSummaries(
+        normalizeWrappedAnswers(normalizeSubmittedQueries(content)),
+      ),
     },
   ];
 }

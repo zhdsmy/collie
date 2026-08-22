@@ -66,6 +66,24 @@ describe("terminal mirror colour space", () => {
     expect(otherLine.style.backgroundColor).toBe("rgb(57, 57, 71)");
   });
 
+  it("restores a full-width surface for a backgroundless Codex history query", () => {
+    const input = [
+      `${ESC}[1;2m› ${ESC}[0m重新设计按键，将按键合并到直接输入，上方一排辅助按`,
+      "  键，可以按组切换，第一组是 Ctrl Esc Tab，看看 Shift 和 Alt 有没有必要",
+      "",
+      "• 收到，先讨论交互结构。",
+    ].join("\n");
+    const { container } = render(<AnsiOutput text={input} agent="codex" />);
+    const lines = [...container.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
+
+    expect(lines).toHaveLength(3);
+    expect(lines[0]!.textContent).toBe(
+      "› 重新设计按键，将按键合并到直接输入，上方一排辅助按键，可以按组切换，第一组是 Ctrl Esc Tab，看看 Shift 和 Alt 有没有必要",
+    );
+    expect(lines[0]!.style.backgroundColor).toBe("var(--mirror-codex-input-background)");
+    expect(lines[1]!.style.backgroundColor).toBe("");
+  });
+
   it("lets solid rows own their background instead of overflowing terminal padding cells", () => {
     const text = `${ESC}[41mremoved${ESC}[0m\n${ESC}[42madded${ESC}[0m`;
     const pre = mirror(text);

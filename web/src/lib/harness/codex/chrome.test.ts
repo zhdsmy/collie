@@ -359,6 +359,54 @@ describe("Codex chrome", () => {
     expect(block.lines.at(-1)!.segments).toEqual(captured.at(-1)!.segments);
   });
 
+  it("reflows backgroundless submitted queries and restores their input surface", () => {
+    const captured = lines(
+      [
+        "\x1b[1;2m› \x1b[0m重新设计按键，将按键合并到直接输入，上方一排辅助按",
+        "  键，可以按组切换，第一组是 Ctrl Esc Tab 方向键上 下 左 右，看看",
+        "  Shift 和 Alt 有没有必要，第二组是 F1 到 F12。",
+        "",
+        "• 收到，先讨论交互结构。",
+      ].join("\n"),
+    );
+    const block = codexBuildBlocks(captured)[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([
+      "› 重新设计按键，将按键合并到直接输入，上方一排辅助按键，可以按组切换，第一组是 Ctrl Esc Tab 方向键上 下 左 右，看看 Shift 和 Alt 有没有必要，第二组是 F1 到 F12。",
+      "",
+      "• 收到，先讨论交互结构。",
+    ]);
+    expect(block.lines[0]!.segments.every((segment) => segment.bg === "rgb(57,57,71)"))
+      .toBe(true);
+  });
+
+  it("keeps an image and caption on separate submitted-query rows with one surface", () => {
+    const captured = lines(
+      [
+        "\x1b[1;2m› \x1b[0m\x1b[36m[Image #1]\x1b[0m",
+        "",
+        "  输入的背景颜色没有了，然后换行也不太对",
+        "",
+        "• 我来检查。",
+      ].join("\n"),
+    );
+    const block = codexBuildBlocks(captured)[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([
+      "› [Image #1]",
+      "",
+      "  输入的背景颜色没有了，然后换行也不太对",
+      "",
+      "• 我来检查。",
+    ]);
+    expect(block.lines[0]!.segments.every((segment) => segment.bg === "rgb(57,57,71)"))
+      .toBe(true);
+    expect(block.lines[2]!.segments.every((segment) => segment.bg === "rgb(57,57,71)"))
+      .toBe(true);
+  });
+
   it("removes Codex 0.149 command-boundary rules and their single-glyph residue", () => {
     const commandSummary = "• Ran 4 commands · ctrl + t to view transcript";
     const longRule = "─".repeat(133);
