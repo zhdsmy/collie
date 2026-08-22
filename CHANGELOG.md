@@ -6,6 +6,16 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.23] - 2026-08-23
+
+### Added
+
+- **Agent panes now default to compact Markdown conversations.** User bubbles, formatted prose, code blocks with copy, task lists, tables, tools, thinking, and a terminal fallback are available behind the view toggle. (91a956b)
+
+### Fixed
+
+- **Opening or using a pane retracts its pending or delivered notification.** (91a956b)
+
 ## [0.32.0+collie.22] - 2026-08-22
 
 ### Fixed
