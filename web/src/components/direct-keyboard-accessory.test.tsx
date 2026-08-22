@@ -25,6 +25,12 @@ describe("DirectKeyboardAccessory", () => {
     expect(switcher.parentElement).toBe(root);
     expect(rail).toHaveClass("overflow-x-auto", "flex", "min-w-0");
     expect(switcher).toHaveClass("shrink-0");
+    for (const button of root.querySelectorAll("button")) {
+      expect(button).toHaveClass("size-10", "shrink-0");
+    }
+    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveTextContent("⌃");
+    expect(screen.getByRole("button", { name: "Alt" })).toHaveTextContent("⌥");
+    expect(screen.getByRole("button", { name: "Shift" })).toHaveTextContent("⇧");
   });
 
   it("preserves arrow hold-repeat through the accessory sender", async () => {

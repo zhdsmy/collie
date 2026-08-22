@@ -1,4 +1,15 @@
-import { CircleCheck, Hourglass, ListChecks, ShieldCheck, Zap } from "lucide-react";
+import {
+  CircleAlert,
+  CircleCheck,
+  CircleOff,
+  Gauge,
+  Hourglass,
+  ListChecks,
+  Pause,
+  ShieldCheck,
+  Target,
+  Zap,
+} from "lucide-react";
 
 import type { AnsiSegment } from "@/lib/ansi";
 import { styleFor } from "@/components/mirror-space";
@@ -9,11 +20,22 @@ interface StatuslineSegmentProps {
 }
 
 const CODEX_STATUS_TOKEN =
-  /(Ctx \d+%|Approve|Fast:(?:on|off)|Tasks \d+\/\d+|Ready|Working)/g;
+  /(Ctx \d+%|Approve|Fast:(?:on|off)|Tasks \d+\/\d+|Ready|Working|Goal:(?:active|paused|blocked|usage|budget|abandoned|done))/g;
 const EXACT_CODEX_STATUS_TOKEN =
-  /^(?:Ctx \d+%|Approve|Fast:(?:on|off)|Tasks \d+\/\d+|Ready|Working)$/;
+  /^(?:Ctx \d+%|Approve|Fast:(?:on|off)|Tasks \d+\/\d+|Ready|Working|Goal:(?:active|paused|blocked|usage|budget|abandoned|done))$/;
 const CONTEXT_TOKEN = /^Ctx (\d+%)$/;
 const TASKS_TOKEN = /^Tasks (\d+\/\d+)$/;
+const GOAL_TOKEN = /^Goal:(active|paused|blocked|usage|budget|abandoned|done)$/;
+const GOAL_LABELS = {
+  active: "Pursuing goal",
+  paused: "Goal paused",
+  blocked: "Goal stalled",
+  usage: "Goal hit usage limits",
+  budget: "Goal unmet",
+  abandoned: "Goal abandoned",
+  done: "Goal achieved",
+} as const;
+type GoalDisplayState = keyof typeof GOAL_LABELS;
 
 function CodexStatusToken({ token }: { token: string }) {
   const context = CONTEXT_TOKEN.exec(token);
@@ -62,6 +84,39 @@ function CodexStatusToken({ token }: { token: string }) {
         ) : (
           <CircleCheck aria-hidden="true" className="size-[1em]" strokeWidth={2.25} />
         )}
+      </span>
+    );
+  }
+
+  const goal = GOAL_TOKEN.exec(token);
+  if (goal) {
+    const state = goal[1] as GoalDisplayState;
+    const label = GOAL_LABELS[state];
+    const Icon =
+      state === "active"
+        ? Target
+        : state === "paused"
+          ? Pause
+          : state === "blocked"
+            ? CircleAlert
+            : state === "usage"
+              ? Gauge
+              : state === "budget" || state === "abandoned"
+                ? CircleOff
+                : CircleCheck;
+    return (
+      <span
+        className="inline-flex items-center align-[-0.125em]"
+        aria-label={label}
+        title={label}
+        data-status-icon="goal"
+        data-state={state}
+      >
+        <Icon
+          aria-hidden="true"
+          className={state === "active" ? "size-[1em] motion-safe:animate-pulse" : "size-[1em]"}
+          strokeWidth={state === "paused" ? 2.5 : 2.25}
+        />
       </span>
     );
   }

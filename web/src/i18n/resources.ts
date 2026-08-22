@@ -499,6 +499,7 @@ const en = {
     dialogWaiting: "A dialog is waiting — answer it first, then send.",
     display: "Display",
     displaySettings: "Display settings",
+    settings: "Settings",
     draftInTerminal: "Draft in terminal",
     imageAdded: "Image added — path in message",
     inputChanged:
@@ -993,6 +994,7 @@ const zhCN = {
     dialogWaiting: "有一个对话框正在等待，请先完成它再发送。",
     display: "显示",
     displaySettings: "显示设置",
+    settings: "设置",
     draftInTerminal: "终端中的草稿",
     imageAdded: "图片已添加，路径已写入消息",
     inputChanged: "清除输入时输入框发生了变化，尚未输入任何内容。请检查窗格。",
@@ -1479,6 +1481,7 @@ const zhTW = {
     dialogWaiting: "有一個對話框正在等待，請先完成它再傳送。",
     display: "顯示",
     displaySettings: "顯示設定",
+    settings: "設定",
     draftInTerminal: "終端機中的草稿",
     imageAdded: "圖片已新增，路徑已寫入訊息",
     inputChanged: "清除輸入時輸入框發生變化，尚未輸入任何內容。請檢查窗格。",

@@ -45,6 +45,24 @@ describe("StatuslineSegment", () => {
     expect(screen.getByLabelText("Working").querySelector("svg")).toHaveClass("lucide-hourglass");
   });
 
+  it.each([
+    ["Goal:active", "Pursuing goal", "active", "lucide-target"],
+    ["Goal:paused", "Goal paused", "paused", "lucide-pause"],
+    ["Goal:blocked", "Goal stalled", "blocked", "lucide-circle-alert"],
+    ["Goal:usage", "Goal hit usage limits", "usage", "lucide-gauge"],
+    ["Goal:budget", "Goal unmet", "budget", "lucide-circle-off"],
+    ["Goal:abandoned", "Goal abandoned", "abandoned", "lucide-circle-off"],
+    ["Goal:done", "Goal achieved", "done", "lucide-circle-check"],
+  ])("renders %s as an accessible compact goal icon", (token, label, state, iconClass) => {
+    render(<StatuslineSegment agent="codex" segment={segment(token)} />);
+
+    const goal = screen.getByLabelText(label);
+    expect(goal).toHaveAttribute("data-status-icon", "goal");
+    expect(goal).toHaveAttribute("data-state", state);
+    expect(goal).toHaveAttribute("title", label);
+    expect(goal.querySelector("svg")).toHaveClass(iconClass);
+  });
+
   it("leaves unknown Codex fields and other agents as plain text", () => {
     const { rerender } = render(
       <StatuslineSegment agent="codex" segment={segment("gpt-5.6-sol")} />,

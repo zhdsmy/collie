@@ -2165,19 +2165,18 @@ describe("Composer — Agent command dock", () => {
 });
 
 describe("Composer — display prefs behind the gear", () => {
-  it("keeps labelled icons compact so full labels and the Display gear fit inside", () => {
+  it("tiles the four labelled actions evenly across the compact row", () => {
     renderComposer();
     const gear = screen.getByRole("button", { name: "Display settings" });
     const row = gear.parentElement;
     expect(row).toHaveClass("min-w-0", "gap-1");
-    expect(gear).toHaveClass("mr-1", "shrink-0");
-    for (const button of Array.from(row!.querySelectorAll("button")).filter(
-      (button) => button !== gear,
-    )) {
+    const buttons = Array.from(row!.querySelectorAll("button"));
+    expect(buttons).toHaveLength(4);
+    expect(gear).toHaveTextContent("Settings");
+    for (const button of buttons) {
       expect(button).toHaveClass(
         "min-w-0",
-        "flex-auto",
-        "shrink",
+        "flex-1",
         "gap-0.5",
         "overflow-hidden",
         "px-0",

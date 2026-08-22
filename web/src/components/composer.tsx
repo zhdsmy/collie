@@ -832,15 +832,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
-        {/* The action row: Type · Quick · Agent · ⚙ (Agent only when the pane's agent has
-            commands). Display prefs used to sit on a second, permanent icon-only "View" row above
-            this one; folding them behind the ⚙ gives the mirror that row back. The gear is icon-only
-            and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
-            keeping it narrow leaves the labelled buttons their width on a 390px phone. The labelled
-            controls override Button's icon-aware padding as well as its regular padding; otherwise
-            `:has(>svg)` silently adds 20px per control and truncates longer translations. The
-            hide-controls preference yields the whole row while the software keyboard provides input
-            controls. */}
+        {/* Action controls share the row evenly. Explicit padding prevents Button's icon-aware
+            defaults from truncating longer translations. The hide-controls preference yields the
+            whole row while the software keyboard provides input controls. */}
         {!hideControlsWhenTyping && (
           <div className="mb-2 flex min-w-0 items-center gap-1">
           {/* Direct input is the single keyboard surface: once armed, its accessory supplies every
@@ -849,9 +843,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           <Button
             variant="ghost"
             size="sm"
-              className={cn(
-                "h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs has-[>svg]:px-0",
-                direct.active ? CONTROL_ON : CONTROL_OFF,
+            className={cn(
+              "h-8 min-w-0 flex-1 gap-0.5 overflow-hidden px-0 text-xs has-[>svg]:px-0",
+              direct.active ? CONTROL_ON : CONTROL_OFF,
               )}
             disabled={locked || sending}
             aria-pressed={direct.active}
@@ -873,9 +867,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           <Button
             variant="ghost"
             size="sm"
-              className={cn(
-                "h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs has-[>svg]:px-0",
-                drawer === "quick" ? CONTROL_ON : CONTROL_OFF,
+            className={cn(
+              "h-8 min-w-0 flex-1 gap-0.5 overflow-hidden px-0 text-xs has-[>svg]:px-0",
+              drawer === "quick" ? CONTROL_ON : CONTROL_OFF,
               )}
             disabled={locked}
             aria-expanded={drawer === "quick"}
@@ -888,7 +882,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 min-w-0 flex-auto shrink gap-0.5 overflow-hidden px-0 text-xs text-muted-foreground has-[>svg]:px-0"
+              className="h-8 min-w-0 flex-1 gap-0.5 overflow-hidden px-0 text-xs text-muted-foreground has-[>svg]:px-0"
               disabled={locked}
               aria-expanded={drawer === "cmd"}
               onClick={() => requestDrawer(drawer === "cmd" ? null : "cmd")}
@@ -901,13 +895,17 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               read-only device or a gone pane can still make its mirror readable. */}
           <Button
             variant="ghost"
-            size="icon"
-            className={cn("mr-1 size-8 shrink-0", drawer === "display" ? CONTROL_ON : CONTROL_OFF)}
+            size="sm"
+            className={cn(
+              "h-8 min-w-0 flex-1 gap-0.5 overflow-hidden px-0 text-xs has-[>svg]:px-0",
+              drawer === "display" ? CONTROL_ON : CONTROL_OFF,
+            )}
             aria-label={translate("composer.displaySettings")}
             aria-expanded={drawer === "display"}
             onClick={() => requestDrawer(drawer === "display" ? null : "display")}
           >
-            <Settings2 className="size-4" />
+            <Settings2 className="size-4 shrink-0" />
+            <span className="min-w-0 truncate">{translate("composer.settings")}</span>
           </Button>
           </div>
         )}

@@ -103,6 +103,25 @@ describe("Codex chrome", () => {
     expect(lineText(captured[0]!)).toContain("Approve for me");
   });
 
+  it("compacts every Codex goal label while preserving useful usage details", () => {
+    const captured = lines(
+      [
+        "Pursuing goal (4K / 5K)",
+        "Goal paused (/goal resume)",
+        "Goal stalled (/goal resume)",
+        "Goal hit usage limits (/goal resume)",
+        "Goal unmet (51K / 50K tokens)",
+        "Goal abandoned",
+        "Goal achieved (10h 12m)",
+      ].join(" · "),
+    );
+
+    expect(lineText(compactCodexStatusLines(captured)[0]!)).toBe(
+      "Goal:active (4K / 5K)· Goal:paused· Goal:blocked· Goal:usage· " +
+        "Goal:budget (51K / 50K tokens)· Goal:abandoned· Goal:done (10h 12m)",
+    );
+  });
+
   it("keeps every Codex status item visible when the terminal wraps the statusline", () => {
     const captured = lines(
       [

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { useHoldRepeat } from "@/hooks/use-hold-repeat";
 import type { DirectKeyRow, DirectModifierState } from "@/hooks/use-direct-typing";
 import type { Modifier } from "@/lib/key-queue";
-import { cn } from "@/lib/utils";
 
 interface DirectKeyboardAccessoryProps {
   row: DirectKeyRow;
@@ -54,7 +53,7 @@ export function DirectKeyboardAccessory({
     event.preventDefault();
   };
 
-  const modifierButton = (modifier: Modifier, label: string) => {
+  const modifierButton = (modifier: Modifier, glyph: string, label: string) => {
     const mode = modifiers[modifier];
     return (
       <Button
@@ -66,12 +65,13 @@ export function DirectKeyboardAccessory({
         onPointerDown={preserveTextareaFocus}
         onClick={() => onToggleModifier(modifier)}
         aria-label={label}
+        title={label}
         aria-pressed={mode !== "off"}
         data-mode={mode}
-        className="h-10 min-w-[4.25rem] touch-manipulation gap-1 px-2 text-xs"
+        className="size-10 shrink-0 touch-manipulation gap-0.5 px-0 text-lg"
       >
         {mode === "locked" && <Lock className="size-3" />}
-        {label}
+        <span aria-hidden="true">{glyph}</span>
       </Button>
     );
   };
@@ -97,13 +97,10 @@ export function DirectKeyboardAccessory({
           binding?.onPointerDown(event);
         }}
         aria-label={ariaLabel}
-        className={cn(
-          "h-10 min-w-12 touch-manipulation select-none px-2 text-xs",
-          repeatable && "w-10 min-w-10 px-0",
-        )}
+        className="size-10 shrink-0 touch-manipulation select-none px-0 text-xs"
       >
         {held ? (
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-0.5">
             {label}
             {repeat.count > 1 && (
               <span className="font-mono text-[10px] tabular-nums">×{repeat.count}</span>
@@ -152,9 +149,9 @@ export function DirectKeyboardAccessory({
       >
         {row === "navigation" ? (
           <>
-            {modifierButton("ctrl", "Ctrl")}
-            {modifierButton("alt", "Alt")}
-            {modifierButton("shift", "Shift")}
+            {modifierButton("ctrl", "⌃", "Ctrl")}
+            {modifierButton("alt", "⌥", "Alt")}
+            {modifierButton("shift", "⇧", "Shift")}
             {NAVIGATION_KEYS.map((item) =>
               keyButton(item.key, item.label, item.ariaLabel, item.repeatable),
             )}

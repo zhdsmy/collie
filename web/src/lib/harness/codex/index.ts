@@ -46,7 +46,14 @@ function compactStatusSegment(text: string): string {
     .replace(/\s+·\s+/g, "· ")
     .replace(/\bContext\s+(\d+)(?:% left|…)/g, "Ctx $1%")
     .replace(/\bApprove(?: for)? me\b/g, "Approve")
-    .replace(/\bFast (on|off)\b/g, "Fast:$1");
+    .replace(/\bFast (on|off)\b/g, "Fast:$1")
+    .replace(/\bPursuing goal\b/gi, "Goal:active")
+    .replace(/\bGoal paused(?:\s+\(\/goal resume\))?/gi, "Goal:paused")
+    .replace(/\bGoal stalled(?:\s+\(\/goal resume\))?/gi, "Goal:blocked")
+    .replace(/\bGoal hit usage limits(?:\s+\(\/goal resume\))?/gi, "Goal:usage")
+    .replace(/\bGoal unmet\b/gi, "Goal:budget")
+    .replace(/\bGoal abandoned\b/gi, "Goal:abandoned")
+    .replace(/\bGoal achieved\b/gi, "Goal:done");
 }
 
 function withoutContinuationIndent(line: StyledLine, joiner: string): StyledLine["segments"] {
