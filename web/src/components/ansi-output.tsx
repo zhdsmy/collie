@@ -195,25 +195,18 @@ function tableCells(text: string): TableToken[] {
   return tableTokens(text).filter((token) => token.kind === "cell" && token.text.trim().length > 0);
 }
 
-function isTableRule(text: string): boolean {
-  const cells = tableCells(text);
-  return (
-    cells.length >= 2 &&
-    cells.reduce((length, cell) => length + cell.text.trim().length, 0) >= 20 &&
-    cells.every((cell) => TABLE_RULE.test(cell.text.trim()))
-  );
-}
-
 function isTableRuleGlyphLine(text: string): boolean {
   const glyphs = text.replace(/\s/g, "");
-  return glyphs.length >= 8 && TABLE_RULE.test(glyphs);
+  return glyphs.length >= 16 && TABLE_RULE.test(glyphs);
 }
 
 const NUMERIC_CELL =
   /^[+\-]?(?:(?:USD|EUR|GBP|JPY|CNY|[$¥€£])\s*)?\d[\d.,:/\-]*(?:\s*(?:%|ms|s|m|h|kb|mb|gb|tb))?$/i;
 
 function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
-  const tableRules = lines.map((line) => isTableRule(lineText(line)));
+  // Codex TUI often leaves only one space between rule runs. Detect the rule from its glyphs,
+  // then use the parsed cell count only for deciding whether semantic columns are trustworthy.
+  const tableRules = lines.map((line) => isTableRuleGlyphLine(lineText(line)));
   const flags = lines.map<TableLineFlags>((line, i) => ({
     keepSingleRow: Boolean(line.noWrap),
     table: false,
@@ -237,12 +230,14 @@ function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
     const ruleIndexes = indexes.filter((index) => tableRules[index]);
     if (ruleIndexes.length > 0) {
       const columnCount = tableCells(lineText(lines[ruleIndexes[0]!]!)).length;
-      const hasMatchingRow = indexes.some(
-        (index) =>
-          !tableRules[index] && tableCells(lineText(lines[index]!)).length === columnCount,
+      const hasContentRow = indexes.some(
+        (index) => !tableRules[index] && !isBlank(lineText(lines[index]!)),
       );
-      if (hasMatchingRow) {
-        const semantic = indexes.every((index) => {
+      // A lone long border beside prose is ordinary terminal output, not a table. Structurally lost
+      // tables have repeated rule runs; semantic tables can still be recognized from one multi-cell
+      // rule and their stable column count.
+      if (hasContentRow && (columnCount >= 2 || ruleIndexes.length >= 2)) {
+        const semantic = columnCount >= 2 && indexes.every((index) => {
           const cells = tableCells(lineText(lines[index]!));
           return cells.length === columnCount;
         });
@@ -589,7 +584,12 @@ export const AnsiOutput = memo(function AnsiOutput({
               isTableRuleGlyphLine(lineText(block.lines[row]!))
             ) {
               sourceRules.push(
-                <span key={row} data-terminal-table-source-rule className="hidden">
+                <span
+                  key={row}
+                  data-terminal-table-source-rule
+                  aria-hidden="true"
+                  style={{ display: "none" }}
+                >
                   {renderLine(block.lines[row]!, row)}
                 </span>,
               );

@@ -254,23 +254,23 @@ describe("mirror line wrapping", () => {
       "",
       "状态       模块          说明",
       "数量",
-      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      `${"━".repeat(8)} ${"━".repeat(12)} ${"━".repeat(10)}`,
       "─".repeat(42),
       "✅ 已完成   Terminal Table   文本列保持左对齐，数字列使用等宽数字",
       "128                 单元格的结构稳定。",
-      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
       "🟡 处理中   Composer       正在检查输入法、软键盘、安全区和底部布局",
       "9,876               English to test wrapping behavior at https://herdr.dev/table.",
-      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
       "⚠️ 需确认   Agent 命令     带有 ↩︎ 标记的命令需要先精准定位输入区",
       "42                  并保留用户当前输入。",
-      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
       "⏸️ 已暂停   Goal           目标暂停后保留上下文、当前进度和待办。",
       "3",
-      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
       "🚀 已部署   Collie         v0.32.0+collie.29 已构建并部署到 macOS。",
       "24,567",
-      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
       "❌ 失败     Network / API  ECONNREFUSED，需要区分启动竞争和服务未监听。",
       "127.0.0.1:8788      0",
       "",
@@ -299,7 +299,7 @@ describe("mirror line wrapping", () => {
     expect(records[6]!.textContent).toContain("❌ 失败");
     expect(container.querySelectorAll("[data-terminal-table-divider]")).toHaveLength(6);
     expect(sourceRules).toHaveLength(7);
-    expect(sourceRules.every((rule) => rule.classList.contains("hidden"))).toBe(true);
+    expect(sourceRules.every((rule) => (rule as HTMLElement).style.display === "none")).toBe(true);
     expect(pre.className).toContain("whitespace-pre-wrap");
     expect(pre.className).not.toContain("overflow-x-auto");
     expect(table.querySelector("a")?.getAttribute("href")).toBe("https://herdr.dev/table");
