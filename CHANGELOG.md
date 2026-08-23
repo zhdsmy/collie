@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.30] - 2026-08-23
+
+### Fixed
+
+- **Structurally lost tables group wrapped records and collapse rule runs to quiet dividers.** (e3bed6b)
+
 ## [0.32.0+collie.29] - 2026-08-23
 
 ### Fixed
