@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.33] - 2026-08-23
+
+### Changed
+
+- **Terminal output renderer restored to the notification-fix baseline before table transformations.** (d7f4c89)
+
 ## [0.32.0+collie.32] - 2026-08-23
 
 ### Fixed
