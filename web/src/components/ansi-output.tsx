@@ -165,14 +165,49 @@ const TABLE_RULE = new RegExp(`^[${PURE_HORIZONTAL_RULE_GLYPH_CLASS}]+$`);
 interface TableLineFlags {
   keepSingleRow: boolean;
   table: boolean;
+  rule: boolean;
 }
 
-function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
-  const tableRules = lines.map((line) => {
-    const text = lineText(line).trim();
-    const compact = text.replace(/\s/g, "");
-    return compact.length >= 20 && /\s/.test(text) && TABLE_RULE.test(compact);
+interface TableToken {
+  kind: "cell" | "gap";
+  text: string;
+  start: number;
+  end: number;
+}
+
+function tableTokens(text: string): TableToken[] {
+  const pieces = text.split(/(\s{2,})/);
+  let start = 0;
+  return pieces.map((piece) => {
+    const token: TableToken = {
+      kind: /^\s{2,}$/.test(piece) ? "gap" : "cell",
+      text: piece,
+      start,
+      end: start + piece.length,
+    };
+    start = token.end;
+    return token;
   });
+}
+
+function tableCells(text: string): TableToken[] {
+  return tableTokens(text).filter((token) => token.kind === "cell" && token.text.trim().length > 0);
+}
+
+function isTableRule(text: string): boolean {
+  const cells = tableCells(text);
+  return (
+    cells.length >= 2 &&
+    cells.reduce((length, cell) => length + cell.text.trim().length, 0) >= 20 &&
+    cells.every((cell) => TABLE_RULE.test(cell.text.trim()))
+  );
+}
+
+const NUMERIC_CELL =
+  /^[+\-]?(?:(?:USD|EUR|GBP|JPY|CNY|[$¥€£])\s*)?\d[\d.,:/\-]*(?:\s*(?:%|ms|s|m|h|kb|mb|gb|tb))?$/i;
+
+function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
+  const tableRules = lines.map((line) => isTableRule(lineText(line)));
   const table = tableRules.map(() => false);
   for (let i = 0; i < lines.length; i++) {
     if (!tableRules[i]) continue;
@@ -187,6 +222,7 @@ function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
   return lines.map((line, i) => ({
     keepSingleRow: Boolean(line.noWrap || table[i]),
     table: table[i]!,
+    rule: tableRules[i]!,
   }));
 }
 
@@ -411,6 +447,34 @@ export const AnsiOutput = memo(function AnsiOutput({
     });
   };
 
+  // Preserve ANSI spans, links, and find offsets while a table cell drops terminal padding through
+  // CSS whitespace collapsing. `start`/`end` are UTF-16 offsets in the original visual line.
+  const renderLineSlice = (
+    line: StyledLine,
+    start: number,
+    end: number,
+    lineStart: number,
+  ): ReactNode => {
+    let segmentStart = 0;
+    const nodes: ReactNode[] = [];
+    for (let si = 0; si < line.segments.length; si++) {
+      const segment = line.segments[si]!;
+      const segmentEnd = segmentStart + segment.text.length;
+      const from = Math.max(start, segmentStart);
+      const to = Math.min(end, segmentEnd);
+      if (from < to) {
+        const text = segment.text.slice(from - segmentStart, to - segmentStart);
+        nodes.push(
+          <span key={si} data-terminal-segment style={styleFor(segment, agent)}>
+            {renderSegment(text, lineStart + from)}
+          </span>,
+        );
+      }
+      segmentStart = segmentEnd;
+    }
+    return nodes;
+  };
+
   const renderBlock = (block: RawBlock, bi: number) => {
     if (bi > 0) offset += 1; // the "\n" separating this block from the previous
     const backgrounds = lineBackgrounds(block.lines);
@@ -477,15 +541,116 @@ export const AnsiOutput = memo(function AnsiOutput({
       }
       let end = li + 1;
       while (end < block.lines.length && tableLines[end]!.table) end++;
+      const ruleIndex = tableLines.slice(li, end).findIndex((flags) => flags.rule) + li;
+      const columnCount = tableCells(lineText(block.lines[ruleIndex]!)).length;
+      const contentRows = block.lines
+        .slice(li, end)
+        .filter((_, relative) => !tableLines[li + relative]!.rule)
+        .map((line) => tableCells(lineText(line)))
+        .filter((cells) => cells.length === columnCount);
+      const numericColumns = Array.from({ length: columnCount }, (_, column) => {
+        const values = contentRows.slice(1).map((cells) => cells[column]!.text.trim());
+        return values.length > 0 && values.every((value) => NUMERIC_CELL.test(value));
+      });
+
+      let contentRow = 0;
       const rows: ReactNode[] = [];
-      for (let row = li; row < end; row++) rows.push(renderLine(block.lines[row]!, row));
+      for (let row = li; row < end; row++) {
+        if (row > 0) offset += 1;
+        const line = block.lines[row]!;
+        const text = lineText(line);
+        const lineStart = offset;
+        offset += text.length;
+        const flags = tableLines[row]!;
+        const newline = row > 0 ? <span className="hidden">{"\n"}</span> : null;
+
+        if (flags.rule) {
+          rows.push(
+            <Fragment key={row}>
+              {newline}
+              <span data-terminal-line data-terminal-table-rule className="contents">
+                <span className="hidden">{text}</span>
+                <span
+                  aria-hidden
+                  className="my-[0.15em] h-px bg-[#3f3f46]"
+                  style={{ gridColumn: "1 / -1" }}
+                />
+              </span>
+            </Fragment>,
+          );
+          continue;
+        }
+
+        const tokens = tableTokens(text);
+        const cells = tokens.filter(
+          (token) => token.kind === "cell" && token.text.trim().length > 0,
+        );
+        const isHeader = contentRow++ === 0;
+        if (cells.length !== columnCount) {
+          rows.push(
+            <Fragment key={row}>
+              {newline}
+              <span
+                data-terminal-line
+                className="terminal-table-line whitespace-normal py-[0.38em] text-left"
+                style={{ gridColumn: "1 / -1" }}
+              >
+                {renderLineSlice(line, 0, text.length, lineStart)}
+              </span>
+            </Fragment>,
+          );
+          continue;
+        }
+
+        let cell = 0;
+        rows.push(
+          <Fragment key={row}>
+            {newline}
+            <span data-terminal-line className="terminal-table-line contents" role="row">
+              {tokens.map((token, tokenIndex) => {
+                if (token.kind === "gap" || token.text.trim().length === 0) {
+                  return (
+                    <span key={tokenIndex} className="hidden">
+                      {token.text}
+                    </span>
+                  );
+                }
+                const column = cell++;
+                return (
+                  <span
+                    key={tokenIndex}
+                    data-terminal-table-cell
+                    role={isHeader ? "columnheader" : "cell"}
+                    className={cn(
+                      "min-w-0 whitespace-normal py-[0.38em]",
+                      isHeader && "font-semibold text-[#fafafa]",
+                      numericColumns[column] ? "text-right tabular-nums" : "text-left",
+                    )}
+                  >
+                    {renderLineSlice(line, token.start, token.end, lineStart)}
+                  </span>
+                );
+              })}
+            </span>
+          </Fragment>,
+        );
+      }
       rendered.push(
         <span
           key={`table-${li}`}
           data-terminal-table
-          className="my-[0.45em] block max-w-full overflow-x-auto overscroll-x-contain rounded-[6px] border-y border-[#27272a] bg-[#111113] py-[0.35em] text-[0.92em] leading-[1.4] [touch-action:pan-x_pan-y]"
+          role="table"
+          aria-colcount={columnCount}
+          className="my-[0.45em] block max-w-full overflow-x-auto overscroll-x-contain rounded-[6px] border-y border-[#27272a] bg-[#111113] text-[0.92em] leading-[1.4] [touch-action:pan-x_pan-y]"
         >
-          <span className="block min-w-full w-max px-[0.7em]">{rows}</span>
+          <span
+            className="grid min-w-full w-max gap-x-[1.6em] px-[0.9em] py-[0.25em]"
+            style={{
+              gridTemplateColumns: `repeat(${columnCount}, minmax(max-content, 1fr))`,
+            }}
+          >
+            {rows}
+          </span>
         </span>,
       );
       li = end;

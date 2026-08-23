@@ -224,15 +224,54 @@ describe("mirror line wrapping", () => {
     expect(lines.map((line) => line.classList.contains("terminal-table-line"))).toEqual([
       false,
       true,
-      true,
+      false,
       true,
     ]);
     expect(table).toBeInTheDocument();
     expect(table.className).toContain("overflow-x-auto");
     expect(table.className).toContain("text-[0.92em]");
     expect(table.querySelectorAll("[data-terminal-line]")).toHaveLength(3);
+    expect(table.querySelector("[data-terminal-table-rule]")).toBeInTheDocument();
+    expect(
+      [...table.querySelectorAll("[data-terminal-table-cell]")].map((cell) =>
+        cell.textContent?.trim(),
+      ),
+    ).toEqual(["按键", "reply 模式行为", "方向键", "移动输入框光标，必要时本地处理"]);
+    expect(
+      [...table.querySelectorAll("[data-terminal-table-cell]")].every((cell) =>
+        cell.classList.contains("text-left"),
+      ),
+    ).toBe(true);
     expect(lines.slice(1).every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
     expect(container.querySelector("pre")!.textContent).toBe(text);
+  });
+
+  it("right-aligns a purely numeric column while keeping its header on the same strategy", () => {
+    const text = [
+      "Name       State     Count",
+      `${"─".repeat(8)}   ${"─".repeat(7)}   ${"─".repeat(6)}`,
+      "Adapter    Active    12",
+    ].join("\n");
+    const { container } = render(<AnsiOutput text={text} />);
+    const cells = [...container.querySelectorAll("[data-terminal-table-cell]")] as HTMLElement[];
+
+    expect(cells.map((cell) => cell.textContent?.trim())).toEqual([
+      "Name",
+      "State",
+      "Count",
+      "Adapter",
+      "Active",
+      "12",
+    ]);
+    expect(cells.map((cell) => cell.classList.contains("text-right"))).toEqual([
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+    ]);
+    expect(cells[2]!.className).toContain("tabular-nums");
   });
 });
 
