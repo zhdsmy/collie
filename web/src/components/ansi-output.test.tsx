@@ -248,7 +248,7 @@ describe("mirror line wrapping", () => {
     expect(container.querySelector("pre")!.textContent).toBe(text);
   });
 
-  it("falls a TUI-wrapped emoji table back to ordinary single-viewport text", () => {
+  it("groups a TUI-wrapped emoji table into compact single-viewport records", () => {
     const text = [
       "before",
       "",
@@ -260,29 +260,50 @@ describe("mirror line wrapping", () => {
       "128                 单元格的结构稳定。",
       `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
       "🟡 处理中   Composer       正在检查输入法、软键盘、安全区和底部布局",
-      "9,876               English to test wrapping behavior beyond one phone viewport.",
+      "9,876               English to test wrapping behavior at https://herdr.dev/table.",
       `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
       "⚠️ 需确认   Agent 命令     带有 ↩︎ 标记的命令需要先精准定位输入区",
       "42                  并保留用户当前输入。",
       `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
       "⏸️ 已暂停   Goal           目标暂停后保留上下文、当前进度和待办。",
       "3",
+      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      "🚀 已部署   Collie         v0.32.0+collie.29 已构建并部署到 macOS。",
+      "24,567",
+      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      "❌ 失败     Network / API  ECONNREFUSED，需要区分启动竞争和服务未监听。",
+      "127.0.0.1:8788      0",
       "",
       "after",
     ].join("\n");
-    const { container } = render(<AnsiOutput text={text} />);
+    const { container } = render(<AnsiOutput text={text} query="wrapping behavior" />);
     const pre = container.querySelector("pre")!;
+    const table = container.querySelector("[data-terminal-table]") as HTMLElement;
     const lines = [...container.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
+    const records = [...container.querySelectorAll("[data-terminal-table-record]")];
+    const sourceRules = [...container.querySelectorAll("[data-terminal-table-source-rule]")];
 
-    expect(container.querySelector("[data-terminal-table]")).toBeNull();
+    expect(table.dataset.terminalTableVariant).toBe("compact");
+    expect(table.className).not.toContain("overflow-x-auto");
+    expect(table.className).not.toContain("w-max");
     expect(container.querySelector("[data-terminal-table-cell]")).toBeNull();
     expect(lines.every((line) => !line.classList.contains("terminal-table-line"))).toBe(true);
     expect(lines.every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
+    expect(records).toHaveLength(7);
+    expect(records[0]).toHaveAttribute("data-terminal-table-header");
+    expect(records[1]!.textContent).toContain("✅ 已完成");
+    expect(records[2]!.textContent).toContain("🟡 处理中");
+    expect(records[3]!.textContent).toContain("⚠️ 需确认");
+    expect(records[4]!.textContent).toContain("⏸️ 已暂停");
+    expect(records[5]!.textContent).toContain("🚀 已部署");
+    expect(records[6]!.textContent).toContain("❌ 失败");
+    expect(container.querySelectorAll("[data-terminal-table-divider]")).toHaveLength(6);
+    expect(sourceRules).toHaveLength(7);
+    expect(sourceRules.every((rule) => rule.classList.contains("hidden"))).toBe(true);
     expect(pre.className).toContain("whitespace-pre-wrap");
     expect(pre.className).not.toContain("overflow-x-auto");
-    expect(pre.textContent).toContain("✅ 已完成");
-    expect(pre.textContent).toContain("⚠️ 需确认");
-    expect(pre.textContent).toContain("⏸️ 已暂停");
+    expect(table.querySelector("a")?.getAttribute("href")).toBe("https://herdr.dev/table");
+    expect(table.querySelector("[data-find-match]")?.textContent).toBe("wrapping behavior");
     expect(pre.textContent).toBe(text);
   });
 

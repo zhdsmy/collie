@@ -204,6 +204,11 @@ function isTableRule(text: string): boolean {
   );
 }
 
+function isTableRuleGlyphLine(text: string): boolean {
+  const glyphs = text.replace(/\s/g, "");
+  return glyphs.length >= 8 && TABLE_RULE.test(glyphs);
+}
+
 const NUMERIC_CELL =
   /^[+\-]?(?:(?:USD|EUR|GBP|JPY|CNY|[$¥€£])\s*)?\d[\d.,:/\-]*(?:\s*(?:%|ms|s|m|h|kb|mb|gb|tb))?$/i;
 
@@ -572,7 +577,70 @@ export const AnsiOutput = memo(function AnsiOutput({
       let end = li + 1;
       while (end < block.lines.length && tableLines[end]!.table) end++;
       if (!tableLines[li]!.semantic) {
-        for (let row = li; row < end; row++) rendered.push(renderLine(block.lines[row]!, row));
+        // Cell positions are gone, but rule runs still delimit logical records. Keep that reliable
+        // structure, collapse each run to one divider, and let record text wrap naturally.
+        const groups: ReactNode[] = [];
+        let record = 0;
+        for (let row = li; row < end; ) {
+          if (isTableRuleGlyphLine(lineText(block.lines[row]!))) {
+            const sourceRules: ReactNode[] = [];
+            while (
+              row < end &&
+              isTableRuleGlyphLine(lineText(block.lines[row]!))
+            ) {
+              sourceRules.push(
+                <span key={row} data-terminal-table-source-rule className="hidden">
+                  {renderLine(block.lines[row]!, row)}
+                </span>,
+              );
+              row++;
+            }
+            groups.push(
+              <Fragment key={`divider-${row}`}>
+                {sourceRules}
+                <span
+                  aria-hidden
+                  data-terminal-table-divider
+                  className="block h-px bg-[#3f3f46]"
+                />
+              </Fragment>,
+            );
+            continue;
+          }
+
+          const rows: ReactNode[] = [];
+          while (
+            row < end &&
+            !isTableRuleGlyphLine(lineText(block.lines[row]!))
+          ) {
+            rows.push(renderLine(block.lines[row]!, row));
+            row++;
+          }
+          groups.push(
+            <span
+              key={`record-${record}`}
+              data-terminal-table-record
+              data-terminal-table-header={record === 0 ? "" : undefined}
+              className={cn(
+                "block whitespace-normal py-[0.55em]",
+                record === 0 && "py-[0.4em] font-semibold [word-spacing:0.45em]",
+              )}
+            >
+              {rows}
+            </span>,
+          );
+          record++;
+        }
+        rendered.push(
+          <span
+            key={`table-${li}`}
+            data-terminal-table
+            data-terminal-table-variant="compact"
+            className="my-[0.45em] block max-w-full overflow-hidden rounded-[6px] border-y border-[#27272a] bg-[#111113] px-[0.9em] py-[0.1em] text-[0.92em] leading-[1.45]"
+          >
+            {groups}
+          </span>,
+        );
         li = end;
         continue;
       }
