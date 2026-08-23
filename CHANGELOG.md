@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.26] - 2026-08-23
+
+### Fixed
+
+- **Terminal tables now move as one compact, subtly framed horizontal surface on phones.** (1fbe6da)
+
 ## [0.32.0+collie.25] - 2026-08-23
 
 ### Fixed
