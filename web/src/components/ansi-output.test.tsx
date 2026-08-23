@@ -248,7 +248,7 @@ describe("mirror line wrapping", () => {
     expect(container.querySelector("pre")!.textContent).toBe(text);
   });
 
-  it("keeps a TUI-wrapped emoji table together as one raw rail instead of parsing fragments", () => {
+  it("falls a TUI-wrapped emoji table back to ordinary single-viewport text", () => {
     const text = [
       "before",
       "",
@@ -256,25 +256,34 @@ describe("mirror line wrapping", () => {
       "数量",
       `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
       "─".repeat(42),
-      "✅ 已完成   Terminal Table   文本列很长，已经被终端换行",
+      "✅ 已完成   Terminal Table   文本列保持左对齐，数字列使用等宽数字",
       "128                 单元格的结构稳定。",
       `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
-      "🟡 处理中   Composer       English to test wrapping behavior",
+      "🟡 处理中   Composer       正在检查输入法、软键盘、安全区和底部布局",
+      "9,876               English to test wrapping behavior beyond one phone viewport.",
+      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      "⚠️ 需确认   Agent 命令     带有 ↩︎ 标记的命令需要先精准定位输入区",
+      "42                  并保留用户当前输入。",
+      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      "⏸️ 已暂停   Goal           目标暂停后保留上下文、当前进度和待办。",
+      "3",
       "",
       "after",
     ].join("\n");
     const { container } = render(<AnsiOutput text={text} />);
-    const tables = container.querySelectorAll("[data-terminal-table]");
-    const table = tables[0] as HTMLElement;
+    const pre = container.querySelector("pre")!;
+    const lines = [...container.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
 
-    expect(tables).toHaveLength(1);
-    expect(table.dataset.terminalTableVariant).toBe("raw");
-    expect(table.className).toContain("overflow-x-auto");
-    expect(table.querySelectorAll("[data-terminal-line]")).toHaveLength(8);
-    expect(table.querySelector("[data-terminal-table-cell]")).toBeNull();
-    expect(table.textContent).toContain("✅ 已完成");
-    expect(table.textContent).toContain("🟡 处理中");
-    expect(container.querySelector("pre")!.textContent).toBe(text);
+    expect(container.querySelector("[data-terminal-table]")).toBeNull();
+    expect(container.querySelector("[data-terminal-table-cell]")).toBeNull();
+    expect(lines.every((line) => !line.classList.contains("terminal-table-line"))).toBe(true);
+    expect(lines.every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
+    expect(pre.className).toContain("whitespace-pre-wrap");
+    expect(pre.className).not.toContain("overflow-x-auto");
+    expect(pre.textContent).toContain("✅ 已完成");
+    expect(pre.textContent).toContain("⚠️ 需确认");
+    expect(pre.textContent).toContain("⏸️ 已暂停");
+    expect(pre.textContent).toBe(text);
   });
 
   it("right-aligns a purely numeric column while keeping its header on the same strategy", () => {

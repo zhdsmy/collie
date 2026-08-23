@@ -218,8 +218,9 @@ function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
 
   // A blank-delimited terminal paragraph is the only boundary that survives after a TUI wraps a
   // Markdown table. Promote the whole paragraph together, never isolated rows. Semantic columns are
-  // safe only when every non-rule line still has exactly the rule's column count; otherwise the TUI
-  // has already wrapped cells and we preserve the complete paragraph as one raw horizontal rail.
+  // safe only when every non-rule line still has exactly the rule's column count. Otherwise the TUI
+  // has already destroyed the cell boundaries, so the paragraph must fall back to ordinary wrapped
+  // terminal text instead of becoming a wide surface the reader has to reconstruct by panning.
   for (let start = 0; start < lines.length; ) {
     if (isBlank(lineText(lines[start]!))) {
       start++;
@@ -242,7 +243,7 @@ function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
         });
         for (let index = start; index < end; index++) {
           flags[index] = {
-            keepSingleRow: true,
+            keepSingleRow: semantic,
             table: true,
             rule: tableRules[index]!,
             semantic,
@@ -571,18 +572,7 @@ export const AnsiOutput = memo(function AnsiOutput({
       let end = li + 1;
       while (end < block.lines.length && tableLines[end]!.table) end++;
       if (!tableLines[li]!.semantic) {
-        const rows: ReactNode[] = [];
-        for (let row = li; row < end; row++) rows.push(renderLine(block.lines[row]!, row));
-        rendered.push(
-          <span
-            key={`table-${li}`}
-            data-terminal-table
-            data-terminal-table-variant="raw"
-            className="my-[0.45em] block max-w-full overflow-x-auto overscroll-x-contain rounded-[6px] border-y border-[#27272a] bg-[#111113] text-[0.92em] leading-[1.4] [touch-action:pan-x_pan-y]"
-          >
-            <span className="block min-w-full w-max px-[0.9em] py-[0.25em]">{rows}</span>
-          </span>,
-        );
+        for (let row = li; row < end; row++) rendered.push(renderLine(block.lines[row]!, row));
         li = end;
         continue;
       }
