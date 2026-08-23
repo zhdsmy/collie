@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.32] - 2026-08-23
+
+### Fixed
+
+- **Terminal tables now preserve Codex-sized columns on one shared horizontal scroll rail.** (f229445)
+
 ## [0.32.0+collie.31] - 2026-08-23
 
 ### Fixed
