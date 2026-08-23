@@ -162,21 +162,32 @@ function preClass(wrap: boolean, className?: string): string {
 // follows the normal narrow-screen wrapping path.
 const TABLE_RULE = new RegExp(`^[${PURE_HORIZONTAL_RULE_GLYPH_CLASS}]+$`);
 
-function tableLineFlags(lines: StyledLine[]): boolean[] {
-  const rules = lines.map((line) => {
+interface TableLineFlags {
+  keepSingleRow: boolean;
+  table: boolean;
+}
+
+function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
+  const tableRules = lines.map((line) => {
     const text = lineText(line).trim();
     const compact = text.replace(/\s/g, "");
-    return line.noWrap || (compact.length >= 20 && /\s/.test(text) && TABLE_RULE.test(compact));
+    return compact.length >= 20 && /\s/.test(text) && TABLE_RULE.test(compact);
   });
-  const flags = [...rules];
+  const table = tableRules.map(() => false);
   for (let i = 0; i < lines.length; i++) {
-    if (!rules[i]) continue;
+    if (!tableRules[i]) continue;
     for (const neighbor of [i - 1, i + 1]) {
       if (neighbor < 0 || neighbor >= lines.length || isBlank(lineText(lines[neighbor]!))) continue;
-      if (/\S\s{2,}\S/.test(lineText(lines[neighbor]!))) flags[neighbor] = true;
+      if (/\S\s{2,}\S/.test(lineText(lines[neighbor]!))) {
+        table[i] = true;
+        table[neighbor] = true;
+      }
     }
   }
-  return flags;
+  return lines.map((line, i) => ({
+    keepSingleRow: Boolean(line.noWrap || table[i]),
+    table: table[i]!,
+  }));
 }
 
 // A real terminal paints backgrounds cell-by-cell across its fixed-width grid. In the wrapped web
@@ -404,54 +415,86 @@ export const AnsiOutput = memo(function AnsiOutput({
     if (bi > 0) offset += 1; // the "\n" separating this block from the previous
     const backgrounds = lineBackgrounds(block.lines);
     const tableLines = tableLineFlags(block.lines);
+    const renderLine = (line: StyledLine, li: number) => {
+      if (li > 0) offset += 1; // the "\n" separating this line from the previous
+      const background = backgrounds[li];
+      const flags = tableLines[li]!;
+      const keepSingleRow = wrap && flags.keepSingleRow;
+      const segNodes = line.segments.map((s, si) => {
+        const segStart = offset;
+        offset += s.text.length;
+        return (
+          <span
+            key={si}
+            data-terminal-segment
+            style={styleFor(s, agent, background === undefined)}
+          >
+            {renderSegment(s.text, segStart)}
+          </span>
+        );
+      });
+      const content = keepSingleRow ? (
+        <span
+          className={cn(
+            "block whitespace-pre",
+            !flags.table &&
+              "max-w-full overflow-x-auto overscroll-x-contain [touch-action:pan-x_pan-y]",
+          )}
+        >
+          {segNodes}
+        </span>
+      ) : (
+        segNodes
+      );
+      return (
+        <Fragment key={li}>
+          {li > 0 ? <span className="hidden">{"\n"}</span> : null}
+          <span
+            data-terminal-line
+            className={cn(
+              "block min-h-[1.25em]",
+              keepSingleRow && "terminal-table-line",
+              wrap ? "w-full" : "min-w-full w-max",
+            )}
+            style={
+              background === undefined
+                ? undefined
+                : { backgroundColor: mirrorBackground(background, agent) }
+            }
+          >
+            {content}
+          </span>
+        </Fragment>
+      );
+    };
+
+    const rendered: ReactNode[] = [];
+    for (let li = 0; li < block.lines.length; ) {
+      if (!wrap || !tableLines[li]!.table) {
+        rendered.push(renderLine(block.lines[li]!, li));
+        li++;
+        continue;
+      }
+      let end = li + 1;
+      while (end < block.lines.length && tableLines[end]!.table) end++;
+      const rows: ReactNode[] = [];
+      for (let row = li; row < end; row++) rows.push(renderLine(block.lines[row]!, row));
+      rendered.push(
+        <span
+          key={`table-${li}`}
+          data-terminal-table
+          className="my-[0.45em] block max-w-full overflow-x-auto overscroll-x-contain rounded-[6px] border-y border-[#27272a] bg-[#111113] py-[0.35em] text-[0.92em] leading-[1.4] [touch-action:pan-x_pan-y]"
+        >
+          <span className="block min-w-full w-max px-[0.7em]">{rows}</span>
+        </span>,
+      );
+      li = end;
+    }
+
     return (
       <Fragment key={bi}>
         {bi > 0 ? <span className="hidden">{"\n"}</span> : null}
-        {block.lines.map((line, li) => {
-          if (li > 0) offset += 1; // the "\n" separating this line from the previous
-          const background = backgrounds[li];
-          const keepSingleRow = wrap && tableLines[li];
-          const segNodes = line.segments.map((s, si) => {
-            const segStart = offset;
-            offset += s.text.length;
-            return (
-              <span
-                key={si}
-                data-terminal-segment
-                style={styleFor(s, agent, background === undefined)}
-              >
-                {renderSegment(s.text, segStart)}
-              </span>
-            );
-          });
-          const content = keepSingleRow ? (
-            <span className="block max-w-full overflow-x-auto overscroll-x-contain whitespace-pre [touch-action:pan-x_pan-y]">
-              {segNodes}
-            </span>
-          ) : (
-            segNodes
-          );
-          return (
-            <Fragment key={li}>
-              {li > 0 ? <span className="hidden">{"\n"}</span> : null}
-              <span
-                data-terminal-line
-                className={cn(
-                  "block min-h-[1.25em]",
-                  keepSingleRow && "terminal-table-line",
-                  wrap ? "w-full" : "min-w-full w-max",
-                )}
-                style={
-                  background === undefined
-                    ? undefined
-                    : { backgroundColor: mirrorBackground(background, agent) }
-                }
-              >
-                {content}
-              </span>
-            </Fragment>
-          );
-        })}
+        {rendered}
       </Fragment>
     );
   };

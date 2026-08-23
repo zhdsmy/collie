@@ -214,11 +214,12 @@ describe("mirror line wrapping", () => {
     const text = [
       "ordinary prose that should still wrap normally",
       "按键     reply 模式行为",
-      "─".repeat(24),
+      `${"─".repeat(8)}   ${"─".repeat(13)}`,
       "方向键   移动输入框光标，必要时本地处理",
     ].join("\n");
     const { container } = render(<AnsiOutput text={text} />);
     const lines = [...container.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
+    const table = container.querySelector("[data-terminal-table]") as HTMLElement;
 
     expect(lines.map((line) => line.classList.contains("terminal-table-line"))).toEqual([
       false,
@@ -226,11 +227,12 @@ describe("mirror line wrapping", () => {
       true,
       true,
     ]);
-    expect(
-      lines
-        .slice(1)
-        .every((line) => line.querySelector("span")?.className.includes("overflow-x-auto")),
-    ).toBe(true);
+    expect(table).toBeInTheDocument();
+    expect(table.className).toContain("overflow-x-auto");
+    expect(table.className).toContain("text-[0.92em]");
+    expect(table.querySelectorAll("[data-terminal-line]")).toHaveLength(3);
+    expect(lines.slice(1).every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
+    expect(container.querySelector("pre")!.textContent).toBe(text);
   });
 });
 
