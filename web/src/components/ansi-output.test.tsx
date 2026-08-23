@@ -210,7 +210,7 @@ describe("mirror line wrapping", () => {
     expect(pannedPre.textContent).toBe(`${border}\n`);
   });
 
-  it("keeps padded rows beside terminal table rules on one horizontal rail", () => {
+  it("keeps a terminal table on one shared horizontal rail", () => {
     const text = [
       "ordinary prose that should still wrap normally",
       "",
@@ -222,33 +222,20 @@ describe("mirror line wrapping", () => {
     const lines = [...container.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
     const table = container.querySelector("[data-terminal-table]") as HTMLElement;
 
-    expect(lines.map((line) => line.classList.contains("terminal-table-line"))).toEqual([
-      false,
-      false,
-      true,
-      false,
-      true,
-    ]);
+    expect(lines.every((line) => !line.classList.contains("terminal-table-line"))).toBe(true);
     expect(table).toBeInTheDocument();
     expect(table.className).toContain("overflow-x-auto");
     expect(table.className).toContain("text-[0.92em]");
     expect(table.querySelectorAll("[data-terminal-line]")).toHaveLength(3);
-    expect(table.querySelector("[data-terminal-table-rule]")).toBeInTheDocument();
-    expect(
-      [...table.querySelectorAll("[data-terminal-table-cell]")].map((cell) =>
-        cell.textContent?.trim(),
-      ),
-    ).toEqual(["按键", "reply 模式行为", "方向键", "移动输入框光标，必要时本地处理"]);
-    expect(
-      [...table.querySelectorAll("[data-terminal-table-cell]")].every((cell) =>
-        cell.classList.contains("text-left"),
-      ),
-    ).toBe(true);
-    expect(lines.slice(1).every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
+    expect(table.dataset.terminalTableVariant).toBe("scroll");
+    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("whitespace-pre");
+    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("w-max");
+    expect(table.querySelector("[data-terminal-table-cell]")).toBeNull();
+    expect(lines.every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
     expect(container.querySelector("pre")!.textContent).toBe(text);
   });
 
-  it("groups a TUI-wrapped emoji table into compact single-viewport records", () => {
+  it("keeps a TUI-wrapped emoji table verbatim on one shared rail", () => {
     const text = [
       "before",
       "",
@@ -280,26 +267,14 @@ describe("mirror line wrapping", () => {
     const pre = container.querySelector("pre")!;
     const table = container.querySelector("[data-terminal-table]") as HTMLElement;
     const lines = [...container.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
-    const records = [...container.querySelectorAll("[data-terminal-table-record]")];
-    const sourceRules = [...container.querySelectorAll("[data-terminal-table-source-rule]")];
 
-    expect(table.dataset.terminalTableVariant).toBe("compact");
-    expect(table.className).not.toContain("overflow-x-auto");
-    expect(table.className).not.toContain("w-max");
+    expect(table.dataset.terminalTableVariant).toBe("scroll");
+    expect(table.className).toContain("overflow-x-auto");
+    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("whitespace-pre");
+    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("w-max");
     expect(container.querySelector("[data-terminal-table-cell]")).toBeNull();
     expect(lines.every((line) => !line.classList.contains("terminal-table-line"))).toBe(true);
     expect(lines.every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
-    expect(records).toHaveLength(7);
-    expect(records[0]).toHaveAttribute("data-terminal-table-header");
-    expect(records[1]!.textContent).toContain("✅ 已完成");
-    expect(records[2]!.textContent).toContain("🟡 处理中");
-    expect(records[3]!.textContent).toContain("⚠️ 需确认");
-    expect(records[4]!.textContent).toContain("⏸️ 已暂停");
-    expect(records[5]!.textContent).toContain("🚀 已部署");
-    expect(records[6]!.textContent).toContain("❌ 失败");
-    expect(container.querySelectorAll("[data-terminal-table-divider]")).toHaveLength(6);
-    expect(sourceRules).toHaveLength(7);
-    expect(sourceRules.every((rule) => (rule as HTMLElement).style.display === "none")).toBe(true);
     expect(pre.className).toContain("whitespace-pre-wrap");
     expect(pre.className).not.toContain("overflow-x-auto");
     expect(table.querySelector("a")?.getAttribute("href")).toBe("https://herdr.dev/table");
@@ -307,32 +282,16 @@ describe("mirror line wrapping", () => {
     expect(pre.textContent).toBe(text);
   });
 
-  it("right-aligns a purely numeric column while keeping its header on the same strategy", () => {
+  it("preserves terminal padding for numeric columns", () => {
     const text = [
       "Name       State     Count",
       `${"─".repeat(8)}   ${"─".repeat(7)}   ${"─".repeat(6)}`,
       "Adapter    Active    12",
     ].join("\n");
     const { container } = render(<AnsiOutput text={text} />);
-    const cells = [...container.querySelectorAll("[data-terminal-table-cell]")] as HTMLElement[];
-
-    expect(cells.map((cell) => cell.textContent?.trim())).toEqual([
-      "Name",
-      "State",
-      "Count",
-      "Adapter",
-      "Active",
-      "12",
-    ]);
-    expect(cells.map((cell) => cell.classList.contains("text-right"))).toEqual([
-      false,
-      false,
-      true,
-      false,
-      false,
-      true,
-    ]);
-    expect(cells[2]!.className).toContain("tabular-nums");
+    const table = container.querySelector("[data-terminal-table]") as HTMLElement;
+    expect(table.textContent).toBe(text);
+    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("whitespace-pre");
   });
 });
 
