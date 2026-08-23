@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.0+collie.29] - 2026-08-23
+
+### Fixed
+
+- **TUI-wrapped tables with lost cell boundaries fall back to readable single-viewport text.** (5bfbe33)
+
 ## [0.32.0+collie.28] - 2026-08-23
 
 ### Fixed
