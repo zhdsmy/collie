@@ -166,6 +166,7 @@ interface TableLineFlags {
   keepSingleRow: boolean;
   table: boolean;
   rule: boolean;
+  semantic: boolean;
 }
 
 interface TableToken {
@@ -208,22 +209,50 @@ const NUMERIC_CELL =
 
 function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
   const tableRules = lines.map((line) => isTableRule(lineText(line)));
-  const table = tableRules.map(() => false);
-  for (let i = 0; i < lines.length; i++) {
-    if (!tableRules[i]) continue;
-    for (const neighbor of [i - 1, i + 1]) {
-      if (neighbor < 0 || neighbor >= lines.length || isBlank(lineText(lines[neighbor]!))) continue;
-      if (/\S\s{2,}\S/.test(lineText(lines[neighbor]!))) {
-        table[i] = true;
-        table[neighbor] = true;
+  const flags = lines.map<TableLineFlags>((line, i) => ({
+    keepSingleRow: Boolean(line.noWrap),
+    table: false,
+    rule: tableRules[i]!,
+    semantic: false,
+  }));
+
+  // A blank-delimited terminal paragraph is the only boundary that survives after a TUI wraps a
+  // Markdown table. Promote the whole paragraph together, never isolated rows. Semantic columns are
+  // safe only when every non-rule line still has exactly the rule's column count; otherwise the TUI
+  // has already wrapped cells and we preserve the complete paragraph as one raw horizontal rail.
+  for (let start = 0; start < lines.length; ) {
+    if (isBlank(lineText(lines[start]!))) {
+      start++;
+      continue;
+    }
+    let end = start + 1;
+    while (end < lines.length && !isBlank(lineText(lines[end]!))) end++;
+    const indexes = Array.from({ length: end - start }, (_, relative) => start + relative);
+    const ruleIndexes = indexes.filter((index) => tableRules[index]);
+    if (ruleIndexes.length > 0) {
+      const columnCount = tableCells(lineText(lines[ruleIndexes[0]!]!)).length;
+      const hasMatchingRow = indexes.some(
+        (index) =>
+          !tableRules[index] && tableCells(lineText(lines[index]!)).length === columnCount,
+      );
+      if (hasMatchingRow) {
+        const semantic = indexes.every((index) => {
+          const cells = tableCells(lineText(lines[index]!));
+          return cells.length === columnCount;
+        });
+        for (let index = start; index < end; index++) {
+          flags[index] = {
+            keepSingleRow: true,
+            table: true,
+            rule: tableRules[index]!,
+            semantic,
+          };
+        }
       }
     }
+    start = end;
   }
-  return lines.map((line, i) => ({
-    keepSingleRow: Boolean(line.noWrap || table[i]),
-    table: table[i]!,
-    rule: tableRules[i]!,
-  }));
+  return flags;
 }
 
 // A real terminal paints backgrounds cell-by-cell across its fixed-width grid. In the wrapped web
@@ -541,6 +570,22 @@ export const AnsiOutput = memo(function AnsiOutput({
       }
       let end = li + 1;
       while (end < block.lines.length && tableLines[end]!.table) end++;
+      if (!tableLines[li]!.semantic) {
+        const rows: ReactNode[] = [];
+        for (let row = li; row < end; row++) rows.push(renderLine(block.lines[row]!, row));
+        rendered.push(
+          <span
+            key={`table-${li}`}
+            data-terminal-table
+            data-terminal-table-variant="raw"
+            className="my-[0.45em] block max-w-full overflow-x-auto overscroll-x-contain rounded-[6px] border-y border-[#27272a] bg-[#111113] text-[0.92em] leading-[1.4] [touch-action:pan-x_pan-y]"
+          >
+            <span className="block min-w-full w-max px-[0.9em] py-[0.25em]">{rows}</span>
+          </span>,
+        );
+        li = end;
+        continue;
+      }
       const ruleIndex = tableLines.slice(li, end).findIndex((flags) => flags.rule) + li;
       const columnCount = tableCells(lineText(block.lines[ruleIndex]!)).length;
       const contentRows = block.lines

@@ -213,6 +213,7 @@ describe("mirror line wrapping", () => {
   it("keeps padded rows beside terminal table rules on one horizontal rail", () => {
     const text = [
       "ordinary prose that should still wrap normally",
+      "",
       "按键     reply 模式行为",
       `${"─".repeat(8)}   ${"─".repeat(13)}`,
       "方向键   移动输入框光标，必要时本地处理",
@@ -222,6 +223,7 @@ describe("mirror line wrapping", () => {
     const table = container.querySelector("[data-terminal-table]") as HTMLElement;
 
     expect(lines.map((line) => line.classList.contains("terminal-table-line"))).toEqual([
+      false,
       false,
       true,
       false,
@@ -243,6 +245,35 @@ describe("mirror line wrapping", () => {
       ),
     ).toBe(true);
     expect(lines.slice(1).every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
+    expect(container.querySelector("pre")!.textContent).toBe(text);
+  });
+
+  it("keeps a TUI-wrapped emoji table together as one raw rail instead of parsing fragments", () => {
+    const text = [
+      "before",
+      "",
+      "状态       模块          说明",
+      "数量",
+      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      "─".repeat(42),
+      "✅ 已完成   Terminal Table   文本列很长，已经被终端换行",
+      "128                 单元格的结构稳定。",
+      `${"─".repeat(8)}   ${"─".repeat(12)}   ${"─".repeat(10)}`,
+      "🟡 处理中   Composer       English to test wrapping behavior",
+      "",
+      "after",
+    ].join("\n");
+    const { container } = render(<AnsiOutput text={text} />);
+    const tables = container.querySelectorAll("[data-terminal-table]");
+    const table = tables[0] as HTMLElement;
+
+    expect(tables).toHaveLength(1);
+    expect(table.dataset.terminalTableVariant).toBe("raw");
+    expect(table.className).toContain("overflow-x-auto");
+    expect(table.querySelectorAll("[data-terminal-line]")).toHaveLength(8);
+    expect(table.querySelector("[data-terminal-table-cell]")).toBeNull();
+    expect(table.textContent).toContain("✅ 已完成");
+    expect(table.textContent).toContain("🟡 处理中");
     expect(container.querySelector("pre")!.textContent).toBe(text);
   });
 
