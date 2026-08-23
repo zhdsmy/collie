@@ -25,7 +25,6 @@ import {
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks } from "@/lib/links";
 import { displayClusters } from "@/lib/text-width";
-import { PURE_HORIZONTAL_RULE_GLYPH_CLASS } from "@/lib/rule-glyphs";
 import { PromptSelectBlock, type PromptBlockAction } from "@/components/prompt-select-block";
 import { WizardBlock } from "@/components/wizard-block";
 import { PreviewSelectBlock, type PreviewBlockAction } from "@/components/preview-select-block";
@@ -155,89 +154,6 @@ function preClass(wrap: boolean, className?: string): string {
         "min-w-0 w-full max-w-full shrink-0 whitespace-pre overflow-x-auto overscroll-x-contain [touch-action:pan-x_pan-y]",
     className,
   );
-}
-
-// A terminal table is wider than a phone, but wrapping its padded columns makes the rows
-// unreadable. Keep only rows adjacent to a horizontal rule horizontally scrollable; prose still
-// follows the normal narrow-screen wrapping path.
-const TABLE_RULE = new RegExp(`^[${PURE_HORIZONTAL_RULE_GLYPH_CLASS}]+$`);
-
-interface TableLineFlags {
-  keepSingleRow: boolean;
-  table: boolean;
-}
-
-interface TableToken {
-  kind: "cell" | "gap";
-  text: string;
-  start: number;
-  end: number;
-}
-
-function tableTokens(text: string): TableToken[] {
-  const pieces = text.split(/(\s{2,})/);
-  let start = 0;
-  return pieces.map((piece) => {
-    const token: TableToken = {
-      kind: /^\s{2,}$/.test(piece) ? "gap" : "cell",
-      text: piece,
-      start,
-      end: start + piece.length,
-    };
-    start = token.end;
-    return token;
-  });
-}
-
-function tableCells(text: string): TableToken[] {
-  return tableTokens(text).filter((token) => token.kind === "cell" && token.text.trim().length > 0);
-}
-
-function isTableRuleGlyphLine(text: string): boolean {
-  const glyphs = text.replace(/\s/g, "");
-  return glyphs.length >= 16 && TABLE_RULE.test(glyphs);
-}
-
-function tableLineFlags(lines: StyledLine[]): TableLineFlags[] {
-  // Codex TUI may leave one or more spaces between rule runs. Rules identify the surrounding
-  // blank-delimited table; its own terminal padding already carries the correct column widths.
-  const tableRules = lines.map((line) => isTableRuleGlyphLine(lineText(line)));
-  const flags = lines.map<TableLineFlags>((line) => ({
-    keepSingleRow: Boolean(line.noWrap),
-    table: false,
-  }));
-
-  // A blank-delimited terminal paragraph is the only table boundary that survives pane.read. Keep
-  // the whole paragraph on one horizontal rail: browser reflow would destroy the padding that keeps
-  // wrapped cell continuations under their original columns.
-  for (let start = 0; start < lines.length; ) {
-    if (isBlank(lineText(lines[start]!))) {
-      start++;
-      continue;
-    }
-    let end = start + 1;
-    while (end < lines.length && !isBlank(lineText(lines[end]!))) end++;
-    const indexes = Array.from({ length: end - start }, (_, relative) => start + relative);
-    const ruleIndexes = indexes.filter((index) => tableRules[index]);
-    if (ruleIndexes.length > 0) {
-      const columnCount = tableCells(lineText(lines[ruleIndexes[0]!]!)).length;
-      const hasContentRow = indexes.some(
-        (index) => !tableRules[index] && !isBlank(lineText(lines[index]!)),
-      );
-      // A lone long border beside prose is ordinary terminal output, not a table. Structurally lost
-      // tables have repeated rule rows; an intact table may have one multi-column rule row.
-      if (hasContentRow && (columnCount >= 2 || ruleIndexes.length >= 2)) {
-        for (let index = start; index < end; index++) {
-          flags[index] = {
-            keepSingleRow: false,
-            table: true,
-          };
-        }
-      }
-    }
-    start = end;
-  }
-  return flags;
 }
 
 // A real terminal paints backgrounds cell-by-cell across its fixed-width grid. In the wrapped web
@@ -464,95 +380,50 @@ export const AnsiOutput = memo(function AnsiOutput({
   const renderBlock = (block: RawBlock, bi: number) => {
     if (bi > 0) offset += 1; // the "\n" separating this block from the previous
     const backgrounds = lineBackgrounds(block.lines);
-    const tableLines = tableLineFlags(block.lines);
-    const renderLine = (line: StyledLine, li: number) => {
-      if (li > 0) offset += 1; // the "\n" separating this line from the previous
-      const background = backgrounds[li];
-      const flags = tableLines[li]!;
-      const keepSingleRow = wrap && flags.keepSingleRow;
-      const segNodes = line.segments.map((s, si) => {
-        const segStart = offset;
-        offset += s.text.length;
-        return (
-          <span
-            key={si}
-            data-terminal-segment
-            style={styleFor(s, agent, background === undefined)}
-          >
-            {renderSegment(s.text, segStart)}
-          </span>
-        );
-      });
-      const content = keepSingleRow ? (
-        <span
-          className={cn(
-            "block whitespace-pre",
-            !flags.table &&
-              "max-w-full overflow-x-auto overscroll-x-contain [touch-action:pan-x_pan-y]",
-          )}
-        >
-          {segNodes}
-        </span>
-      ) : (
-        segNodes
-      );
-      return (
-        <Fragment key={li}>
-          {li > 0 ? <span className="hidden">{"\n"}</span> : null}
-          <span
-            data-terminal-line
-            className={cn(
-              "block min-h-[1.25em]",
-              keepSingleRow && "terminal-table-line",
-              wrap ? "w-full" : "min-w-full w-max",
-            )}
-            style={
-              background === undefined
-                ? undefined
-                : { backgroundColor: mirrorBackground(background, agent) }
-            }
-          >
-            {content}
-          </span>
-        </Fragment>
-      );
-    };
-
-    const rendered: ReactNode[] = [];
-    for (let li = 0; li < block.lines.length; ) {
-      if (!wrap || !tableLines[li]!.table) {
-        rendered.push(renderLine(block.lines[li]!, li));
-        li++;
-        continue;
-      }
-      let end = li + 1;
-      while (end < block.lines.length && tableLines[end]!.table) end++;
-      const rows: ReactNode[] = [];
-      for (let row = li; row < end; row++) {
-        rows.push(renderLine(block.lines[row]!, row));
-      }
-      rendered.push(
-        <span
-          key={`table-${li}`}
-          data-terminal-table
-          data-terminal-table-variant="scroll"
-          className="my-[0.45em] block max-w-full overflow-x-auto overscroll-x-contain rounded-[6px] border-y border-[#27272a] bg-[#111113] text-[0.92em] leading-[1.4] [touch-action:pan-x_pan-y]"
-        >
-          <span
-            data-terminal-table-rail
-            className="block min-w-full w-max whitespace-pre px-[0.9em] py-[0.25em]"
-          >
-            {rows}
-          </span>
-        </span>,
-      );
-      li = end;
-    }
-
     return (
       <Fragment key={bi}>
         {bi > 0 ? <span className="hidden">{"\n"}</span> : null}
-        {rendered}
+        {block.lines.map((line, li) => {
+          if (li > 0) offset += 1; // the "\n" separating this line from the previous
+          const background = backgrounds[li];
+          const segNodes = line.segments.map((s, si) => {
+            const segStart = offset;
+            offset += s.text.length;
+            return (
+              <span
+                key={si}
+                data-terminal-segment
+                style={styleFor(s, agent, background === undefined)}
+              >
+                {renderSegment(s.text, segStart)}
+              </span>
+            );
+          });
+          const content = line.noWrap && wrap ? (
+            <span className="inline-block max-w-full overflow-hidden align-bottom whitespace-pre break-normal">{segNodes}</span>
+          ) : (
+            segNodes
+          );
+          return (
+            <Fragment key={li}>
+              {li > 0 ? <span className="hidden">{"\n"}</span> : null}
+              <span
+                data-terminal-line
+                className={cn(
+                  "block min-h-[1.25em]",
+                  wrap ? "w-full" : "min-w-full w-max",
+                )}
+                style={
+                  background === undefined
+                    ? undefined
+                    : { backgroundColor: mirrorBackground(background, agent) }
+                }
+              >
+                {content}
+              </span>
+            </Fragment>
+          );
+        })}
       </Fragment>
     );
   };

@@ -172,18 +172,21 @@ describe("mirror line wrapping", () => {
     expect(container.querySelector("pre")!.textContent).toBe("中文 prose");
   });
 
-  it("keeps a marked ANSI border on one horizontal rail without changing its text, styles, links, or find offsets", () => {
+  it("keeps a marked ANSI border to one clipped row without changing its text, styles, links, or find offsets", () => {
     const border = `  ${"─".repeat(20)}  `;
     const text = `ordinary prose\n${ESC}[41m${border.slice(0, 12)}${ESC}[44m${border.slice(12)}${ESC}[0m\nsee https://herdr.dev/docs\n`;
     const { container } = render(<AnsiOutput text={text} query="───" />);
     const pre = container.querySelector("pre")!;
-    const line = pre.querySelector("[data-terminal-line].terminal-table-line")!;
-    const clipped = line.querySelector("span")!;
+    const clipped = pre.querySelector("span.inline-block")!;
 
     expect(clipped.className).toContain("max-w-full");
-    expect(clipped.className).toContain("overflow-x-auto");
-    expect(clipped.className).toContain("block");
+    expect(clipped.className).toContain("overflow-hidden");
+    // `overflow-hidden` gives an inline-block a bottom-edge baseline; align it to the line box's
+    // bottom so the border keeps the terminal grid's one-row line advance.
+    expect(clipped.className).toContain("align-bottom");
     expect(clipped.className).toContain("whitespace-pre");
+    expect(clipped.className).not.toContain("whitespace-nowrap");
+    expect(clipped.className).toContain("break-normal");
     expect(clipped.textContent).toBe(border);
     expect(clipped.children).toHaveLength(2);
     expect((clipped.children[0] as HTMLElement).style.backgroundColor).toBe("var(--ansi-1)");
@@ -193,105 +196,21 @@ describe("mirror line wrapping", () => {
     expect(pre.textContent).toBe(`ordinary prose\n${border}\nsee https://herdr.dev/docs\n`);
   });
 
-  it("keeps a plain border on one rail while wrapping, leaving ordinary output and wrap-off panning alone", () => {
+  it("clips a plain border only while wrapping, leaving ordinary output and wrap-off panning alone", () => {
     const border = `  ${"─".repeat(20)}  `;
     const { container: plain } = render(<AnsiOutput text={`${border}\n`} />);
-    expect(plain.querySelector(".terminal-table-line span")?.textContent).toBe(border);
+    expect(plain.querySelector("span.inline-block")?.textContent).toBe(border);
 
     const { container: wrapped } = render(<AnsiOutput text={`unbroken-${"x".repeat(40)}\n`} />);
     const wrappedPre = wrapped.querySelector("pre")!;
     expect(wrappedPre.className).toContain("break-words");
-    expect(wrappedPre.querySelector(".terminal-table-line")).toBeNull();
+    expect(wrappedPre.querySelector("span.inline-block")).toBeNull();
 
     const { container: panned } = render(<AnsiOutput text={`${border}\n`} wrap={false} />);
     const pannedPre = panned.querySelector("pre")!;
     expect(pannedPre.className).toContain("overflow-x-auto");
-    expect(pannedPre.querySelector(".terminal-table-line")).toBeNull();
+    expect(pannedPre.querySelector("span.inline-block")).toBeNull();
     expect(pannedPre.textContent).toBe(`${border}\n`);
-  });
-
-  it("keeps a terminal table on one shared horizontal rail", () => {
-    const text = [
-      "ordinary prose that should still wrap normally",
-      "",
-      "按键     reply 模式行为",
-      `${"─".repeat(8)}   ${"─".repeat(13)}`,
-      "方向键   移动输入框光标，必要时本地处理",
-    ].join("\n");
-    const { container } = render(<AnsiOutput text={text} />);
-    const lines = [...container.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
-    const table = container.querySelector("[data-terminal-table]") as HTMLElement;
-
-    expect(lines.every((line) => !line.classList.contains("terminal-table-line"))).toBe(true);
-    expect(table).toBeInTheDocument();
-    expect(table.className).toContain("overflow-x-auto");
-    expect(table.className).toContain("text-[0.92em]");
-    expect(table.querySelectorAll("[data-terminal-line]")).toHaveLength(3);
-    expect(table.dataset.terminalTableVariant).toBe("scroll");
-    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("whitespace-pre");
-    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("w-max");
-    expect(table.querySelector("[data-terminal-table-cell]")).toBeNull();
-    expect(lines.every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
-    expect(container.querySelector("pre")!.textContent).toBe(text);
-  });
-
-  it("keeps a TUI-wrapped emoji table verbatim on one shared rail", () => {
-    const text = [
-      "before",
-      "",
-      "状态       模块          说明",
-      "数量",
-      `${"━".repeat(8)} ${"━".repeat(12)} ${"━".repeat(10)}`,
-      "─".repeat(42),
-      "✅ 已完成   Terminal Table   文本列保持左对齐，数字列使用等宽数字",
-      "128                 单元格的结构稳定。",
-      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
-      "🟡 处理中   Composer       正在检查输入法、软键盘、安全区和底部布局",
-      "9,876               English to test wrapping behavior at https://herdr.dev/table.",
-      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
-      "⚠️ 需确认   Agent 命令     带有 ↩︎ 标记的命令需要先精准定位输入区",
-      "42                  并保留用户当前输入。",
-      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
-      "⏸️ 已暂停   Goal           目标暂停后保留上下文、当前进度和待办。",
-      "3",
-      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
-      "🚀 已部署   Collie         v0.32.0+collie.29 已构建并部署到 macOS。",
-      "24,567",
-      `${"─".repeat(8)} ${"─".repeat(12)} ${"─".repeat(10)}`,
-      "❌ 失败     Network / API  ECONNREFUSED，需要区分启动竞争和服务未监听。",
-      "127.0.0.1:8788      0",
-      "",
-      "after",
-    ].join("\n");
-    const { container } = render(<AnsiOutput text={text} query="wrapping behavior" />);
-    const pre = container.querySelector("pre")!;
-    const table = container.querySelector("[data-terminal-table]") as HTMLElement;
-    const lines = [...container.querySelectorAll("[data-terminal-line]")] as HTMLElement[];
-
-    expect(table.dataset.terminalTableVariant).toBe("scroll");
-    expect(table.className).toContain("overflow-x-auto");
-    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("whitespace-pre");
-    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("w-max");
-    expect(container.querySelector("[data-terminal-table-cell]")).toBeNull();
-    expect(lines.every((line) => !line.classList.contains("terminal-table-line"))).toBe(true);
-    expect(lines.every((line) => !line.innerHTML.includes("overflow-x-auto"))).toBe(true);
-    expect(pre.className).toContain("whitespace-pre-wrap");
-    expect(pre.className).not.toContain("overflow-x-auto");
-    expect(table.querySelector("a")?.getAttribute("href")).toBe("https://herdr.dev/table");
-    expect(table.querySelector("[data-find-match]")?.textContent).toBe("wrapping behavior");
-    expect(pre.textContent).toBe(text);
-  });
-
-  it("preserves terminal padding for numeric columns", () => {
-    const text = [
-      "Name       State     Count",
-      `${"─".repeat(8)}   ${"─".repeat(7)}   ${"─".repeat(6)}`,
-      "Adapter    Active    12",
-    ].join("\n");
-    const { container } = render(<AnsiOutput text={text} />);
-    const table = container.querySelector("[data-terminal-table]") as HTMLElement;
-    expect(table.textContent).toBe(text);
-    expect(table.querySelector("[data-terminal-table-rail]")?.className).toContain("whitespace-pre");
   });
 });
 
