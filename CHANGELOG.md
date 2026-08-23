@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.32.1+collie.1] - 2026-08-23
+
+### Fixed
+
+- **Imported upstream `v0.32.1`: `url`, `status`, and `qr` now honor `COLLIE_PUBLIC_URL`.** (#122, 859610d)
+
 ## [0.32.0+collie.33] - 2026-08-23
 
 ### Changed
