@@ -3,7 +3,20 @@ import type { ChangeEvent, ClipboardEvent, ReactNode } from "react";
 import type { TFunction } from "i18next";
 import { useRevalidator } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Check, ImagePlus, Keyboard, Loader2, Send, Settings2, Slash, Terminal, X, Zap } from "lucide-react";
+import {
+  Check,
+  ImagePlus,
+  Keyboard,
+  Loader2,
+  Maximize2,
+  Minimize2,
+  Send,
+  Settings2,
+  Slash,
+  Terminal,
+  X,
+  Zap,
+} from "lucide-react";
 
 import type { DisplayPrefs } from "@/hooks/use-display-prefs";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
@@ -203,6 +216,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // pane view is keyed by paneId, so without this, stepping over to another tab mid-reply ate the
   // message. Lazy initialiser so the restore happens on the mount, before first paint.
   const [input, setInput] = useState(() => loadDraft(session, paneId) ?? "");
+  const [inputExpanded, setInputExpanded] = useState(false);
   // Mirror of `input` for the write-through path: updateInput needs the previous value to apply a
   // functional update AND to persist the result, without either reading stale state or doing the
   // save inside a (double-invoked) state updater.
@@ -247,6 +261,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     const restored = loadDraft(session, paneId) ?? "";
     inputValueRef.current = restored;
     setInput(restored);
+    setInputExpanded(false);
     noticeNoEcho(null); // it described the pane we just left
   }, [session, paneId]);
   const [sending, setSending] = useState(false);
@@ -566,6 +581,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         // Phone-owned input — cleared once the reply is on its way. Via updateInput, so the stored
         // draft goes with it (an empty value removes the key).
         if (isDraft) updateInput("");
+        setInputExpanded(false);
         // Remember what/when we sent, so the next few polls recognise this text echoing on the "❯"
         // line as our own in-flight reply rather than a stranded draft (suppressEcho above).
         lastSentRef.current = { text: t, at: Date.now() };
@@ -858,6 +874,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               // Close whatever dock is open first: the mode needs the phone keyboard, and a dock
               // holding half the viewport is in its way.
               requestDrawer(null);
+              setInputExpanded(false);
               direct.activate();
             }}
           >
@@ -944,6 +961,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                     // any draft is present, which would make the offered remedy fail on the spot.
                     updateInput("");
                     requestDrawer(null);
+                    setInputExpanded(false);
                     direct.activate();
                   }
             }
@@ -1019,33 +1037,60 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               // matters: a textarea is inline-level by default, so the wrapper inherits a few px of
               // baseline gap beneath it and the absolutely-positioned button hangs past the field's
               // bottom edge.
-              "block pr-11",
+              "block",
+              direct.active ? "pr-11" : "pr-[5.25rem]",
+              inputExpanded &&
+                "h-[clamp(10rem,40dvh,20rem)] max-h-[clamp(10rem,40dvh,20rem)] overflow-y-auto [field-sizing:fixed]",
               direct.active &&
                 "border-primary focus-visible:border-primary focus-visible:ring-primary/30",
             )}
-            style={keyboardOpen ? { maxHeight: "5.75rem", overflowY: "auto" } : undefined}
+            style={
+              !inputExpanded && keyboardOpen
+                ? { maxHeight: "5.75rem", overflowY: "auto" }
+                : undefined
+            }
             disabled={locked}
             rows={1}
           />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              // bottom-1, not centred: the field grows upward as the draft wraps, and a vertically
-              // centred button would drift up with it, away from the thumb and away from the send
-              // button it pairs with. Pinned to the bottom it stays put at any height.
-              className="absolute bottom-1 right-1 size-9 rounded-full text-muted-foreground"
-              disabled={uploading || locked || direct.active}
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={() => fileRef.current?.click()}
-              aria-label={translate("composer.attachImage")}
-            >
-              {uploading ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <ImagePlus className="size-4" />
+            {/* Keep both field tools pinned to the thumb-side bottom edge while the textarea grows. */}
+            <div className="absolute bottom-1 right-1 flex items-center">
+              {!direct.active && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 rounded-full text-muted-foreground"
+                  onPointerDown={(e) => e.preventDefault()}
+                  onClick={() => setInputExpanded((expanded) => !expanded)}
+                  aria-label={translate(
+                    inputExpanded ? "composer.collapseInput" : "composer.expandInput",
+                  )}
+                  aria-expanded={inputExpanded}
+                >
+                  {inputExpanded ? (
+                    <Minimize2 className="size-4" />
+                  ) : (
+                    <Maximize2 className="size-4" />
+                  )}
+                </Button>
               )}
-            </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9 rounded-full text-muted-foreground"
+                disabled={uploading || locked || direct.active}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={() => fileRef.current?.click()}
+                aria-label={translate("composer.attachImage")}
+              >
+                {uploading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="size-4" />
+                )}
+              </Button>
+            </div>
           </div>
           {!direct.active && forcingSend ? (
             // The pre-flight refused and the user is being offered the override. Labelled for what it

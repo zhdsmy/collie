@@ -1891,6 +1891,36 @@ describe("Composer — quick keys / image attach", () => {
     await user.click(attach); // clickable without throwing (opens the hidden file input)
   });
 
+  it("expands the reply field in place and can collapse it again", async () => {
+    const user = userEvent.setup();
+    renderComposer({ keyboardOpen: true });
+    const box = screen.getByPlaceholderText(/type a reply/i);
+
+    const expand = screen.getByRole("button", { name: "Expand input" });
+    expect(expand).toHaveAttribute("aria-expanded", "false");
+    expect(box).toHaveStyle({ maxHeight: "5.75rem" });
+
+    await user.click(expand);
+    expect(screen.getByRole("button", { name: "Collapse input" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(box).toHaveClass(
+      "h-[clamp(10rem,40dvh,20rem)]",
+      "max-h-[clamp(10rem,40dvh,20rem)]",
+      "overflow-y-auto",
+      "[field-sizing:fixed]",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Collapse input" }));
+    expect(screen.getByRole("button", { name: "Expand input" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(box).not.toHaveClass("h-[clamp(10rem,40dvh,20rem)]", "[field-sizing:fixed]");
+    expect(box).toHaveStyle({ maxHeight: "5.75rem" });
+  });
+
   it("does not render digit shortcut buttons because the phone keyboard already supplies them", () => {
     renderComposer();
     for (const d of ["1", "2", "3", "4", "5"]) {
