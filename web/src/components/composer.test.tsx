@@ -1418,7 +1418,7 @@ describe("Composer — destructive-input confirm", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
     const confirm = screen.getByRole("button", { name: /really send/i });
     expect(confirm).toBeInTheDocument();
-    expect(box.parentElement).toContainElement(confirm);
+    expect(box.closest('[data-slot="composer-input-frame"]')).toContainElement(confirm);
     expect(box).toHaveClass("pr-[9rem]");
     expect(box).toHaveValue("rm -rf node_modules"); // draft kept
     expect(props.onSent).not.toHaveBeenCalled();
@@ -1895,11 +1895,16 @@ describe("Composer — quick keys / image attach", () => {
     // The attach button now lives on the always-visible reply-input row instead of the strip.
     const attach = screen.getByRole("button", { name: "Attach image" });
     const send = screen.getByRole("button", { name: "Send" });
-    expect(box.parentElement).toHaveClass("relative", "w-full");
-    expect(box.parentElement).toContainElement(attach);
-    expect(box.parentElement).toContainElement(send);
-    expect(box).toHaveClass("leading-6", "py-[9px]", "pr-[7.25rem]");
-    expect(box).toHaveStyle({ maxHeight: "5.75rem", overflowY: "auto" });
+    const frame = box.closest('[data-slot="composer-input-frame"]');
+    const viewport = box.parentElement;
+    const actions = send.parentElement;
+    expect(frame).toHaveClass("relative", "w-full");
+    expect(frame).toContainElement(attach);
+    expect(frame).toContainElement(send);
+    expect(viewport).toHaveClass("py-[9px]");
+    expect(actions).toHaveClass("absolute", "bottom-[3px]", "right-[3px]");
+    expect(box).toHaveClass("min-h-6", "leading-6", "py-0", "pr-[7.25rem]");
+    expect(box).toHaveStyle({ maxHeight: "4.5rem", overflowY: "auto" });
     expect(send).toHaveClass("size-9");
     expect(send).toHaveClass("hover:bg-accent");
     expect(send).not.toHaveClass("bg-primary");
@@ -1911,36 +1916,35 @@ describe("Composer — quick keys / image attach", () => {
     const user = userEvent.setup();
     renderComposer({ keyboardOpen: true });
     const box = screen.getByPlaceholderText(/type a reply/i);
+    const frame = box.closest('[data-slot="composer-input-frame"]');
 
     const expand = screen.getByRole("button", { name: "Expand input" });
     expect(expand).toHaveAttribute("aria-expanded", "false");
-    expect(box).toHaveStyle({ maxHeight: "5.75rem" });
+    expect(box).toHaveStyle({ maxHeight: "4.5rem" });
 
     await user.click(expand);
+    const actions = screen.getByRole("button", { name: "Send" }).parentElement;
     expect(screen.getByRole("button", { name: "Collapse input" })).toHaveAttribute(
       "aria-expanded",
       "true",
     );
-    expect(box).toHaveClass(
-      "h-[clamp(10rem,40dvh,20rem)]",
-      "max-h-[clamp(10rem,40dvh,20rem)]",
-      "overflow-y-auto",
-      "[field-sizing:fixed]",
-      "pr-[7.25rem]",
-    );
-    expect(box).not.toHaveClass("pb-12", "pr-3");
-    expect(box.parentElement).toContainElement(screen.getByRole("button", { name: "Send" }));
+    expect(frame).toHaveClass("flex", "h-[clamp(10rem,40dvh,20rem)]", "flex-col");
+    expect(box).toHaveClass("h-full", "max-h-none", "[field-sizing:fixed]", "pr-3");
+    expect(actions).toHaveClass("h-[42px]", "border-t");
+    expect(actions).not.toHaveClass("absolute");
+    expect(frame).toContainElement(screen.getByRole("button", { name: "Send" }));
 
     await user.click(screen.getByRole("button", { name: "Collapse input" }));
     expect(screen.getByRole("button", { name: "Expand input" })).toHaveAttribute(
       "aria-expanded",
       "false",
     );
-    expect(box).not.toHaveClass("h-[clamp(10rem,40dvh,20rem)]", "[field-sizing:fixed]");
-    expect(box).toHaveStyle({ maxHeight: "5.75rem" });
+    expect(frame).not.toHaveClass("flex", "h-[clamp(10rem,40dvh,20rem)]");
+    expect(box).not.toHaveClass("h-full", "[field-sizing:fixed]");
+    expect(box).toHaveStyle({ maxHeight: "4.5rem" });
   });
 
-  it("grows through three rows then scrolls without entering the action gutter", async () => {
+  it("caps text at three exact rows and moves actions out of the scrollport", async () => {
     const user = userEvent.setup();
     renderComposer({ keyboardOpen: true });
     const box = screen.getByPlaceholderText(/type a reply/i);
@@ -1950,12 +1954,15 @@ describe("Composer — quick keys / image attach", () => {
     expect(box).toHaveClass(
       "field-sizing-content",
       "leading-6",
-      "py-[9px]",
-      "pr-[7.25rem]",
+      "py-0",
+      "pr-3",
     );
-    expect(box).not.toHaveClass("pb-12", "pr-3");
-    expect(box).toHaveStyle({ maxHeight: "5.75rem", overflowY: "auto" });
-    expect(screen.queryByTestId("composer-scroll-top-mask")).not.toBeInTheDocument();
+    expect(box).not.toHaveClass("pr-[7.25rem]");
+    expect(box.parentElement).toHaveClass("py-[9px]");
+    expect(box).toHaveStyle({ maxHeight: "4.5rem", overflowY: "auto" });
+    const actions = screen.getByRole("button", { name: "Send" }).parentElement;
+    expect(actions).toHaveClass("h-[42px]", "border-t");
+    expect(actions).not.toHaveClass("absolute");
   });
 
   it("does not render digit shortcut buttons because the phone keyboard already supplies them", () => {

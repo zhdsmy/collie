@@ -217,6 +217,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // message. Lazy initialiser so the restore happens on the mount, before first paint.
   const [input, setInput] = useState(() => loadDraft(session, paneId) ?? "");
   const [inputExpanded, setInputExpanded] = useState(false);
+  const [inputNeedsActionRow, setInputNeedsActionRow] = useState(false);
   // Mirror of `input` for the write-through path: updateInput needs the previous value to apply a
   // functional update AND to persist the result, without either reading stale state or doing the
   // save inside a (double-invoked) state updater.
@@ -672,6 +673,30 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const confirmingSend = sendConfirm.pending === "send";
   const forcingSend = forceConfirm.pending === "force";
 
+  // A native textarea cannot wrap around buttons. Keep the compact one-line rail inline, then move
+  // the rail into its own in-frame row once that lane wraps. Measure using inline-mode padding even
+  // while the row is active so the two layouts cannot oscillate.
+  useLayoutEffect(() => {
+    const field = inputRef.current;
+    if (!field || direct.active) {
+      setInputNeedsActionRow(false);
+      return;
+    }
+    if (inputExpanded) return;
+
+    const previousRight = field.style.paddingRight;
+    field.style.paddingRight = forcingSend || confirmingSend ? "9rem" : "7.25rem";
+
+    const style = getComputedStyle(field);
+    const lineHeight = Number.parseFloat(style.lineHeight) || 24;
+    const needsRow = field.value.includes("\n") || field.scrollHeight > lineHeight + 0.5;
+
+    field.style.paddingRight = previousRight;
+    setInputNeedsActionRow(needsRow);
+  }, [confirmingSend, direct.active, forcingSend, input, inputExpanded]);
+
+  const inputUsesActionRow = !direct.active && (inputExpanded || inputNeedsActionRow);
+
   // Coalesce revalidations from a burst of key presses, LEADING edge first: the first press in a
   // burst refetches immediately, and only presses that arrive inside the window collapse into one
   // trailing refetch. It used to be trailing-only, which meant a lone press — the common case — sat
@@ -989,66 +1014,86 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             {translate("composer.tooLongDraft")}
           </p>
         )}
-          {/* A permanent right gutter keeps every scrolled line clear of the action rail. */}
-        <div className="relative min-w-0 w-full">
-          <ChatInput
-            ref={inputRef}
-            value={direct.active ? direct.value : input}
-            onChange={direct.active ? direct.onChange : (e) => updateInput(e.target.value)}
-            onCompositionStart={direct.active ? direct.onCompositionStart : undefined}
-            onCompositionEnd={direct.active ? direct.onCompositionEnd : undefined}
-            onKeyDown={
-              direct.active
-                ? direct.onKeyDown
-                : (e) => {
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                      e.preventDefault();
-                      onSendClick();
-                    }
-                  }
-            }
-            onPaste={onPasteImage}
-            placeholder={
-              gone
-                ? translate("composer.paneGone")
-                : readOnly
-                  ? translate("composer.placeholderReadOnly")
-                  : direct.active
-                    ? translate("composer.placeholderDirect")
-                    : isShell
-                      ? translate("composer.placeholderShell")
-                      : translate("composer.placeholderReply")
-            }
-            autoCorrect={direct.active ? "off" : undefined}
-            spellCheck={direct.active ? false : undefined}
+          {/* Text scrolls independently of the in-frame action row, so padding never becomes a
+              fourth visible line and upper lines can use the full field width. */}
+          <div
+            data-slot="composer-input-frame"
             className={cn(
-                // One row is 44px including the border; every line shares the same centred line box.
-                "block overflow-y-auto py-[9px] leading-6",
-                direct.active
-                  ? "pr-12"
-                  : forcingSend || confirmingSend
-                    ? "pr-[9rem]"
-                    : "pr-[7.25rem]",
-              inputExpanded &&
-                "h-[clamp(10rem,40dvh,20rem)] max-h-[clamp(10rem,40dvh,20rem)] overflow-y-auto [field-sizing:fixed]",
+              "relative min-w-0 w-full overflow-hidden rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring",
+              inputExpanded && "flex h-[clamp(10rem,40dvh,20rem)] flex-col",
               direct.active &&
-                "border-primary focus-visible:border-primary focus-visible:ring-primary/30",
+                "border-primary focus-within:border-primary focus-within:ring-primary/30",
             )}
-            style={
-              !inputExpanded
-                ? {
-                      // Three 24px lines + 18px vertical padding + 2px border.
-                      maxHeight: "5.75rem",
-                    overflowY: "auto",
-                  }
-                : undefined
-            }
-            disabled={locked}
-            rows={1}
-          />
+          >
+            <div
+              data-slot="composer-input-viewport"
+              className={cn("min-h-0 py-[9px]", inputExpanded && "flex-1")}
+            >
+              <ChatInput
+                ref={inputRef}
+                value={direct.active ? direct.value : input}
+                onChange={direct.active ? direct.onChange : (e) => updateInput(e.target.value)}
+                onCompositionStart={direct.active ? direct.onCompositionStart : undefined}
+                onCompositionEnd={direct.active ? direct.onCompositionEnd : undefined}
+                onKeyDown={
+                  direct.active
+                    ? direct.onKeyDown
+                    : (e) => {
+                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                          e.preventDefault();
+                          onSendClick();
+                        }
+                      }
+                }
+                onPaste={onPasteImage}
+                placeholder={
+                  gone
+                    ? translate("composer.paneGone")
+                    : readOnly
+                      ? translate("composer.placeholderReadOnly")
+                      : direct.active
+                        ? translate("composer.placeholderDirect")
+                        : isShell
+                          ? translate("composer.placeholderShell")
+                          : translate("composer.placeholderReply")
+                }
+                autoCorrect={direct.active ? "off" : undefined}
+                spellCheck={direct.active ? false : undefined}
+                className={cn(
+                  "block min-h-6 rounded-none border-0 px-3 py-0 leading-6 shadow-none focus-visible:border-transparent focus-visible:ring-0",
+                  inputUsesActionRow
+                    ? "pr-3"
+                    : direct.active
+                      ? "pr-12"
+                      : forcingSend || confirmingSend
+                        ? "pr-[9rem]"
+                        : "pr-[7.25rem]",
+                  inputExpanded && "h-full max-h-none [field-sizing:fixed]",
+                )}
+                style={
+                  !inputExpanded
+                    ? {
+                        // Padding lives outside this scrollport: 72px is exactly three 24px lines.
+                        maxHeight: "4.5rem",
+                        overflowY: "auto",
+                      }
+                    : undefined
+                }
+                disabled={locked}
+                rows={1}
+              />
+            </div>
             {/* One stable action rail: ordinary controls share a size; confirmation swaps the image
                 and Send icons for one explicit destructive action without changing field width. */}
-            <div className="absolute bottom-1 right-1 flex items-center gap-0.5">
+            <div
+              data-slot="composer-input-actions"
+              className={cn(
+                "flex items-center gap-0.5",
+                inputUsesActionRow
+                  ? "h-[42px] shrink-0 justify-end border-t border-border/40 px-1"
+                  : "absolute bottom-[3px] right-[3px]",
+              )}
+            >
               {!direct.active && (
                 <Button
                   type="button"
