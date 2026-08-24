@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.34.0+collie.3] - 2026-08-24
+
+### Changed
+
+- **Send now sits inside the full-width reply field, including expanded mode.** (4efb9bd)
+
 ## [0.34.0+collie.2] - 2026-08-24
 
 ### Added
