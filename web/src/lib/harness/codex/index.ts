@@ -1,7 +1,16 @@
-import { lineText, type Block, type StyledLine } from "../../blocks";
+import { lineText, trimTrailingBlank, type Block, type PromptModel, type StyledLine } from "../../blocks";
 import { draftCarriesSend as textDraftCarriesSend } from "../../draft-match";
 import type { HarnessAdapter } from "../types";
-import { extractInputDraft, extractStatusLines, hasComposer, stripChrome } from "./chrome";
+import {
+  composerPrompt,
+  composerReady,
+  extractInputDraft,
+  extractStatusLines,
+  stripChrome,
+} from "./chrome";
+import { detectApprovalRegion } from "./approval";
+import { detectAskRegion } from "./ask";
+import { detectTrustRegion } from "./trust";
 
 const COMPLETION_SUMMARY = /^─+\s+Worked for\b/;
 const COMMAND_SUMMARY = /^•\s+Ran\s+\d+\s+commands\b/;
@@ -343,16 +352,38 @@ export function imageDraftCarriesSend(sent: string, draft: string): boolean {
   return textDraftCarriesSend(sentCaption, draftCaption);
 }
 
+function codexRawBlock(lines: StyledLine[]): Block {
+  return {
+    kind: "raw",
+    lines: normalizeCompletionSummaries(
+      normalizeWrappedAnswers(normalizeSubmittedQueries(lines)),
+    ),
+  };
+}
+
+function codexDialogBlocks(
+  lines: StyledLine[],
+  startLine: number,
+  prompt: PromptModel,
+): Block[] {
+  const before = trimTrailingBlank(lines.slice(0, startLine));
+  const blocks: Block[] = [];
+  if (before.length > 0) blocks.push(codexRawBlock(before));
+  blocks.push({ kind: "prompt-select", prompt, lines: lines.slice(startLine) });
+  return blocks;
+}
+
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
-  const content = stripChrome(lines);
-  return [
-    {
-      kind: "raw",
-      lines: normalizeCompletionSummaries(
-        normalizeWrappedAnswers(normalizeSubmittedQueries(content)),
-      ),
-    },
-  ];
+  const trust = detectTrustRegion(lines);
+  if (trust !== null) return codexDialogBlocks(lines, trust.startLine, trust.model);
+
+  const approval = detectApprovalRegion(lines);
+  if (approval !== null) return codexDialogBlocks(lines, approval.startLine, approval.model);
+
+  const ask = detectAskRegion(lines);
+  if (ask !== null) return codexDialogBlocks(lines, ask.startLine, ask.model);
+
+  return [codexRawBlock(stripChrome(lines))];
 }
 
 export { extractInputDraft, extractStatusLines };
@@ -365,7 +396,8 @@ export const codexAdapter: HarnessAdapter = {
   extractInputDraft,
   // The reply path's pre-flight and post-type verifier now share the same captured Codex composer
   // shape. A modal without that tail refuses message bytes before they can land in the wrong UI.
-  composerReady: hasComposer,
+  composerReady,
+  composerPrompt,
   // Codex consumes image paths and renders `[Image #N]`, so the generic literal verifier cannot
   // see the original send. Verify replacement tokens against this send's paths and caption.
   draftCarriesSend: imageDraftCarriesSend,

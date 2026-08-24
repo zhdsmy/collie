@@ -124,7 +124,7 @@ function isSlashSuggestion(line: StyledLine, command: string): boolean {
   return new RegExp(`^${escapedCommand}\\s+\\S`).test(lineText(line).trim());
 }
 
-function locateComposer(lines: StyledLine[]): ComposerMatch | null {
+export function locateComposer(lines: StyledLine[]): ComposerMatch | null {
   let end = lines.length;
   while (
     end > 0 &&
@@ -133,7 +133,7 @@ function locateComposer(lines: StyledLine[]): ComposerMatch | null {
   ) {
     end--;
   }
-  if (end < 4) return null;
+  if (end < 3) return null;
 
   // Codex 0.149 temporarily replaces the statusline with a slash autocomplete run. Treat the whole
   // run as chrome only when a structurally valid composer immediately precedes it.
@@ -168,14 +168,30 @@ function locateComposer(lines: StyledLine[]): ComposerMatch | null {
   // anchors on the borderless path so ordinary output ending in similar words stays raw.
   if (background === null) {
     const richStatus = lines.slice(statusStart, end).find(isRichStatusLine);
-    if (richStatus !== undefined && coloredFieldCount(richStatus) < 2) return null;
 
-    const first = Math.max(1, bottom - MAX_COMPOSER_LINES);
+    const first = Math.max(0, bottom - MAX_COMPOSER_LINES);
     for (let prompt = bottom - 1; prompt >= first; prompt--) {
-      if (!startsWithPrompt(lines[prompt]!) || !hasBoldPromptMarker(lines[prompt]!)) continue;
+      if (
+        !startsWithPrompt(lines[prompt]!) ||
+        (prompt > 0 && !hasBoldPromptMarker(lines[prompt]!))
+      ) {
+        continue;
+      }
+      if (
+        prompt > 0 &&
+        richStatus !== undefined &&
+        coloredFieldCount(richStatus) < 2
+      ) {
+        continue;
+      }
 
-      const top = prompt - 1;
-      if (!isBlank(lineText(lines[top]!)) || uniformBackground(lines[top]!) !== null) continue;
+      const top = Math.max(0, prompt - 1);
+      if (
+        prompt > 0 &&
+        (!isBlank(lineText(lines[top]!)) || uniformBackground(lines[top]!) !== null)
+      ) {
+        continue;
+      }
       if (
         lines
           .slice(prompt, bottom)
@@ -266,4 +282,25 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
     .map((row) => row.trim())
     .filter((row) => row.length > 0);
   return rows.length === 0 ? null : rows.join(" ");
+}
+
+const BRIDGE_PROMPT_TAIL_LINES = 6;
+
+/** Typing reaches the composer only when its full tail shape is on screen. */
+export function composerReady(lines: StyledLine[]): boolean {
+  return hasComposer(lines);
+}
+
+/** The on-screen prompt row used to bind a destructive pre-clear sweep. */
+export function composerPrompt(lines: StyledLine[]): string | null {
+  const match = locateComposer(lines);
+  if (match === null) return null;
+
+  const nonBlankBelow = lines
+    .slice(match.prompt + 1, match.statusEnd)
+    .filter((line) => !isBlank(lineText(line))).length;
+  if (nonBlankBelow > BRIDGE_PROMPT_TAIL_LINES - 1) return null;
+
+  const row = lineText(lines[match.prompt]!).trimEnd();
+  return row.length === 0 ? null : row;
 }
