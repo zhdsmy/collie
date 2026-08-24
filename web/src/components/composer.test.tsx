@@ -1417,7 +1417,10 @@ describe("Composer — destructive-input confirm", () => {
 
     // First tap: the Send button flips to a "Really send?" confirm — nothing is sent yet.
     await user.click(screen.getByRole("button", { name: "Send" }));
-    expect(screen.getByRole("button", { name: /really send/i })).toBeInTheDocument();
+    const confirm = screen.getByRole("button", { name: /really send/i });
+    expect(confirm).toBeInTheDocument();
+    expect(box.parentElement).toContainElement(confirm);
+    expect(box).toHaveClass("pr-[9rem]");
     expect(box).toHaveValue("rm -rf node_modules"); // draft kept
     expect(props.onSent).not.toHaveBeenCalled();
 
@@ -1879,6 +1882,7 @@ describe("Composer — quick keys / image attach", () => {
   it("shows the attach button on the reply-input row without the quick-key strip being visible", async () => {
     const user = userEvent.setup();
     renderComposer();
+    const box = screen.getByPlaceholderText(/type a reply/i);
 
     // The quick-key strip only renders once composerFocused && keyboardOpen — keyboardOpen defaults
     // to false in jsdom (no visualViewport resize fires), so none of its keys are present here.
@@ -1887,6 +1891,12 @@ describe("Composer — quick keys / image attach", () => {
 
     // The attach button now lives on the always-visible reply-input row instead of the strip.
     const attach = screen.getByRole("button", { name: "Attach image" });
+    const send = screen.getByRole("button", { name: "Send" });
+    expect(box.parentElement).toHaveClass("relative", "w-full");
+    expect(box.parentElement).toContainElement(attach);
+    expect(box.parentElement).toContainElement(send);
+    expect(box).toHaveClass("pr-[7.25rem]");
+    expect(send).toHaveClass("size-9");
     expect(attach).toBeEnabled();
     await user.click(attach); // clickable without throwing (opens the hidden file input)
   });
@@ -1911,6 +1921,7 @@ describe("Composer — quick keys / image attach", () => {
       "overflow-y-auto",
       "[field-sizing:fixed]",
     );
+    expect(box.parentElement).toContainElement(screen.getByRole("button", { name: "Send" }));
 
     await user.click(screen.getByRole("button", { name: "Collapse input" }));
     expect(screen.getByRole("button", { name: "Expand input" })).toHaveAttribute(

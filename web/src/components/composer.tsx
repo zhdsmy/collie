@@ -992,16 +992,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             {translate("composer.tooLongDraft")}
           </p>
         )}
-        {/* gap-3, not gap-2: with the attach button moved inside the field this row is only the
-            field and Send, and the old spacing left them looking joined. */}
-        <div className="flex items-end gap-3">
-          {/* The input and its attach button share one box: the button is positioned INSIDE the
-              field, messenger-style, rather than sitting beside it as a third control in the row.
-              It used to occupy a full-height slot to the left, which spent the widest part of the
-              composer on the least-used action; inside the field it costs nothing but a strip of
-              padding the text was not using anyway. `pr-11` on the textarea reserves that strip so a
-              long line can never run underneath the icon. */}
-          <div className="relative min-w-0 flex-1">
+        {/* The textarea owns the full row. Every action sits inside its bottom-right edge, so
+            expanding the field also claims the width that Send used to reserve beside it. */}
+        <div className="relative min-w-0 w-full">
           <ChatInput
             ref={inputRef}
             value={direct.active ? direct.value : input}
@@ -1038,7 +1031,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               // baseline gap beneath it and the absolutely-positioned button hangs past the field's
               // bottom edge.
               "block",
-              direct.active ? "pr-11" : "pr-[5.25rem]",
+              direct.active
+                ? "pr-12"
+                : forcingSend || confirmingSend
+                  ? "pr-[9rem]"
+                  : "pr-[7.25rem]",
               inputExpanded &&
                 "h-[clamp(10rem,40dvh,20rem)] max-h-[clamp(10rem,40dvh,20rem)] overflow-y-auto [field-sizing:fixed]",
               direct.active &&
@@ -1052,8 +1049,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             disabled={locked}
             rows={1}
           />
-            {/* Keep both field tools pinned to the thumb-side bottom edge while the textarea grows. */}
-            <div className="absolute bottom-1 right-1 flex items-center">
+            {/* One stable action rail: ordinary controls share a size; confirmation swaps the image
+                and Send icons for one explicit destructive action without changing field width. */}
+            <div className="absolute bottom-1 right-1 flex items-center gap-0.5">
               {!direct.active && (
                 <Button
                   type="button"
@@ -1074,69 +1072,69 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   )}
                 </Button>
               )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-9 rounded-full text-muted-foreground"
-                disabled={uploading || locked || direct.active}
-                onPointerDown={(e) => e.preventDefault()}
-                onClick={() => fileRef.current?.click()}
-                aria-label={translate("composer.attachImage")}
-              >
-                {uploading ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <ImagePlus className="size-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-          {!direct.active && forcingSend ? (
-            // The pre-flight refused and the user is being offered the override. Labelled for what it
-            // actually does — TYPE the text into whatever is on screen — not "send", because the
-            // submit key is still conditional on the verify step behind it.
-            <Button
-              variant="destructive"
-              className="h-11 shrink-0 rounded-full px-4 text-sm font-semibold"
-              onClick={onSendClick}
-              disabled={locked || !input.trim() || sending}
-              aria-label={translate("composer.typeAnyway")}
-            >
-              {translate("composer.typeAnyway")}
-            </Button>
-          ) : !direct.active && confirmingSend ? (
-            <Button
-              variant="destructive"
-              className="h-11 shrink-0 rounded-full px-4 text-sm font-semibold"
-              onClick={onSendClick}
-              disabled={locked || !input.trim() || sending}
-              aria-label={translate("composer.reallySend")}
-            >
-              {translate("composer.reallySend")}
-            </Button>
-          ) : (
-            <Button
-              size="icon"
-              className="size-11 shrink-0 rounded-full"
-              onClick={direct.active ? () => direct.deactivate() : onSendClick}
-              disabled={locked || sending}
-              aria-label={
-                direct.active ? translate("composer.stopDirect") : translate("composer.send")
-              }
-              aria-pressed={direct.active}
-            >
-              {direct.active ? (
-                <Keyboard className="size-4" />
-              ) : sending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : justSent ? (
-                <Check className="size-4" />
-              ) : (
-                <Send className="size-4" />
+              {!direct.active && !forcingSend && !confirmingSend && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-9 rounded-full text-muted-foreground"
+                  disabled={uploading || locked}
+                  onPointerDown={(e) => e.preventDefault()}
+                  onClick={() => fileRef.current?.click()}
+                  aria-label={translate("composer.attachImage")}
+                >
+                  {uploading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="size-4" />
+                  )}
+                </Button>
               )}
-            </Button>
-          )}
+              {!direct.active && forcingSend ? (
+                // The pre-flight refused and the user is being offered the override. Labelled for
+                // what it actually does — TYPE into what is on screen — because Enter stays guarded.
+                <Button
+                  variant="destructive"
+                  className="h-9 shrink-0 rounded-full px-3 text-xs font-semibold"
+                  onClick={onSendClick}
+                  disabled={locked || !input.trim() || sending}
+                  aria-label={translate("composer.typeAnyway")}
+                >
+                  {translate("composer.typeAnyway")}
+                </Button>
+              ) : !direct.active && confirmingSend ? (
+                <Button
+                  variant="destructive"
+                  className="h-9 shrink-0 rounded-full px-3 text-xs font-semibold"
+                  onClick={onSendClick}
+                  disabled={locked || !input.trim() || sending}
+                  aria-label={translate("composer.reallySend")}
+                >
+                  {translate("composer.reallySend")}
+                </Button>
+              ) : (
+                <Button
+                  size="icon"
+                  className="size-9 shrink-0 rounded-full"
+                  onClick={direct.active ? () => direct.deactivate() : onSendClick}
+                  disabled={locked || sending}
+                  aria-label={
+                    direct.active ? translate("composer.stopDirect") : translate("composer.send")
+                  }
+                  aria-pressed={direct.active}
+                >
+                  {direct.active ? (
+                    <Keyboard className="size-4" />
+                  ) : sending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : justSent ? (
+                    <Check className="size-4" />
+                  ) : (
+                    <Send className="size-4" />
+                  )}
+                </Button>
+              )}
+            </div>
         </div>
       </div>
 
