@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.34.0+collie.8] - 2026-08-24
+
+### Fixed
+
+- **Multiline replies use a strict three-line viewport above a fixed action row.** (6fc8a28)
+
 ## [0.34.0+collie.7] - 2026-08-24
 
 ### Fixed
