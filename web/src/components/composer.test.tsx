@@ -1897,6 +1897,8 @@ describe("Composer — quick keys / image attach", () => {
     expect(box.parentElement).toContainElement(send);
     expect(box).toHaveClass("pr-[7.25rem]");
     expect(send).toHaveClass("size-9");
+    expect(send).toHaveClass("hover:bg-accent");
+    expect(send).not.toHaveClass("bg-primary");
     expect(attach).toBeEnabled();
     await user.click(attach); // clickable without throwing (opens the hidden file input)
   });
@@ -1920,7 +1922,10 @@ describe("Composer — quick keys / image attach", () => {
       "max-h-[clamp(10rem,40dvh,20rem)]",
       "overflow-y-auto",
       "[field-sizing:fixed]",
+      "pb-12",
+      "pr-3",
     );
+    expect(box).not.toHaveClass("pr-[7.25rem]");
     expect(box.parentElement).toContainElement(screen.getByRole("button", { name: "Send" }));
 
     await user.click(screen.getByRole("button", { name: "Collapse input" }));

@@ -1031,11 +1031,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               // baseline gap beneath it and the absolutely-positioned button hangs past the field's
               // bottom edge.
               "block",
-              direct.active
-                ? "pr-12"
-                : forcingSend || confirmingSend
-                  ? "pr-[9rem]"
-                  : "pr-[7.25rem]",
+              inputExpanded
+                ? "pb-12 pr-3"
+                : direct.active
+                  ? "pr-12"
+                  : forcingSend || confirmingSend
+                    ? "pr-[9rem]"
+                    : "pr-[7.25rem]",
               inputExpanded &&
                 "h-[clamp(10rem,40dvh,20rem)] max-h-[clamp(10rem,40dvh,20rem)] overflow-y-auto [field-sizing:fixed]",
               direct.active &&
@@ -1114,6 +1116,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 </Button>
               ) : (
                 <Button
+                  variant={direct.active ? "default" : "ghost"}
                   size="icon"
                   className="size-9 shrink-0 rounded-full"
                   onClick={direct.active ? () => direct.deactivate() : onSendClick}
