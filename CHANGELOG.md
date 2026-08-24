@@ -6,6 +6,16 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.34.0+collie.2] - 2026-08-24
+
+### Added
+
+- **The reply composer expands in place for long drafts and collapses back without moving Send.** (175cff3)
+
+### Fixed
+
+- **Current Codex indented list continuations reflow cleanly on narrow phone panes.** (bb50275)
+
 ## [0.34.0+collie.1] - 2026-08-24
 
 ### Added
