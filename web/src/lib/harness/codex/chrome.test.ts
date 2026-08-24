@@ -359,6 +359,32 @@ describe("Codex chrome", () => {
     expect(block.lines.at(-1)!.segments).toEqual(captured.at(-1)!.segments);
   });
 
+  it("reflows indented dash answers from current Codex without leaving short CJK rows", () => {
+    const captured = lines(
+      [
+        "  - Collie 同期已有约 20 个 Codex 专项提交，覆盖 macOS",
+        "    composer、v0.149 分隔线、slash autocomplete、statusline、多行",
+        "    输入、",
+        "    图片草稿及正文换行。",
+        "",
+        "  - 下面仍是嵌套列表：",
+        "    - first item",
+        "    - second item",
+      ].join("\n"),
+    );
+
+    const block = codexBuildBlocks(captured)[0]!;
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([
+      "  - Collie 同期已有约 20 个 Codex 专项提交，覆盖 macOS " +
+        "composer、v0.149 分隔线、slash autocomplete、statusline、多行输入、图片草稿及正文换行。",
+      "",
+      "  - 下面仍是嵌套列表：",
+      "    - first item",
+      "    - second item",
+    ]);
+  });
+
   it("reflows backgroundless submitted queries and restores their input surface", () => {
     const captured = lines(
       [

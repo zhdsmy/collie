@@ -16,12 +16,12 @@ const COMPLETION_SUMMARY = /^─+\s+Worked for\b/;
 const COMMAND_SUMMARY = /^•\s+Ran\s+\d+\s+commands\b/;
 const COMMAND_EVENT =
   /^•\s+(?:Called|Edited|Explored|Ran|Read|Running|Searched|Viewed|Working|You have)(?:\s|$)/;
-const ANSWER_LEAD = /^•\s+\S/;
-const ANSWER_CONTINUATION = /^ {2}\S/;
+const ANSWER_LEAD = /^(?:•| {2}-)\s+\S/;
 const SUBMITTED_QUERY_LEAD = /^›(?:\s|$)/;
 const SUBMITTED_QUERY_ROW = /^ {2}/;
 const SUBMITTED_QUERY_CONTINUATION = /^ {2}\S/;
 const NESTED_ROW = /^ {2}(?:(?:[-+*•]|\d+[.)])(?:\s|$)|[│└┌┐┘┬├┤┼])/;
+const NESTED_ANSWER_CONTENT = /^(?:(?:[-+*•]|\d+[.)])(?:\s|$)|[│└┌┐┘┬├┤┼])/;
 const DECORATIVE_RULE = /^─{40,}$/;
 const RESIDUAL_RULE = /^─$/;
 // Codex dims command output; paired wide edges inside it are decoration, not terminal tables.
@@ -80,8 +80,12 @@ function compactStatusSegment(text: string): string {
     .replace(/\bGoal achieved\b/gi, "Goal:done");
 }
 
-function withoutContinuationIndent(line: StyledLine, joiner: string): StyledLine["segments"] {
-  let remaining = 2;
+function withoutContinuationIndent(
+  line: StyledLine,
+  joiner: string,
+  indent = 2,
+): StyledLine["segments"] {
+  let remaining = indent;
   let prefixed = false;
   const segments: StyledLine["segments"] = [];
   for (const segment of line.segments) {
@@ -107,6 +111,22 @@ function wrappedJoiner(previous: string, continuation: string): string {
   const bothWordCharacters = /[\p{L}\p{N}]/u.test(before) && /[\p{L}\p{N}]/u.test(after);
   const crossesAsciiWord = /[A-Za-z0-9]/.test(before) || /[A-Za-z0-9]/.test(after);
   return bothWordCharacters && crossesAsciiWord ? " " : "";
+}
+
+function answerContinuationIndent(text: string): number | null {
+  if (!ANSWER_LEAD.test(text)) return null;
+  const marker = /^(?:•| {2}-)\s+/.exec(text);
+  return marker?.[0].length ?? null;
+}
+
+function isAnswerContinuation(text: string, indent: number): boolean {
+  const content = text.slice(indent);
+  return (
+    text.startsWith(" ".repeat(indent)) &&
+    content.length > 0 &&
+    !/^\s/.test(content) &&
+    !NESTED_ANSWER_CONTENT.test(content)
+  );
 }
 
 function isSubmittedQueryLead(line: StyledLine): boolean {
@@ -200,10 +220,11 @@ function normalizeSubmittedQueries(lines: StyledLine[]): StyledLine[] {
 }
 
 /**
- * Codex hard-wraps its rendered answer paragraphs to the host PTY and prefixes continuation rows
- * with two spaces. The phone then wraps those rows a second time, leaving short fragments and
- * hanging indents. Rejoin only answer-bullet continuations; tool events, nested rows, and painted
- * code/diffs keep their terminal rows verbatim.
+ * Codex hard-wraps its rendered answer paragraphs to the host PTY and indents continuation rows to
+ * the answer's text column. The phone then wraps those rows a second time, leaving short fragments
+ * and hanging indents. Rejoin only answer-bullet continuations, including the indented `-` form used
+ * by newer Codex builds; tool events, nested rows, and painted code/diffs keep their terminal rows
+ * verbatim.
  */
 function normalizeWrappedAnswers(lines: StyledLine[]): StyledLine[] {
   let normalized: StyledLine[] | undefined;
@@ -211,11 +232,12 @@ function normalizeWrappedAnswers(lines: StyledLine[]): StyledLine[] {
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index]!;
     const text = lineText(line);
-    const answerLead =
-      ANSWER_LEAD.test(text) &&
-      !COMMAND_EVENT.test(text) &&
-      line.segments.every((segment) => segment.bg === undefined);
-    if (!answerLead) {
+    const continuationIndent = answerContinuationIndent(text);
+    if (
+      continuationIndent === null ||
+      COMMAND_EVENT.test(text) ||
+      line.segments.some((segment) => segment.bg !== undefined)
+    ) {
       normalized?.push(line);
       continue;
     }
@@ -225,8 +247,7 @@ function normalizeWrappedAnswers(lines: StyledLine[]): StyledLine[] {
       const next = lines[index + 1]!;
       const nextText = lineText(next);
       if (
-        !ANSWER_CONTINUATION.test(nextText) ||
-        NESTED_ROW.test(nextText) ||
+        !isAnswerContinuation(nextText, continuationIndent) ||
         next.segments.some((segment) => segment.bg !== undefined)
       ) {
         break;
@@ -236,7 +257,11 @@ function normalizeWrappedAnswers(lines: StyledLine[]): StyledLine[] {
         ...merged,
         segments: [
           ...merged.segments,
-          ...withoutContinuationIndent(next, wrappedJoiner(lineText(merged), nextText)),
+          ...withoutContinuationIndent(
+            next,
+            wrappedJoiner(lineText(merged), nextText),
+            continuationIndent,
+          ),
         ],
       };
       index++;
