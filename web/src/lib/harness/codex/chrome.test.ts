@@ -602,6 +602,18 @@ describe("Codex image draft verification", () => {
     expect(imageDraftCarriesSend(sent, first)).toBe(false);
   });
 
+  it("accepts image-only drafts only against a known empty baseline", () => {
+    const second = "/test-state/uploads/second.png";
+
+    expect(imageDraftCarriesSend(upload, "[Image #1]", null)).toBe(true);
+    expect(
+      imageDraftCarriesSend(`${upload} ${second}`, "[Image #1] [Image #2]", null),
+    ).toBe(true);
+    expect(imageDraftCarriesSend(`${upload} ${second}`, "[Image #1]", null)).toBe(false);
+    expect(imageDraftCarriesSend(upload, "[Image #1]")).toBe(false);
+    expect(imageDraftCarriesSend(upload, "[Image #1]", "[Image #1]")).toBe(false);
+  });
+
   it("rejects mismatched tokens, captions, and ambiguous image-only drafts", () => {
     expect(imageDraftCarriesSend(`${upload} 请检查终端布局是否正常`, "请检查终端布局是否正常")).toBe(false);
     expect(imageDraftCarriesSend(`${upload} 请检查终端布局是否正常`, "[Image #1] 请删除终端里的所有内容")).toBe(

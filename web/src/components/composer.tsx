@@ -510,24 +510,21 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         // Clear a stranded draft on the terminal's "❯" line before pane.send_text appends at cursor —
         // ctrl+k kills cursor→end, Backspace sweep kills the head (preview-action.ts pattern). Skip
         // when there's no draft: a blind sweep races the TUI and Enter can fire before the PTY
-        // settles. Keys on effectiveRaw (the actual current line, echo-suppressed), so our own
-        // in-flight echo never triggers a (destructive) clear of a message that's already on its way,
-        // and a live host draft is swept exactly once whether or not the user took it over first.
+        // settles. The guard supplies the draft from its live pre-flight read, so a stale page snapshot
+        // cannot skip a stranded input line or trigger a clear after the line has already emptied.
         //
         // Handed to the guard rather than run out here, because these are the most destructive keys
-        // the composer sends and everything deciding to send them is a SNAPSHOT. `effectiveRaw` and
-        // `dialogPresent` are both derived from the mirror's `display`, which lags the live pane by a
-        // poll while following and is frozen outright while the user has scrolled back or opened
-        // find. A dialog that went up in that gap leaves `dialogPresent` false and a draft still
-        // visible, and the sweep lands in the dialog — the #34 failure one step upstream of where
-        // #34 was fixed. The guard runs this ONLY after a live read has positively seen the composer,
+        // the composer sends. The mirror's `display` lags the live pane by a poll while following and
+        // is frozen outright while the user has scrolled back or opened find. The guard therefore
+        // decides both whether the composer exists and whether it has a draft from one live read. It
+        // runs this ONLY after that read has positively seen the composer,
         // which is why it is named for that and not for its position: `force` included, since a
         // forced retry is armed by a `blocked` outcome, i.e. by the app having just PROVEN a dialog
         // owns the keyboard. A forced send therefore types without sweeping and stalls if the line
         // really did hold a draft — which is what it did anyway, since the same detector that could
         // not see the box cannot read our text back out of it either.
-        onComposerSeen: async ({ promptRegion }) => {
-          if (effectiveRaw === null) return { ok: true as const, keysSent: false };
+        onComposerSeen: async ({ promptRegion, draft }) => {
+          if (draft === null) return { ok: true as const, keysSent: false };
           // The props that lock this composer are a SNAPSHOT too, and `send()` read them before the
           // pre-flight's round-trip. A pane that died or a device that lost write access inside that
           // window leaves the composer rendered locked while this burst is still queued behind an
@@ -536,11 +533,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           if (lockedRef.current) {
             return { ok: false as const, error: translate("composer.paneNotWritable") };
           }
-          // Overshoot well past the snapshotted length: the count comes from the LAST-POLLED line, so
-          // anything the host typed inside the poll gap (~1.5s) isn't counted. Extra Backspace on an
+          // Overshoot well past the live pre-flight length: anything the host types after that read
+          // and before the bound key burst lands is not counted. Extra Backspace on an
           // already-empty input is a no-op, so a generous margin costs nothing and shrinks the window
           // where a mid-gap host burst leaves a remnant that corrupts the send.
-          const clearCount = [...effectiveRaw].length + 32;
+          const clearCount = [...draft].length + 32;
           // BOUND to the prompt row the pre-flight's read actually saw. Ordering is not a freshness
           // bound: the read's answer describes the pane at the moment the BRIDGE snapshotted it, and
           // these keys go out when the answer arrives — a whole network round-trip later, capped only

@@ -345,7 +345,11 @@ function visibleCaptionLength(text: string): number {
 }
 
 /** Verify Codex's replacement of Collie upload paths with its own `[Image #N]` tokens. */
-export function imageDraftCarriesSend(sent: string, draft: string): boolean {
+export function imageDraftCarriesSend(
+  sent: string,
+  draft: string,
+  beforeDraft?: string | null,
+): boolean {
   const sentPaths = uploadPaths(sent);
   if (sentPaths.length === 0) return false;
 
@@ -358,6 +362,20 @@ export function imageDraftCarriesSend(sent: string, draft: string): boolean {
   }
 
   const placeholderCount = [...draft.matchAll(IMAGE_PLACEHOLDER)].length;
+  const sentCaption = captionWithoutImages(sent);
+  const draftCaption = captionWithoutImages(draft);
+
+  // A placeholder has no image identity, so image-only sends need a trustworthy empty
+  // pre-type baseline. Then every sent path must be accounted for by either its still-visible
+  // literal path or one newly-created placeholder. A stale placeholder can never clear this gate.
+  if (visibleCaptionLength(sentCaption) === 0) {
+    if (beforeDraft === undefined || (beforeDraft !== null && beforeDraft.trim() !== "")) {
+      return false;
+    }
+    if (visibleCaptionLength(draftCaption) > 0) return false;
+    return placeholderCount === unmatchedPaths.length;
+  }
+
   if (placeholderCount === 0) {
     // A long multi-image draft can window out both the caption and Codex's converted placeholders.
     // Two distinct exact upload paths still identify this send strongly enough to submit; one path
@@ -366,8 +384,6 @@ export function imageDraftCarriesSend(sent: string, draft: string): boolean {
   }
   if (placeholderCount > unmatchedPaths.length) return false;
 
-  const sentCaption = captionWithoutImages(sent);
-  const draftCaption = captionWithoutImages(draft);
   const exactCaption = draftCaption === sentCaption;
   const minimum = exactCaption ? MIN_CAPTION_CHARS : MIN_WINDOWED_CAPTION_CHARS;
   if (visibleCaptionLength(draftCaption) < minimum) return false;

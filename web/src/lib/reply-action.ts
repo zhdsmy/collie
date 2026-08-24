@@ -131,6 +131,8 @@ export interface ComposerSeen {
    * write goes out unbound, which is the pre-existing behaviour and the reason the hook is optional.
    */
   promptRegion: string | null;
+  /** The draft from the same live pre-flight read. `null` means the input box was empty. */
+  draft: string | null;
 }
 
 export type ComposerPrepResult =
@@ -163,8 +165,9 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
   // threw, an adapter with no `composerReady`, and anything added later) skips this by construction
   // rather than by remembering to check. `?.()` is the whole enforcement; there is no list to keep
   // in sync.
-  const aborted = await runPreType?.();
-  if (aborted) return aborted;
+  const prepared = await runPreType?.();
+  if (prepared?.abort) return prepared.abort;
+  const beforeDraft = prepared?.beforeDraft;
 
   let typed;
   try {
@@ -210,7 +213,9 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
     // thing that knows its harness's token and whether this one is consistent with THIS send
     // (.adr/0010). It can only widen the evidence, never narrow it, so a harness without the
     // capability is untouched.
-    if (draft !== null && adapter.draftCarriesSend?.(args.text, draft)) return submitOnly(args);
+    if (draft !== null && adapter.draftCarriesSend?.(args.text, draft, beforeDraft)) {
+      return submitOnly(args);
+    }
   }
 
   // The text never showed up on the input line. The likeliest cause is a dialog holding focus and
@@ -253,7 +258,8 @@ const NO_ECHO =
  *
  *   `refuse`     — non-null ⇒ return it; the send is refused with no reply text typed.
  *   `runPreType` — non-null ⇒ a live read POSITIVELY SAW the composer, so the caller's destructive
- *                  pre-type work may run. It is created on exactly one branch below and nowhere else.
+ *                  pre-type work may run. Its result also carries the last trustworthy draft before
+ *                  typing. It is created on exactly one branch below and nowhere else.
  *
  * The point of shipping the permission as a CALLABLE rather than a boolean is that there is nothing
  * for a later edit to re-derive, forget, or get subtly wrong: a new path through `preflight` that does
@@ -265,7 +271,13 @@ const NO_ECHO =
  */
 interface Preflight {
   refuse: ReplyOutcome | null;
-  runPreType: (() => Promise<ReplyOutcome | null>) | null;
+  runPreType: (() => Promise<PreTypeResult>) | null;
+}
+
+interface PreTypeResult {
+  abort: ReplyOutcome | null;
+  /** `undefined` means no trustworthy post-clear baseline could be read. */
+  beforeDraft: string | null | undefined;
 }
 
 /**
@@ -319,19 +331,28 @@ async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promi
   // answered about, so the caller cannot bind its keys to anything but the screen that authorised
   // them — and cannot forget to, since it arrives as the argument.
   const promptRegion = adapter.composerPrompt?.(seen) ?? null;
+  const beforeDraft = adapter.extractInputDraft(seen);
 
   return {
     refuse: null,
     runPreType: async () => {
-      if (!args.onComposerSeen) return null;
+      if (!args.onComposerSeen) return { abort: null, beforeDraft };
       let prep;
       try {
-        prep = await args.onComposerSeen({ promptRegion });
+        prep = await args.onComposerSeen({ promptRegion, draft: beforeDraft });
       } catch (e) {
-        return { status: "error", error: message(e) };
+        return {
+          abort: { status: "error", error: message(e) },
+          beforeDraft: undefined,
+        };
       }
-      if (!prep.ok) return { status: "error", error: prep.error };
-      if (!prep.keysSent) return null; // the read above is still the freshest thing there is
+      if (!prep.ok) {
+        return {
+          abort: { status: "error", error: prep.error },
+          beforeDraft: undefined,
+        };
+      }
+      if (!prep.keysSent) return { abort: null, beforeDraft };
 
       // The caller put keys on the wire and waited for the TUI to settle, so the evidence that
       // authorised them is now an RPC and a settle old. Re-confirm before the MESSAGE goes out —
@@ -339,15 +360,21 @@ async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promi
       // the reply instead. Still fail-open on a throw: the submit key is guarded downstream.
       try {
         const fresh = await fetchPane(args.paneId, args.requestedLines, args.session);
-        if (composerReady(splitLines(parseAnsi(fresh.text)))) return null;
+        const freshLines = splitLines(parseAnsi(fresh.text));
+        if (composerReady(freshLines)) {
+          return { abort: null, beforeDraft: adapter.extractInputDraft(freshLines) };
+        }
       } catch {
-        return null;
+        return { abort: null, beforeDraft: undefined };
       }
       return {
-        status: "blocked",
-        clientError: "reply_input_left_during_clear",
-        error:
-          "The agent's input box left the screen while its input line was being cleared — a menu or dialog is probably up. Your message wasn't typed.",
+        abort: {
+          status: "blocked",
+          clientError: "reply_input_left_during_clear",
+          error:
+            "The agent's input box left the screen while its input line was being cleared — a menu or dialog is probably up. Your message wasn't typed.",
+        },
+        beforeDraft: undefined,
       };
     },
   };

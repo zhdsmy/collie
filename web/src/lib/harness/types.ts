@@ -68,9 +68,10 @@ export interface HarnessAdapter {
    * OPTIONAL, and consulted ONLY after the generic match has already failed (lib/reply-action.ts) —
    * it can widen what counts as evidence, never narrow it. The contract is strict-or-false: return
    * true only when the token on screen is CONSISTENT with this exact send, because a `true` here fires
-   * the submit key. An adapter that can't tell omits it and keeps today's stall.
+   * the submit key. `beforeDraft` is the trusted pre-type input state; `undefined` means pre-flight
+   * could not establish one. An adapter that can't tell omits it and keeps today's stall.
    */
-  draftCarriesSend?(sent: string, draft: string): boolean;
+  draftCarriesSend?(sent: string, draft: string, beforeDraft?: string | null): boolean;
   /**
    * Whether the draft on the input line is the harness's OWN opaque token rather than the user's text
    * — the same placeholder as above, sitting stranded. The stranded-draft preview keeps showing it

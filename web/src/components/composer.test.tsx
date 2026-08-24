@@ -10,7 +10,7 @@ import { clearStatus, useStatus } from "@/lib/status";
 import { isReloadHeld, __resetReloadGuard } from "@/lib/reload-guard";
 import { loadDraft } from "@/lib/drafts";
 import { server } from "@/test/setup";
-import { recordReply } from "@/test/handlers";
+import { recordReply, resetTypedDraft } from "@/test/handlers";
 import { Composer } from "./composer";
 
 // A guarded send is TWO reply calls: type (submit:false), then — once the text is verified on the
@@ -267,15 +267,14 @@ describe("Composer — send", () => {
         const body = (await request.json()) as { keys: string[] };
         sentKeys = body.keys;
         callOrder.push("keys");
+        resetTypedDraft();
         return HttpResponse.json({ ok: true });
       }),
-      http.post(/\/api\/pane\/[^/]+\/reply$/, async () => {
-        callOrder.push("reply");
-        return HttpResponse.json({ ok: true });
-      }),
+      replyHandler(() => callOrder.push("reply")),
     );
     // The pre-clear keys on the RAW line (the actual current "❯" content), independent of whether the
     // draft ever stabilised into a visible preview — a stranded raw draft is still swept before send.
+    recordReply({ text: "leftover", submit: false });
     renderComposerWithStatus({ terminalDraft: null, rawTerminalDraft: "leftover" });
     const box = screen.getByPlaceholderText(/type a reply/i);
 
@@ -287,7 +286,7 @@ describe("Composer — send", () => {
     // Draft length + the 32-Backspace overshoot (mid-poll-gap host typing margin) + the ctrl+k.
     expect(sentKeys).toHaveLength([..."leftover"].length + 33);
     expect(sentKeys!.slice(1).every((k) => k === "Backspace")).toBe(true);
-    await awaitTerminalStall(); // see the helper: an unawaited stall lands in a later test
+    expect(screen.getByTestId("status")).toHaveTextContent(/sent/i);
   }, 15000);
 
   // The burst is the only destructive keystroke path in the app not bound to the screen that
@@ -1675,12 +1674,14 @@ describe("Composer — terminal-draft preview", () => {
       http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
         sentKeys = ((await request.json()) as { keys: string[] }).keys;
         callOrder.push("keys");
+        resetTypedDraft();
         return HttpResponse.json({ ok: true });
       }),
       replyHandler((typed) => callOrder.push(`reply:${typed}`)),
     );
     renderDraftHarness();
     strandDraft("adopted line");
+    recordReply({ text: "adopted line", submit: false });
     await screen.findByText(/draft in terminal/i);
 
     await user.click(screen.getByRole("button", { name: /take over/i }));
@@ -1765,6 +1766,7 @@ describe("Composer — in-flight echo suppression (match-last-sent)", () => {
     server.use(
       http.post(/\/api\/pane\/[^/]+\/keys$/, async () => {
         callLog.push("keys");
+        resetTypedDraft();
         return HttpResponse.json({ ok: true });
       }),
       replyHandler((typed) => callLog.push(`reply:${typed}`)),
@@ -1813,6 +1815,7 @@ describe("Composer — in-flight echo suppression (match-last-sent)", () => {
     // A draft that is NOT what we just sent is a real stranded draft — not suppressed. It shows in the
     // preview (never auto-written into the now-empty input).
     await user.click(screen.getByRole("button", { name: "__set-draft" }));
+    recordReply({ text: "someone else's leftover", submit: false });
     expect(await screen.findByText(/draft in terminal/i)).toBeInTheDocument();
     expect(box).toHaveValue("");
 

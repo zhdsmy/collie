@@ -272,6 +272,105 @@ describe("sendGuardedReply", () => {
     ]);
   });
 
+  it("submits a pure Codex image when its placeholder appears after an empty baseline", async () => {
+    const path = "/test-state/uploads/example.jpg";
+    let pane = codexPaneWithDraft("");
+    const calls = harness(
+      () => pane,
+      (body) => {
+        if (!body.submit) pane = codexPaneWithDraft("[Image #1]");
+      },
+    );
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: path,
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: path, submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
+  it("submits multiple pure Codex images only after every placeholder appears", async () => {
+    const first = "/test-state/uploads/first.jpg";
+    const second = "/test-state/uploads/second.png";
+    const text = `${first} ${second}`;
+    let pane = codexPaneWithDraft("");
+    const calls = harness(
+      () => pane,
+      (body) => {
+        if (!body.submit) pane = codexPaneWithDraft("[Image #1] [Image #2]");
+      },
+    );
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text,
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text, submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
+  it("refuses an unchanged stale Codex image placeholder", async () => {
+    const path = "/test-state/uploads/example.jpg";
+    const calls = harness(() => codexPaneWithDraft("[Image #1]"));
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: path,
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toMatchObject({
+      status: "stalled",
+      clientError: "reply_message_not_received",
+    });
+    expect(calls).toEqual([{ text: path, submit: false }]);
+  });
+
+  it("clears a live stale Codex image before retrying a pure image", async () => {
+    const path = "/test-state/uploads/example.jpg";
+    let pane = codexPaneWithDraft("[Image #1]");
+    let seenDraft: string | null | undefined;
+    const calls = harness(
+      () => pane,
+      (body) => {
+        if (!body.submit) pane = codexPaneWithDraft("[Image #2]");
+      },
+    );
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: path,
+      agent: "codex",
+      onComposerSeen: async ({ draft }) => {
+        seenDraft = draft;
+        pane = codexPaneWithDraft("");
+        return { ok: true as const, keysSent: true };
+      },
+      ...instant,
+    });
+
+    expect(seenDraft).toBe("[Image #1]");
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: path, submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
   it("submits a windowed Codex draft when only one of several image paths is visible", async () => {
     const first = "/test-state/uploads/first.jpg";
     const second = "/test-state/uploads/second.png";
