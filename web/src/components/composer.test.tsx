@@ -1910,7 +1910,7 @@ describe("Composer — quick keys / image attach", () => {
 
     const expand = screen.getByRole("button", { name: "Expand input" });
     expect(expand).toHaveAttribute("aria-expanded", "false");
-    expect(box).toHaveStyle({ maxHeight: "5.75rem" });
+    expect(box).toHaveStyle({ maxHeight: "5.875rem" });
 
     await user.click(expand);
     expect(screen.getByRole("button", { name: "Collapse input" })).toHaveAttribute(
@@ -1934,7 +1934,20 @@ describe("Composer — quick keys / image attach", () => {
       "false",
     );
     expect(box).not.toHaveClass("h-[clamp(10rem,40dvh,20rem)]", "[field-sizing:fixed]");
-    expect(box).toHaveStyle({ maxHeight: "5.75rem" });
+    expect(box).toHaveStyle({ maxHeight: "5.875rem" });
+  });
+
+  it("uses full text width and a three-row cap once a collapsed reply wraps", async () => {
+    const user = userEvent.setup();
+    renderComposer({ keyboardOpen: true });
+    const box = screen.getByPlaceholderText(/type a reply/i);
+
+    await user.type(box, "first line{enter}second line");
+
+    expect(box).toHaveClass("pb-12", "pr-3");
+    expect(box).not.toHaveClass("pr-[7.25rem]");
+    expect(box).toHaveStyle({ maxHeight: "8.25rem", overflowY: "auto" });
+    expect(screen.getByTestId("composer-scroll-top-mask")).toBeInTheDocument();
   });
 
   it("does not render digit shortcut buttons because the phone keyboard already supplies them", () => {

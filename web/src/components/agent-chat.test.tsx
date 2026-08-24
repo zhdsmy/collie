@@ -194,7 +194,7 @@ describe("AgentChat — typing layout preferences", () => {
     expect(screen.queryByRole("button", { name: "Switch pane" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Type into terminal" })).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText(/type a reply/i)).toHaveStyle({
-      maxHeight: "5.75rem",
+      maxHeight: "5.875rem",
       overflowY: "auto",
     });
   });
