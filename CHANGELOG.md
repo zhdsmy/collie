@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.34.0+collie.7] - 2026-08-24
+
+### Fixed
+
+- **Reply input grows to three centred rows, then scrolls clear of its buttons.** (f6a332d)
+
 ## [0.34.0+collie.6] - 2026-08-24
 
 ### Fixed
