@@ -1898,7 +1898,8 @@ describe("Composer — quick keys / image attach", () => {
     expect(box.parentElement).toHaveClass("relative", "w-full");
     expect(box.parentElement).toContainElement(attach);
     expect(box.parentElement).toContainElement(send);
-    expect(box).toHaveClass("pr-[7.25rem]");
+    expect(box).toHaveClass("leading-6", "py-[9px]", "pr-[7.25rem]");
+    expect(box).toHaveStyle({ maxHeight: "5.75rem", overflowY: "auto" });
     expect(send).toHaveClass("size-9");
     expect(send).toHaveClass("hover:bg-accent");
     expect(send).not.toHaveClass("bg-primary");
@@ -1913,7 +1914,7 @@ describe("Composer — quick keys / image attach", () => {
 
     const expand = screen.getByRole("button", { name: "Expand input" });
     expect(expand).toHaveAttribute("aria-expanded", "false");
-    expect(box).toHaveStyle({ maxHeight: "5.875rem" });
+    expect(box).toHaveStyle({ maxHeight: "5.75rem" });
 
     await user.click(expand);
     expect(screen.getByRole("button", { name: "Collapse input" })).toHaveAttribute(
@@ -1925,10 +1926,9 @@ describe("Composer — quick keys / image attach", () => {
       "max-h-[clamp(10rem,40dvh,20rem)]",
       "overflow-y-auto",
       "[field-sizing:fixed]",
-      "pb-12",
-      "pr-3",
+      "pr-[7.25rem]",
     );
-    expect(box).not.toHaveClass("pr-[7.25rem]");
+    expect(box).not.toHaveClass("pb-12", "pr-3");
     expect(box.parentElement).toContainElement(screen.getByRole("button", { name: "Send" }));
 
     await user.click(screen.getByRole("button", { name: "Collapse input" }));
@@ -1937,20 +1937,25 @@ describe("Composer — quick keys / image attach", () => {
       "false",
     );
     expect(box).not.toHaveClass("h-[clamp(10rem,40dvh,20rem)]", "[field-sizing:fixed]");
-    expect(box).toHaveStyle({ maxHeight: "5.875rem" });
+    expect(box).toHaveStyle({ maxHeight: "5.75rem" });
   });
 
-  it("uses full text width and a three-row cap once a collapsed reply wraps", async () => {
+  it("grows through three rows then scrolls without entering the action gutter", async () => {
     const user = userEvent.setup();
     renderComposer({ keyboardOpen: true });
     const box = screen.getByPlaceholderText(/type a reply/i);
 
-    await user.type(box, "first line{enter}second line");
+    await user.type(box, "first line{enter}second line{enter}third line{enter}fourth line");
 
-    expect(box).toHaveClass("pb-12", "pr-3");
-    expect(box).not.toHaveClass("pr-[7.25rem]");
-    expect(box).toHaveStyle({ maxHeight: "8.25rem", overflowY: "auto" });
-    expect(screen.getByTestId("composer-scroll-top-mask")).toBeInTheDocument();
+    expect(box).toHaveClass(
+      "field-sizing-content",
+      "leading-6",
+      "py-[9px]",
+      "pr-[7.25rem]",
+    );
+    expect(box).not.toHaveClass("pb-12", "pr-3");
+    expect(box).toHaveStyle({ maxHeight: "5.75rem", overflowY: "auto" });
+    expect(screen.queryByTestId("composer-scroll-top-mask")).not.toBeInTheDocument();
   });
 
   it("does not render digit shortcut buttons because the phone keyboard already supplies them", () => {

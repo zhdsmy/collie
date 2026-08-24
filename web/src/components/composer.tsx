@@ -217,7 +217,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // message. Lazy initialiser so the restore happens on the mount, before first paint.
   const [input, setInput] = useState(() => loadDraft(session, paneId) ?? "");
   const [inputExpanded, setInputExpanded] = useState(false);
-  const [inputNeedsActionRow, setInputNeedsActionRow] = useState(false);
   // Mirror of `input` for the write-through path: updateInput needs the previous value to apply a
   // functional update AND to persist the result, without either reading stale state or doing the
   // save inside a (double-invoked) state updater.
@@ -673,35 +672,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const confirmingSend = sendConfirm.pending === "send";
   const forcingSend = forceConfirm.pending === "force";
 
-  // A textarea cannot wrap around an absolutely-positioned rail. Keep the compact single-line
-  // layout inline, but once that narrow text lane would wrap, give text the full field width and
-  // reserve the rail's height at the bottom instead. Measure with the inline padding even while the
-  // bottom-row layout is active, so the decision cannot oscillate between the two arrangements.
-  useLayoutEffect(() => {
-    const field = inputRef.current;
-    if (!field || direct.active) {
-      setInputNeedsActionRow(false);
-      return;
-    }
-
-    const previousRight = field.style.paddingRight;
-    const previousBottom = field.style.paddingBottom;
-    field.style.paddingRight = forcingSend || confirmingSend ? "9rem" : "7.25rem";
-    field.style.paddingBottom = "0.625rem";
-
-    const style = getComputedStyle(field);
-    const lineHeight = Number.parseFloat(style.lineHeight) || 24;
-    const verticalPadding =
-      (Number.parseFloat(style.paddingTop) || 0) +
-      (Number.parseFloat(style.paddingBottom) || 0);
-    const contentHeight = Math.max(0, field.scrollHeight - verticalPadding);
-    const needsRow = field.value.includes("\n") || contentHeight > lineHeight + 0.5;
-
-    field.style.paddingRight = previousRight;
-    field.style.paddingBottom = previousBottom;
-    setInputNeedsActionRow(needsRow);
-  }, [confirmingSend, direct.active, forcingSend, input, inputExpanded, keyboardOpen]);
-
   // Coalesce revalidations from a burst of key presses, LEADING edge first: the first press in a
   // burst refetches immediately, and only presses that arrive inside the window collapse into one
   // trailing refetch. It used to be trailing-only, which meant a lone press — the common case — sat
@@ -1019,8 +989,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             {translate("composer.tooLongDraft")}
           </p>
         )}
-        {/* The textarea owns the full row. Every action sits inside its bottom-right edge, so
-            expanding the field also claims the width that Send used to reserve beside it. */}
+          {/* A permanent right gutter keeps every scrolled line clear of the action rail. */}
         <div className="relative min-w-0 w-full">
           <ChatInput
             ref={inputRef}
@@ -1053,14 +1022,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             autoCorrect={direct.active ? "off" : undefined}
             spellCheck={direct.active ? false : undefined}
             className={cn(
-              // Room for the attach button tucked into the bottom-right of the field. `block`
-              // matters: a textarea is inline-level by default, so the wrapper inherits a few px of
-              // baseline gap beneath it and the absolutely-positioned button hangs past the field's
-              // bottom edge.
-              "block",
-              inputExpanded || inputNeedsActionRow
-                ? "pb-12 pr-3"
-                : direct.active
+                // One row is 44px including the border; every line shares the same centred line box.
+                "block overflow-y-auto py-[9px] leading-6",
+                direct.active
                   ? "pr-12"
                   : forcingSend || confirmingSend
                     ? "pr-[9rem]"
@@ -1073,9 +1037,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             style={
               !inputExpanded
                 ? {
-                    // text-base is 1.5rem leading: exactly three rows + 1.25rem vertical padding +
-                    // 2px border. A bottom action row replaces the normal lower padding.
-                    maxHeight: inputNeedsActionRow ? "8.25rem" : "5.875rem",
+                      // Three 24px lines + 18px vertical padding + 2px border.
+                      maxHeight: "5.75rem",
                     overflowY: "auto",
                   }
                 : undefined
@@ -1083,15 +1046,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             disabled={locked}
             rows={1}
           />
-          {!inputExpanded && inputNeedsActionRow && (
-            // Native textarea scrolling also scrolls its top padding, exposing a clipped fragment of
-            // the preceding row. Repaint only that padding strip so every visible row stays whole.
-            <div
-              data-testid="composer-scroll-top-mask"
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-px top-px z-[1] h-2.5 bg-muted"
-            />
-          )}
             {/* One stable action rail: ordinary controls share a size; confirmation swaps the image
                 and Send icons for one explicit destructive action without changing field width. */}
             <div className="absolute bottom-1 right-1 flex items-center gap-0.5">
