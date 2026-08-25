@@ -25,11 +25,13 @@ const COMMAND_SUMMARY = /^•\s+Ran\s+\d+\s+commands\b/;
 const COMMAND_EVENT =
   /^•\s+(?:Called|Edited|Explored|Ran|Read|Running|Searched|Viewed|Working|You have)(?:\s|$)/;
 const ANSWER_LEAD = /^(?:•| {2}-)\s+\S/;
+const PLAIN_ANSWER_ROW = /^ {2}\S/;
 const SUBMITTED_QUERY_LEAD = /^›(?:\s|$)/;
 const SUBMITTED_QUERY_ROW = /^ {2}/;
 const SUBMITTED_QUERY_CONTINUATION = /^ {2}\S/;
 const NESTED_ROW = /^ {2}(?:(?:[-+*•]|\d+[.)])(?:\s|$)|[│└┌┐┘┬├┤┼])/;
 const NESTED_ANSWER_CONTENT = /^(?:(?:[-+*•]|\d+[.)])(?:\s|$)|[│└┌┐┘┬├┤┼])/;
+const STRUCTURAL_ANSWER_CONTENT = /^(?:```|~~~|[|─━═])/;
 const DECORATIVE_RULE = /^─{40,}$/;
 const RESIDUAL_RULE = /^─$/;
 // Codex dims command output; paired wide edges inside it are decoration, not terminal tables.
@@ -113,6 +115,23 @@ function withoutContinuationIndent(
   return segments;
 }
 
+function withoutTrailingWhitespace(line: StyledLine): StyledLine {
+  let end = line.segments.length;
+  while (end > 0 && /^[ \t]*$/.test(line.segments[end - 1]!.text)) end--;
+
+  let changed = end !== line.segments.length;
+  const segments = line.segments.slice(0, end);
+  const last = segments.at(-1);
+  if (last) {
+    const text = last.text.replace(/[ \t]+$/, "");
+    if (text !== last.text) {
+      segments[segments.length - 1] = { ...last, text };
+      changed = true;
+    }
+  }
+  return changed ? { ...line, segments } : line;
+}
+
 function wrappedJoiner(previous: string, continuation: string): string {
   const before = previous.at(-1) ?? "";
   const after = continuation.trimStart().at(0) ?? "";
@@ -135,6 +154,28 @@ function isAnswerContinuation(text: string, indent: number): boolean {
     !/^\s/.test(content) &&
     !NESTED_ANSWER_CONTENT.test(content)
   );
+}
+
+function isPlainAnswerParagraph(text: string): boolean {
+  if (!PLAIN_ANSWER_ROW.test(text)) return false;
+  const content = text.slice(2);
+  return !NESTED_ANSWER_CONTENT.test(content) && !STRUCTURAL_ANSWER_CONTENT.test(content);
+}
+
+function mergeWrappedLine(previous: StyledLine, continuation: StyledLine, indent: number): StyledLine {
+  const trimmed = withoutTrailingWhitespace(previous);
+  const continuationText = lineText(continuation);
+  return {
+    ...trimmed,
+    segments: [
+      ...trimmed.segments,
+      ...withoutContinuationIndent(
+        continuation,
+        wrappedJoiner(lineText(trimmed), continuationText),
+        indent,
+      ),
+    ],
+  };
 }
 
 function isSubmittedQueryLead(line: StyledLine): boolean {
@@ -198,7 +239,9 @@ function normalizeSubmittedQueries(lines: StyledLine[]): StyledLine[] {
     for (const queryLine of queryLines) {
       const text = lineText(queryLine);
       if (text.length === 0) {
-        if (merged) normalized.push(paintSubmittedQuery(merged, background));
+        if (merged) {
+          normalized.push(paintSubmittedQuery(withoutTrailingWhitespace(merged), background));
+        }
         merged = undefined;
         normalized.push(queryLine);
         continue;
@@ -209,19 +252,15 @@ function normalizeSubmittedQueries(lines: StyledLine[]): StyledLine[] {
         !NESTED_ROW.test(text) &&
         !NESTED_ROW.test(lineText(merged))
       ) {
-        merged = {
-          ...merged,
-          segments: [
-          ...merged.segments,
-            ...withoutContinuationIndent(queryLine, wrappedJoiner(lineText(merged), text)),
-          ],
-        };
+        merged = mergeWrappedLine(merged, queryLine, 2);
         continue;
       }
-      if (merged) normalized.push(paintSubmittedQuery(merged, background));
+      if (merged) {
+        normalized.push(paintSubmittedQuery(withoutTrailingWhitespace(merged), background));
+      }
       merged = queryLine;
     }
-    if (merged) normalized.push(paintSubmittedQuery(merged, background));
+    if (merged) normalized.push(paintSubmittedQuery(withoutTrailingWhitespace(merged), background));
   }
 
   return normalized ?? lines;
@@ -230,20 +269,39 @@ function normalizeSubmittedQueries(lines: StyledLine[]): StyledLine[] {
 /**
  * Codex hard-wraps its rendered answer paragraphs to the host PTY and indents continuation rows to
  * the answer's text column. The phone then wraps those rows a second time, leaving short fragments
- * and hanging indents. Rejoin only answer-bullet continuations, including the indented `-` form used
- * by newer Codex builds; tool events, nested rows, and painted code/diffs keep their terminal rows
- * verbatim.
+ * and hanging indents. Rejoin bullet continuations and plain paragraphs inside an identified answer,
+ * including the indented `-` form used by newer Codex builds. Tool events, nested rows, and painted
+ * code/diffs keep their terminal rows verbatim.
  */
 function normalizeWrappedAnswers(lines: StyledLine[]): StyledLine[] {
   let normalized: StyledLine[] | undefined;
+  let insideAnswer = false;
 
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index]!;
     const text = lineText(line);
-    const continuationIndent = answerContinuationIndent(text);
+    const commandEvent = COMMAND_EVENT.test(text);
+    const answerIndent = answerContinuationIndent(text);
+
+    if (
+      commandEvent ||
+      isCompletionSummary(line) ||
+      isCommandSummary(line) ||
+      isSubmittedQueryLead(line)
+    ) {
+      insideAnswer = false;
+    }
+
+    let continuationIndent: number | null = null;
+    if (!commandEvent && answerIndent !== null) {
+      insideAnswer = true;
+      continuationIndent = answerIndent;
+    } else if (insideAnswer && isPlainAnswerParagraph(text)) {
+      continuationIndent = 2;
+    }
+
     if (
       continuationIndent === null ||
-      COMMAND_EVENT.test(text) ||
       line.segments.some((segment) => segment.bg !== undefined)
     ) {
       normalized?.push(line);
@@ -251,6 +309,7 @@ function normalizeWrappedAnswers(lines: StyledLine[]): StyledLine[] {
     }
 
     let merged = line;
+    let joined = false;
     while (index + 1 < lines.length) {
       const next = lines[index + 1]!;
       const nextText = lineText(next);
@@ -261,20 +320,11 @@ function normalizeWrappedAnswers(lines: StyledLine[]): StyledLine[] {
         break;
       }
       normalized ??= lines.slice(0, index);
-      merged = {
-        ...merged,
-        segments: [
-          ...merged.segments,
-          ...withoutContinuationIndent(
-            next,
-            wrappedJoiner(lineText(merged), nextText),
-            continuationIndent,
-          ),
-        ],
-      };
+      merged = mergeWrappedLine(merged, next, continuationIndent);
+      joined = true;
       index++;
     }
-    normalized?.push(merged);
+    normalized?.push(joined ? withoutTrailingWhitespace(merged) : merged);
   }
 
   return normalized ?? lines;

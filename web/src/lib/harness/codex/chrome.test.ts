@@ -385,6 +385,34 @@ describe("Codex chrome", () => {
     ]);
   });
 
+  it("reflows plain paragraphs inside a Codex answer without joining command output", () => {
+    const captured = lines(
+      [
+        "• 所有命令仍走现有的精准 Composer 检测和发送保护：",
+        "  web/src/lib/reply-action.ts:145。   ",
+        "",
+        "  本轮只确认了设计和实现边界，没有修改代码。我的建议是按以上方案落      ",
+        "  地，其中 Plan 明确采用“可确认时显示状态，否则保持动作态”的策略。",
+        "",
+        "• Running a deliberately long command",
+        "  output must stay on its own terminal row",
+      ].join("\n"),
+    );
+
+    const block = codexBuildBlocks(captured)[0]!;
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([
+      "• 所有命令仍走现有的精准 Composer 检测和发送保护：" +
+        "web/src/lib/reply-action.ts:145。",
+      "",
+      "  本轮只确认了设计和实现边界，没有修改代码。我的建议是按以上方案落" +
+        "地，其中 Plan 明确采用“可确认时显示状态，否则保持动作态”的策略。",
+      "",
+      "• Running a deliberately long command",
+      "  output must stay on its own terminal row",
+    ]);
+  });
+
   it("reflows backgroundless submitted queries and restores their input surface", () => {
     const captured = lines(
       [
@@ -402,6 +430,34 @@ describe("Codex chrome", () => {
       "› 重新设计按键，将按键合并到直接输入，上方一排辅助按键，可以按组切换，第一组是 Ctrl Esc Tab 方向键上 下 左 右，看看 Shift 和 Alt 有没有必要，第二组是 F1 到 F12。",
       "",
       "• 收到，先讨论交互结构。",
+    ]);
+    expect(block.lines[0]!.segments.every((segment) => segment.bg === "rgb(57,57,71)"))
+      .toBe(true);
+  });
+
+  it("removes PTY padding while reflowing submitted image paths and their caption", () => {
+    const captured = lines(
+      [
+        painted(
+          "› /Users/michael/.local/state/collie/uploads/w6_p1-mt88moqs-d3b39ec3.jpg " +
+            "/Users/michael/.local/state/collie/uploads/      ",
+          "1;2;",
+        ),
+        painted("  w6_p1-mt88mryg-e9ab431d.jpg                             "),
+        painted("  输出和输入的换行还是有问题                              "),
+        "",
+        "• 我来检查。",
+      ].join("\n"),
+    );
+
+    const block = codexBuildBlocks(captured)[0]!;
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual([
+      "› /Users/michael/.local/state/collie/uploads/w6_p1-mt88moqs-d3b39ec3.jpg " +
+        "/Users/michael/.local/state/collie/uploads/w6_p1-mt88mryg-e9ab431d.jpg " +
+        "输出和输入的换行还是有问题",
+      "",
+      "• 我来检查。",
     ]);
     expect(block.lines[0]!.segments.every((segment) => segment.bg === "rgb(57,57,71)"))
       .toBe(true);
