@@ -1,6 +1,21 @@
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Lock, Move } from "lucide-react";
+import {
+  ArrowBigUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowRightToLine,
+  ArrowUp,
+  ChevronUp,
+  CornerDownLeft,
+  Keyboard,
+  LockKeyhole,
+  Option,
+  SquareFunction,
+  X,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useHoldRepeat } from "@/hooks/use-hold-repeat";
@@ -20,18 +35,20 @@ const FUNCTION_KEYS = Array.from({ length: 12 }, (_, index) => `F${index + 1}`);
 
 const NAVIGATION_KEYS: ReadonlyArray<{
   key: string;
-  label: ReactNode;
+  icon: LucideIcon;
   ariaLabel: string;
   repeatable?: boolean;
 }> = [
-  { key: "Escape", label: <span aria-hidden="true">⎋</span>, ariaLabel: "Escape" },
-  { key: "Tab", label: <span aria-hidden="true">⇥</span>, ariaLabel: "Tab" },
-  { key: "Up", label: <ArrowUp className="size-4" />, ariaLabel: "Up", repeatable: true },
-  { key: "Down", label: <ArrowDown className="size-4" />, ariaLabel: "Down", repeatable: true },
-  { key: "Left", label: <ArrowLeft className="size-4" />, ariaLabel: "Left", repeatable: true },
-  { key: "Right", label: <ArrowRight className="size-4" />, ariaLabel: "Right", repeatable: true },
-  { key: "Enter", label: <span aria-hidden="true">↩</span>, ariaLabel: "Enter" },
+  { key: "Escape", icon: X, ariaLabel: "Escape" },
+  { key: "Tab", icon: ArrowRightToLine, ariaLabel: "Tab" },
+  { key: "Up", icon: ArrowUp, ariaLabel: "Up", repeatable: true },
+  { key: "Down", icon: ArrowDown, ariaLabel: "Down", repeatable: true },
+  { key: "Left", icon: ArrowLeft, ariaLabel: "Left", repeatable: true },
+  { key: "Right", icon: ArrowRight, ariaLabel: "Right", repeatable: true },
+  { key: "Enter", icon: CornerDownLeft, ariaLabel: "Enter" },
 ];
+
+const KEY_ICON_CLASS = "size-[18px] shrink-0";
 
 export function DirectKeyboardAccessory({
   row,
@@ -54,7 +71,7 @@ export function DirectKeyboardAccessory({
     event.preventDefault();
   };
 
-  const modifierButton = (modifier: Modifier, glyph: string, label: string) => {
+  const modifierButton = (modifier: Modifier, Icon: LucideIcon, label: string) => {
     const mode = modifiers[modifier];
     return (
       <Button
@@ -69,10 +86,12 @@ export function DirectKeyboardAccessory({
         title={label}
         aria-pressed={mode !== "off"}
         data-mode={mode}
-        className="size-10 shrink-0 touch-manipulation gap-0.5 px-0 text-lg"
+        className="relative size-10 shrink-0 touch-manipulation px-0"
       >
-        {mode === "locked" && <Lock className="size-3" />}
-        <span aria-hidden="true">{glyph}</span>
+        <Icon aria-hidden="true" className={KEY_ICON_CLASS} />
+        {mode === "locked" && (
+          <LockKeyhole aria-hidden="true" className="absolute right-1 top-1 size-2.5" />
+        )}
       </Button>
     );
   };
@@ -136,11 +155,9 @@ export function DirectKeyboardAccessory({
         className="size-10 shrink-0 touch-manipulation border border-border/60 bg-muted/40"
       >
         {row === "navigation" ? (
-          <span className="font-mono text-xs font-semibold">
-            F<span className="text-[9px]">x</span>
-          </span>
+          <SquareFunction aria-hidden="true" className={KEY_ICON_CLASS} />
         ) : (
-          <Move className="size-4" />
+          <Keyboard aria-hidden="true" className={KEY_ICON_CLASS} />
         )}
       </Button>
       <div aria-hidden="true" className="h-7 w-px shrink-0 bg-border/70" />
@@ -151,12 +168,17 @@ export function DirectKeyboardAccessory({
       >
         {row === "navigation" ? (
           <>
-            {modifierButton("ctrl", "⌃", "Ctrl")}
-            {NAVIGATION_KEYS.map((item) =>
-              keyButton(item.key, item.label, item.ariaLabel, item.repeatable),
+            {modifierButton("ctrl", ChevronUp, "Ctrl")}
+            {NAVIGATION_KEYS.map(({ key, icon: Icon, ariaLabel, repeatable }) =>
+              keyButton(
+                key,
+                <Icon aria-hidden="true" className={KEY_ICON_CLASS} />,
+                ariaLabel,
+                repeatable,
+              ),
             )}
-            {modifierButton("shift", "⇧", "Shift")}
-            {modifierButton("alt", "⌥", "Alt")}
+            {modifierButton("shift", ArrowBigUp, "Shift")}
+            {modifierButton("alt", Option, "Alt")}
           </>
         ) : (
           FUNCTION_KEYS.map((key) => keyButton(key, key, key))

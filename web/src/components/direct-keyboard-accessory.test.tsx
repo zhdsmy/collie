@@ -26,6 +26,10 @@ describe("DirectKeyboardAccessory", () => {
     expect(switcher.parentElement).toBe(root);
     expect(rail).toHaveClass("overflow-x-auto", "flex", "min-w-0");
     expect(switcher).toHaveClass("shrink-0");
+    expect(switcher.querySelector("svg")).toHaveClass(
+      "lucide-square-function",
+      "size-[18px]",
+    );
     for (const button of root.querySelectorAll("button")) {
       expect(button).toHaveClass("size-10", "shrink-0");
     }
@@ -46,15 +50,49 @@ describe("DirectKeyboardAccessory", () => {
       "Shift",
       "Alt",
     ]);
-    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveTextContent("⌃");
-    expect(screen.getByRole("button", { name: "Escape" })).toHaveTextContent("⎋");
-    expect(screen.getByRole("button", { name: "Tab" })).toHaveTextContent("⇥");
-    expect(screen.getByRole("button", { name: "Enter" })).toHaveTextContent("↩");
-    expect(screen.getByRole("button", { name: "Shift" })).toHaveTextContent("⇧");
-    expect(screen.getByRole("button", { name: "Alt" })).toHaveTextContent("⌥");
+    const expectedIcons = [
+      "lucide-chevron-up",
+      "lucide-x",
+      "lucide-arrow-right-to-line",
+      "lucide-arrow-up",
+      "lucide-arrow-down",
+      "lucide-arrow-left",
+      "lucide-arrow-right",
+      "lucide-corner-down-left",
+      "lucide-arrow-big-up",
+      "lucide-option",
+    ];
+    within(rail)
+      .getAllByRole("button")
+      .forEach((button, index) => {
+        expect(button).toHaveTextContent("");
+        expect(button.querySelector("svg")).toHaveClass(expectedIcons[index], "size-[18px]");
+      });
 
     fireEvent.click(screen.getByRole("button", { name: "Enter" }));
     expect(onSendKeys).toHaveBeenCalledWith(["Enter"]);
+  });
+
+  it("overlays a locked modifier badge without moving or resizing its main icon", () => {
+    render(
+      <DirectKeyboardAccessory
+        row="navigation"
+        modifiers={{ ...ALL_OFF, ctrl: "locked" }}
+        onToggleRow={vi.fn()}
+        onToggleModifier={vi.fn()}
+        onSendKeys={vi.fn()}
+      />,
+    );
+
+    const ctrl = screen.getByRole("button", { name: "Ctrl" });
+    expect(ctrl).toHaveClass("relative");
+    expect(ctrl.querySelector(".lucide-chevron-up")).toHaveClass("size-[18px]");
+    expect(ctrl.querySelector(".lucide-lock-keyhole")).toHaveClass(
+      "absolute",
+      "right-1",
+      "top-1",
+      "size-2.5",
+    );
   });
 
   it("preserves arrow hold-repeat through the accessory sender", async () => {
