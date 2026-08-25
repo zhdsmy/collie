@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.34.0+collie.13] - 2026-08-25
+
+### Fixed
+
+- **Codex terminal input and output reflow without PTY padding or hanging continuation rows.** (b5d7ec0)
+
 ## [0.34.0+collie.12] - 2026-08-25
 
 ### Fixed
