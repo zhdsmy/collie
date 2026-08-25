@@ -3,20 +3,7 @@ import type { ChangeEvent, ClipboardEvent, ReactNode } from "react";
 import type { TFunction } from "i18next";
 import { useRevalidator } from "react-router";
 import { useTranslation } from "react-i18next";
-import {
-  Check,
-  ImagePlus,
-  Keyboard,
-  Loader2,
-  Maximize2,
-  Minimize2,
-  Send,
-  Settings2,
-  Slash,
-  Terminal,
-  X,
-  Zap,
-} from "lucide-react";
+import { Check, ImagePlus, Keyboard, Loader2, Send, Settings2, Slash, Terminal, X, Zap } from "lucide-react";
 
 import type { DisplayPrefs } from "@/hooks/use-display-prefs";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
@@ -43,11 +30,6 @@ import { TerminalDraftPreview } from "@/components/terminal-draft-preview";
 import { DirectTypingStrip } from "@/components/direct-typing-strip";
 import { DirectKeyboardAccessory } from "@/components/direct-keyboard-accessory";
 import { NoEchoNotice } from "@/components/no-echo-notice";
-import {
-  CodexComposerControls,
-  type CodexComposerCommand,
-} from "@/components/codex-composer-controls";
-import type { CodexSessionState } from "@/lib/harness/codex/session-state";
 
 export interface ComposerHandle {
   /** Focus the input and put the caret at the end — used by the mirror-tap-to-focus in AgentChat. */
@@ -83,8 +65,6 @@ interface ComposerProps {
    * text tracks this live so host typing streams into it; it also drives the send()-time pre-clear (the
    * actual current "❯" line) and unmounts the preview when it goes null. Never written into the input. */
   rawTerminalDraft: string | null;
-  /** Last live Codex status fields. Undefined for other harnesses or before a statusline is seen. */
-  codexSession?: CodexSessionState;
   /** Mirror display prefs — the View row lives here, but the mirror (in AgentChat) reads the same
    * single instance, so they're threaded through rather than each calling useDisplayPrefs. */
   prefs: DisplayPrefs;
@@ -195,7 +175,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     text,
     terminalDraft,
     rawTerminalDraft,
-    codexSession,
     prefs,
     setWrap,
     stepFontSize,
@@ -224,8 +203,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // pane view is keyed by paneId, so without this, stepping over to another tab mid-reply ate the
   // message. Lazy initialiser so the restore happens on the mount, before first paint.
   const [input, setInput] = useState(() => loadDraft(session, paneId) ?? "");
-  const [inputExpanded, setInputExpanded] = useState(false);
-  const [inputNeedsActionRow, setInputNeedsActionRow] = useState(false);
   // Mirror of `input` for the write-through path: updateInput needs the previous value to apply a
   // functional update AND to persist the result, without either reading stale state or doing the
   // save inside a (double-invoked) state updater.
@@ -270,11 +247,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     const restored = loadDraft(session, paneId) ?? "";
     inputValueRef.current = restored;
     setInput(restored);
-    setInputExpanded(false);
     noticeNoEcho(null); // it described the pane we just left
   }, [session, paneId]);
   const [sending, setSending] = useState(false);
-  const [codexCommand, setCodexCommand] = useState<CodexComposerCommand | null>(null);
   const [uploading, setUploading] = useState(false);
   // Pending-send preview: set on a successful send, cleared when the mirror catches up (next text
   // update) or after a 6s safety timeout. Shows "You sent: …" so the user knows the message landed.
@@ -588,7 +563,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         // Phone-owned input — cleared once the reply is on its way. Via updateInput, so the stored
         // draft goes with it (an empty value removes the key).
         if (isDraft) updateInput("");
-        setInputExpanded(false);
         // Remember what/when we sent, so the next few polls recognise this text echoing on the "❯"
         // line as our own in-flight reply rather than a stranded draft (suppressEcho above).
         lastSentRef.current = { text: t, at: Date.now() };
@@ -681,44 +655,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   }
   const confirmingSend = sendConfirm.pending === "send";
   const forcingSend = forceConfirm.pending === "force";
-  const isCodex = agent === "codex" && !isShell;
-
-  async function runCodexCommand(command: CodexComposerCommand) {
-    if (!isCodex || locked || sending || dialogPresent) return;
-    setCodexCommand(command);
-    try {
-      await send(command, false);
-    } finally {
-      setCodexCommand(null);
-    }
-  }
-
-  // A native textarea cannot wrap around buttons. Keep the compact one-line rail inline, then move
-  // the rail into its own in-frame row once that lane wraps. Measure using inline-mode padding even
-  // while the row is active so the two layouts cannot oscillate.
-  useLayoutEffect(() => {
-    const field = inputRef.current;
-    if (!field || direct.active) {
-      setInputNeedsActionRow(false);
-      return;
-    }
-    if (inputExpanded) return;
-
-    const previousRight = field.style.paddingRight;
-    field.style.paddingRight = forcingSend || confirmingSend ? "9rem" : "7.25rem";
-
-    const style = getComputedStyle(field);
-    const lineHeight = Number.parseFloat(style.lineHeight) || 24;
-    const needsRow = field.value.includes("\n") || field.scrollHeight > lineHeight + 0.5;
-
-    field.style.paddingRight = previousRight;
-    setInputNeedsActionRow(needsRow);
-  }, [confirmingSend, direct.active, forcingSend, input, inputExpanded]);
-
-  // Codex's session controls live in a stable bottom rail. Other harnesses retain the compact
-  // inline actions until their text wraps, so this feature does not make every composer taller.
-  const inputUsesActionRow =
-    !direct.active && (isCodex || inputExpanded || inputNeedsActionRow);
 
   // Coalesce revalidations from a burst of key presses, LEADING edge first: the first press in a
   // burst refetches immediately, and only presses that arrive inside the window collapse into one
@@ -919,7 +855,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               // Close whatever dock is open first: the mode needs the phone keyboard, and a dock
               // holding half the viewport is in its way.
               requestDrawer(null);
-              setInputExpanded(false);
               direct.activate();
             }}
           >
@@ -1006,7 +941,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                     // any draft is present, which would make the offered remedy fail on the spot.
                     updateInput("");
                     requestDrawer(null);
-                    setInputExpanded(false);
                     direct.activate();
                   }
             }
@@ -1037,178 +971,124 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             {translate("composer.tooLongDraft")}
           </p>
         )}
-          {/* Text scrolls independently of the in-frame action row, so padding never becomes a
-              fourth visible line and upper lines can use the full field width. */}
-          <div
-            data-slot="composer-input-frame"
-            className={cn(
-              "relative min-w-0 w-full overflow-hidden rounded-md border border-input bg-transparent shadow-xs transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring",
-              inputExpanded && "flex h-[clamp(10rem,40dvh,20rem)] flex-col",
-              direct.active &&
-                "border-primary focus-within:border-primary focus-within:ring-primary/30",
-            )}
-          >
-            <div
-              data-slot="composer-input-viewport"
-              className={cn("min-h-0 py-[9px]", inputExpanded && "flex-1")}
-            >
-              <ChatInput
-                ref={inputRef}
-                value={direct.active ? direct.value : input}
-                onChange={direct.active ? direct.onChange : (e) => updateInput(e.target.value)}
-                onCompositionStart={direct.active ? direct.onCompositionStart : undefined}
-                onCompositionEnd={direct.active ? direct.onCompositionEnd : undefined}
-                onKeyDown={
-                  direct.active
-                    ? direct.onKeyDown
-                    : (e) => {
-                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                          e.preventDefault();
-                          onSendClick();
-                        }
-                      }
-                }
-                onPaste={onPasteImage}
-                placeholder={
-                  gone
-                    ? translate("composer.paneGone")
-                    : readOnly
-                      ? translate("composer.placeholderReadOnly")
-                      : direct.active
-                        ? translate("composer.placeholderDirect")
-                        : isShell
-                          ? translate("composer.placeholderShell")
-                          : translate("composer.placeholderReply")
-                }
-                autoCorrect={direct.active ? "off" : undefined}
-                spellCheck={direct.active ? false : undefined}
-                className={cn(
-                  "block min-h-6 rounded-none border-0 px-3 py-0 leading-6 shadow-none focus-visible:border-transparent focus-visible:ring-0",
-                  inputUsesActionRow
-                    ? "pr-3"
-                    : direct.active
-                      ? "pr-12"
-                      : forcingSend || confirmingSend
-                        ? "pr-[9rem]"
-                        : "pr-[7.25rem]",
-                  inputExpanded && "h-full max-h-none [field-sizing:fixed]",
-                )}
-                style={
-                  !inputExpanded
-                    ? {
-                        // Padding lives outside this scrollport: 72px is exactly three 24px lines.
-                        maxHeight: "4.5rem",
-                        overflowY: "auto",
-                      }
-                    : undefined
-                }
-                disabled={locked}
-                rows={1}
-              />
-            </div>
-            {/* One stable action rail: ordinary controls share a size; confirmation swaps the image
-                and Send icons for one explicit destructive action without changing field width. */}
-            <div
-              data-slot="composer-input-actions"
-              className={cn(
-                "flex items-center gap-0.5",
-                inputUsesActionRow
-                  ? "h-[42px] shrink-0 justify-between border-t border-border/40 px-1"
-                  : "absolute bottom-[3px] right-[3px]",
-              )}
-            >
-              {isCodex && !direct.active && !forcingSend && !confirmingSend && (
-                <CodexComposerControls
-                  state={codexSession}
-                  busy={codexCommand}
-                  disabled={locked || sending || dialogPresent}
-                  onCommand={runCodexCommand}
-                />
-              )}
-                {!direct.active && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="ml-auto size-9 rounded-full text-muted-foreground"
-                    onPointerDown={(e) => e.preventDefault()}
-                    onClick={() => setInputExpanded((expanded) => !expanded)}
-                    aria-label={translate(
-                      inputExpanded ? "composer.collapseInput" : "composer.expandInput",
-                    )}
-                    aria-expanded={inputExpanded}
-                  >
-                    {inputExpanded ? (
-                      <Minimize2 className="size-4" />
-                    ) : (
-                      <Maximize2 className="size-4" />
-                    )}
-                  </Button>
-                )}
-                {!direct.active && !forcingSend && !confirmingSend && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-9 rounded-full text-muted-foreground"
-                    disabled={uploading || locked}
-                    onPointerDown={(e) => e.preventDefault()}
-                    onClick={() => fileRef.current?.click()}
-                    aria-label={translate("composer.attachImage")}
-                  >
-                    {uploading ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <ImagePlus className="size-4" />
-                    )}
-                  </Button>
-                )}
-                {!direct.active && forcingSend ? (
-                // The pre-flight refused and the user is being offered the override. Labelled for
-                // what it actually does — TYPE into what is on screen — because Enter stays guarded.
-                <Button
-                  variant="destructive"
-                  className="h-9 shrink-0 rounded-full px-3 text-xs font-semibold"
-                  onClick={onSendClick}
-                  disabled={locked || !input.trim() || sending}
-                  aria-label={translate("composer.typeAnyway")}
-                >
-                  {translate("composer.typeAnyway")}
-                </Button>
-                ) : !direct.active && confirmingSend ? (
-                <Button
-                  variant="destructive"
-                  className="h-9 shrink-0 rounded-full px-3 text-xs font-semibold"
-                  onClick={onSendClick}
-                  disabled={locked || !input.trim() || sending}
-                  aria-label={translate("composer.reallySend")}
-                >
-                  {translate("composer.reallySend")}
-                </Button>
-                ) : (
-                <Button
-                  variant={direct.active ? "default" : "ghost"}
-                  size="icon"
-                  className="size-9 shrink-0 rounded-full"
-                  onClick={direct.active ? () => direct.deactivate() : onSendClick}
-                  disabled={locked || sending}
-                  aria-label={
-                    direct.active ? translate("composer.stopDirect") : translate("composer.send")
+        {/* gap-3, not gap-2: with the attach button moved inside the field this row is only the
+            field and Send, and the old spacing left them looking joined. */}
+        <div className="flex items-end gap-3">
+          {/* The input and its attach button share one box: the button is positioned INSIDE the
+              field, messenger-style, rather than sitting beside it as a third control in the row.
+              It used to occupy a full-height slot to the left, which spent the widest part of the
+              composer on the least-used action; inside the field it costs nothing but a strip of
+              padding the text was not using anyway. `pr-11` on the textarea reserves that strip so a
+              long line can never run underneath the icon. */}
+          <div className="relative min-w-0 flex-1">
+          <ChatInput
+            ref={inputRef}
+            value={direct.active ? direct.value : input}
+            onChange={direct.active ? direct.onChange : (e) => updateInput(e.target.value)}
+            onCompositionStart={direct.active ? direct.onCompositionStart : undefined}
+            onCompositionEnd={direct.active ? direct.onCompositionEnd : undefined}
+            onKeyDown={
+              direct.active
+                ? direct.onKeyDown
+                : (e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault();
+                      onSendClick();
+                    }
                   }
-                  aria-pressed={direct.active}
-                >
-                  {direct.active ? (
-                    <Keyboard className="size-4" />
-                  ) : sending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : justSent ? (
-                    <Check className="size-4" />
-                  ) : (
-                    <Send className="size-4" />
-                  )}
-                </Button>
-                )}
-            </div>
+            }
+            onPaste={onPasteImage}
+            placeholder={
+              gone
+                ? translate("composer.paneGone")
+                : readOnly
+                  ? translate("composer.placeholderReadOnly")
+                  : direct.active
+                    ? translate("composer.placeholderDirect")
+                    : isShell
+                      ? translate("composer.placeholderShell")
+                      : translate("composer.placeholderReply")
+            }
+            autoCorrect={direct.active ? "off" : undefined}
+            spellCheck={direct.active ? false : undefined}
+            className={cn(
+              // Room for the attach button tucked into the bottom-right of the field. `block`
+              // matters: a textarea is inline-level by default, so the wrapper inherits a few px of
+              // baseline gap beneath it and the absolutely-positioned button hangs past the field's
+              // bottom edge.
+              "block pr-11",
+              direct.active &&
+                "border-primary focus-visible:border-primary focus-visible:ring-primary/30",
+            )}
+            style={keyboardOpen ? { maxHeight: "5.75rem", overflowY: "auto" } : undefined}
+            disabled={locked}
+            rows={1}
+          />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              // bottom-1, not centred: the field grows upward as the draft wraps, and a vertically
+              // centred button would drift up with it, away from the thumb and away from the send
+              // button it pairs with. Pinned to the bottom it stays put at any height.
+              className="absolute bottom-1 right-1 size-9 rounded-full text-muted-foreground"
+              disabled={uploading || locked || direct.active}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => fileRef.current?.click()}
+              aria-label={translate("composer.attachImage")}
+            >
+              {uploading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ImagePlus className="size-4" />
+              )}
+            </Button>
+          </div>
+          {!direct.active && forcingSend ? (
+            // The pre-flight refused and the user is being offered the override. Labelled for what it
+            // actually does — TYPE the text into whatever is on screen — not "send", because the
+            // submit key is still conditional on the verify step behind it.
+            <Button
+              variant="destructive"
+              className="h-11 shrink-0 rounded-full px-4 text-sm font-semibold"
+              onClick={onSendClick}
+              disabled={locked || !input.trim() || sending}
+              aria-label={translate("composer.typeAnyway")}
+            >
+              {translate("composer.typeAnyway")}
+            </Button>
+          ) : !direct.active && confirmingSend ? (
+            <Button
+              variant="destructive"
+              className="h-11 shrink-0 rounded-full px-4 text-sm font-semibold"
+              onClick={onSendClick}
+              disabled={locked || !input.trim() || sending}
+              aria-label={translate("composer.reallySend")}
+            >
+              {translate("composer.reallySend")}
+            </Button>
+          ) : (
+            <Button
+              size="icon"
+              className="size-11 shrink-0 rounded-full"
+              onClick={direct.active ? () => direct.deactivate() : onSendClick}
+              disabled={locked || sending}
+              aria-label={
+                direct.active ? translate("composer.stopDirect") : translate("composer.send")
+              }
+              aria-pressed={direct.active}
+            >
+              {direct.active ? (
+                <Keyboard className="size-4" />
+              ) : sending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : justSent ? (
+                <Check className="size-4" />
+              ) : (
+                <Send className="size-4" />
+              )}
+            </Button>
+          )}
         </div>
       </div>
 

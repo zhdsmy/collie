@@ -1416,10 +1416,7 @@ describe("Composer — destructive-input confirm", () => {
 
     // First tap: the Send button flips to a "Really send?" confirm — nothing is sent yet.
     await user.click(screen.getByRole("button", { name: "Send" }));
-    const confirm = screen.getByRole("button", { name: /really send/i });
-    expect(confirm).toBeInTheDocument();
-    expect(box.closest('[data-slot="composer-input-frame"]')).toContainElement(confirm);
-    expect(box).toHaveClass("pr-[9rem]");
+    expect(screen.getByRole("button", { name: /really send/i })).toBeInTheDocument();
     expect(box).toHaveValue("rm -rf node_modules"); // draft kept
     expect(props.onSent).not.toHaveBeenCalled();
 
@@ -1884,7 +1881,7 @@ describe("Composer — reload-guard hold (no-SW self-update safety gate)", () =>
 describe("Composer — quick keys / image attach", () => {
   it("shows the attach button on the reply-input row without the quick-key strip being visible", async () => {
     const user = userEvent.setup();
-    renderComposer();
+    renderComposer({ keyboardOpen: true });
     const box = screen.getByPlaceholderText(/type a reply/i);
 
     // The quick-key strip only renders once composerFocused && keyboardOpen — keyboardOpen defaults
@@ -1895,74 +1892,22 @@ describe("Composer — quick keys / image attach", () => {
     // The attach button now lives on the always-visible reply-input row instead of the strip.
     const attach = screen.getByRole("button", { name: "Attach image" });
     const send = screen.getByRole("button", { name: "Send" });
-    const frame = box.closest('[data-slot="composer-input-frame"]');
-    const viewport = box.parentElement;
-    const actions = send.parentElement;
-    expect(frame).toHaveClass("relative", "w-full");
-    expect(frame).toContainElement(attach);
-    expect(frame).toContainElement(send);
-    expect(viewport).toHaveClass("py-[9px]");
-    expect(actions).toHaveClass("absolute", "bottom-[3px]", "right-[3px]");
-    expect(box).toHaveClass("min-h-6", "leading-6", "py-0", "pr-[7.25rem]");
-    expect(box).toHaveStyle({ maxHeight: "4.5rem", overflowY: "auto" });
-    expect(send).toHaveClass("size-9");
-    expect(send).toHaveClass("hover:bg-accent");
-    expect(send).not.toHaveClass("bg-primary");
+    const field = box.parentElement;
+    const row = field?.parentElement;
+    expect(row).toHaveClass("flex", "items-end", "gap-3");
+    expect(field).toHaveClass("relative", "min-w-0", "flex-1");
+    expect(field).toContainElement(attach);
+    expect(field).not.toContainElement(send);
+    expect(row).toContainElement(send);
+    expect(box).toHaveClass("block", "pr-11");
+    expect(box).toHaveAttribute("rows", "1");
+    expect(box).toHaveStyle({ maxHeight: "5.75rem", overflowY: "auto" });
+    expect(send).toHaveClass("size-11", "bg-primary");
+    expect(screen.queryByRole("button", { name: "Expand input" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Model/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Fast/ })).not.toBeInTheDocument();
     expect(attach).toBeEnabled();
     await user.click(attach); // clickable without throwing (opens the hidden file input)
-  });
-
-  it("expands the reply field in place and can collapse it again", async () => {
-    const user = userEvent.setup();
-    renderComposer({ keyboardOpen: true });
-    const box = screen.getByPlaceholderText(/type a reply/i);
-    const frame = box.closest('[data-slot="composer-input-frame"]');
-
-    const expand = screen.getByRole("button", { name: "Expand input" });
-    expect(expand).toHaveAttribute("aria-expanded", "false");
-    expect(box).toHaveStyle({ maxHeight: "4.5rem" });
-
-    await user.click(expand);
-    const actions = screen.getByRole("button", { name: "Send" }).parentElement;
-    expect(screen.getByRole("button", { name: "Collapse input" })).toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
-    expect(frame).toHaveClass("flex", "h-[clamp(10rem,40dvh,20rem)]", "flex-col");
-    expect(box).toHaveClass("h-full", "max-h-none", "[field-sizing:fixed]", "pr-3");
-    expect(actions).toHaveClass("h-[42px]", "border-t");
-    expect(actions).not.toHaveClass("absolute");
-    expect(frame).toContainElement(screen.getByRole("button", { name: "Send" }));
-
-    await user.click(screen.getByRole("button", { name: "Collapse input" }));
-    expect(screen.getByRole("button", { name: "Expand input" })).toHaveAttribute(
-      "aria-expanded",
-      "false",
-    );
-    expect(frame).not.toHaveClass("flex", "h-[clamp(10rem,40dvh,20rem)]");
-    expect(box).not.toHaveClass("h-full", "[field-sizing:fixed]");
-    expect(box).toHaveStyle({ maxHeight: "4.5rem" });
-  });
-
-  it("caps text at three exact rows and moves actions out of the scrollport", async () => {
-    const user = userEvent.setup();
-    renderComposer({ keyboardOpen: true });
-    const box = screen.getByPlaceholderText(/type a reply/i);
-
-    await user.type(box, "first line{enter}second line{enter}third line{enter}fourth line");
-
-    expect(box).toHaveClass(
-      "field-sizing-content",
-      "leading-6",
-      "py-0",
-      "pr-3",
-    );
-    expect(box).not.toHaveClass("pr-[7.25rem]");
-    expect(box.parentElement).toHaveClass("py-[9px]");
-    expect(box).toHaveStyle({ maxHeight: "4.5rem", overflowY: "auto" });
-    const actions = screen.getByRole("button", { name: "Send" }).parentElement;
-    expect(actions).toHaveClass("h-[42px]", "border-t");
-    expect(actions).not.toHaveClass("absolute");
   });
 
   it("does not render digit shortcut buttons because the phone keyboard already supplies them", () => {
@@ -2105,82 +2050,6 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
     // No ✓, no close — the reply never landed, so the dock stays put for a retry.
     await waitFor(() => expect(screen.getByRole("button", { name: "continue" })).toBeEnabled());
     expect(screen.getByRole("button", { name: "skip" })).toBeEnabled();
-  });
-});
-
-describe("Composer — Codex session controls", () => {
-  const status =
-    "  \x1b[38;2;246;226;183mgpt-5.6-sol xhigh\x1b[0m\x1b[2m · \x1b[0m" +
-    "\x1b[38;2;200;169;238mReady\x1b[0m\x1b[2m · \x1b[0m" +
-    "\x1b[38;2;200;169;238mApprove for me\x1b[0m\x1b[2m · \x1b[0m" +
-    "\x1b[38;2;242;181;144mContext 91% left\x1b[0m\x1b[2m · \x1b[0m" +
-    "\x1b[38;2;171;223;167mFast off\x1b[0m";
-  const pane = (draft: string) =>
-    [
-      "some output",
-      " ",
-      draft
-        ? `\x1b[1m›\x1b[0m ${draft}`
-        : "\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m",
-      " ",
-      status,
-    ].join("\n");
-  const state = {
-    model: "gpt-5.6-sol",
-    activity: "ready" as const,
-    approval: "Approve for me",
-    fast: false,
-  };
-
-  it("keeps the Codex controls in one bottom rail and leaves other harnesses unchanged", () => {
-    renderComposer({ agent: "codex", codexSession: state });
-
-    const model = screen.getByRole("button", { name: "Model: gpt-5.6-sol" });
-    const controls = model.closest('[data-slot="codex-composer-controls"]');
-    const rail = controls?.parentElement;
-    expect(controls).not.toBeNull();
-    expect(rail).toHaveAttribute("data-slot", "composer-input-actions");
-    expect(rail).toHaveClass("h-[42px]", "justify-between", "border-t");
-    expect(screen.getByPlaceholderText(/type a reply/i)).toHaveClass("pr-3");
-    expect(screen.getByRole("button", { name: "Fast off" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-  });
-
-  it("sends a toolbar command through the guarded Codex composer without touching the phone draft", async () => {
-    const user = userEvent.setup();
-    const calls: Array<{ text: string; submit: boolean }> = [];
-    let terminal = pane("");
-    server.use(
-      http.get(/\/api\/pane\/[^/]+$/, () =>
-        HttpResponse.json({ paneId: "w1:p1", text: terminal, truncated: false, revision: 1 }),
-      ),
-      http.post(/\/api\/pane\/[^/]+\/reply$/, async ({ request }) => {
-        const body = (await request.json()) as { text: string; submit?: boolean };
-        calls.push({ text: body.text, submit: body.submit === true });
-        terminal = pane(body.submit ? "" : body.text);
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    const props = renderComposer({ agent: "codex", codexSession: state });
-    const box = screen.getByPlaceholderText(/type a reply/i);
-    await user.type(box, "keep this draft");
-
-    await user.click(screen.getByRole("button", { name: "Fast off" }));
-
-    await waitFor(() => expect(calls).toEqual([
-      { text: "/fast", submit: false },
-      { text: "", submit: true },
-    ]));
-    expect(box).toHaveValue("keep this draft");
-    expect(props.onSent).toHaveBeenCalledOnce();
-  });
-
-  it("does not add Codex controls to another harness", () => {
-    renderComposer({ agent: "claude" });
-    expect(screen.queryByRole("button", { name: /^Model/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Fast/ })).not.toBeInTheDocument();
   });
 });
 
