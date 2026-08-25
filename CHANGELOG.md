@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.34.0+collie.12] - 2026-08-25
+
+### Fixed
+
+- **Direct input uses one consistent icon system and optical size across every keyboard control.** (9056d78)
+
 ## [0.34.0+collie.11] - 2026-08-25
 
 ### Added
