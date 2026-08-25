@@ -20,7 +20,7 @@ independent Keys dock or staged key queue.**
 
 The accessory has exactly two horizontally scrolling, non-wrapping rows behind one fixed switch:
 
-- navigation: Ctrl, Alt, Shift, Esc, Tab, Left, Up, Down, Right;
+- navigation: Ctrl, Esc, Tab, Up, Down, Left, Right, Enter, Shift, Alt;
 - function: F1 through F12.
 
 Modifiers cycle off → one-shot → locked. They compose in Ctrl, Alt, Shift order regardless of tap

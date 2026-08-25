@@ -24,12 +24,13 @@ const NAVIGATION_KEYS: ReadonlyArray<{
   ariaLabel: string;
   repeatable?: boolean;
 }> = [
-  { key: "Escape", label: "Esc", ariaLabel: "Escape" },
-  { key: "Tab", label: "Tab", ariaLabel: "Tab" },
-  { key: "Left", label: <ArrowLeft className="size-4" />, ariaLabel: "Left", repeatable: true },
+  { key: "Escape", label: <span aria-hidden="true">⎋</span>, ariaLabel: "Escape" },
+  { key: "Tab", label: <span aria-hidden="true">⇥</span>, ariaLabel: "Tab" },
   { key: "Up", label: <ArrowUp className="size-4" />, ariaLabel: "Up", repeatable: true },
   { key: "Down", label: <ArrowDown className="size-4" />, ariaLabel: "Down", repeatable: true },
+  { key: "Left", label: <ArrowLeft className="size-4" />, ariaLabel: "Left", repeatable: true },
   { key: "Right", label: <ArrowRight className="size-4" />, ariaLabel: "Right", repeatable: true },
+  { key: "Enter", label: <span aria-hidden="true">↩</span>, ariaLabel: "Enter" },
 ];
 
 export function DirectKeyboardAccessory({
@@ -97,6 +98,7 @@ export function DirectKeyboardAccessory({
           binding?.onPointerDown(event);
         }}
         aria-label={ariaLabel}
+        title={ariaLabel}
         className="size-10 shrink-0 touch-manipulation select-none px-0 text-xs"
       >
         {held ? (
@@ -150,11 +152,11 @@ export function DirectKeyboardAccessory({
         {row === "navigation" ? (
           <>
             {modifierButton("ctrl", "⌃", "Ctrl")}
-            {modifierButton("alt", "⌥", "Alt")}
-            {modifierButton("shift", "⇧", "Shift")}
             {NAVIGATION_KEYS.map((item) =>
               keyButton(item.key, item.label, item.ariaLabel, item.repeatable),
             )}
+            {modifierButton("shift", "⇧", "Shift")}
+            {modifierButton("alt", "⌥", "Alt")}
           </>
         ) : (
           FUNCTION_KEYS.map((key) => keyButton(key, key, key))

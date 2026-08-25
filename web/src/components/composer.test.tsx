@@ -1109,6 +1109,24 @@ describe("Composer — typing into the terminal", () => {
     );
   });
 
+  it("sends the accessory Enter key with an armed modifier", async () => {
+    const keyCalls: string[][] = [];
+    server.use(
+      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        keyCalls.push(((await request.json()) as { keys: string[] }).keys);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    renderComposer();
+    startDirectTyping();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ctrl" }));
+    fireEvent.click(screen.getByRole("button", { name: "Enter" }));
+
+    await waitFor(() => expect(keyCalls).toEqual([["ctrl+Enter"]]));
+    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
+  });
+
   it("exits on a tap of the highlighted keyboard button", async () => {
     const user = userEvent.setup();
     renderComposer();

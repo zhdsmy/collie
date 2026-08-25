@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import type { DirectModifierState } from "@/hooks/use-direct-typing";
 import { DirectKeyboardAccessory } from "./direct-keyboard-accessory";
@@ -6,14 +6,15 @@ import { DirectKeyboardAccessory } from "./direct-keyboard-accessory";
 const ALL_OFF: DirectModifierState = { ctrl: "off", alt: "off", shift: "off" };
 
 describe("DirectKeyboardAccessory", () => {
-  it("keeps the row switch fixed beside one horizontally scrolling rail", () => {
+  it("keeps the switch fixed beside an icon-only navigation rail in keyboard order", () => {
+    const onSendKeys = vi.fn();
     render(
       <DirectKeyboardAccessory
         row="navigation"
         modifiers={ALL_OFF}
         onToggleRow={vi.fn()}
         onToggleModifier={vi.fn()}
-        onSendKeys={vi.fn()}
+        onSendKeys={onSendKeys}
       />,
     );
 
@@ -28,9 +29,32 @@ describe("DirectKeyboardAccessory", () => {
     for (const button of root.querySelectorAll("button")) {
       expect(button).toHaveClass("size-10", "shrink-0");
     }
+
+    expect(
+      within(rail)
+        .getAllByRole("button")
+        .map((button) => button.getAttribute("aria-label")),
+    ).toEqual([
+      "Ctrl",
+      "Escape",
+      "Tab",
+      "Up",
+      "Down",
+      "Left",
+      "Right",
+      "Enter",
+      "Shift",
+      "Alt",
+    ]);
     expect(screen.getByRole("button", { name: "Ctrl" })).toHaveTextContent("⌃");
-    expect(screen.getByRole("button", { name: "Alt" })).toHaveTextContent("⌥");
+    expect(screen.getByRole("button", { name: "Escape" })).toHaveTextContent("⎋");
+    expect(screen.getByRole("button", { name: "Tab" })).toHaveTextContent("⇥");
+    expect(screen.getByRole("button", { name: "Enter" })).toHaveTextContent("↩");
     expect(screen.getByRole("button", { name: "Shift" })).toHaveTextContent("⇧");
+    expect(screen.getByRole("button", { name: "Alt" })).toHaveTextContent("⌥");
+
+    fireEvent.click(screen.getByRole("button", { name: "Enter" }));
+    expect(onSendKeys).toHaveBeenCalledWith(["Enter"]);
   });
 
   it("preserves arrow hold-repeat through the accessory sender", async () => {
