@@ -1,4 +1,11 @@
-import { lineText, trimTrailingBlank, type Block, type PromptModel, type StyledLine } from "../../blocks";
+import {
+  lineText,
+  trimTrailingBlank,
+  type Block,
+  type MenuModel,
+  type PromptModel,
+  type StyledLine,
+} from "../../blocks";
 import { draftCarriesSend as textDraftCarriesSend } from "../../draft-match";
 import type { HarnessAdapter } from "../types";
 import {
@@ -10,6 +17,7 @@ import {
 } from "./chrome";
 import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
+import { detectCodexMenuRegion } from "./menu";
 import { detectTrustRegion } from "./trust";
 
 const COMPLETION_SUMMARY = /^─+\s+Worked for\b/;
@@ -414,6 +422,14 @@ function codexDialogBlocks(
   return blocks;
 }
 
+function codexMenuBlocks(lines: StyledLine[], startLine: number, menu: MenuModel): Block[] {
+  const before = trimTrailingBlank(lines.slice(0, startLine));
+  const blocks: Block[] = [];
+  if (before.length > 0) blocks.push(codexRawBlock(before));
+  blocks.push({ kind: "menu", menu, lines: lines.slice(startLine) });
+  return blocks;
+}
+
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   const trust = detectTrustRegion(lines);
   if (trust !== null) return codexDialogBlocks(lines, trust.startLine, trust.model);
@@ -423,6 +439,11 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
 
   const ask = detectAskRegion(lines);
   if (ask !== null) return codexDialogBlocks(lines, ask.startLine, ask.model);
+
+  // Last resort after every specific dialog. This selector emits no option digits: Up/Down only
+  // moves the highlight, and the sole committing key is the Enter named by Codex's own footer.
+  const menu = detectCodexMenuRegion(lines);
+  if (menu !== null) return codexMenuBlocks(lines, menu.startLine, menu.model);
 
   return [codexRawBlock(stripChrome(lines))];
 }

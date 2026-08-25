@@ -22,6 +22,10 @@ import { cn } from "@/lib/utils";
 import { parseAnsi } from "@/lib/ansi";
 import { splitLines } from "@/lib/blocks";
 import { adapterFor } from "@/lib/harness";
+import {
+  parseCodexSessionState,
+  type CodexSessionState,
+} from "@/lib/harness/codex/session-state";
 import { FindBar } from "@/components/find-bar";
 import { Composer, type ComposerHandle } from "@/components/composer";
 import { ThreadSidebar } from "@/components/agent-sidebar";
@@ -208,13 +212,33 @@ export function AgentChat({
   // the agent, a menu is up, or no box at the tail, in which case the strip is hidden. A second parse
   // of `display`, but memoised on it, so it only recomputes when the buffer content changes — off the
   // render hot path.
-  const statusLines = useMemo(() => {
-    if (!grammarsOn) return [];
+  const statusSnapshot = useMemo(() => {
+    if (!grammarsOn) return { lines: [], codex: null };
 
     const adapter = adapterFor(agent?.agent);
-    const lines = adapter?.extractStatusLines(splitLines(parseAnsi(display))) ?? [];
-    return adapter?.compactStatusLines?.(lines) ?? lines;
+    const raw = adapter?.extractStatusLines(splitLines(parseAnsi(display))) ?? [];
+    return {
+      lines: adapter?.compactStatusLines?.(raw) ?? raw,
+      codex: agent?.agent === "codex" ? parseCodexSessionState(raw) : null,
+    };
   }, [display, agent?.agent, grammarsOn]);
+  const statusLines = statusSnapshot.lines;
+  // A selector temporarily replaces Codex's composer and statusline. Preserve the most recent
+  // proven state while that modal is up, keyed to the pane so a pane switch cannot flash stale state.
+  const [cachedCodexSession, setCachedCodexSession] = useState<{
+    paneId: string;
+    state: CodexSessionState;
+  }>();
+  useEffect(() => {
+    if (agent?.agent === "codex" && statusSnapshot.codex !== null) {
+      setCachedCodexSession({ paneId, state: statusSnapshot.codex });
+    }
+  }, [agent?.agent, paneId, statusSnapshot.codex]);
+  const codexSession =
+    agent?.agent === "codex"
+      ? (statusSnapshot.codex ??
+        (cachedCodexSession?.paneId === paneId ? cachedCodexSession.state : undefined))
+      : undefined;
 
   // A user draft stranded on the input box's "❯" line — a message queued while the agent was busy
   // then recalled, which persists across turns. stripChrome peels the box off the mirror so it goes
@@ -518,8 +542,8 @@ export function AgentChat({
   // Tap a generic-menu control (a footer-named key like Enter/s/Esc, or an arrow). Same guard-first
   // shape as the handlers above; the arrow taps pass `nav`, which swaps the guard's signature check
   // for an identity-only one (moving the highlight is the tap's own effect — see lib/menu-action.ts).
-  // gate: Claude's adapter is the only one that emits `menu` — omp's modals deliberately stay raw
-  // (harness/omp/index.ts), so this handler cannot fire for another agent.
+  // gate: only adapters that emit a `menu` can reach this handler; Codex and Claude both bind every
+  // tap to the selector signature, while omp's unprobed modals deliberately stay raw.
   const handleMenuAction = useCallback(
     async (action: MenuBlockAction, menu: MenuModel) => {
       if (readOnly) {
@@ -971,6 +995,7 @@ export function AgentChat({
             text={text}
             terminalDraft={terminalDraft}
             rawTerminalDraft={rawTerminalDraft}
+            codexSession={codexSession}
             prefs={prefs}
             setWrap={setWrap}
             stepFontSize={stepFontSize}

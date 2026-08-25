@@ -2108,6 +2108,82 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
   });
 });
 
+describe("Composer — Codex session controls", () => {
+  const status =
+    "  \x1b[38;2;246;226;183mgpt-5.6-sol xhigh\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;200;169;238mReady\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;200;169;238mApprove for me\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;242;181;144mContext 91% left\x1b[0m\x1b[2m · \x1b[0m" +
+    "\x1b[38;2;171;223;167mFast off\x1b[0m";
+  const pane = (draft: string) =>
+    [
+      "some output",
+      " ",
+      draft
+        ? `\x1b[1m›\x1b[0m ${draft}`
+        : "\x1b[1m›\x1b[0m \x1b[2mAsk Codex to do anything\x1b[0m",
+      " ",
+      status,
+    ].join("\n");
+  const state = {
+    model: "gpt-5.6-sol",
+    activity: "ready" as const,
+    approval: "Approve for me",
+    fast: false,
+  };
+
+  it("keeps the Codex controls in one bottom rail and leaves other harnesses unchanged", () => {
+    renderComposer({ agent: "codex", codexSession: state });
+
+    const model = screen.getByRole("button", { name: "Model: gpt-5.6-sol" });
+    const controls = model.closest('[data-slot="codex-composer-controls"]');
+    const rail = controls?.parentElement;
+    expect(controls).not.toBeNull();
+    expect(rail).toHaveAttribute("data-slot", "composer-input-actions");
+    expect(rail).toHaveClass("h-[42px]", "justify-between", "border-t");
+    expect(screen.getByPlaceholderText(/type a reply/i)).toHaveClass("pr-3");
+    expect(screen.getByRole("button", { name: "Fast off" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("sends a toolbar command through the guarded Codex composer without touching the phone draft", async () => {
+    const user = userEvent.setup();
+    const calls: Array<{ text: string; submit: boolean }> = [];
+    let terminal = pane("");
+    server.use(
+      http.get(/\/api\/pane\/[^/]+$/, () =>
+        HttpResponse.json({ paneId: "w1:p1", text: terminal, truncated: false, revision: 1 }),
+      ),
+      http.post(/\/api\/pane\/[^/]+\/reply$/, async ({ request }) => {
+        const body = (await request.json()) as { text: string; submit?: boolean };
+        calls.push({ text: body.text, submit: body.submit === true });
+        terminal = pane(body.submit ? "" : body.text);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const props = renderComposer({ agent: "codex", codexSession: state });
+    const box = screen.getByPlaceholderText(/type a reply/i);
+    await user.type(box, "keep this draft");
+
+    await user.click(screen.getByRole("button", { name: "Fast off" }));
+
+    await waitFor(() => expect(calls).toEqual([
+      { text: "/fast", submit: false },
+      { text: "", submit: true },
+    ]));
+    expect(box).toHaveValue("keep this draft");
+    expect(props.onSent).toHaveBeenCalledOnce();
+  });
+
+  it("does not add Codex controls to another harness", () => {
+    renderComposer({ agent: "claude" });
+    expect(screen.queryByRole("button", { name: /^Model/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Fast/ })).not.toBeInTheDocument();
+  });
+});
+
 describe("Composer — Agent command dock", () => {
   it("types then submits a no-argument Codex command with multiple autocomplete rows", async () => {
     const user = userEvent.setup();

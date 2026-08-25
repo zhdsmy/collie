@@ -43,6 +43,11 @@ import { TerminalDraftPreview } from "@/components/terminal-draft-preview";
 import { DirectTypingStrip } from "@/components/direct-typing-strip";
 import { DirectKeyboardAccessory } from "@/components/direct-keyboard-accessory";
 import { NoEchoNotice } from "@/components/no-echo-notice";
+import {
+  CodexComposerControls,
+  type CodexComposerCommand,
+} from "@/components/codex-composer-controls";
+import type { CodexSessionState } from "@/lib/harness/codex/session-state";
 
 export interface ComposerHandle {
   /** Focus the input and put the caret at the end — used by the mirror-tap-to-focus in AgentChat. */
@@ -78,6 +83,8 @@ interface ComposerProps {
    * text tracks this live so host typing streams into it; it also drives the send()-time pre-clear (the
    * actual current "❯" line) and unmounts the preview when it goes null. Never written into the input. */
   rawTerminalDraft: string | null;
+  /** Last live Codex status fields. Undefined for other harnesses or before a statusline is seen. */
+  codexSession?: CodexSessionState;
   /** Mirror display prefs — the View row lives here, but the mirror (in AgentChat) reads the same
    * single instance, so they're threaded through rather than each calling useDisplayPrefs. */
   prefs: DisplayPrefs;
@@ -188,6 +195,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     text,
     terminalDraft,
     rawTerminalDraft,
+    codexSession,
     prefs,
     setWrap,
     stepFontSize,
@@ -266,6 +274,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     noticeNoEcho(null); // it described the pane we just left
   }, [session, paneId]);
   const [sending, setSending] = useState(false);
+  const [codexCommand, setCodexCommand] = useState<CodexComposerCommand | null>(null);
   const [uploading, setUploading] = useState(false);
   // Pending-send preview: set on a successful send, cleared when the mirror catches up (next text
   // update) or after a 6s safety timeout. Shows "You sent: …" so the user knows the message landed.
@@ -672,6 +681,17 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   }
   const confirmingSend = sendConfirm.pending === "send";
   const forcingSend = forceConfirm.pending === "force";
+  const isCodex = agent === "codex" && !isShell;
+
+  async function runCodexCommand(command: CodexComposerCommand) {
+    if (!isCodex || locked || sending || dialogPresent) return;
+    setCodexCommand(command);
+    try {
+      await send(command, false);
+    } finally {
+      setCodexCommand(null);
+    }
+  }
 
   // A native textarea cannot wrap around buttons. Keep the compact one-line rail inline, then move
   // the rail into its own in-frame row once that lane wraps. Measure using inline-mode padding even
@@ -695,7 +715,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     setInputNeedsActionRow(needsRow);
   }, [confirmingSend, direct.active, forcingSend, input, inputExpanded]);
 
-  const inputUsesActionRow = !direct.active && (inputExpanded || inputNeedsActionRow);
+  // Codex's session controls live in a stable bottom rail. Other harnesses retain the compact
+  // inline actions until their text wraps, so this feature does not make every composer taller.
+  const inputUsesActionRow =
+    !direct.active && (isCodex || inputExpanded || inputNeedsActionRow);
 
   // Coalesce revalidations from a burst of key presses, LEADING edge first: the first press in a
   // burst refetches immediately, and only presses that arrive inside the window collapse into one
@@ -1090,49 +1113,57 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               className={cn(
                 "flex items-center gap-0.5",
                 inputUsesActionRow
-                  ? "h-[42px] shrink-0 justify-end border-t border-border/40 px-1"
+                  ? "h-[42px] shrink-0 justify-between border-t border-border/40 px-1"
                   : "absolute bottom-[3px] right-[3px]",
               )}
             >
-              {!direct.active && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-9 rounded-full text-muted-foreground"
-                  onPointerDown={(e) => e.preventDefault()}
-                  onClick={() => setInputExpanded((expanded) => !expanded)}
-                  aria-label={translate(
-                    inputExpanded ? "composer.collapseInput" : "composer.expandInput",
-                  )}
-                  aria-expanded={inputExpanded}
-                >
-                  {inputExpanded ? (
-                    <Minimize2 className="size-4" />
-                  ) : (
-                    <Maximize2 className="size-4" />
-                  )}
-                </Button>
+              {isCodex && !direct.active && !forcingSend && !confirmingSend && (
+                <CodexComposerControls
+                  state={codexSession}
+                  busy={codexCommand}
+                  disabled={locked || sending || dialogPresent}
+                  onCommand={runCodexCommand}
+                />
               )}
-              {!direct.active && !forcingSend && !confirmingSend && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-9 rounded-full text-muted-foreground"
-                  disabled={uploading || locked}
-                  onPointerDown={(e) => e.preventDefault()}
-                  onClick={() => fileRef.current?.click()}
-                  aria-label={translate("composer.attachImage")}
-                >
-                  {uploading ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="size-4" />
-                  )}
-                </Button>
-              )}
-              {!direct.active && forcingSend ? (
+                {!direct.active && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="ml-auto size-9 rounded-full text-muted-foreground"
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={() => setInputExpanded((expanded) => !expanded)}
+                    aria-label={translate(
+                      inputExpanded ? "composer.collapseInput" : "composer.expandInput",
+                    )}
+                    aria-expanded={inputExpanded}
+                  >
+                    {inputExpanded ? (
+                      <Minimize2 className="size-4" />
+                    ) : (
+                      <Maximize2 className="size-4" />
+                    )}
+                  </Button>
+                )}
+                {!direct.active && !forcingSend && !confirmingSend && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 rounded-full text-muted-foreground"
+                    disabled={uploading || locked}
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={() => fileRef.current?.click()}
+                    aria-label={translate("composer.attachImage")}
+                  >
+                    {uploading ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <ImagePlus className="size-4" />
+                    )}
+                  </Button>
+                )}
+                {!direct.active && forcingSend ? (
                 // The pre-flight refused and the user is being offered the override. Labelled for
                 // what it actually does — TYPE into what is on screen — because Enter stays guarded.
                 <Button
@@ -1144,7 +1175,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 >
                   {translate("composer.typeAnyway")}
                 </Button>
-              ) : !direct.active && confirmingSend ? (
+                ) : !direct.active && confirmingSend ? (
                 <Button
                   variant="destructive"
                   className="h-9 shrink-0 rounded-full px-3 text-xs font-semibold"
@@ -1154,7 +1185,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 >
                   {translate("composer.reallySend")}
                 </Button>
-              ) : (
+                ) : (
                 <Button
                   variant={direct.active ? "default" : "ghost"}
                   size="icon"
@@ -1176,7 +1207,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                     <Send className="size-4" />
                   )}
                 </Button>
-              )}
+                )}
             </div>
         </div>
       </div>

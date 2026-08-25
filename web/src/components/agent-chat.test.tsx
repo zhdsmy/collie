@@ -599,7 +599,9 @@ describe("AgentChat — block-grammar adapter scoping", () => {
   it("re-surfaces the backgroundless macOS Codex statusline outside the terminal mirror", () => {
     renderChat({ text: CODEX_STATUS_TEXT, agent: codexAgent });
 
-    const status = screen.getByLabelText("Fast off").closest(".statusline-row");
+    const status = screen
+      .getByLabelText("Fast off", { selector: "span" })
+      .closest(".statusline-row");
     expect(screen.getByLabelText("Ready")).toBeInTheDocument();
     expect(screen.getByLabelText("Context 19% left")).toBeInTheDocument();
     expect(screen.getByLabelText("Approve for me")).toBeInTheDocument();
@@ -611,6 +613,14 @@ describe("AgentChat — block-grammar adapter scoping", () => {
     expect(status).not.toHaveClass("truncate");
     expect(status).toHaveStyle({ overflowWrap: "anywhere" });
     expect(screen.queryByText(/Ask Codex to do anything/)).toBeNull();
+    // The same un-compacted source drives the Composer controls; no local toggle invents state.
+    expect(screen.getByRole("button", { name: "Model: gpt-5.6-sol" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Permissions: Approve for me" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Fast off" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "Plan mode" })).toBeEnabled();
   });
 
   it("leaves an adapterless agent's input-box buffer fully raw — no status strip, box kept in the mirror", () => {

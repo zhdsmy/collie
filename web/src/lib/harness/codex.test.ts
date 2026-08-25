@@ -36,6 +36,7 @@ const PINNED = [
   "codex--draft-wrapped.txt",
   "codex--draft.txt",
   "codex--fresh-idle.txt",
+  "codex--menu-model-picker.txt",
   "codex--trust-prompt.txt",
   "codex--working.txt",
 ];
@@ -48,6 +49,7 @@ const DIALOG = [
   "codex--ask-fruit.txt",
   "codex--ask-wizard-q1.txt",
   "codex--ask-wizard-q2.txt",
+  "codex--menu-model-picker.txt",
   "codex--trust-prompt.txt",
 ];
 
@@ -78,9 +80,12 @@ describe("composerReady — the gate the reply path pre-flights on", () => {
     },
   );
 
-  it.each([...DIALOG, "codex--ask-notes-focused.txt"])("%s: a modal owns the screen ⇒ false", (name) => {
-    expect(codexAdapter.composerReady!(fixtureLines(name))).toBe(false);
-  });
+  it.each([...DIALOG, "codex--ask-notes-focused.txt"])(
+    "%s: a modal owns the screen ⇒ false",
+    (name) => {
+      expect(codexAdapter.composerReady!(fixtureLines(name))).toBe(false);
+    },
+  );
 });
 
 describe("chrome", () => {
