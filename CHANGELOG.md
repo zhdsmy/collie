@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.34.0+collie.11] - 2026-08-25
+
+### Added
+
+- **Direct input adds an icon-only Enter key and keyboard-ordered navigation rail.** (aa957c3)
+
 ## [0.34.0+collie.10] - 2026-08-25
 
 ### Changed
