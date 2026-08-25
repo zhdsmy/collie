@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.34.0+collie.9] - 2026-08-25
+
+### Added
+
+- **Codex Composer adds live permissions, model, Fast, and Plan controls.** (7d23ca3)
+
 ## [0.34.0+collie.8] - 2026-08-24
 
 ### Fixed
