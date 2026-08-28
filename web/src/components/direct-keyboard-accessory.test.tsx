@@ -24,8 +24,9 @@ describe("DirectKeyboardAccessory", () => {
     expect(root).toContainElement(switcher);
     expect(root).toContainElement(rail);
     expect(switcher.parentElement).toBe(root);
+    expect(root).toHaveClass("-mx-1", "bg-background/50");
     expect(rail).toHaveClass("overflow-x-auto", "flex", "min-w-0");
-    expect(switcher).toHaveClass("shrink-0");
+    expect(switcher).toHaveClass("shrink-0", "bg-accent/70");
     expect(switcher.querySelector("svg")).toHaveClass(
       "lucide-square-function",
       "size-[18px]",
@@ -33,6 +34,8 @@ describe("DirectKeyboardAccessory", () => {
     for (const button of root.querySelectorAll("button")) {
       expect(button).toHaveClass("size-10", "shrink-0");
     }
+    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveClass("bg-secondary");
+    expect(screen.getByRole("button", { name: "Escape" })).toHaveClass("bg-secondary");
 
     expect(
       within(rail)

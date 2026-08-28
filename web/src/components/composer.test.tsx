@@ -579,10 +579,10 @@ describe("Composer — typing into the terminal", () => {
     return screen.getByPlaceholderText(/type into the terminal/i);
   }
 
-  it("focuses the textarea synchronously so the activation gesture opens the phone keyboard", () => {
+  it("arms without focusing the textarea or opening the phone keyboard", () => {
     renderComposer();
 
-    expect(startDirectTyping()).toHaveFocus();
+    expect(startDirectTyping()).not.toHaveFocus();
   });
 
   // The old Keys drawer is gone: direct input is the one keyboard surface, with the navigation
@@ -932,10 +932,10 @@ describe("Composer — typing into the terminal", () => {
   });
 
   // The blur above is deferred, so it can outlive the disarm that scheduled it. Re-arming is the
-  // ordinary way that happens: you come back, tap Type again, and the old timer must not fire into
-  // the session that replaced it and drop the keyboard you just asked for. What prevents it is
-  // activate()'s cancelPendingBlur() — remove that one line and this test fails, which is the whole
-  // reason it runs the timers by hand instead of waiting them out.
+  // ordinary way that happens: you come back and tap Type again. The old timer must not reach the
+  // session that replaced it; otherwise a subsequent intentional tap into the field can race a stale
+  // blur. What prevents it is activate()'s cancelPendingBlur() — remove that one line and this test
+  // fails, which is the whole reason it runs the timers by hand instead of waiting them out.
   it("does not blur a re-armed session with the disarm it already superseded", () => {
     renderComposerWithStatus();
     const box = startDirectTyping();

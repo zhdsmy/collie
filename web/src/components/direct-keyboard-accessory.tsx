@@ -77,7 +77,7 @@ export function DirectKeyboardAccessory({
       <Button
         key={modifier}
         type="button"
-        variant={mode === "off" ? "outline" : "default"}
+        variant={mode === "off" ? "secondary" : "default"}
         size="sm"
         disabled={disabled}
         onPointerDown={preserveTextareaFocus}
@@ -108,7 +108,7 @@ export function DirectKeyboardAccessory({
       <Button
         key={key}
         type="button"
-        variant={held ? "default" : "outline"}
+        variant={held ? "default" : "secondary"}
         size="sm"
         disabled={disabled}
         {...(binding ?? { onClick: () => onSendKeys([key]) })}
@@ -137,7 +137,7 @@ export function DirectKeyboardAccessory({
   return (
     <div
       data-testid="direct-keyboard-accessory"
-      className="mb-2 flex min-w-0 items-center gap-1.5 border-y border-border/60 bg-background/50 py-1.5"
+      className="-mx-1 mb-2 flex min-w-0 items-center gap-1.5 border-y border-border/60 bg-background/50 py-1.5"
     >
       <Button
         type="button"
@@ -152,7 +152,7 @@ export function DirectKeyboardAccessory({
         title={
           row === "navigation" ? t("keys.showFunctionKeys") : t("keys.showNavigationKeys")
         }
-        className="size-10 shrink-0 touch-manipulation border border-border/60 bg-muted/40"
+        className="size-10 shrink-0 touch-manipulation border border-border/70 bg-accent/70 text-accent-foreground shadow-xs hover:bg-accent"
       >
         {row === "navigation" ? (
           <SquareFunction aria-hidden="true" className={KEY_ICON_CLASS} />
