@@ -19,6 +19,7 @@ import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
 import { detectCodexMenuRegion } from "./menu";
 import { detectTrustRegion } from "./trust";
+import { codexDraftCarriesSend } from "./paste";
 
 const COMPLETION_SUMMARY = /^─+\s+Worked for\b/;
 const COMMAND_SUMMARY = /^•\s+Ran\s+\d+\s+commands\b/;
@@ -451,6 +452,16 @@ export function imageDraftCarriesSend(
   return textDraftCarriesSend(sentCaption, draftCaption);
 }
 
+function codexAdapterDraftCarriesSend(
+  sent: string,
+  draft: string,
+  beforeDraft?: string | null,
+): boolean {
+  return uploadPaths(sent).length > 0
+    ? imageDraftCarriesSend(sent, draft, beforeDraft)
+    : codexDraftCarriesSend(sent, draft);
+}
+
 function codexRawBlock(lines: StyledLine[]): Block {
   return {
     kind: "raw",
@@ -510,7 +521,5 @@ export const codexAdapter: HarnessAdapter = {
   // shape. A modal without that tail refuses message bytes before they can land in the wrong UI.
   composerReady,
   composerPrompt,
-  // Codex consumes image paths and renders `[Image #N]`, so the generic literal verifier cannot
-  // see the original send. Verify replacement tokens against this send's paths and caption.
-  draftCarriesSend: imageDraftCarriesSend,
+  draftCarriesSend: codexAdapterDraftCarriesSend,
 };

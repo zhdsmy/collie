@@ -1,5 +1,6 @@
 import type { AnsiSegment } from "../../ansi";
 import { isBlank, lineText, trimTrailingBlank, type StyledLine } from "../../blocks";
+import { isStatusRow } from "./markers";
 
 const PROMPT_MARKER = "›";
 const MAX_COMPOSER_LINES = 100;
@@ -18,6 +19,8 @@ interface ComposerMatch {
   bottom: number;
   statusStart: number;
   statusEnd: number;
+  /** Compatibility alias for the first native status row. */
+  statusRow: number;
 }
 
 function uniformBackground(line: StyledLine): string | null {
@@ -87,6 +90,8 @@ function locateStatusStart(lines: StyledLine[], end: number): number | null {
     return start;
   }
 
+  if (isStatusRow(lineText(last), last)) return end - 1;
+
   if (QUEUE_STATUS.test(lastText) && uniformBackground(last) === null) {
     return end - 1;
   }
@@ -147,6 +152,9 @@ export function locateComposer(lines: StyledLine[]): ComposerMatch | null {
   }
   const bottom = (nativeStatusStart ?? suggestionStart) - 1;
   const statusStart = nativeStatusStart ?? end;
+  const hasVerifiedStatus =
+    nativeStatusStart !== null &&
+    isStatusRow(lineText(lines[nativeStatusStart]!), lines[nativeStatusStart]!);
   const finish = (top: number, prompt: number): ComposerMatch | null => {
     if (
       nativeStatusStart === null &&
@@ -156,7 +164,7 @@ export function locateComposer(lines: StyledLine[]): ComposerMatch | null {
     ) {
       return null;
     }
-    return { top, prompt, bottom, statusStart, statusEnd: end };
+    return { top, prompt, bottom, statusStart, statusEnd: end, statusRow: statusStart };
   };
 
   const background = uniformBackground(lines[bottom]!);
@@ -167,20 +175,22 @@ export function locateComposer(lines: StyledLine[]): ComposerMatch | null {
   // status line. Keep the painted path exact, and require all three independent style/position
   // anchors on the borderless path so ordinary output ending in similar words stays raw.
   if (background === null) {
-    const richStatus = lines.slice(statusStart, end).find(isRichStatusLine);
+    const weakRichStatus = lines
+      .slice(statusStart, end)
+      .find((line) => isRichStatusLine(line) && !isStatusRow(lineText(line), line));
 
     const first = Math.max(0, bottom - MAX_COMPOSER_LINES);
     for (let prompt = bottom - 1; prompt >= first; prompt--) {
       if (
         !startsWithPrompt(lines[prompt]!) ||
-        (prompt > 0 && !hasBoldPromptMarker(lines[prompt]!))
+        (prompt > 0 && !hasBoldPromptMarker(lines[prompt]!) && !hasVerifiedStatus)
       ) {
         continue;
       }
       if (
         prompt > 0 &&
-        richStatus !== undefined &&
-        coloredFieldCount(richStatus) < 2
+        weakRichStatus !== undefined &&
+        coloredFieldCount(weakRichStatus) < 2
       ) {
         continue;
       }
@@ -284,23 +294,17 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
   return rows.length === 0 ? null : rows.join(" ");
 }
 
-const BRIDGE_PROMPT_TAIL_LINES = 6;
-
 /** Typing reaches the composer only when its full tail shape is on screen. */
 export function composerReady(lines: StyledLine[]): boolean {
   return hasComposer(lines);
 }
 
-/** The on-screen prompt row used to bind a destructive pre-clear sweep. */
+/** The full on-screen prompt/draft run used to bind a destructive pre-clear sweep. */
 export function composerPrompt(lines: StyledLine[]): string | null {
   const match = locateComposer(lines);
   if (match === null) return null;
-
-  const nonBlankBelow = lines
-    .slice(match.prompt + 1, match.statusEnd)
-    .filter((line) => !isBlank(lineText(line))).length;
-  if (nonBlankBelow > BRIDGE_PROMPT_TAIL_LINES - 1) return null;
-
-  const row = lineText(lines[match.prompt]!).trimEnd();
-  return row.length === 0 ? null : row;
+  return lines
+    .slice(match.prompt, match.bottom)
+    .map((line) => lineText(line).trimEnd())
+    .join("\n");
 }
