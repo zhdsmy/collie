@@ -6,6 +6,12 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.36.0+collie.2] - 2026-08-28
+
+### Fixed
+
+- **Direct input opens without summoning the phone keyboard** and its key rail uses theme-aware surfaces with tighter panel spacing. (c139d5f)
+
 ## [0.36.0+collie.1] - 2026-08-28
 
 ### Added
