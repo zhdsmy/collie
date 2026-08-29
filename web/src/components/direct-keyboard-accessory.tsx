@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { useHoldRepeat } from "@/hooks/use-hold-repeat";
 import type { DirectKeyRow, DirectModifierState } from "@/hooks/use-direct-typing";
 import type { Modifier } from "@/lib/key-queue";
+import { cn } from "@/lib/utils";
 
 interface DirectKeyboardAccessoryProps {
   row: DirectKeyRow;
@@ -49,6 +50,8 @@ const NAVIGATION_KEYS: ReadonlyArray<{
 ];
 
 const KEY_ICON_CLASS = "size-[18px] shrink-0";
+const RESTING_KEY_CLASS =
+  "border-border/70 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground";
 
 export function DirectKeyboardAccessory({
   row,
@@ -77,7 +80,7 @@ export function DirectKeyboardAccessory({
       <Button
         key={modifier}
         type="button"
-        variant={mode === "off" ? "secondary" : "default"}
+        variant={mode === "off" ? "outline" : "default"}
         size="sm"
         disabled={disabled}
         onPointerDown={preserveTextareaFocus}
@@ -86,7 +89,10 @@ export function DirectKeyboardAccessory({
         title={label}
         aria-pressed={mode !== "off"}
         data-mode={mode}
-        className="relative size-10 shrink-0 touch-manipulation px-0"
+        className={cn(
+          "relative size-10 shrink-0 touch-manipulation px-0",
+          mode === "off" && RESTING_KEY_CLASS,
+        )}
       >
         <Icon aria-hidden="true" className={KEY_ICON_CLASS} />
         {mode === "locked" && (
@@ -108,7 +114,7 @@ export function DirectKeyboardAccessory({
       <Button
         key={key}
         type="button"
-        variant={held ? "default" : "secondary"}
+        variant={held ? "default" : "outline"}
         size="sm"
         disabled={disabled}
         {...(binding ?? { onClick: () => onSendKeys([key]) })}
@@ -118,7 +124,10 @@ export function DirectKeyboardAccessory({
         }}
         aria-label={ariaLabel}
         title={ariaLabel}
-        className="size-10 shrink-0 touch-manipulation select-none px-0 text-xs"
+        className={cn(
+          "size-10 shrink-0 touch-manipulation select-none px-0 text-xs",
+          !held && RESTING_KEY_CLASS,
+        )}
       >
         {held ? (
           <span className="flex items-center gap-0.5">
@@ -137,11 +146,11 @@ export function DirectKeyboardAccessory({
   return (
     <div
       data-testid="direct-keyboard-accessory"
-      className="-mx-1 mb-2 flex min-w-0 items-center gap-1.5 border-y border-border/60 bg-background/50 py-1.5"
+      className="-mx-1 mb-2 flex min-w-0 items-center gap-1.5 border-y border-border/60 bg-background/50 px-1.5 py-1.5"
     >
       <Button
         type="button"
-        variant="ghost"
+        variant="outline"
         size="icon"
         disabled={disabled}
         onPointerDown={preserveTextareaFocus}
@@ -152,7 +161,7 @@ export function DirectKeyboardAccessory({
         title={
           row === "navigation" ? t("keys.showFunctionKeys") : t("keys.showNavigationKeys")
         }
-        className="size-10 shrink-0 touch-manipulation border border-border/70 bg-accent/70 text-accent-foreground shadow-xs hover:bg-accent"
+        className={cn("size-10 shrink-0 touch-manipulation", RESTING_KEY_CLASS)}
       >
         {row === "navigation" ? (
           <SquareFunction aria-hidden="true" className={KEY_ICON_CLASS} />
