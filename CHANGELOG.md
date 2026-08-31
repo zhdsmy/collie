@@ -6,6 +6,15 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [0.36.1+collie.1] - 2026-08-31
+
+### Fixed
+
+- **Codex accepts a dim final status field** instead of refusing a visible composer. Thanks @mauhai (#141) (e233280)
+- **Codex accepts indented text after its continuation gutter** so wrapped drafts remain sendable. Thanks @sdertli (#140) (71fc207)
+- **oh-my-posh 18 separates busy-pane drafts from ghost suggestions.** Thanks @enieuwy (#142) (4c1dde4)
+- **Windows supervised bridge runs headless** without opening a terminal tab. Thanks @erwin-wee (#121) (5fd7a2f)
+
 ## [0.36.0+collie.3] - 2026-08-29
 
 ### Fixed

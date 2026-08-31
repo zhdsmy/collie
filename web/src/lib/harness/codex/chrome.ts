@@ -6,6 +6,7 @@ const PROMPT_MARKER = "›";
 const MAX_COMPOSER_LINES = 100;
 const SLASH_COMMAND = /^\/[a-z][a-z0-9-]*$/i;
 const SLASH_SUGGESTION = /^\/[a-z][a-z0-9-]*\s+\S/i;
+const CONTINUATION = /^ {2}\s*\S/;
 const CONTEXT_FIELD = /(?:^|\s)Context \d+(?:% left|…)(?:\s|$)/;
 const STATUS_ITEM_FIELD =
   /(?:gpt-\S+|(?:^|\s)[~/]\S*|\b(?:Ready|Working|Approve(?: for)? me|Fast(?: on| off)|Tasks \d+\/\d+)\b)/;
@@ -207,7 +208,8 @@ export function locateComposer(lines: StyledLine[]): ComposerMatch | null {
           .slice(prompt, bottom)
           .some(
             (line, index) =>
-              uniformBackground(line) !== null || (index > 0 && startsWithPrompt(line)),
+              uniformBackground(line) !== null ||
+              (index > 0 && !CONTINUATION.test(lineText(line))),
           )
       ) {
         continue;

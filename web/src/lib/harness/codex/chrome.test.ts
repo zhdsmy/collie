@@ -51,7 +51,14 @@ function backgroundlessComposerBuffer(draft: string, continuation: string[] = []
     "\x1b[38;2;171;223;167m~/Documents/GitHub/zhdsmy/collie\x1b[0m\x1b[2m · \x1b[0m" +
     "\x1b[38;2;200;169;238mReady\x1b[0m\x1b[2m · \x1b[0m" +
     "\x1b[38;2;242;181;144mContext 100…\x1b[0m";
-  return lines(["earlier output", " ", prompt, ...continuation, " ", status].join("\n"));
+  return lines([
+    "earlier output",
+    " ",
+    prompt,
+    ...continuation.map((row) => `  ${row}`),
+    " ",
+    status,
+  ].join("\n"));
 }
 
 describe("Codex chrome", () => {
