@@ -21,6 +21,7 @@ import {
   type PromptBindingResult,
 } from "./prompt-binding.ts";
 import type { Push, PushSubscription } from "./push.ts";
+import { parsePushLocale } from "./push-localization.ts";
 import { RefreshCoalescer } from "./refresh.ts";
 import { herdTagFor, type SessionRegistry, type SessionRuntime, widenedPanes } from "./sessions.ts";
 import type { Snooze } from "./snooze.ts";
@@ -1106,6 +1107,7 @@ export function startServer(opts: {
         await push.addSubscription(body, {
           replaces: supersededEndpoint(body),
           userAgent: req.headers.get("user-agent") ?? undefined,
+          locale: subscriptionLocale(body),
         });
         return secure(new Response(null, { status: 204 }));
       }
@@ -2763,6 +2765,10 @@ function supersededEndpoint(body: JsonValue | undefined): string | undefined {
   const replaces = asJsonRecord(body)?.replaces;
   if (typeof replaces !== "string" || replaces === "" || replaces.length > 2048) return undefined;
   return replaces;
+}
+
+function subscriptionLocale(body: JsonValue | undefined) {
+  return parsePushLocale(asJsonRecord(body)?.locale);
 }
 
 // Build id of the bundle currently on disk (written by the Vite build to dist/build-info.json).

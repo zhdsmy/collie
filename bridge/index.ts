@@ -533,6 +533,7 @@ const updateMonitor = new UpdateMonitor({
       // release page carry the location-independent Herdr actions. Keeps this off the cwd-dependent path.
       title: "Collie update available",
       body: `Version ${latest} is available`,
+      copy: { kind: "update", version: latest },
       target: "settings",
     }),
 });

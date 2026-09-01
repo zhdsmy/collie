@@ -2,6 +2,13 @@ import type { JsonObject, JsonValue } from "./json.ts";
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Config } from "./config.ts";
+import {
+  localizePushCopy,
+  parsePushLocale,
+  pushLocale,
+  type PushCopy,
+  type PushLocale,
+} from "./push-localization.ts";
 
 // Optional Web Push (VAPID). Zero hard dependency: if `web-push` isn't installed or VAPID keys
 // aren't configured, push is silently disabled and the rest of the bridge works unchanged.
@@ -32,6 +39,8 @@ export interface StoredSubscription extends PushSubscription {
   /** The `User-Agent` of the request that registered it, trimmed and capped. The only thing that
    *  tells "my iPhone" from "the Mac I used once" in a list of opaque Apple endpoints. */
   userAgent?: string;
+  /** UI locale this device requested for notification copy. Old rows omit it and read as English. */
+  locale?: PushLocale;
 }
 
 /** What a registration knows about itself beyond the subscription — see {@link Push.addSubscription}. */
@@ -46,6 +55,7 @@ export interface SubscriptionMeta {
    */
   replaces?: string;
   userAgent?: string;
+  locale?: PushLocale;
 }
 
 /**
@@ -86,6 +96,7 @@ function coerceStored(v: JsonValue | undefined): StoredSubscription | null {
   };
   if (typeof o.createdAt === "string") row.createdAt = o.createdAt;
   if (typeof o.userAgent === "string") row.userAgent = o.userAgent.slice(0, USER_AGENT_MAX);
+  row.locale = parsePushLocale(o.locale);
   return row;
 }
 
@@ -201,6 +212,8 @@ export interface PushMessage {
    *  absent = today's pane deep-link (so the agent-alert payload is unchanged). */
   target?: "settings";
   renotify?: boolean;
+  /** Locale-neutral copy rendered separately for each subscribed device. */
+  copy?: PushCopy;
 }
 
 export class Push {
@@ -269,6 +282,7 @@ export class Push {
     // Re-subscribing does not restart the clock: `createdAt` is when this endpoint first appeared.
     row.createdAt = previous?.createdAt ?? new Date().toISOString();
     if (userAgent !== undefined && userAgent !== "") row.userAgent = userAgent;
+    row.locale = meta.locale ?? previous?.locale ?? "en";
     this.subs.set(sub.endpoint, row);
     // A re-subscribe is fresh evidence even when the endpoint string is unchanged — the device just
     // told us it wants pushes, so it doesn't inherit the failure history of its predecessor.
@@ -319,7 +333,19 @@ export class Push {
     if (msg.target !== undefined) data.target = msg.target;
     // Per-message collapse topic — update alerts must not share the herd slot (see UPDATE_SEND_OPTIONS).
     const options = msg.type === "update" ? UPDATE_SEND_OPTIONS : SEND_OPTIONS;
-    await this.broadcast(JSON.stringify({ ...msg, data }), options);
+    const { copy, ...wire } = msg;
+    await this.broadcast(
+      (locale) => {
+        const payload = { ...wire, data };
+        if (copy !== undefined) {
+          const localized = localizePushCopy(copy, locale);
+          payload.title = localized.title;
+          payload.body = localized.body;
+        }
+        return JSON.stringify(payload);
+      },
+      options,
+    );
   }
 
   /** Convenience for a one-off render (used by the manual push-test script). */
@@ -327,7 +353,10 @@ export class Push {
     await this.send({ title, body, paneId: data.paneId });
   }
 
-  private async broadcast(payload: string, options: SendOptions): Promise<void> {
+  private async broadcast(
+    payloadFor: (locale: PushLocale) => string,
+    options: SendOptions,
+  ): Promise<void> {
     if (!this.enabled) return;
     const dead: string[] = [];
     // One entry per subscription attempted this round, so the eviction pass below can ask which
@@ -337,7 +366,11 @@ export class Push {
         try {
           // `{ endpoint, keys }` and nothing else: the stored row also carries operator metadata,
           // and web-push serialises what it is handed.
-          await this.sender({ endpoint: sub.endpoint, keys: sub.keys }, payload, options);
+          await this.sender(
+            { endpoint: sub.endpoint, keys: sub.keys },
+            payloadFor(pushLocale(sub.locale)),
+            options,
+          );
           return { sub, err: null };
         } catch (err) {
           return { sub, err };

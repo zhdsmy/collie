@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { useLocale } from "@/hooks/use-locale";
 import {
   disablePush,
   enablePush,
@@ -13,6 +14,7 @@ import {
 // silent: service workers + Push need a secure context, so over plain HTTP this no-ops (it lights up
 // once served over HTTPS). The subscribe flow lives in lib/push so the settings page can reuse it.
 export function usePushSetup() {
+  const { locale } = useLocale();
   useEffect(() => {
     if (isPushDisabledByUser()) return;
     let cancelled = false;
@@ -26,7 +28,7 @@ export function usePushSetup() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [locale]);
 }
 
 // Settings-page controller: the current push state plus an enable/disable action that refreshes it.

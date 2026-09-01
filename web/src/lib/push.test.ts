@@ -37,6 +37,7 @@ describe("subscribeBody", () => {
     expect(subscribeBody(json, null)).toEqual({
       endpoint: "https://push/new",
       keys: { p256dh: "P", auth: "A" },
+      locale: "en",
     });
   });
 
@@ -44,6 +45,7 @@ describe("subscribeBody", () => {
     expect(subscribeBody(json, "https://push/old")).toEqual({
       endpoint: "https://push/new",
       keys: { p256dh: "P", auth: "A" },
+      locale: "en",
       replaces: "https://push/old",
     });
   });
@@ -61,6 +63,14 @@ describe("subscribeBody", () => {
     // carrying fields the type does not declare, which is exactly what a browser may hand us. The
     // case then pins that `subscribeBody` forwards none of them.
     const extra = { ...json, expirationTime: 123, junk: "x" } as PushSubscriptionJSON;
-    expect(Object.keys(subscribeBody(extra, null)).toSorted()).toEqual(["endpoint", "keys"]);
+    expect(Object.keys(subscribeBody(extra, null)).toSorted()).toEqual([
+      "endpoint",
+      "keys",
+      "locale",
+    ]);
+  });
+
+  it("sends the device's concrete UI locale", () => {
+    expect(subscribeBody(json, null, "ja").locale).toBe("ja");
   });
 });

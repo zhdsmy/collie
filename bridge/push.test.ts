@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { Push, topicIsSendable } from "./push.ts";
-import type { PushSender, PushSubscription } from "./push.ts";
+import type { PushSender, PushSubscription, StoredSubscription } from "./push.ts";
 import { loadConfig } from "./config.ts";
 
 // The broadcast prune-vs-log logic and the on-disk persistence are the untested-by-Bun.serve parts.
@@ -27,7 +27,7 @@ function sub(endpoint: string): PushSubscription {
 }
 
 /** Enable push and seed subscriptions without the real VAPID/web-push init handshake. */
-function enable(push: Push, seed: PushSubscription[]) {
+function enable(push: Push, seed: StoredSubscription[]) {
   // Bracket access reaches Push's private state without an assertion, so the compiler still checks
   // both fields against their real declarations.
   push["_enabled"] = true;
@@ -305,6 +305,34 @@ describe("Push — per-message collapse topic (update must not share the herd sl
     // message by Doze / App Standby bucket, which silently ate alerts entirely. See push.ts.
     expect(sends[0]!.options).toEqual({ topic: "collie-herd", TTL: 21_600, urgency: "high" });
     expect("target" in JSON.parse(sends[0]!.payload).data).toBe(false);
+  });
+
+  test("renders locale-neutral copy separately for each subscribed device", async () => {
+    const cfg = await tempCfg();
+    const payloads = new Map<string, string>();
+    const push = new Push(cfg, (subscription, payload) => {
+      payloads.set(subscription.endpoint, payload);
+      return Promise.resolve();
+    });
+    enable(push, [
+      { ...sub("english"), locale: "en" },
+      { ...sub("chinese"), locale: "zh" },
+    ]);
+
+    await push.send({
+      title: "codex needs you",
+      body: "collie · /repo",
+      copy: {
+        kind: "agent",
+        agent: "codex",
+        status: "blocked",
+        workspaceLabel: "collie",
+        cwd: "/repo",
+      },
+    });
+
+    expect(JSON.parse(payloads.get("english")!).title).toBe("codex needs you");
+    expect(JSON.parse(payloads.get("chinese")!).title).toBe("codex 需要你处理");
   });
 
   test("the payload `data` gains `host` only when the message names one", async () => {
