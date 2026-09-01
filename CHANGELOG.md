@@ -14,6 +14,7 @@ per-release detail lives in the linked commits and the git history. Coming from 
 
 ### Added
 
+- **Web Push follows each subscribed device's UI language.** Update, single-agent, and digest notifications are rendered independently in English, German, Spanish, Korean, Japanese, or Chinese; old subscriptions fall back to English. (650d0b6)
 - **Collie drives tmux and zellij, not only Herdr.** `COLLIE_MUX=tmux` or `COLLIE_MUX=zellij` picks the multiplexer behind one Collie-owned port, where each adapter declares its capabilities and the UI reads them from `GET /api/config` rather than from a name ([2feb1aa](https://github.com/AltanS/collie/commit/2feb1aa), [4d6787f](https://github.com/AltanS/collie/commit/4d6787f))
 - **Agents name themselves through their own hooks.** `collie hooks install claude` writes the guarded Claude emitter and `collie beacon emit` gives a pane its agent's name, status and session ref ([b17e8c5](https://github.com/AltanS/collie/commit/b17e8c5), [cb7eb7b](https://github.com/AltanS/collie/commit/cb7eb7b))
 - **A pack brings several machines to one phone.** A lead merges its peers' spaces, tabs and panes and proxies every read and write byte for byte; `collie pack invite | join | add | update | leave | status | rotate | remove | promote | reconnect | set-address` are the verbs ([9f5d91e](https://github.com/AltanS/collie/commit/9f5d91e), [c5a810f](https://github.com/AltanS/collie/commit/c5a810f))
@@ -33,6 +34,9 @@ per-release detail lives in the linked commits and the git history. Coming from 
 
 ### Fixed
 
+- **Direct typing arms without focusing the hidden textarea**, so opening the key tray does not summon the phone keyboard. (c5c595f)
+- **Codex `Conversation recap` remains one separator row on mobile** instead of wrapping its rule onto a second line. (48d7cfc)
+- **Cursor uses its official brand mark** anywhere Collie identifies the active agent. (41dd889)
 - **tmux is parsed and driven correctly on the versions people run.** tmux 3.4's escaped field separator is un-escaped, a listing that parses to zero rows on non-empty output is refused as an error, and a create under a `manual` `window-size` refuses rather than segfault tmux < 3.7 ([30add9a](https://github.com/AltanS/collie/commit/30add9a), [b58cb61](https://github.com/AltanS/collie/commit/b58cb61))
 - **Four agent-parser fixes carried over from the 0.x line.** Codex's one-dim-segment status row, a Codex draft wrapped onto an indented line, oh-my-posh 18's ghost suggestion read as your text, and the Windows bridge now running under `conhost.exe --headless` ([c6ba534](https://github.com/AltanS/collie/commit/c6ba534), [89cbbe0](https://github.com/AltanS/collie/commit/89cbbe0), [d4a9030](https://github.com/AltanS/collie/commit/d4a9030), [baf04ac](https://github.com/AltanS/collie/commit/baf04ac))
 - **A peer can reach its own lead.** The lead is dialled unpinned, because its front door terminates TLS and the pinned certificate can never be on the wire, while a witness stays pinned ([33fa455](https://github.com/AltanS/collie/commit/33fa455))
