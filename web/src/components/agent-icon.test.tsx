@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { AgentIcon } from "./agent-icon";
 
 describe("AgentIcon", () => {
-  it.each(["claude", "codex", "pi", "opencode", "agy", "antigravity"])(
+  it.each(["claude", "codex", "cursor", "pi", "opencode", "agy", "antigravity"])(
     "renders the %s brand logo as an inline-SVG app-icon tile",
     (agent) => {
       const { container } = render(<AgentIcon agent={agent} />);
@@ -19,6 +19,7 @@ describe("AgentIcon", () => {
   it.each([
     ["claude-code"],
     ["codex-cli"],
+    ["cursor-cli"],
     ["opencode-dev"],
     ["pi-go"],
     ["PI"],
