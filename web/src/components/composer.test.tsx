@@ -2664,11 +2664,13 @@ describe("Composer — a long upload path cannot widen the field", () => {
 });
 
 describe("Composer — iOS bottom spacing", () => {
-  it("uses the safe area as the floor instead of adding padding above it", () => {
+  it("paints current chrome through the safe area without reserving its full height", () => {
     renderComposer();
     const dock = document.querySelector('[data-slot="composer-status"]')!.parentElement!;
 
-    expect(dock.className).toContain("pb-[max(env(safe-area-inset-bottom),_0.5rem)]");
-    expect(dock.className).not.toContain("calc(env(safe-area-inset-bottom)");
+    expect(dock.className).toContain("bg-chrome");
+    expect(dock.className).toContain(
+      "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",
+    );
   });
 });

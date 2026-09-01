@@ -6,6 +6,15 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [1.0.0+collie.2] - 2026-09-02
+
+### Fixed
+
+- **The mobile composer reclaims the iOS safe-area height without exposing the page background.**
+  The compensated padding and margin geometry from `v0.36.1+collie.2` now fits the current
+  full-width chrome dock, keeping the controls close to the Home Indicator while the chrome still
+  paints through the inset.
+
 ## [1.0.0+collie.1] - 2026-09-01
 
 ### Fixed

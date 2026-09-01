@@ -979,10 +979,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       <div
         className={cn(
           "bg-chrome px-3",
-          // See `composing` on the props above: the inset reserves room for the home indicator, and
-          // while the keyboard is up the keyboard is already covering it. Paying it twice costs
-          // ~24px on the one screen that has none.
-          composing ? "pb-2" : "pb-[max(env(safe-area-inset-bottom),_0.5rem)]",
+          // Closed-keyboard chrome still paints through the iOS safe area, but the matching negative
+          // margin keeps that inset from becoming empty flex height below the controls. This carries
+          // the proven compensated geometry forward without restoring the old floating panel style.
+          composing
+            ? "pb-2"
+            : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",
         )}
       >
         {/* Pending-send preview: visible from send until the mirror echoes back (or 6s). Shows the
