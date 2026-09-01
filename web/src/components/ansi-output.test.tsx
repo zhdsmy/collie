@@ -84,6 +84,15 @@ describe("terminal mirror colour space", () => {
     expect(lines[1]!.style.backgroundColor).toBe("");
   });
 
+  it("normalizes Codex 0.150 light-terminal input paint to the theme surface", () => {
+    const input = `${ESC}[1;2;48;2;240;240;240m› ${ESC}[0m${ESC}[48;2;240;240;240mreadable in both themes${ESC}[0m`;
+    const { container } = render(<AnsiOutput text={input} agent="codex" />);
+    const line = container.querySelector("[data-terminal-line]") as HTMLElement;
+
+    expect(line.textContent).toBe("› readable in both themes");
+    expect(line.style.backgroundColor).toBe("var(--mirror-codex-input-background)");
+  });
+
   it("lets solid rows own their background instead of overflowing terminal padding cells", () => {
     const text = `${ESC}[41mremoved${ESC}[0m\n${ESC}[42madded${ESC}[0m`;
     const pre = mirror(text);

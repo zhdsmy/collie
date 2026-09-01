@@ -327,6 +327,22 @@ describe("Codex chrome", () => {
     ]);
   });
 
+  it("keeps the Codex 0.150 conversation recap separator on one mobile row", () => {
+    const recap = `─ Conversation recap ${"─".repeat(108)}`;
+    const captured = lines(
+      [
+        "earlier output",
+        `\x1b[2m─ \x1b[0m\x1b[1mConversation recap\x1b[0m\x1b[2m ${"─".repeat(108)}\x1b[0m`,
+        "recap body",
+      ].join("\n"),
+    );
+    const block = codexBuildBlocks(captured)[0]!;
+
+    if (block.kind !== "raw") throw new Error("expected raw Codex block");
+    expect(block.lines.map(lineText)).toEqual(["earlier output", recap, "recap body"]);
+    expect(block.lines[1]).toEqual({ ...captured[1], noWrap: true });
+  });
+
   it("reflows Codex answer continuations without joining tools, lists, or code", () => {
     const captured = lines(
       [

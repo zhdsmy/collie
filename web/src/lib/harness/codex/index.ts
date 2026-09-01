@@ -22,6 +22,7 @@ import { detectTrustRegion } from "./trust";
 import { codexDraftCarriesSend } from "./paste";
 
 const COMPLETION_SUMMARY = /^─+\s+Worked for\b/;
+const CONVERSATION_RECAP = /^─+\s+Conversation recap(?:\s+─+)?$/;
 const COMMAND_SUMMARY = /^•\s+Ran\s+\d+\s+commands\b/;
 const COMMAND_EVENT =
   /^•\s+(?:Called|Edited|Explored|Ran|Read|Running|Searched|Viewed|Working|You have)(?:\s|$)/;
@@ -43,8 +44,8 @@ const UPLOAD_IMAGE_PATH =
 const IMAGE_PLACEHOLDER = /(?:^|\s)\[\s*Image\s+#\d+\s*\]/g;
 const MIN_CAPTION_CHARS = 4;
 const MIN_WINDOWED_CAPTION_CHARS = 8;
-// Codex 0.149 no longer paints submitted queries on macOS. Use the same dark-space colour older
-// Codex versions emitted so mirrorBackground() keeps one semantic input surface across versions.
+// Codex changes submitted-query paint with its terminal theme. Use one dark-space marker colour so
+// mirrorBackground() keeps the semantic input surface readable in both Collie themes.
 const SUBMITTED_QUERY_BACKGROUND = "rgb(57,57,71)";
 
 function isCompletionSummary(line: StyledLine): boolean {
@@ -212,8 +213,7 @@ function normalizeSubmittedQueries(lines: StyledLine[]): StyledLine[] {
     }
 
     normalized ??= lines.slice(0, index);
-    const background = lead.segments.find((segment) => segment.bg !== undefined)?.bg
-      ?? SUBMITTED_QUERY_BACKGROUND;
+    const background = SUBMITTED_QUERY_BACKGROUND;
     const queryLines = [lead];
 
     while (index + 1 < lines.length) {
@@ -351,6 +351,12 @@ function normalizeCompletionSummaries(lines: StyledLine[]): StyledLine[] {
     const line = lines[index]!;
 
     if (isToolBoxBorder(line)) {
+      normalized ??= lines.slice(0, index);
+      normalized.push({ ...line, noWrap: true });
+      continue;
+    }
+
+    if (CONVERSATION_RECAP.test(lineText(line).trim())) {
       normalized ??= lines.slice(0, index);
       normalized.push({ ...line, noWrap: true });
       continue;
