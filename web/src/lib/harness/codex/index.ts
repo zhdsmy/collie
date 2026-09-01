@@ -12,7 +12,7 @@
 // the captured screen. Registered as `agent: "codex"`; variant folding belongs in
 // `canonicalAgent`, never here.
 
-import { trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
+import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { HarnessAdapter } from "../types";
 import {
   composerPrompt,
@@ -25,6 +25,21 @@ import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
 import { detectTrustRegion } from "./trust";
 import { codexDraftCarriesSend } from "./paste";
+
+const CONVERSATION_RECAP = /^[-\u2500]+\s+Conversation recap(?:\s+[-\u2500]+)?$/;
+
+function markConversationRecap(lines: StyledLine[]): StyledLine[] {
+  let normalized: StyledLine[] | null = null;
+
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]!;
+    if (!CONVERSATION_RECAP.test(lineText(line).trim()) || line.noWrap) continue;
+    normalized ??= lines.slice();
+    normalized[index] = { ...line, noWrap: true };
+  }
+
+  return normalized ?? lines;
+}
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   const trust = detectTrustRegion(lines);
@@ -58,7 +73,7 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
     return blocks;
   }
 
-  return [{ kind: "raw", lines: stripChrome(lines) }];
+  return [{ kind: "raw", lines: markConversationRecap(stripChrome(lines)) }];
 }
 
 export { extractStatusLines, extractInputDraft };

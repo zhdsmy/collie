@@ -409,6 +409,18 @@ describe("the styled status-row acceptor fails closed", () => {
 });
 
 describe("codexBuildBlocks", () => {
+  it("keeps the Codex 0.150 conversation recap separator on one mobile row", () => {
+    const recap = `\u2500 Conversation recap ${"\u2500".repeat(108)}`;
+    const [block] = codexAdapter.buildBlocks(
+      splitLines(parseAnsi(["earlier output", recap, "recap body"].join("\n"))),
+    );
+
+    expect(block?.kind).toBe("raw");
+    if (block?.kind !== "raw") return;
+    expect(block.lines.map(lineText)).toEqual(["earlier output", recap, "recap body"]);
+    expect(block.lines[1]?.noWrap).toBe(true);
+  });
+
   it("stays raw on every neutral capture", () => {
     for (const name of neutralFixtures) {
       const blocks = codexAdapter.buildBlocks(fixtureLines(name));
