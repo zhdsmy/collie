@@ -2662,3 +2662,13 @@ describe("Composer — a long upload path cannot widen the field", () => {
     expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument();
   });
 });
+
+describe("Composer — iOS bottom spacing", () => {
+  it("uses the safe area as the floor instead of adding padding above it", () => {
+    renderComposer();
+    const dock = document.querySelector('[data-slot="composer-status"]')!.parentElement!;
+
+    expect(dock.className).toContain("pb-[max(env(safe-area-inset-bottom),_0.5rem)]");
+    expect(dock.className).not.toContain("calc(env(safe-area-inset-bottom)");
+  });
+});

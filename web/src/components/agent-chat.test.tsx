@@ -695,14 +695,15 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
     // is the whole claim, so BOTH cases are asserted below, and the handle must be the last thing
     // before the composer in each.
     //
-    // It also puts the statusline back against the mirror it was cut from — that strip is the
-    // mirror's own last row, and a 34px grab handle wedged into the seam read as a boundary
-    // between the terminal and a piece of chrome that IS the terminal.
+    // It also puts the statusline back against the mirror it was cut from. The switcher is a
+    // compact chevron rather than a wide grip that reads like a second iOS home indicator.
     for (const text of [STATUS_TEXT, MENU_TEXT]) {
       const { container } = renderChat({ text });
       const handle = screen.getByRole("button", { name: "Switch pane" });
       const band = container.querySelector('[data-slot="composer-status"]')!;
       const composer = band.parentElement!;
+      expect(handle.className).toMatch(/(?:^|\s)py-1(?=\s|$)/);
+      expect(handle.querySelector(".lucide-chevron-up")).not.toBeNull();
       // ROW IDENTITY, NOT ELEMENT IDENTITY. The handle now stands inside a `Collapse` — it stands
       // down while the soft keyboard is up — so its element is two wrappers deep. `Collapse` is a
       // presence animation and nothing else (it "styles NOTHING", per its header), so the ROW in
@@ -1457,7 +1458,7 @@ describe("the pane fits its viewport", () => {
     // could hide the scroll up row and status row could be hidden?" — taken, and half of it
     // declined, which is why this test names both halves.
     //
-    // TAKEN: the 34px grab handle and the 21–112px agent statusline. Both are read BEFORE typing,
+    // TAKEN: the compact switcher row and the 21–112px agent statusline. Both are read BEFORE typing,
     // not during it. Nobody switches panes mid-sentence, and CTX/CACHE/LIMITS is reference data.
     //
     // DECLINED: the status band. It is 14px — the cheapest row on the screen — and it is the only

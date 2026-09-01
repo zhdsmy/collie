@@ -1640,7 +1640,7 @@ export function AgentChat({
                   above the composer's status band, on every pane and in every state.
 
                   It also puts the statusline back where it belongs: that strip is the mirror's own last
-                  row, cut from the pane tail, and a 34px gap with a grab handle in it read as a seam
+                  row, cut from the pane tail; putting a wide grip in that gap used to read as a seam
                   between the terminal and a piece of chrome that IS the terminal. */}
               {/* THE CHROME BLOCK, DRAWN ONCE. Everything the thumb operates — the grab handle, the
                   status band, the controls, the input — stands on ONE surface, closed against the
@@ -1666,10 +1666,9 @@ export function AgentChat({
                   and unchanged at rgb(235) in light, where --card would be pure white and land
                   1.04:1 against the inverted mirror. index.css states the whole argument. */}
               <div data-slot="chrome-block" className="border-t border-rule bg-chrome">
-                {/* …and stands down while the keyboard is up, for 30px (`py-3` around the 6px
-                    grip — it was py-3.5/34px until the 2026-08-31 shave; the swipe threshold is
-                    24px and the strip is full-width, so the gesture still lands). Switching panes
-                    is a
+                {/* …and stands down while the keyboard is up. The compact chevron avoids looking
+                    like a second iOS home indicator; the strip stays full-width, so the 24px swipe
+                    threshold and tap target still land. Switching panes is a
                     BEFORE-typing act, so the row costs its height at the one moment it cannot be
                     wanted. Nothing is stranded: the tab strip above still switches, the sheet is still
                     reachable the instant the keyboard closes, and `Collapse` unmounts the button at
@@ -1680,9 +1679,9 @@ export function AgentChat({
                     aria-label={t("chat.switcher.aria")}
                     {...swipe}
                     onClick={() => setDrawer("switcher")}
-                    className="flex w-full touch-none items-center justify-center py-3 transition-colors active:bg-muted/50"
+                    className="flex w-full touch-none items-center justify-center py-1 text-muted-foreground transition-colors active:bg-muted/50"
                   >
-                    <span className="h-1.5 w-12 rounded-md bg-muted-foreground/50" />
+                    <ChevronUp className="size-4" />
                   </button>
                 </Collapse>
 

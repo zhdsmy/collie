@@ -6,6 +6,14 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [1.0.0+collie.1] - 2026-09-01
+
+### Fixed
+
+- **Codex no longer leaves a painted blank composer row in the mobile mirror.**
+- **The pane switcher uses a compact chevron instead of a Home Indicator-like grip.**
+- **The composer no longer adds redundant padding beyond the iOS safe area.**
+
 ## [1.0.0] - 2026-09-01
 
 **This release is the whole `1.0.0-alpha` / `1.0.0-beta` line in one entry**, grouped once; the

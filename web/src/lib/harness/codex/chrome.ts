@@ -94,7 +94,17 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
 export function stripChrome(lines: StyledLine[]): StyledLine[] {
   const box = locateComposer(lines);
   if (box === null) return lines;
-  return lines.slice(0, box.promptRow);
+
+  let end = box.promptRow;
+  while (end > 0) {
+    const line = lines[end - 1]!;
+    const paintedBlank =
+      isBlank(lineText(line)) &&
+      line.segments.some((segment) => segment.style.backgroundColor !== undefined);
+    if (!paintedBlank) break;
+    end--;
+  }
+  return lines.slice(0, end);
 }
 
 /** The status row, styled, for the strip above the phone composer. Empty when no composer. */

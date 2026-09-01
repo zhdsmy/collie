@@ -105,6 +105,26 @@ describe("chrome", () => {
     expect(text).toContain("OpenAI Codex");
   });
 
+  it.each([
+    "codex--v0150-idle.txt",
+    "codex--v0150-nogit-idle.txt",
+    "codex--working.txt",
+  ])("%s: strips the painted blank row above the composer", (name) => {
+    const lines = fixtureLines(name);
+    const box = locateComposer(lines)!;
+    const spacer = lines[box.promptRow - 1]!;
+    expect(lineText(spacer).trim()).toBe("");
+    expect(spacer.segments.some((segment) => segment.style.backgroundColor !== undefined)).toBe(
+      true,
+    );
+
+    const last = stripChrome(lines).at(-1)!;
+    const paintedBlank =
+      lineText(last).trim() === "" &&
+      last.segments.some((segment) => segment.style.backgroundColor !== undefined);
+    expect(paintedBlank).toBe(false);
+  });
+
   it("extracts a one-line draft, and null for the placeholder", () => {
     expect(codexAdapter.extractInputDraft(fixtureLines("codex--draft.txt"))).toBe("hi there");
     expect(codexAdapter.extractInputDraft(fixtureLines("codex--fresh-idle.txt"))).toBeNull();
