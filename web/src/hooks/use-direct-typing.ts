@@ -129,12 +129,8 @@ export function useDirectTyping({
     activeRef.current = true;
     setActive(true);
     setStatus(t("directTyping.status.armed"), "success");
-    // Focus synchronously while the long-press/contextmenu gesture still carries browser user
-    // activation; a deferred focus selects the field but mobile browsers may refuse to open their
-    // software keyboard once that activation has expired. The existing callback still runs after
-    // React swaps the controlled value so selection lands at the end.
-    inputRef.current?.focus();
-    focusInput();
+    // Entering the mode must not summon the phone keyboard. The operator can tap the field when
+    // printable input is wanted; the separate Keys tray remains immediately usable without it.
   }
 
   /** Disarm and forget the transient state. Leaves the field alone — callers decide about focus. */
