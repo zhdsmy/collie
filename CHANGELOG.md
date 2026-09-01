@@ -6,6 +6,14 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [1.0.0+collie.3] - 2026-09-02
+
+### Fixed
+
+- **The iOS safe-area compensation now applies to the pane's actual bottom flex row.** The v1
+  `Collapse` wrapper made the composer-local margin in `1.0.0+collie.2` ineffective at moving the
+  dock; the outer row now reclaims that height while the current chrome still paints through it.
+
 ## [1.0.0+collie.2] - 2026-09-02
 
 ### Fixed

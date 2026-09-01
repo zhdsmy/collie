@@ -1560,7 +1560,12 @@ export function AgentChat({
               still the last thing before the composer, in zen and out of it. Tests read the ROW
               rather than the element for exactly this reason (agent-chat.test.tsx says so at the
               docking test). */}
-          <Collapse open={!zen}>
+          <Collapse
+            open={!zen}
+            className={
+              composing ? undefined : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]"
+            }
+          >
             <div className="relative shrink-0">
 
               {/* The agent's statusline, re-surfaced as app chrome (its branch/model/ctx/permission mode

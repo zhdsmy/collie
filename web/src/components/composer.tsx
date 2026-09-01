@@ -979,12 +979,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       <div
         className={cn(
           "bg-chrome px-3",
-          // Closed-keyboard chrome still paints through the iOS safe area, but the matching negative
-          // margin keeps that inset from becoming empty flex height below the controls. This carries
-          // the proven compensated geometry forward without restoring the old floating panel style.
+          // Closed-keyboard chrome paints through the iOS safe area. The matching negative margin
+          // lives on AgentChat's outer Collapse — the actual flex row whose height must be reduced.
           composing
             ? "pb-2"
-            : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",
+            : "pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",
         )}
       >
         {/* Pending-send preview: visible from send until the mirror echoes back (or 6s). Shows the

@@ -1395,6 +1395,9 @@ describe("the pane fits its viewport", () => {
     // the wrapper must be found, so a bottom region that quietly escaped its Collapse fails here too.
     const bottomRow = bottom.closest('[data-slot="collapse"]')!;
     expect(bottomRow).not.toBeNull();
+    expect(bottomRow.className).toContain(
+      "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
+    );
     // The mirror is the bottom row's own previous sibling — taken that way rather than by a
     // selector, so this asserts the ADJACENCY the argument rests on instead of merely finding two
     // elements that happen to match.
