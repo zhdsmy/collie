@@ -20,6 +20,15 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.1.0+collie.3] - 2026-09-02
+
+### Fixed
+
+- Codex answers no longer retain host-terminal hard wraps, including broken CJK continuations.
+- Codex `Worked for` and `Conversation recap` separators stay on one row without trailing rule remnants.
+- Codex status lines use compact context, fast-mode, approval, and goal labels on narrow screens.
+- The composer paints and occupies the iOS bottom safe area consistently across keyboard viewport transitions.
+
 ## [1.1.0+collie.2] - 2026-09-02
 
 ### Fixed

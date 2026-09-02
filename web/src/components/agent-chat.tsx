@@ -430,11 +430,13 @@ export function AgentChat({
   // the agent, a menu is up, or no box at the tail, in which case the strip is hidden. A second parse
   // of `display`, but memoised on it, so it only recomputes when the buffer content changes — off the
   // render hot path.
-  const statusLines = useMemo(
-    () =>
-      grammarsOn ? adapterFor(agent?.agent)?.extractStatusLines(splitLines(parseAnsi(display))) ?? [] : [],
-    [display, agent?.agent, grammarsOn],
-  );
+  const statusLines = useMemo(() => {
+    if (!grammarsOn) return [];
+    const adapter = adapterFor(agent?.agent);
+    if (!adapter) return [];
+    const extracted = adapter.extractStatusLines(splitLines(parseAnsi(display)));
+    return adapter.compactStatusLines?.(extracted) ?? extracted;
+  }, [display, agent?.agent, grammarsOn]);
 
   // A user draft stranded on the input box's "❯" line — a message queued while the agent was busy
   // then recalled, which persists across turns. stripChrome peels the box off the mirror so it goes
@@ -1567,16 +1569,7 @@ export function AgentChat({
               still the last thing before the composer, in zen and out of it. Tests read the ROW
               rather than the element for exactly this reason (agent-chat.test.tsx says so at the
               docking test). */}
-          <Collapse
-            open={!zen}
-            contentClassName={
-              // This must live on Collapse's direct grid child, not its outer flex/grid shell.
-              // Safari otherwise shortens the row without carrying the painted chrome into the
-              // bottom safe area, leaving the controls above a blank strip. The content-box
-              // overflow reproduces the proven iOS geometry while retaining the current v1 skin.
-              composing ? undefined : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]"
-            }
-          >
+          <Collapse open={!zen}>
             <div className="relative shrink-0">
 
               {/* The agent's statusline, re-surfaced as app chrome (its branch/model/ctx/permission mode
@@ -1713,8 +1706,6 @@ export function AgentChat({
                   // `connecting` the dot reads, so the pair still dims as one.
                   status={agent?.status}
                   stale={connecting}
-                  // The one read of the keyboard, handed down. See `composing` above.
-                  composing={composing}
                   gone={gone}
                   readOnly={readOnly}
                   // §10.3's pre-flight refusal, as a disabled state AND as the placeholder copy: the

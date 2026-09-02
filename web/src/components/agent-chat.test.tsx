@@ -678,6 +678,26 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
     expect(screen.queryByText(/❯/)).toBeNull(); // the input box was stripped off the mirror
   });
 
+  it("uses the Codex adapter's compact status labels in the surfaced strip", () => {
+    const codexAgent = { ...fixtureAgents[0]!, agent: "codex" };
+    const { container } = renderChat({
+      agent: codexAgent,
+      text: [
+        "earlier output",
+        "",
+        "› reply",
+        "",
+        "  gpt-5.6-sol xhigh · Ready · Context 11% left · Fast off · Approve for me",
+      ].join("\n"),
+    });
+
+    const statusRows = [...container.querySelectorAll("div.truncate")].map(
+      (row) => row.textContent,
+    );
+    expect(statusRows).toContain("  gpt-5.6-sol xhigh· Ready· Ctx 11%· Fast:off· Approve");
+    expect(screen.queryByText(/Context 11% left/)).toBeNull();
+  });
+
   it("docks the pane-switch handle between the statusline and the composer, always", () => {
     // THE OPERATOR'S REPORT, verbatim: "the switch panel up drawer sits above the agent Statusline,
     // it should always be right above the bottom status row."
@@ -1397,7 +1417,9 @@ describe("the pane fits its viewport", () => {
     expect(bottomRow).not.toBeNull();
     expect(bottomRow.className).not.toContain("mb-[calc(");
     const bottomContent = bottomRow.firstElementChild!;
-    expect(bottomContent.className).toContain(
+    expect(bottomContent.className).not.toContain("mb-[calc(");
+    const dock = container.querySelector('[data-slot="composer-status"]')!.parentElement!;
+    expect(dock.className).toContain(
       "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
     );
     // The mirror is the bottom row's own previous sibling — taken that way rather than by a
@@ -1494,13 +1516,14 @@ describe("the pane fits its viewport", () => {
       // the rows back in one tap. Pinned in its own describe below, not here; this test is about
       // the two rows that genuinely leave.
 
-      // …and the band is untouched, keyboard or no keyboard.
+      // …and the band and safe-area paint are untouched, keyboard or no keyboard. The inset pair
+      // stays on one node so a delayed viewport event cannot expose the page background.
       expect(container.querySelector('[data-slot="composer-status"]')).not.toBeNull();
-      // The dock also stops paying the home-indicator inset twice: the keyboard covers the
-      // indicator, so reserving for it as well is ~24px spent on the one screen that has none.
       const dock = container.querySelector('[data-slot="composer-status"]')!.parentElement!;
-      expect(dock.className).toMatch(/(?:^|\s)pb-2(?=\s|$)/);
-      expect(dock.className).not.toMatch(/safe-area-inset-bottom/);
+      expect(dock.className).toContain("pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]");
+      expect(dock.className).toContain(
+        "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
+      );
     } finally {
       kb.restore();
     }

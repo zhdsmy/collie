@@ -2670,6 +2670,6 @@ describe("Composer — iOS bottom spacing", () => {
 
     expect(dock.className).toContain("bg-chrome");
     expect(dock.className).toContain("pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]");
-    expect(dock.className).not.toContain("mb-[calc(");
+    expect(dock.className).toContain("mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]");
   });
 });

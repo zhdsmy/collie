@@ -86,16 +86,12 @@ interface ComposerProps {
    */
   hostBlock?: string;
   /**
-   * The soft keyboard is up, so this dock is standing on it rather than on the screen's own bottom
-   * edge. Read ONCE by the pane (agent-chat.tsx, `composing`) and passed down — never re-derived
-   * here, or the boundary animates out of step with the two rows above that read the same fact.
-   *
-   * All it changes in this file is the bottom pad. `env(safe-area-inset-bottom)` reserves room for
-   * the home indicator, and the keyboard is already covering the home indicator: while it is up the
-   * inset is a second reservation for the same strip of glass, ~24px of it, paid at the exact moment
-   * the screen has none to give. The `0.5rem` of real breathing room stays, in both states.
+   * The safe-area paint and layout compensation live on the dock itself, independent of transient
+   * keyboard state. This keeps the app surface behind the iOS home indicator through viewport
+   * transitions without changing the composer's effective bottom spacing.
+   * The matching padding and negative margin preserve a fixed breathing room while extending only
+   * the dock's paint through the inset.
    */
-  composing?: boolean;
   /** A dialog (prompt/wizard/preview/multi-select) is on screen, so the TUI's keyboard belongs to it.
    * Free-text sending is refused while true — see send(). Answer it with its own buttons instead. */
   dialogPresent: boolean;
@@ -225,7 +221,7 @@ function ComposerDock({
 }
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, scope, agent, isShell, status, stale, gone, readOnly, hostBlock, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, onSent },
+    { paneId, scope, agent, isShell, status, stale, gone, readOnly, hostBlock, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, onSent },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -978,12 +974,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     <>
       <div
         className={cn(
-          "bg-chrome px-3",
-          // Closed-keyboard chrome paints through the iOS safe area. The matching negative margin
-          // lives on AgentChat's Collapse content box so Safari carries this paint below the row.
-          composing
-            ? "pb-2"
-            : "pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",
+          // Paint and compensate on one node so a stale keyboard signal cannot expose the page below.
+          "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] bg-chrome px-3 pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",
         )}
       >
         {/* Pending-send preview: visible from send until the mirror echoes back (or 6s). Shows the

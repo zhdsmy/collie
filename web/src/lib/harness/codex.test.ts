@@ -503,6 +503,56 @@ describe("codexBuildBlocks", () => {
     expect(block.lines[1]?.noWrap).toBe(true);
   });
 
+  it("rejoins hard-wrapped CJK and Latin answer continuations before mobile wrapping", () => {
+    const lines = splitLines(
+      parseAnsi(
+        [
+          "• 已定位并修复。v1.1.0 没有修改核心发送链路；真正的问题是 v1 重写",
+          "  Codex 解析器时漏掉了旧版分支。输入 /status 时，顶栏报",
+          "  错且不提交。",
+          "",
+          "  下一段保留为独立段落。",
+        ].join("\n"),
+      ),
+    );
+    const [block] = codexAdapter.buildBlocks(lines);
+    expect(block?.kind).toBe("raw");
+    if (block?.kind !== "raw") return;
+
+    expect(block.lines.map(lineText)).toEqual([
+      "• 已定位并修复。v1.1.0 没有修改核心发送链路；真正的问题是 v1 重写 Codex 解析器时漏掉了旧版分支。输入 /status 时，顶栏报错且不提交。",
+      "",
+      "  下一段保留为独立段落。",
+    ]);
+  });
+
+  it("keeps the Worked for row intact and removes its trailing rule remnants", () => {
+    const worked = "─ Worked for 16m 47s";
+    const rule = "─".repeat(80);
+    const [block] = codexAdapter.buildBlocks(
+      splitLines(
+        parseAnsi(["answer", `\x1b[2m${worked}\x1b[22m`, rule, rule, "next"].join("\n")),
+      ),
+    );
+    expect(block?.kind).toBe("raw");
+    if (block?.kind !== "raw") return;
+
+    expect(block.lines.map(lineText)).toEqual(["answer", worked, "next"]);
+    expect(block.lines[1]?.noWrap).toBe(true);
+  });
+
+  it("compacts verbose Codex status fields without changing the captured row", () => {
+    const [line] = splitLines(
+      parseAnsi(" gpt-5.6-sol xhigh · Ready · Context 11% left · Fast off · Approve for me"),
+    );
+    const compacted = codexAdapter.compactStatusLines!([line!]);
+
+    expect(lineText(line!)).toContain("Context 11% left");
+    expect(lineText(compacted[0]!)).toBe(
+      " gpt-5.6-sol xhigh· Ready· Ctx 11%· Fast:off· Approve",
+    );
+  });
+
   it("stays raw on every neutral capture", () => {
     for (const name of neutralFixtures) {
       const blocks = codexAdapter.buildBlocks(fixtureLines(name));

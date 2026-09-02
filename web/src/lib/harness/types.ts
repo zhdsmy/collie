@@ -25,6 +25,9 @@ export interface HarnessAdapter {
    *  readable at a glance. Empty = no box at the tail (a menu is up, or a foreign/torn buffer), so
    *  nothing to surface. */
   extractStatusLines(lines: StyledLine[]): StyledLine[];
+  /** Display-only normalization for the re-surfaced status strip. The captured rows stay untouched
+   *  for detection; adapters may shorten verbose labels so the same fields survive on a phone. */
+  compactStatusLines?(lines: StyledLine[]): StyledLine[];
   /** Re-surface a user draft stranded on the input box's prompt line (null = no box / empty / a
    *  known placeholder). */
   extractInputDraft(lines: StyledLine[]): string | null;
