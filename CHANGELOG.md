@@ -20,6 +20,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.1.0+collie.4] - 2026-09-02
+
+### Fixed
+
+- Codex image replies submit after upload paths become `[Image #N]`; stale tokens remain blocked. (55a7b45)
+
 ## [1.1.0+collie.3] - 2026-09-02
 
 ### Fixed
