@@ -2,9 +2,12 @@
 
 All notable changes to Collie are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project uses
-[Semantic Versioning](https://semver.org/). The newest `## [x.y.z]` heading **must** match the
-`version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
-`scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
+[Semantic Versioning](https://semver.org/). Work that has landed but is not released yet is
+collected under `## [Unreleased]`; the release commit renames that heading to `## [x.y.z] -
+YYYY-MM-DD` and opens an empty one above it. The newest *numbered* `## [x.y.z]` heading, which the
+Unreleased heading is not, **must** match the `version` in `herdr-plugin.toml`, `package.json`,
+and `web/package.json` (enforced by `scripts/check-version.sh`). See
+[`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
 ## Upgrading
 
@@ -19,6 +22,39 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 `herdr plugin action invoke update --plugin herdr.collie`, is enough.
 
 ## [Unreleased]
+
+## [1.2.0+collie.1] - 2026-09-02
+
+### Changed
+
+- **Integrated upstream 1.2.0.** This adds dual-container speech-to-text probes, compact dashboard
+  rows, reliable Android notification deep links and assets, and expanded OMP recognition.
+
+### Fixed
+
+- Retained the downstream Codex image and slash-command send verification, narrow-screen output
+  cleanup, and iOS safe-area layout on the v1.2.0 codebase.
+
+## [1.2.0] - 2026-09-02
+
+### Added
+
+- `collie stt test` now sends the two containers a phone actually records, webm/opus and mp4, after the wav probe, and fails with guidance when the provider refuses one; Voxtral on OpenRouter refuses both, whisper-large-v3-turbo accepts them (#148) ([d6d7a1c](https://github.com/AltanS/collie/commit/d6d7a1c))
+
+### Changed
+
+- A refused transcription names the upstream status and the container it was sent as, so the phone's error says which format the provider rejected (#148) ([d6d7a1c](https://github.com/AltanS/collie/commit/d6d7a1c))
+- A functional commit now records one line under `## [Unreleased]` instead of bumping the version; the pre-commit hook enforces both halves, and only the `chore(release):` commit bumps and dates the heading. ([f6805cb](https://github.com/AltanS/collie/commit/f6805cb))
+- The mirror's default font size is 10px, down from 12; a device that already picked a size keeps it ([4b005aa](https://github.com/AltanS/collie/commit/4b005aa))
+- Dashboard rows lead with the pane title beside a small agent tile, with the space and tab as the address beneath; the big tile, the bold space name and its truncation are gone ([c442429](https://github.com/AltanS/collie/commit/c442429))
+
+### Fixed
+
+- Renaming a tab or pane from its sheet works on the phone again; the rename field's own keyboard used to fold the strip band and unmount the sheet mid-edit ([93373ce](https://github.com/AltanS/collie/commit/93373ce))
+- oh-my-pi panes show omp's own π mark, painted with its official three-stop gradient, instead of the initials tile; the brand table now says every mark must be painted, thanks @enieuwy (#151) ([17386ef](https://github.com/AltanS/collie/commit/17386ef))
+- The OMP adapter recognises the open-ended `╰─ <draft>` composer row and standalone status row that OMP 18.1.2 paints on a wide pane; the closed OMP 17 box and the corner-to-corner modal rule are unchanged, thanks @ImArtisann (#149, #150) ([6081520](https://github.com/AltanS/collie/commit/6081520))
+- A notification tap on Android opens the deep-linked pane again when the Collie tab had been discarded; navigate before focus, and fall through to a new window when no tab survives. (#147) ([18cd9cb](https://github.com/AltanS/collie/commit/18cd9cb))
+- Android push notifications show a proper small badge glyph and a full-size Collie mark; the maskable home-screen tile was doing both jobs and rendered as a grey block on the notification ([177a8a9](https://github.com/AltanS/collie/commit/177a8a9))
 
 ## [1.1.0+collie.4] - 2026-09-02
 
