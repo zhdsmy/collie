@@ -980,7 +980,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         className={cn(
           "bg-chrome px-3",
           // Closed-keyboard chrome paints through the iOS safe area. The matching negative margin
-          // lives on AgentChat's outer Collapse — the actual flex row whose height must be reduced.
+          // lives on AgentChat's Collapse content box so Safari carries this paint below the row.
           composing
             ? "pb-2"
             : "pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",

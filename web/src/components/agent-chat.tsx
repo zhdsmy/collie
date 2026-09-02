@@ -1562,7 +1562,11 @@ export function AgentChat({
               docking test). */}
           <Collapse
             open={!zen}
-            className={
+            contentClassName={
+              // This must live on Collapse's direct grid child, not its outer flex/grid shell.
+              // Safari otherwise shortens the row without carrying the painted chrome into the
+              // bottom safe area, leaving the controls above a blank strip. The content-box
+              // overflow reproduces the proven iOS geometry while retaining the current v1 skin.
               composing ? undefined : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]"
             }
           >

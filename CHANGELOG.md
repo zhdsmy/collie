@@ -6,6 +6,15 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## [1.0.0+collie.4] - 2026-09-02
+
+### Fixed
+
+- **The pane composer now actually occupies the iOS bottom safe area.** The compensation is applied
+  to `Collapse`'s direct content box so Safari paints and positions the full chrome below the normal
+  viewport edge; applying it to the outer grid/flex item in `1.0.0+collie.3` still left the controls
+  above the visible empty strip on iPhone.
+
 ## [1.0.0+collie.3] - 2026-09-02
 
 ### Fixed

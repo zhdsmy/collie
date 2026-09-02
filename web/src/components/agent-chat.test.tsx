@@ -1395,7 +1395,9 @@ describe("the pane fits its viewport", () => {
     // the wrapper must be found, so a bottom region that quietly escaped its Collapse fails here too.
     const bottomRow = bottom.closest('[data-slot="collapse"]')!;
     expect(bottomRow).not.toBeNull();
-    expect(bottomRow.className).toContain(
+    expect(bottomRow.className).not.toContain("mb-[calc(");
+    const bottomContent = bottomRow.firstElementChild!;
+    expect(bottomContent.className).toContain(
       "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
     );
     // The mirror is the bottom row's own previous sibling — taken that way rather than by a

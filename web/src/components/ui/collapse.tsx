@@ -68,6 +68,7 @@ export interface CollapseProps {
    */
   children: ReactNode;
   className?: string;
+  contentClassName?: string;
 }
 
 /**
@@ -108,7 +109,7 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-export function Collapse({ open, children, className }: CollapseProps) {
+export function Collapse({ open, children, className, contentClassName }: CollapseProps) {
   const reduced = usePrefersReducedMotion();
   const ms = reduced ? 0 : COLLAPSE_MS;
 
@@ -183,7 +184,13 @@ export function Collapse({ open, children, className }: CollapseProps) {
         className,
       )}
     >
-      <div className={cn("min-h-0 min-w-0", settled ? "overflow-visible" : "overflow-hidden")}>
+      <div
+        className={cn(
+          "min-h-0 min-w-0",
+          settled ? "overflow-visible" : "overflow-hidden",
+          contentClassName,
+        )}
+      >
         {content}
       </div>
     </div>
