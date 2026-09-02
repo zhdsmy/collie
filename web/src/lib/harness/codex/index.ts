@@ -13,6 +13,7 @@
 // `canonicalAgent`, never here.
 
 import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
+import { draftCarriesSend as textDraftCarriesSend } from "../../draft-match";
 import type { HarnessAdapter } from "../types";
 import {
   composerPrompt,
@@ -37,6 +38,11 @@ const SUBMITTED_QUERY_LEAD = /^›(?:\s|$)/;
 const NESTED_ANSWER_CONTENT = /^(?:(?:[-+*•]|\d+[.)])(?:\s|$)|[│└┌┐┘┬├┤┼])/;
 const STRUCTURAL_ANSWER_CONTENT = /^(?:```|~~~|[|─━═])/;
 const DECORATIVE_RULE = /^[-\u2500]{40,}$/;
+const UPLOAD_IMAGE_PATH =
+  /(?:^|\s)(\/(?:[^\s/]+\/)*uploads\/[^\s/]+\.(?:gif|jpe?g|png|webp))(?=\s|$)/gi;
+const IMAGE_PLACEHOLDER = /(?:^|\s)\[\s*Image\s+#\d+\s*\]/g;
+const MIN_CAPTION_CHARS = 4;
+const MIN_WINDOWED_CAPTION_CHARS = 8;
 
 function isCompletionSummary(line: StyledLine): boolean {
   if (!COMPLETION_SUMMARY.test(lineText(line).trim())) return false;
@@ -249,6 +255,72 @@ function normalizeCompletionSummaries(lines: StyledLine[]): StyledLine[] {
   return normalized ?? lines;
 }
 
+function uploadPaths(text: string): string[] {
+  return [...text.matchAll(UPLOAD_IMAGE_PATH)].map((match) => match[1]!);
+}
+
+function captionWithoutImages(text: string): string {
+  return text.replace(UPLOAD_IMAGE_PATH, "").replace(IMAGE_PLACEHOLDER, "").trim();
+}
+
+function visibleCaptionLength(text: string): number {
+  return Array.from(text).filter((character) => !/\s/u.test(character)).length;
+}
+
+/** Verify Codex's replacement of Collie upload paths with its own `[Image #N]` tokens. */
+export function imageDraftCarriesSend(
+  sent: string,
+  draft: string,
+  beforeDraft?: string | null,
+): boolean {
+  const sentPaths = uploadPaths(sent);
+  if (sentPaths.length === 0) return false;
+
+  const unmatchedPaths = [...sentPaths];
+  const draftPaths = uploadPaths(draft);
+  for (const path of draftPaths) {
+    const index = unmatchedPaths.indexOf(path);
+    if (index === -1) return false;
+    unmatchedPaths.splice(index, 1);
+  }
+
+  const placeholderCount = [...draft.matchAll(IMAGE_PLACEHOLDER)].length;
+  const sentCaption = captionWithoutImages(sent);
+  const draftCaption = captionWithoutImages(draft);
+
+  // Image tokens have no identity, so an image-only send also needs proof that the token is new.
+  if (visibleCaptionLength(sentCaption) === 0) {
+    if (beforeDraft === undefined || (beforeDraft !== null && beforeDraft.trim() !== "")) {
+      return false;
+    }
+    if (visibleCaptionLength(draftCaption) > 0) return false;
+    return placeholderCount === unmatchedPaths.length;
+  }
+
+  if (placeholderCount === 0) {
+    // A long draft can window out both the caption and converted tokens. Two distinct literal paths
+    // still identify the send; one remains ambiguous and fails closed.
+    return new Set(draftPaths).size >= 2;
+  }
+  if (placeholderCount > unmatchedPaths.length) return false;
+
+  const exactCaption = draftCaption === sentCaption;
+  const minimum = exactCaption ? MIN_CAPTION_CHARS : MIN_WINDOWED_CAPTION_CHARS;
+  if (visibleCaptionLength(draftCaption) < minimum) return false;
+
+  return textDraftCarriesSend(sentCaption, draftCaption);
+}
+
+function codexAdapterDraftCarriesSend(
+  sent: string,
+  draft: string,
+  beforeDraft?: string | null,
+): boolean {
+  return uploadPaths(sent).length > 0
+    ? imageDraftCarriesSend(sent, draft, beforeDraft)
+    : codexDraftCarriesSend(sent, draft);
+}
+
 function codexRawBlock(lines: StyledLine[]): Block {
   return {
     kind: "raw",
@@ -301,5 +373,5 @@ export const codexAdapter: HarnessAdapter = {
   extractInputDraft,
   composerReady,
   composerPrompt,
-  draftCarriesSend: codexDraftCarriesSend,
+  draftCarriesSend: codexAdapterDraftCarriesSend,
 };

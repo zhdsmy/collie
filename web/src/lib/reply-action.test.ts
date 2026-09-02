@@ -13,6 +13,13 @@ const BOX_RULE = "─".repeat(40); // clears the 20-glyph border threshold in ha
 const paneWithDraft = (draft: string) => `some output\n${BOX_RULE}\n❯ ${draft}\n${BOX_RULE}`;
 // A focused permission dialog: no input box at the tail at all, so extractInputDraft sees nothing.
 const paneWithDialog = "Do you want to proceed?\n ❯ 1. Yes\n   2. No\n\n Esc to cancel";
+const codexPaneWithDraft = (draft: string) =>
+  [
+    "some output",
+    draft === "" ? "\x1b[2m› Ask Codex to do anything\x1b[0m" : `› ${draft}`,
+    "",
+    "  gpt-5.6-sol · /tmp/project · Context 90% left",
+  ].join("\n");
 
 /** Record every reply POST, and let the fake pane's screen be swapped per test. */
 function harness(
@@ -221,6 +228,98 @@ describe("sendGuardedReply", () => {
       { text: "/diff", submit: false },
       { text: "", submit: true },
     ]);
+  });
+
+  it("submits when Codex replaces an uploaded image path with its image token", async () => {
+    const path = "/Users/michael/.local/state/collie/uploads/w6_p1-mtjtrsqa-e8e03859.png";
+    const caption = "先修复输入问题吧";
+    let pane = codexPaneWithDraft("");
+    const calls = harness(
+      () => pane,
+      (body) => {
+        if (!body.submit) pane = codexPaneWithDraft(`[Image #1] ${caption}`);
+      },
+    );
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: `${path} ${caption}`,
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: `${path} ${caption}`, submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
+  it("submits an image-only Codex token only after an empty pre-type draft", async () => {
+    const path = "/test-state/uploads/example.jpg";
+    let pane = codexPaneWithDraft("");
+    const calls = harness(
+      () => pane,
+      (body) => {
+        if (!body.submit) pane = codexPaneWithDraft("[Image #1]");
+      },
+    );
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: path,
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: path, submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
+  it("uses the post-clear Codex draft as the image-only baseline", async () => {
+    const path = "/test-state/uploads/example.jpg";
+    let pane = codexPaneWithDraft("[Image #1]");
+    const calls = harness(
+      () => pane,
+      (body) => {
+        if (!body.submit) pane = codexPaneWithDraft("[Image #2]");
+      },
+    );
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: path,
+      agent: "codex",
+      onComposerSeen: async () => {
+        pane = codexPaneWithDraft("");
+        return { ok: true as const, keysSent: true };
+      },
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: path, submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
+  it("refuses an unchanged stale Codex image token", async () => {
+    const path = "/test-state/uploads/example.jpg";
+    const calls = harness(() => codexPaneWithDraft("[Image #1]"));
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: path,
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out.status).toBe("stalled");
+    expect(calls).toEqual([{ text: path, submit: false }]);
   });
 
   it("types, verifies the text on the input line, then submits", async () => {
