@@ -20,6 +20,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.1.0+collie.2] - 2026-09-02
+
+### Fixed
+
+- Codex slash commands submit reliably while autocomplete temporarily replaces the status row.
+
 ## [1.1.0+collie.1] - 2026-09-02
 
 ### Changed

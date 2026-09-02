@@ -15,7 +15,10 @@ const paneWithDraft = (draft: string) => `some output\n${BOX_RULE}\n❯ ${draft}
 const paneWithDialog = "Do you want to proceed?\n ❯ 1. Yes\n   2. No\n\n Esc to cancel";
 
 /** Record every reply POST, and let the fake pane's screen be swapped per test. */
-function harness(screen: () => string) {
+function harness(
+  screen: () => string,
+  onReply?: (body: { text: string; submit: boolean }) => void,
+) {
   const calls: Array<{ text: string; submit: boolean }> = [];
   server.use(
     http.get(/\/api\/pane\/[^/]+$/, () =>
@@ -24,6 +27,7 @@ function harness(screen: () => string) {
     http.post<never, { text: string; submit: boolean }>(/\/api\/pane\/[^/]+\/reply$/, async ({ request }) => {
       const body = await request.json();
       calls.push(body);
+      onReply?.(body);
       return HttpResponse.json({ ok: true });
     }),
   );
@@ -183,6 +187,42 @@ describe("draftCarriesSend", () => {
 });
 
 describe("sendGuardedReply", () => {
+  it("submits a Codex slash command after autocomplete replaces the status row", async () => {
+    let pane = [
+      "some output",
+      "\x1b[2m› Ask Codex to do anything\x1b[0m",
+      "",
+      "  gpt-5.6-sol · /tmp/project · Context 90% left",
+    ].join("\n");
+    const calls = harness(
+      () => pane,
+      (body) => {
+        if (!body.submit) {
+          pane = [
+            "some output",
+            "",
+            "\x1b[1m›\x1b[0m /diff",
+            "",
+            "  \x1b[38;2;6;182;212m/diff show git diff including untracked files\x1b[0m",
+          ].join("\n");
+        }
+      },
+    );
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: "/diff",
+      agent: "codex",
+      ...instant,
+    });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: "/diff", submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
   it("types, verifies the text on the input line, then submits", async () => {
     const calls = harness(() => paneWithDraft("ship it please"));
 

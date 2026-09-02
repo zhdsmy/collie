@@ -211,6 +211,66 @@ describe("chrome", () => {
     expect(codexAdapter.extractInputDraft(lines)).toBe("a message waiting to send");
   });
 
+  it("keeps a complete slash command writable while autocomplete replaces the status row", () => {
+    const lines = splitLines(
+      parseAnsi(
+        [
+          "earlier output",
+          "",
+          "\x1b[1m›\x1b[0m /status",
+          "",
+          "  \x1b[38;2;6;182;212m/status     show current session configuration\x1b[0m",
+          "  \x1b[38;2;6;182;212m/statusline configure status line items\x1b[0m",
+          "  \x1b[38;2;6;182;212m/stats      show usage statistics\x1b[0m",
+        ].join("\n"),
+      ),
+    );
+
+    expect(codexAdapter.composerReady!(lines)).toBe(true);
+    expect(codexAdapter.extractInputDraft(lines)).toBe("/status");
+    expect(codexAdapter.extractStatusLines(lines)).toEqual([]);
+    expect(stripChrome(lines).map(lineText)).toEqual(["earlier output"]);
+    expect(codexAdapter.composerPrompt!(lines)).toBe("› /status");
+  });
+
+  it("does not accept slash suggestions when none exactly matches the draft", () => {
+    const lines = splitLines(
+      parseAnsi(
+        [
+          "earlier output",
+          "",
+          "\x1b[1m›\x1b[0m /status",
+          "",
+          "  \x1b[38;2;6;182;212m/statusline configure status line items\x1b[0m",
+          "  \x1b[38;2;6;182;212m/stats      show usage statistics\x1b[0m",
+        ].join("\n"),
+      ),
+    );
+
+    expect(locateComposer(lines)).toBeNull();
+    expect(codexAdapter.composerReady!(lines)).toBe(false);
+    expect(codexAdapter.extractInputDraft(lines)).toBeNull();
+  });
+
+  it("does not accept a malformed row inside a slash autocomplete tail", () => {
+    const lines = splitLines(
+      parseAnsi(
+        [
+          "earlier output",
+          "",
+          "\x1b[1m›\x1b[0m /status",
+          "",
+          "  \x1b[38;2;6;182;212m/status show current session configuration\x1b[0m",
+          "  \x1b[38;2;6;182;212mnot a slash suggestion\x1b[0m",
+          "  \x1b[38;2;6;182;212m/statusline configure status line items\x1b[0m",
+        ].join("\n"),
+      ),
+    );
+
+    expect(locateComposer(lines)).toBeNull();
+    expect(codexAdapter.composerReady!(lines)).toBe(false);
+  });
+
   it("a wrapped row whose own text starts with spaces is still a continuation", () => {
     // The shape, pinned without a capture: two spaces of gutter, then the operator's own text,
     // which may itself begin with spaces. `codex--v0151-draft-indented-line.txt` below is the
@@ -303,7 +363,9 @@ describe("the 0.150.1 default status row", () => {
     expect(lineText(status[0]!)).not.toContain("Context");
     expect(lineText(status[0]!).trimEnd()).toMatch(/^ {2}\S.* · \S/);
     // The located row is the LAST non-blank row — the status row, not a transcript line.
-    expect(status[0]).toBe(lines[locateComposer(lines)!.statusRow]);
+    const statusRow = locateComposer(lines)!.statusRow;
+    expect(statusRow).not.toBeNull();
+    expect(status[0]).toBe(lines[statusRow!]);
   });
 
   it.each(["codex--v0150-idle.txt", "codex--v0150-nogit-idle.txt"])(
