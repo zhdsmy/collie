@@ -85,13 +85,6 @@ interface ComposerProps {
    * will never be allowed to type", the other is "this machine is quiet, wait for the next poll".
    */
   hostBlock?: string;
-  /**
-   * The safe-area paint and layout compensation live on the dock itself, independent of transient
-   * keyboard state. This keeps the app surface behind the iOS home indicator through viewport
-   * transitions without changing the composer's effective bottom spacing.
-   * The matching padding and negative margin preserve a fixed breathing room while extending only
-   * the dock's paint through the inset.
-   */
   /** A dialog (prompt/wizard/preview/multi-select) is on screen, so the TUI's keyboard belongs to it.
    * Free-text sending is refused while true — see send(). Answer it with its own buttons instead. */
   dialogPresent: boolean;
@@ -974,8 +967,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     <>
       <div
         className={cn(
-          // Paint and compensate on one node so a stale keyboard signal cannot expose the page below.
-          "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] bg-chrome px-3 pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]",
+          // Shorten the row by the safe-area inset while keeping only the ordinary 8px padding.
+          // Adding the inset to padding cancelled that shift and stranded the input above a blank
+          // strip; this lets the footer and its paint move into the safe area together.
+          "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] bg-chrome px-3 pb-2",
         )}
       >
         {/* Pending-send preview: visible from send until the mirror echoes back (or 6s). Shows the

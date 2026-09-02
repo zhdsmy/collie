@@ -1517,11 +1517,11 @@ describe("the pane fits its viewport", () => {
       // the rows back in one tap. Pinned in its own describe below, not here; this test is about
       // the two rows that genuinely leave.
 
-      // …and the band and safe-area paint are untouched, keyboard or no keyboard. The inset pair
-      // stays on one node so a delayed viewport event cannot expose the page background.
+      // …and the band and safe-area placement are untouched, keyboard or no keyboard. The dock
+      // keeps ordinary bottom padding while its negative margin moves the whole footer downward.
       expect(container.querySelector('[data-slot="composer-status"]')).not.toBeNull();
       const dock = container.querySelector('[data-slot="composer-status"]')!.parentElement!;
-      expect(dock.className).toContain("pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]");
+      expect(dock.className).toMatch(/(?:^|\s)pb-2(?:\s|$)/);
       expect(dock.className).toContain(
         "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
       );
