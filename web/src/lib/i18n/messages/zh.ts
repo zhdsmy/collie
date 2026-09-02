@@ -572,9 +572,6 @@ export const zh: Dictionary = {
   "time.compact.now": "现在",
 
   // --- sync (how fresh the herd on screen is, and asking for a fresher one) ---
-  "sync.pull.hint": "下拉刷新",
-  "sync.pull.release": "释放立即刷新",
-  "sync.pull.busy": "正在刷新…",
 
   // --- dialog (menu / multi-select / wizard / preview-select block renderers) ---
   "dialog.sendingAria": "正在发送",
@@ -592,6 +589,7 @@ export const zh: Dictionary = {
   "dialog.submitAnswers": "提交回答",
   "dialog.cancel": "取消",
   "dialog.endsQuestionsSuffix": "（结束问答）",
+  "dialog.autocomplete.title": "斜杠命令",
   "dialog.menu.moveUp": "上移",
   "dialog.menu.moveDown": "下移",
   "dialog.menu.leftAria": "向左：{verb}（{label}）",
@@ -715,5 +713,6 @@ export const zh: Dictionary = {
   "space.new.tab.plain": "空间",
   "space.new.tab.worktree": "Worktree",
   "space.new.repo.label": "仓库",
+  "space.new.host.label": "主机",
   "worktree.orOpenExisting": "或打开已有 Worktree",
 };

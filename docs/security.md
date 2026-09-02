@@ -39,7 +39,7 @@ Key security boundaries and risks:
   nodes do not send this header; use `COLLIE_TRUSTED_USER_OPTIONAL=1` to permit missing headers). To
   authorize specific hardware, use [pairing](#pair-a-device--the-write-credential) directly, or
   configure `COLLIE_DEVICE_HEADER` and `COLLIE_DEVICE_ALLOWLIST` if your proxy injects device IDs
-  ([`DEPLOYMENT.md`](../DEPLOYMENT.md)).
+  ([`docs/deployment.md`](deployment.md)).
 
 > 🚫 **Never use `tailscale funnel` with Collie.** Funnel routes traffic to the public internet,
 > whereas `tailscale serve` restricts access to your private tailnet. There is no supported use case
@@ -91,6 +91,10 @@ The write gate is active only while at least one device is paired. No device is 
 run `collie pair`, so until then read and write operations function as before. Pair your current
 phone first. Revoking the final device disables the gate again to prevent lockouts. Five failed code
 attempts invalidate the code, which requires running `collie pair` again.
+
+On a host running multiple instances, prefix commands with `COLLIE_INSTANCE=<name>` and open that
+specific instance URL on the phone
+([Multiple Collie instances on one host](deployment.md#multiple-collie-instances-on-one-host)).
 
 
 ---

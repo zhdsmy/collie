@@ -28,6 +28,9 @@ until explicitly configured.
 - **Keypad for terminal control keys**: `Esc`, `Ctrl+C`, arrows, and modifier combinations
 - **Output search** and full conversation history beyond standard terminal scrollback
 - **Image uploads** directly from the local camera roll
+- **Device pairing** as the write credential: once a device is paired, every write needs its token
+- **Packs**: several machines' Collies behind one URL, with operator-triggered failover
+- **Six UI languages** and a per-device typeface setting
 - **Herdr session switching** managed from the web interface
 - **PWA support** running locally on loopback with no external accounts or cloud dependencies
 
@@ -44,15 +47,15 @@ data without installation.
 <table>
   <tr>
     <td align="center" width="50%"><img src="assets/dashboard.png" alt="Collie dashboard — Needs you, Recent, Spaces" width="250"><br><sub><b>Dashboard</b> — agents needing you float to the top</sub></td>
-    <td align="center" width="50%"><img src="assets/ask-question.png" alt="A Claude AskUserQuestion prompt up-leveled into tappable buttons" width="250"><br><sub><b>Ask</b> — Claude's own questions become tappable buttons</sub></td>
+    <td align="center" width="50%"><img src="assets/ask-question.png" alt="A Claude permission prompt up-leveled into tappable buttons" width="250"><br><sub><b>Ask</b> — the agent's own prompts become tappable buttons</sub></td>
   </tr>
   <tr>
     <td align="center" width="50%"><img src="assets/space-detail.png" alt="A space's tabs and panes" width="250"><br><sub><b>Space</b> — its tabs and panes, deep-linkable</sub></td>
     <td align="center" width="50%"><img src="assets/keys.png" alt="The special-keys pad — arrows, Esc, Tab, Ctrl, Alt, Shift" width="250"><br><sub><b>Keys</b> — the special-keys pad, no chords to remember</sub></td>
   </tr>
   <tr>
-    <td align="center" width="50%"><img src="assets/session-switcher.png" alt="Session switcher" width="250"><br><sub><b>Session switcher</b> — one collie, every herd</sub></td>
-    <td align="center" width="50%"><img src="assets/settings.png" alt="Settings — notifications and diagnostics" width="250"><br><sub><b>Settings</b> — notifications, DND, diagnostics</sub></td>
+    <td align="center" width="50%"><img src="assets/quick.png" alt="The Quick dock — one-tap replies over a working pane" width="250"><br><sub><b>Quick</b> — your own one-tap replies, from <code>quick-replies.toml</code></sub></td>
+    <td align="center" width="50%"><img src="assets/settings.png" alt="Settings — appearance, language, typeface" width="250"><br><sub><b>Settings</b> — appearance, language, typeface, per device</sub></td>
   </tr>
 </table>
 
@@ -112,18 +115,19 @@ requirements table, and what the initial run writes to the host.
 
 | | |
 | --- | --- |
-| [**Install**](./docs/install.md) | Requirements, the four install routes, first run, and opening it on your phone |
+| [**Install**](./docs/install.md) | Requirements, the two ways in — fresh install or through Herdr — first run, and opening it on your phone |
 | [**Security**](./docs/security.md) | What a Collie exposes, the defenses, and pairing a device as the write credential |
 | [**Configure**](./docs/configure.md) | The `.env`, your own slash commands, keys, quick replies and typefaces; appearance, Zen mode, language |
+| [**Deployment**](./docs/deployment.md) | Front doors other than the default: an identity-aware proxy, a reverse proxy with no Tailscale, an off-host ingress, several Collies on one host (one per user, or several instances for one user), and a pack's standby door |
 | [**Commands**](./docs/commands.md) | Every `collie` verb, putting `collie` on your PATH, and the Herdr actions that mirror the verbs on a Herdr-managed install |
 | [**tmux and zellij**](./docs/multiplexers.md) | Running Collie without Herdr — both walkthroughs, what each multiplexer can answer, and agent beacons. Experimental in 1.0; bug reports wanted |
 | [**Packs**](./docs/pack.md) | Several machines' Collies behind one URL: invite, join, deputy, failover |
 | [**Voice input and Web Push**](./docs/voice-and-push.md) | The microphone in the composer, and notifications when an agent is waiting on you |
-| [**Manage & update**](./docs/upgrading.md) | Stop, uninstall, update, the v1 beta train, and upgrading from 0.x to 1.x |
+| [**Manage & update**](./docs/upgrading.md) | Update, cross a major, stop, uninstall, and upgrading a 0.x install to 1.0 — each command in both spellings |
 | [**Troubleshooting**](./docs/troubleshooting.md) | Symptoms in the words you would actually search for |
 
 Repository-level specifications live at the root: [`ARCHITECTURE.md`](./ARCHITECTURE.md) ·
-[`DEPLOYMENT.md`](./DEPLOYMENT.md) · [`MUX_CONTRACT.md`](./MUX_CONTRACT.md) ·
+[`docs/deployment.md`](./docs/deployment.md) · [`MUX_CONTRACT.md`](./MUX_CONTRACT.md) ·
 [`PACK_PROTOCOL.md`](./PACK_PROTOCOL.md) · [`HERDR_API.md`](./HERDR_API.md) ·
 [`DESIGN.md`](./DESIGN.md) · [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
@@ -131,7 +135,7 @@ Repository-level specifications live at the root: [`ARCHITECTURE.md`](./ARCHITEC
 
 Collie always binds **loopback only**; what changes between deployments is *what sits in front
 of it* and *how a request proves who it is*. Variant A is the default and sits below; the other four
-are in [`DEPLOYMENT.md`](./DEPLOYMENT.md). Pick one.
+are in [`docs/deployment.md`](./docs/deployment.md). Pick one.
 
 ### Variant A — `tailscale serve` + person identity (default)
 
@@ -152,12 +156,12 @@ COLLIE_TRUSTED_USER=you@example.com
   device](./docs/security.md#pair-a-device--the-write-credential) — it composes on top of this variant.
 
 This is the right choice unless you specifically need a proxy in the path. If you do, or if Tailscale
-isn't in the path at all, [`DEPLOYMENT.md`](./DEPLOYMENT.md) has the rest:
+isn't in the path at all, [`docs/deployment.md`](./docs/deployment.md) has the rest:
 
-- **[B — identity-aware proxy, authorised by device](./DEPLOYMENT.md#variant-b--identity-aware-proxy--per-device-authorisation)** — a proxy on this host; some devices drive, others watch.
-- **[C — reverse proxy as the only front door](./DEPLOYMENT.md#variant-c--reverse-proxy-as-the-only-front-door-no-tailscale)** — no Tailscale anywhere in the path.
-- **[D — off-host identity proxy over the tailnet](./DEPLOYMENT.md#variant-d--off-host-identity-proxy-over-the-tailnet)** — one central ingress node fronting Collie among your other services.
-- **[E — any other mesh or tunnel](./DEPLOYMENT.md#variant-e--any-other-mesh-or-tunnel-netbird-zerotier-cloudflare-tunnel)** — NetBird, ZeroTier, Cloudflare Tunnel: you own the ingress, Collie publishes nothing.
+- **[B — identity-aware proxy, authorised by device](./docs/deployment.md#variant-b--identity-aware-proxy--per-device-authorisation)** — a proxy on this host; some devices drive, others watch.
+- **[C — reverse proxy as the only front door](./docs/deployment.md#variant-c--reverse-proxy-as-the-only-front-door-no-tailscale)** — no Tailscale anywhere in the path.
+- **[D — off-host identity proxy over the tailnet](./docs/deployment.md#variant-d--off-host-identity-proxy-over-the-tailnet)** — one central ingress node fronting Collie among your other services.
+- **[E — any other mesh or tunnel](./docs/deployment.md#variant-e--any-other-mesh-or-tunnel-netbird-zerotier-cloudflare-tunnel)** — NetBird, ZeroTier, Cloudflare Tunnel: you own the ingress, Collie publishes nothing.
 
 ## Windows (experimental)
 
@@ -172,7 +176,7 @@ Operational details:
   buttons invoke `bash`, requiring Git Bash on `PATH`. The manifest lists only `linux` and `macos`
   support to avoid exposing actions that might fail silently.
 - **`tailscale serve` integration is unavailable on Windows.** Follow
-  [Variant C](./DEPLOYMENT.md#variant-c--reverse-proxy-as-the-only-front-door-no-tailscale): bind to
+  [Variant C](./docs/deployment.md#variant-c--reverse-proxy-as-the-only-front-door-no-tailscale): bind to
   loopback, place your own ingress in front, and set `COLLIE_PUBLIC_HOSTS`. The rules in
   [§Security](./docs/security.md) still apply.
 - **Set `COLLIE_MULTI_SESSION=off`**, as session discovery relies on POSIX paths.
@@ -208,7 +212,7 @@ multiplexer.
   Herdr · tmux · zellij
 ```
 
-Under [Variant C](./DEPLOYMENT.md#variant-c--reverse-proxy-as-the-only-front-door-no-tailscale) a
+Under [Variant C](./docs/deployment.md#variant-c--reverse-proxy-as-the-only-front-door-no-tailscale) a
 reverse proxy replaces the `tailscale serve` box; everything below the front door is identical.
 
 - **Only the adapter touches the multiplexer** (`bridge/mux/<name>/` — Herdr dials a Unix socket, tmux and zellij shell out to their CLIs); everything else speaks the bridge's HTTP API. What every adapter must answer is [`MUX_CONTRACT.md`](./MUX_CONTRACT.md).
@@ -270,13 +274,13 @@ integration is documented in [`HERDR_API.md`](./HERDR_API.md).
 ## See also
 
 - All how-to pages: [`docs/`](./docs/)
-- Deployment variants B through E: [`DEPLOYMENT.md`](./DEPLOYMENT.md)
+- Deployment variants B through E: [`docs/deployment.md`](./docs/deployment.md)
 - Architecture and design rationale: [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 - Multiplexer query interface and capabilities: [`MUX_CONTRACT.md`](./MUX_CONTRACT.md)
 - Lead-to-peer pack protocol: [`PACK_PROTOCOL.md`](./PACK_PROTOCOL.md) (topology diagram in
   [§2](./PACK_PROTOCOL.md#2-shape-of-the-thing))
 - Pack recovery from a phone after lead failure:
-  [`DEPLOYMENT.md` → the standby door](./DEPLOYMENT.md#the-standby-door--a-packs-failover-path)
+  [`docs/deployment.md` → the standby door](./docs/deployment.md#the-standby-door--a-packs-failover-path)
 - Verified Herdr socket API: [`HERDR_API.md`](./HERDR_API.md)
 - Operations, versioning, and project conventions: [`CLAUDE.md`](./CLAUDE.md)
 - Contribution guidelines: [`CONTRIBUTING.md`](./CONTRIBUTING.md)

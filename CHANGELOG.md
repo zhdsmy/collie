@@ -6,6 +6,60 @@ All notable changes to Collie are recorded here. The format follows
 `version` in `herdr-plugin.toml`, `package.json`, and `web/package.json` (enforced by
 `scripts/check-version.sh`). See [`CLAUDE.md`](./CLAUDE.md) → *Versioning* for the bump policy.
 
+## Upgrading
+
+**Coming from 0.x?** Upgrade with one command. Do not use `collie update`. From the Herdr
+plugin: `herdr plugin action invoke update-major --plugin herdr.collie`. From a checkout you can
+reach: `bin/collie update --major`. Fresh install:
+`curl -fsSL https://colliepwa.dev/install.sh | sh`. Neither upgrade path assumes a `collie` on your
+PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgrading from 0.x to
+1.0*.
+
+**Already on any 1.x?** `collie update`, or
+`herdr plugin action invoke update --plugin herdr.collie`, is enough.
+
+## [Unreleased]
+
+## [1.1.0+collie.1] - 2026-09-02
+
+### Changed
+
+- **Integrated upstream 1.1.0.** This includes pack host targeting and colour, the paired-device
+  path from read-only mode, pack warrant hardening, the Claude slash-autocomplete parser fix, and
+  upstream's removal of redundant pull-to-refresh.
+
+### Added
+
+- Web Push content follows each subscribed device's UI language.
+- Cursor keeps its official agent mark wherever Collie identifies the active agent.
+
+### Fixed
+
+- Direct typing arms without focusing the hidden input or opening the phone keyboard.
+- Codex `Conversation recap` stays on one separator row on narrow screens.
+- The current v1 composer chrome extends into the iOS bottom safe area, with the compact pane
+  switcher handle retained.
+
+## [1.1.0] - 2026-09-01
+
+### Added
+
+- The read-only strip links to Settings → Paired devices. ([defec91](https://github.com/AltanS/collie/commit/defec91))
+- Per-host colour on the server glyph in pack mode, ten stable hues. ([e3db22d](https://github.com/AltanS/collie/commit/e3db22d))
+- The new-space sheet picks the host in pack mode; unreachable or incompatible members are shown but disabled. ([af22f6d](https://github.com/AltanS/collie/commit/af22f6d))
+
+### Changed
+
+- The "Side by side" instructions moved out of `docs/upgrading.md` into their own `docs/deployment.md` section. ([0231500](https://github.com/AltanS/collie/commit/0231500))
+
+### Fixed
+
+- **Claude's slash-command autocomplete no longer hides the input box.** The completion list is taller than the statusline window the chrome walk allows, so the box went undetected: the pane fell back to the raw mirror and every send stalled with "Message didn't reach the input box". The popup is now read as its own block and rendered as a list. ([c265d3e](https://github.com/AltanS/collie/commit/c265d3e))
+
+### Removed
+
+- Pull-to-refresh; polling already keeps the view fresh. ([86e8d78](https://github.com/AltanS/collie/commit/86e8d78))
+
 ## [1.0.0+collie.4] - 2026-09-02
 
 ### Fixed
@@ -27,10 +81,10 @@ All notable changes to Collie are recorded here. The format follows
 
 ### Fixed
 
-- **The mobile composer reclaims the iOS safe-area height without exposing the page background.**
-  The compensated padding and margin geometry from `v0.36.1+collie.2` now fits the current
-  full-width chrome dock, keeping the controls close to the Home Indicator while the chrome still
-  paints through the inset.
+- **The mobile composer reclaims iOS safe-area height without exposing the page background.** The
+  compensated padding and margin geometry from `v0.36.1+collie.2` now fits the current full-width
+  chrome dock, keeping controls close to the Home Indicator while chrome still paints through the
+  inset.
 
 ## [1.0.0+collie.1] - 2026-09-01
 
@@ -40,15 +94,55 @@ All notable changes to Collie are recorded here. The format follows
 - **The pane switcher uses a compact chevron instead of a Home Indicator-like grip.**
 - **The composer no longer adds redundant padding beyond the iOS safe area.**
 
+## [1.0.2] - 2026-09-01
+
+### Changed
+
+- `docs/deployment.md` ends with one footer instead of two. A plain-text `← back to the README` line sat above the real link, and the site footer strip matches only the link, leaving the plain line as a dangling sentence. ([e880281](https://github.com/AltanS/collie/commit/e880281))
+
+### Fixed
+
+- **The working status dot no longer pings; it breathes.** It uses a 2.4 s opacity cycle without a ring or scaling, applied only to the pane chip and the pane header. The dot stays static on the tab, space, card and overview chips, where several at once would read as a strobe rather than as "alive". `prefers-reduced-motion` still disables it. ([a2ee186](https://github.com/AltanS/collie/commit/a2ee186))
+- **A lead is no longer deposed by unprovable claims.** At boot, only a warrant signed and verified by this lead can depose it. If a peer reports a higher warrant generation or refuses with no warrant, the lead logs the event once and ignores it. Stale fields from an old pack no longer take down the new lead's front door. ([bd7e3b5](https://github.com/AltanS/collie/commit/bd7e3b5))
+- `collie pack leave` clears the deputy designation, warrant, standby roster, and `standby-devices.json`, preventing old pack state from leaking into the next pack. ([bd7e3b5](https://github.com/AltanS/collie/commit/bd7e3b5))
+- `collie pack remove <member>` drops the deputy designation if it names that member, keeping `pack status` and `pack deputy --revoke` in agreement. ([bd7e3b5](https://github.com/AltanS/collie/commit/bd7e3b5))
+- Stored warrants stamped with another pack's id are discarded at boot, logging the source pack name. ([bd7e3b5](https://github.com/AltanS/collie/commit/bd7e3b5))
+
+## [1.0.1] - 2026-09-01
+
+### Added
+
+- **`collie pack join bluefin` works in a terminal**: an address without a scheme or port uses port 8787, the command prompts for the token, and a lead answering over plain HTTP requests confirmation instead of requiring `--insecure` ([6e3dfca](https://github.com/AltanS/collie/commit/6e3dfca))
+- `collie pack invite` prints the short join command first, followed by the stdin form for scripts ([6e3dfca](https://github.com/AltanS/collie/commit/6e3dfca))
+- `--label` defaults to the local hostname, so a joining peer uses its host name instead of `collie-8f3a2b1c` ([6e3dfca](https://github.com/AltanS/collie/commit/6e3dfca))
+- `collie pack join` and `collie pack leave` are the canonical commands; `collie join` and `collie leave` remain as aliases ([6e3dfca](https://github.com/AltanS/collie/commit/6e3dfca))
+
+### Changed
+
+- **The install and update docs lead with the two shapes an install actually has**, and neither assumes a bare `collie` on your PATH: a Herdr-managed install spells every verb as a plugin action, a standalone one as `bin/collie <verb>`. `docs/install.md` is two ways in rather than four, and ends with the update command it never carried; `docs/upgrading.md` opens on the update instead of the uninstall, folds the two 0.x sections into one crossing, and drops the finished v1 beta train.
+- **`DEPLOYMENT.md` is now [`docs/deployment.md`](./docs/deployment.md), and colliepwa.dev publishes it.** The site serves the files the README's documentation table lists, so every link to a front door other than the default used to leave the site. Each variant keeps its anchor; in-code pointers name the new path, including the `COLLIE_SKIP_SERVE` warning and `collie doctor`'s serve finding.
+
+### Fixed
+
+- The post-update hooks nudge swallows a spawn failure of the new binary (ENOEXEC/EACCES) instead of failing an update that already succeeded — the silence its own comment promised.
+- `collie restart` decides the multiplexer before it stops the bridge, so a refusal no longer leaves the bridge down.
+- The refusal lists each multiplexer on its own line, points at the one the environment already names, and prints the exact line to append.
+- `collie join` with only a lead address says that the token is missing and shows how to pass it, instead of a bare usage line.
+
 ## [1.0.0] - 2026-09-01
 
 **This release is the whole `1.0.0-alpha` / `1.0.0-beta` line in one entry**, grouped once; the
 per-release detail lives in the linked commits and the git history. Coming from 0.x, read
-[`docs/upgrading.md`](./docs/upgrading.md) → *Upgrading from 0.x to 1.x* first.
+[`docs/upgrading.md`](./docs/upgrading.md) → *Upgrading from 0.x to 1.0* first.
+
+**Upgrading, in one line each.** From the Herdr plugin:
+`herdr plugin action invoke update-major --plugin herdr.collie`. From a checkout you can reach:
+`bin/collie update --major`. Fresh install: `curl -fsSL https://colliepwa.dev/install.sh | sh`.
+Neither upgrade path assumes a `collie` on your PATH. Details and rollback:
+[`docs/upgrading.md`](./docs/upgrading.md).
 
 ### Added
 
-- **Web Push follows each subscribed device's UI language.** Update, single-agent, and digest notifications are rendered independently in English, German, Spanish, Korean, Japanese, or Chinese; old subscriptions fall back to English. (650d0b6)
 - **Collie drives tmux and zellij, not only Herdr.** `COLLIE_MUX=tmux` or `COLLIE_MUX=zellij` picks the multiplexer behind one Collie-owned port, where each adapter declares its capabilities and the UI reads them from `GET /api/config` rather than from a name ([2feb1aa](https://github.com/AltanS/collie/commit/2feb1aa), [4d6787f](https://github.com/AltanS/collie/commit/4d6787f))
 - **Agents name themselves through their own hooks.** `collie hooks install claude` writes the guarded Claude emitter and `collie beacon emit` gives a pane its agent's name, status and session ref ([b17e8c5](https://github.com/AltanS/collie/commit/b17e8c5), [cb7eb7b](https://github.com/AltanS/collie/commit/cb7eb7b))
 - **A pack brings several machines to one phone.** A lead merges its peers' spaces, tabs and panes and proxies every read and write byte for byte; `collie pack invite | join | add | update | leave | status | rotate | remove | promote | reconnect | set-address` are the verbs ([9f5d91e](https://github.com/AltanS/collie/commit/9f5d91e), [c5a810f](https://github.com/AltanS/collie/commit/c5a810f))
@@ -68,9 +162,6 @@ per-release detail lives in the linked commits and the git history. Coming from 
 
 ### Fixed
 
-- **Direct typing arms without focusing the hidden textarea**, so opening the key tray does not summon the phone keyboard. (c5c595f)
-- **Codex `Conversation recap` remains one separator row on mobile** instead of wrapping its rule onto a second line. (48d7cfc)
-- **Cursor uses its official brand mark** anywhere Collie identifies the active agent. (41dd889)
 - **tmux is parsed and driven correctly on the versions people run.** tmux 3.4's escaped field separator is un-escaped, a listing that parses to zero rows on non-empty output is refused as an error, and a create under a `manual` `window-size` refuses rather than segfault tmux < 3.7 ([30add9a](https://github.com/AltanS/collie/commit/30add9a), [b58cb61](https://github.com/AltanS/collie/commit/b58cb61))
 - **Four agent-parser fixes carried over from the 0.x line.** Codex's one-dim-segment status row, a Codex draft wrapped onto an indented line, oh-my-posh 18's ghost suggestion read as your text, and the Windows bridge now running under `conhost.exe --headless` ([c6ba534](https://github.com/AltanS/collie/commit/c6ba534), [89cbbe0](https://github.com/AltanS/collie/commit/89cbbe0), [d4a9030](https://github.com/AltanS/collie/commit/d4a9030), [baf04ac](https://github.com/AltanS/collie/commit/baf04ac))
 - **A peer can reach its own lead.** The lead is dialled unpinned, because its front door terminates TLS and the pinned certificate can never be on the wire, while a witness stays pinned ([33fa455](https://github.com/AltanS/collie/commit/33fa455))

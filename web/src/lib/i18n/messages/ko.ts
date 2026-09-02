@@ -582,9 +582,6 @@ export const ko: Dictionary = {
   "time.compact.now": "방금",
 
   // --- sync (how fresh the herd on screen is, and asking for a fresher one) ---
-  "sync.pull.hint": "당겨서 새로고침",
-  "sync.pull.release": "놓으면 새로고침",
-  "sync.pull.busy": "새로고침 중…",
 
   // --- dialog (menu / multi-select / wizard / preview-select block renderers) ---
   "dialog.sendingAria": "전송 중",
@@ -602,6 +599,7 @@ export const ko: Dictionary = {
   "dialog.submitAnswers": "답변 제출",
   "dialog.cancel": "취소",
   "dialog.endsQuestionsSuffix": " (질문 종료)",
+  "dialog.autocomplete.title": "슬래시 명령",
   "dialog.menu.moveUp": "위로 이동",
   "dialog.menu.moveDown": "아래로 이동",
   "dialog.menu.leftAria": "왼쪽: {verb} ({label})",
@@ -728,5 +726,6 @@ export const ko: Dictionary = {
   "space.new.tab.plain": "스페이스",
   "space.new.tab.worktree": "Worktree",
   "space.new.repo.label": "저장소",
+  "space.new.host.label": "호스트",
   "worktree.orOpenExisting": "기존 worktree 열기",
 };

@@ -605,7 +605,7 @@ function frontDoor(deps: DoctorDeps, mode: string): Finding {
     return skipped(
       "front-door",
       "no `tailscale` here — the published mapping cannot be read",
-      "install tailscale and `collie serve`, or set COLLIE_SKIP_SERVE=1 if you own the ingress (DEPLOYMENT.md Variant E)",
+      "install tailscale and `collie serve`, or set COLLIE_SKIP_SERVE=1 if you own the ingress (docs/deployment.md Variant E)",
     );
   }
   const status = liveServeStatus(deps);
@@ -924,7 +924,7 @@ function mux(deps: DoctorDeps): Finding {
   const settings = muxSettings(deps);
   const registry = buildMuxRegistry();
   if (settings.origin.kind === "undecided") {
-    const { detail, remedy } = refusedMux(settings.origin.found, deps.ctx.configDir);
+    const { detail, remedy } = refusedMux(settings.origin.found, deps.ctx.configDir, deps.ctx.env);
     return bad("mux", `${detail}, so \`collie start\` refuses`, remedy);
   }
   if (factoryFor(registry, settings.name) === undefined) {

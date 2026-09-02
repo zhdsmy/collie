@@ -584,9 +584,6 @@ export const ja: Dictionary = {
   "time.compact.now": "今",
 
   // --- sync (how fresh the herd on screen is, and asking for a fresher one) ---
-  "sync.pull.hint": "引いて更新",
-  "sync.pull.release": "離して更新",
-  "sync.pull.busy": "更新中…",
 
   // --- dialog (menu / multi-select / wizard / preview-select block renderers) ---
   "dialog.sendingAria": "送信中",
@@ -604,6 +601,7 @@ export const ja: Dictionary = {
   "dialog.submitAnswers": "回答を送信",
   "dialog.cancel": "キャンセル",
   "dialog.endsQuestionsSuffix": "（質問を終了）",
+  "dialog.autocomplete.title": "スラッシュコマンド",
   "dialog.menu.moveUp": "上へ移動",
   "dialog.menu.moveDown": "下へ移動",
   "dialog.menu.leftAria": "左: {verb}（{label}）",
@@ -736,5 +734,6 @@ export const ja: Dictionary = {
   "space.new.tab.plain": "スペース",
   "space.new.tab.worktree": "ワークツリー",
   "space.new.repo.label": "リポジトリ",
+  "space.new.host.label": "ホスト",
   "worktree.orOpenExisting": "または既存のものを開く",
 };

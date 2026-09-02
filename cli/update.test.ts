@@ -16,6 +16,7 @@ import {
 } from "./fakes.ts";
 import type { Net } from "./sys.ts";
 import { EXIT } from "./io.ts";
+import type { JsonObject } from "../bridge/json.ts";
 import { latestUpdateInMajor } from "../bridge/update.ts";
 import {
   cmdApplyUpdate,
@@ -926,7 +927,7 @@ const DIGEST = "3f786850e387550fdab836ed7e6dc881de23001b9d9dbb3b9b2b0b0f1a2c3d4e
 /** The `/tags` payload as GitHub actually answers it — the document `parseTagsResponse` reads. */
 const apiTags = (...names: string[]) => names.map((name) => ({ name, commit: { sha: `sha-${name}` } }));
 
-const manifestDoc = (over: Record<string, unknown> = {}) => ({
+const manifestDoc = (over: JsonObject = {}) => ({
   schemaVersion: 1,
   repo: "AltanS/collie",
   tag: `v${NEW}`,
@@ -945,7 +946,7 @@ const manifestDoc = (over: Record<string, unknown> = {}) => ({
 
 interface BinaryOptions {
   tags?: readonly { name: string; commit: { sha: string } }[];
-  manifest?: Record<string, unknown> | null;
+  manifest?: JsonObject | null;
   /** The digest the download reports — a different one is the corruption case. */
   digest?: string;
   tagsFailure?: { status: number | null; message: string };
@@ -1186,6 +1187,22 @@ describe("the hooks nudge", () => {
 
   test("a check that cannot run leaves the update successful and silent", async () => {
     const h = binaryHarness({ hooksCheck: { found: false, code: 127 } });
+    expect(await cmdUpdate(h.deps)).toBe(EXIT.OK);
+    expect(h.io.stdout.join("\n")).toContain(`✓ updated to ${NEW}`);
+    expect(h.io.stdout.join("\n")).not.toContain(NUDGE);
+    expect(h.io.stderr).toEqual([]);
+  });
+
+  test("a check whose spawn THROWS leaves the update successful and silent too", async () => {
+    // The real `capture` throws when the child cannot even start (ENOEXEC on a stub, EACCES) —
+    // the shell suite runs it against a fake binary and caught exactly this. The fake exec only
+    // returns results, so the throw is grafted onto the one call that matters.
+    const h = binaryHarness({ hooksCheck: { code: EXIT.STATE } });
+    const real = h.deps.exec.capture.bind(h.deps.exec);
+    h.deps.exec.capture = (tool, args, timeoutMs) => {
+      if (args.join(" ") === "hooks status --check") throw new Error("ENOEXEC: posix_spawn");
+      return real(tool, args, timeoutMs);
+    };
     expect(await cmdUpdate(h.deps)).toBe(EXIT.OK);
     expect(h.io.stdout.join("\n")).toContain(`✓ updated to ${NEW}`);
     expect(h.io.stdout.join("\n")).not.toContain(NUDGE);

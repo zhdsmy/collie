@@ -502,7 +502,7 @@ that something is listening.
 >   the listener, never read from a header — and resolves it to the pinned lead. A peer that cannot
 >   build its anchor sets it `false` and refuses **everything**: down, never single-factor.
 > - **The lead's own listener pins nothing, and cannot.** Its pack surface rides the front door, and
->   `tailscale serve` — or any conforming reverse proxy (DEPLOYMENT.md Variant C) — terminates TLS
+>   `tailscale serve` — or any conforming reverse proxy (docs/deployment.md Variant C) — terminates TLS
 >   before the process sees the connection. No client certificate survives to a lead under any
 >   design. The peer→lead direction re-establishes the second factor at the application layer instead: **§8.6**.
 >
@@ -591,7 +591,7 @@ There is no discovery, no enumeration, and no overlay-network integration — ev
 > order: an explicit `--address`, taken verbatim; then `COLLIE_PUBLIC_URL`, reduced to its origin
 > (scheme + host + port — the pack link mounts at `/pack/v1/*` off it, so a path is dropped with a
 > warning, and a value that does not parse warns and falls through); then this node's Tailscale name.
-> A machine whose real ingress is a reverse proxy (DEPLOYMENT.md Variant C/E) therefore states that
+> A machine whose real ingress is a reverse proxy (docs/deployment.md Variant C/E) therefore states that
 > ingress once in config instead of on every invite — a derived tailnet name is silently undialable
 > from a peer under a one-way tailnet ACL, and nothing in the enrollment names that as the cause. **A peer's
 > own listener address is never taken from `COLLIE_PUBLIC_URL`**: a peer publishes no front door (§3,
@@ -1947,19 +1947,25 @@ onto a machine with a stale roster and no knowledge of what happened since.
 publishes anything.**
 
 - **Budget:** §10.4's patient budget, concurrent, **once**. It arms no timer and it repeats never.
-- **A conflicting answer deposes it before it serves a byte** — either §18.10's named answer, or a
-  member reporting a `warrantGeneration` **higher** than this machine's own (the counter lives on the
-  lead and never resets, §18.3, so a member ahead of its own lead has been told something by somebody
-  else). Because the named answer carries the warrant, the deposition and §18.12's self-heal happen
-  in the **same boot**: a machine that was merely down during a takeover comes back up as a working
-  peer, in one restart, having published nothing in between. That is the common case and it is the
-  whole reason the gate sits at boot rather than at first conflict.
-- **An answer with a proof beats one without.** Two members may both contradict this machine; taking
-  the first would turn a healable deposition into a parked one for no reason but arrival order.
+- **A PROVEN conflicting answer deposes it before it serves a byte** *(amended 2026-09-01)* — the
+  answer must carry a warrant that passes §18.12's *what counts as learning*: signed by this
+  machine's own key, stamped with this pack's id, at a generation at least its own. Because §18.10's
+  named answer carries that warrant, the deposition and §18.12's self-heal happen in the **same
+  boot**: a machine that was merely down during a takeover comes back up as a working peer, in one
+  restart, having published nothing in between. That is the common case and it is the whole reason
+  the gate sits at boot rather than at first conflict.
+- **An unproven claim warns once and changes nothing** *(amended 2026-09-01)* — a member reporting a
+  `warrantGeneration` **higher** than this machine's own but carrying no warrant, a §18.10 answer
+  with no warrant, and a warrant stamped for a different pack are each logged once at that boot, and
+  the lead keeps publishing. Until 2026-09-01 this section deposed on the bare generation too, and a
+  peer that carried one stale deputy field out of a pack it had left could take a new lead's front
+  door down with it. An answer is evidence only when it proves something; arrival order and a
+  counter are not proof.
 - **Silence from every member publishes anyway.** Fail-open on *no answer* is forced: the common case
   for "nobody answered" is a lead rebooting first after a power cut, and a lead that refuses to come
   up because its peers are still booting is an outage manufactured out of a safety check. Fail-closed
-  on a *conflicting answer* is the point — **an answer is evidence, silence is not.**
+  on a *proven* conflicting answer is the point — **a proof is evidence; silence is not, and neither
+  is an unproven claim.**
 - **An empty roster asks nothing.** A lead with no members has nobody who could contradict it.
 
 **This is not a peer-side timer and it is not an election** (§15). It changes no state on any machine
@@ -1976,7 +1982,9 @@ Exactly one thing: **a warrant of a generation at least as high as its own, nami
 than nobody, verified against its own certificate's public key.** A lead can verify its own
 signature, and that is the whole reason the warrant is signed by the lead rather than attested by the
 deputy: what deposes a machine is its own past consent handed back to it. Nothing else does — not a
-peer refusing it, not an unreachable roster, not a timeout.
+peer refusing it, not an unreachable roster, not a timeout. *(amended 2026-09-01)* §18.11's boot gate
+reads this clause unchanged: a foreign warrant or an unproven higher generation is a warning there,
+not a deposition.
 
 **Expiry is deliberately not a clause.** A warrant's 30 days gate what it may *arm* (§18.4), not what
 it *proves*: a machine that refused to believe an expired proof would keep leading a pack that has

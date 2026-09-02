@@ -11,13 +11,16 @@
 // state the app can no longer produce.
 
 import { useEffect, useState, type ReactNode } from "react";
+import { MemoryRouter } from "react-router";
 
 import { AgentList } from "@/components/agent-list";
+import { HostChip } from "@/components/host-chip";
 import { AlphaBar } from "@/components/alpha-bar";
 import { AppHeaderHost, RouteHeader, SettingsGear } from "@/components/app-header";
 import { BuildStamp } from "@/components/build-stamp";
 import { CollieHome } from "@/components/collie-home";
 import { NewSpaceSheet } from "@/components/new-space-sheet";
+import { PackProvider } from "@/components/pack-provider";
 import { SpaceOverview } from "@/components/space-overview";
 import { CollieMark } from "@/components/collie-mark";
 import { ConnectionBanner } from "@/components/connection-banner";
@@ -73,6 +76,7 @@ import {
   paneUploadDraft,
   paneWorking,
   rosterFive,
+  rosterPalette,
   spaces,
   spacesWithWorktrees,
   tabs,
@@ -735,6 +739,33 @@ function PackSection() {
       </Card>
 
       <Card
+        label="host colours — the whole palette, and a real pack"
+        reach="be on a pack. Every surface that names a machine tints it, so the dashboard reads as several machines before the eye reads a name."
+        note="Ten hues, assigned by lib/hosts.ts `hostSlot` and defined in index.css, chosen to avoid every status hue. The top row is a made-up ten-machine roster whose ids land one per slot; below it is the five-machine pack, whose names hash to 0, 2, 4, 8 and 9 — which is the honest spread, not an even one. A solo collie gets NO host colour at all."
+        span={2}
+      >
+        <Stage>
+          <div className="flex flex-col gap-3 p-3">
+            <PackedRootRouter data={{ ...homePack, servers: rosterPalette }}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {rosterPalette.map((s) => (
+                  <HostChip key={s.id} host={s.id} />
+                ))}
+              </div>
+            </PackedRootRouter>
+            <PackedRootRouter data={homePack}>
+              <div className="flex flex-wrap items-center gap-3">
+                {rosterFive.map((s) => (
+                  <HostChip key={s.id} host={s.id} />
+                ))}
+                <ServerSwitcher servers={rosterFive} scope={{}} agents={homePack.agents} />
+              </div>
+            </PackedRootRouter>
+          </div>
+        </Stage>
+      </Card>
+
+      <Card
         label="host switcher"
         reach="be on a pack with more than one reachable machine. The chip names where you are; tap it for the sheet."
         note="The sheet's open/closed state is the component's OWN — there is no `open` prop to force, and inventing one would be a fork. Tap the chip; the sheet is portalled to <body>, so it takes the whole window."
@@ -876,6 +907,19 @@ function SettingsSection() {
             onCreateWorktree={() => {}}
             onOpenWorktree={() => {}}
           />
+        </PhoneFrameCard>
+      </Card>
+
+      <Card
+        label="new space — pack, pick a host"
+        reach="tap + on the spaces list of a lead with peers. On a solo collie this row is not rendered at all and the sheet is the one above."
+        note="The chip that is marked is where the create lands: the machine the list was already showing, or the lead. `attic`, `cellar` and `garage` keep their chips and their names — a machine that cannot take writes is dimmed and says why, never dropped, because a missing row reads as a machine you do not have."
+        span={2}
+      >
+        <PhoneFrameCard height={560}>
+          <PackProvider servers={rosterFive} ts={homePack.ts} pollMs={3_000}>
+            <NewSpaceSheet open onClose={() => {}} onCreate={() => {}} scope={{ host: "workshop" }} />
+          </PackProvider>
         </PhoneFrameCard>
       </Card>
 
@@ -1178,7 +1222,12 @@ function WriteGateCard() {
           nobody has. The gutter rides the component the way home.tsx and space.tsx pass it. */}
       <div className="mx-auto w-[390px] max-w-full">
         <Stage>
-          <ReadOnlyBanner device={deviceRefused} />
+          {/* A router, because the pairing strip is a `<Link>` to Settings' Paired-devices card and
+              it reads the active scope off the query. Nothing here navigates — the card only has to
+              provide the context the real app always has. */}
+          <MemoryRouter>
+            <ReadOnlyBanner device={deviceRefused} />
+          </MemoryRouter>
           <div className="h-3" />
         </Stage>
       </div>

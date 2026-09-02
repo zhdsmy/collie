@@ -606,9 +606,6 @@ export const en = {
   "time.compact.now": "now",
 
   // --- sync (how fresh the herd on screen is, and asking for a fresher one) ---
-  "sync.pull.hint": "Pull to refresh",
-  "sync.pull.release": "Release to refresh",
-  "sync.pull.busy": "Refreshing…",
 
   // --- dialog (menu / multi-select / wizard / preview-select block renderers) ---
   "dialog.sendingAria": "Sending",
@@ -626,6 +623,7 @@ export const en = {
   "dialog.submitAnswers": "Submit answers",
   "dialog.cancel": "Cancel",
   "dialog.endsQuestionsSuffix": "— ends the questions",
+  "dialog.autocomplete.title": "Slash commands",
   "dialog.menu.moveUp": "Move up",
   "dialog.menu.moveDown": "Move down",
   "dialog.menu.leftAria": "Left — {verb} ({label})",
@@ -763,6 +761,7 @@ export const en = {
   "space.new.tab.plain": "Space",
   "space.new.tab.worktree": "Worktree",
   "space.new.repo.label": "Repository",
+  "space.new.host.label": "Host",
   "worktree.orOpenExisting": "Or open one that already exists",
 } as const;
 

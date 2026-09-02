@@ -622,7 +622,13 @@ const HOOKS_CHECK_TIMEOUT_MS = 5_000;
  * silence too. The update already succeeded, and no afterthought may take that back.
  */
 function nudgeHooks(deps: UpdateDeps, binary: string): void {
-  const r = deps.exec.capture(binary, ["hooks", "status", "--check"], HOOKS_CHECK_TIMEOUT_MS);
+  let r;
+  try {
+    r = deps.exec.capture(binary, ["hooks", "status", "--check"], HOOKS_CHECK_TIMEOUT_MS);
+  } catch {
+    // `capture` throws when the child cannot even start (ENOEXEC, EACCES) — spawn failure, silence.
+    return;
+  }
   if (!r.found || r.code !== EXIT.STATE) return;
   deps.io.out(
     "note: this build registers beacon hooks your settings do not carry yet —" +
@@ -834,7 +840,7 @@ function installedVersions(deps: UpdateDeps, layout: BinaryLayout): string[] {
     .list(layout.versionsDir)
     .filter((name) => parsePrereleaseTag(`v${name}`) !== null)
     .filter((name) => deps.files.exists(join(layout.versionsDir, name, "bin", "collie")))
-    .sort((a, b) => compareSemver(a, b));
+    .toSorted((a, b) => compareSemver(a, b));
 }
 
 /** The version `current` points at, or null when it points nowhere we laid down. */
@@ -1060,7 +1066,7 @@ function collectOldVersions(deps: UpdateDeps, layout: BinaryLayout, keepVersion:
   // definition, so `keep` counts it and the list below holds only the ones that follow it.
   const candidates = installedVersions(deps, layout)
     .filter((v) => v !== keepVersion)
-    .reverse();
+    .toReversed();
   const guards = new Set([keepVersion, layout.version, currentVersion(deps, layout) ?? keepVersion]);
   const doomed = candidates.slice(Math.max(0, keep - 1)).filter((v) => !guards.has(v));
   for (const v of doomed) {
