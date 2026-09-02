@@ -23,9 +23,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.2.0+collie.2] - 2026-09-03
+
 ### Fixed
 
-- The pane input now moves into the iOS bottom safe area instead of reserving it as a blank strip.
+- The pane input now moves into the iOS bottom safe area instead of reserving it as a blank strip. ([a8575da](https://github.com/zhdsmy/collie/commit/a8575da))
 
 ## [1.2.0+collie.1] - 2026-09-02
 
