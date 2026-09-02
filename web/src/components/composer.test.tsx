@@ -2664,13 +2664,13 @@ describe("Composer — a long upload path cannot widen the field", () => {
 });
 
 describe("Composer — iOS bottom spacing", () => {
-  it("moves the input and chrome into the safe area instead of reserving it below them", () => {
+  it("keeps the input docked without safe-area-dependent outer spacing", () => {
     renderComposer();
     const dock = document.querySelector('[data-slot="composer-status"]')!.parentElement!;
 
     expect(dock.className).toContain("bg-chrome");
     expect(dock.className).toMatch(/(?:^|\s)pb-2(?:\s|$)/);
-    expect(dock.className).not.toContain("pb-[calc(0.5rem_+_env(safe-area-inset-bottom))]");
-    expect(dock.className).toContain("mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]");
+    expect(dock.className).not.toContain("safe-area-inset-bottom");
+    expect(dock.className).not.toContain("mb-[calc(");
   });
 });

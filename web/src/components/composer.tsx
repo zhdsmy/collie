@@ -967,10 +967,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     <>
       <div
         className={cn(
-          // Shorten the row by the safe-area inset while keeping only the ordinary 8px padding.
-          // Adding the inset to padding cancelled that shift and stranded the input above a blank
-          // strip; this lets the footer and its paint move into the safe area together.
-          "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))] bg-chrome px-3 pb-2",
+          // The route's 100dvh flex column owns the viewport edge. Keep safe-area values out of this
+          // row's outer geometry: iOS changes that env value across viewport states, and a negative
+          // margin then pushes part of the composer outside the clipped pane instead of docking it.
+          "bg-chrome px-3 pb-2",
         )}
       >
         {/* Pending-send preview: visible from send until the mirror echoes back (or 6s). Shows the

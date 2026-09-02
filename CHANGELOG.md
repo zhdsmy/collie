@@ -23,6 +23,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- The pane composer now stays docked to the viewport bottom across iOS safe-area changes.
+
 ## [1.2.0+collie.2] - 2026-09-03
 
 ### Fixed

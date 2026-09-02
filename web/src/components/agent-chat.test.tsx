@@ -1420,9 +1420,8 @@ describe("the pane fits its viewport", () => {
     const bottomContent = bottomRow.firstElementChild!;
     expect(bottomContent.className).not.toContain("mb-[calc(");
     const dock = container.querySelector('[data-slot="composer-status"]')!.parentElement!;
-    expect(dock.className).toContain(
-      "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
-    );
+    expect(dock.className).not.toContain("safe-area-inset-bottom");
+    expect(dock.className).not.toContain("mb-[calc(");
     // The mirror is the bottom row's own previous sibling — taken that way rather than by a
     // selector, so this asserts the ADJACENCY the argument rests on instead of merely finding two
     // elements that happen to match.
@@ -1517,14 +1516,13 @@ describe("the pane fits its viewport", () => {
       // the rows back in one tap. Pinned in its own describe below, not here; this test is about
       // the two rows that genuinely leave.
 
-      // …and the band and safe-area placement are untouched, keyboard or no keyboard. The dock
-      // keeps ordinary bottom padding while its negative margin moves the whole footer downward.
+      // …and the dock's outer geometry stays independent of iOS safe-area changes. The route column
+      // owns the viewport edge; keyboard and browser chrome transitions cannot move this row.
       expect(container.querySelector('[data-slot="composer-status"]')).not.toBeNull();
       const dock = container.querySelector('[data-slot="composer-status"]')!.parentElement!;
       expect(dock.className).toMatch(/(?:^|\s)pb-2(?:\s|$)/);
-      expect(dock.className).toContain(
-        "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
-      );
+      expect(dock.className).not.toContain("safe-area-inset-bottom");
+      expect(dock.className).not.toContain("mb-[calc(");
     } finally {
       kb.restore();
     }
