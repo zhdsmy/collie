@@ -25,9 +25,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.5.0+collie.2] - 2026-09-04
+
 ### Changed
 
-- Compressed Codex statusline state, context, speed, approval, task, and goal fields into accessible icons.
+- Compressed Codex statusline state, context, speed, approval, task, and goal fields into accessible icons. ([e80a2f6](https://github.com/zhdsmy/collie/commit/e80a2f6))
 
 ## [1.5.0+collie.1] - 2026-09-04
 
