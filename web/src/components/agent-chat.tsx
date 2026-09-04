@@ -31,7 +31,8 @@ import { Collapse, CollapseSwap } from "@/components/ui/collapse";
 import { RouteHeader } from "@/components/app-header";
 import { HeaderStatus } from "@/components/header-status";
 import { AnsiOutput } from "@/components/ansi-output";
-import { MIRROR_SPACE, MIRROR_INVERT, styleFor } from "@/components/mirror-space";
+import { MIRROR_SPACE, MIRROR_INVERT } from "@/components/mirror-space";
+import { StatuslineSegment } from "@/components/statusline-segment";
 import { cn } from "@/lib/utils";
 import { paneTag } from "@/lib/pane-tag";
 import { parseAnsi } from "@/lib/ansi";
@@ -1726,11 +1727,9 @@ export function AgentChat({
                     // every poll — there is no identity to preserve across renders.
                     <div key={i} className="truncate">
                       {row.segments.map((s, si) => (
-                        // Text nodes only — colour and weight come from the ANSI parse, never markup.
-                        // Same XSS boundary as the mirror.
-                        <span key={si} style={styleFor(s)}>
-                          {s.text}
-                        </span>
+                        // ANSI stays inline style; recognized Codex labels become inert icons.
+                        // Every other value remains a React text node, the mirror's XSS boundary.
+                        <StatuslineSegment key={si} agent={agent?.agent} segment={s} />
                       ))}
                     </div>
                   ))}

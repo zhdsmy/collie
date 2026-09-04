@@ -686,7 +686,7 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
     expect(screen.queryByText(/❯/)).toBeNull(); // the input box was stripped off the mirror
   });
 
-  it("uses the Codex adapter's compact status labels in the surfaced strip", () => {
+  it("uses compact accessible icons for Codex status fields in the surfaced strip", () => {
     const codexAgent = { ...fixtureAgents[0]!, agent: "codex" };
     const { container } = renderChat({
       agent: codexAgent,
@@ -703,6 +703,10 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
       (row) => row.textContent,
     );
     expect(statusRows).toContain("  gpt-5.6-sol xhigh· Ready· Ctx 11%· Fast:off· Approve");
+    expect(screen.getByLabelText("Ready")).toBeInTheDocument();
+    expect(screen.getByLabelText("Context 11% left")).toBeInTheDocument();
+    expect(screen.getByLabelText("Fast off")).toBeInTheDocument();
+    expect(screen.getByLabelText("Approve for me")).toBeInTheDocument();
     expect(screen.queryByText(/Context 11% left/)).toBeNull();
   });
 

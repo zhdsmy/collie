@@ -25,6 +25,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- Compressed Codex statusline state, context, speed, approval, task, and goal fields into accessible icons.
+
 ## [1.5.0+collie.1] - 2026-09-04
 
 ### Changed
