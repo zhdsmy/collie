@@ -11,11 +11,9 @@ import {
   TerminalSquare,
 } from "lucide-react";
 import { useKeyboardOpen } from "@/hooks/use-keyboard";
-import { useSheetPull } from "@/hooks/use-sheet-pull";
 import { useSpaceActions } from "@/hooks/use-spaces";
 import { useDashPrefs, openForCount } from "@/hooks/use-dash-prefs";
 import { useLaunchers } from "@/lib/launchers";
-import { buzz } from "@/lib/haptics";
 import { mirrorFont, useDisplayPrefs } from "@/hooks/use-display-prefs";
 import { useStableTerminalDraft } from "@/hooks/use-terminal-draft";
 import { useLocale } from "@/hooks/use-locale";
@@ -293,7 +291,6 @@ export function AgentChat({
   const [drawer, setDrawer] = useState<Drawer>(null);
   const closeDrawer = () => {
     setDrawer(null);
-    setPull(0);
   };
 
   // ── ZEN MODE — chrome-free, mirror-only viewing ───────────────────────────────
@@ -351,51 +348,9 @@ export function AgentChat({
 
   const gone = !agent;
 
-  // Drag the handle above the composer up to bring up the pane switcher, tracked finger-by-finger
-  // so the sheet peeks up under the thumb rather than appearing on release. Tapping is still the
-  // reliable fallback (the button's own onClick below). `pull` is the live upward travel in px, fed
-  // straight to the switcher BottomSheet's `pull` prop; a release past the open threshold buzzes and
-  // opens for real, a release short of it snaps back to 0. `pullFrom` is the handle's own distance
-  // from the viewport bottom, measured once per gesture (useSheetPull's `onAnchor`) — the handle
-  // sits above the composer, so without it the peek would rise from the screen's bottom edge with
-  // the composer sandwiched between the panel and the thumb dragging it.
-  const [pull, setPull] = useState(0);
-  const [pullFrom, setPullFrom] = useState(0);
-  const sheetPull = useSheetPull({
-    onPull: setPull,
-    onAnchor: setPullFrom,
-    onOpen: () => {
-      buzz();
-      setDrawer("switcher");
-      setPull(0);
-      setPullFrom(0);
-    },
-    onCancel: () => {
-      setPull(0);
-      setPullFrom(0);
-    },
-  });
-  // ── COMPOSING MODE — read ONCE, here, for the whole pane ──────────────────────
-  // The soft keyboard takes roughly 45% of a phone. What is left has to hold the header, the tab
-  // strip, the agent's statusline, the grab handle, the status band, the controls row and the draft
-  // — and the operator measured the result: the mirror shows ZERO rows of what the agent said while
-  // three rows of cache percentages hold their ground, and the send button lands under the keyboard.
-  //
-  // So two rows stand down while the keyboard is up, and both are chosen on the same test: is this
-  // read BEFORE typing, or DURING it? The pane switcher is read before — nobody switches panes
-  // mid-sentence — and the statusline is reference data. Both come back untouched the instant the
-  // keyboard closes, which is a state the operator causes and understands.
-  //
-  // WHAT DOES NOT STAND DOWN IS THE STATUS BAND, and that is the operator's own suggestion declined
-  // with a reason. It is 14px, the cheapest row on the screen, and it is the only place the pane's
-  // state is spelled as a WORD rather than a coloured dot — which is why it exists (WCAG 1.4.1,
-  // status-badge.tsx holds the measurement). It is also read at exactly this moment: it answers
-  // "is this agent even waiting for me?" while the thumb is over Send. The 30px handle and the
-  // 21–112px statusline are 4–8x the pixels at none of the cost.
-  //
-  // Read once and passed down, never called again in a child: two components calling this hook
-  // separately is two thresholds, two ideas of when the mode starts, and one boundary animating out
-  // of step with itself.
+  // The keyboard shrinks the visual viewport. Reference chrome gives that space back while
+  // composing: the statusline collapses and the navigation strips fold, while the live status
+  // word and composer remain visible. One hook instance keeps those transitions in lockstep.
   const composing = useKeyboardOpen();
 
   // ── THE FOLDED STRIPS, AND THE ONE STATE THAT OVERRIDES THE PREFERENCE ────────
@@ -1647,7 +1602,7 @@ export function AgentChat({
           </div>
 
           {/* Bottom region, in the order it paints: the agent's own statusline (the mirror's last row),
-              the pane-switch handle, the composer. The connection status line USED to float here as an
+              then the composer. The connection status line USED to float here as an
               overlay just above the composer, but it covered the terminal tail (the prompt/cursor and
               up-levelled prompt buttons) — it now lives as a slim row just below the header.
 
@@ -1668,15 +1623,19 @@ export function AgentChat({
               (hooks/use-keyboard.ts) — so the bound follows the real device instead of encoding one
               phone's pixels. `shrink-0` is what makes that bound the whole story. */}
           {/* …AND THE CHROME BELOW IT, the same way. The whole bottom region is ONE row of this
-              column — the statusline, the grab handle, the status band and the composer are its
-              parts, not its siblings — so zen takes it out as one row, through `Collapse`. Wrapping
-              the region rather than each part is what keeps the parts' own relationships intact: the
-              statusline is still the row immediately before the chrome block, and the handle is
-              still the last thing before the composer, in zen and out of it. Tests read the ROW
-              rather than the element for exactly this reason (agent-chat.test.tsx says so at the
-              docking test). */}
+              column — the statusline, the status band and the composer are its parts, not its
+              siblings — so zen takes it out as one row, through `Collapse`. The negative margin
+              pairs with Composer's resting safe-area padding: the chrome paints through the home
+              indicator while the input itself sits at the bottom, instead of reserving an empty
+              safe-area strip below it. It belongs on this real content node, inside `Collapse`, so
+              the wrapper remains only an animation row and never distorts the compensation. */}
           <Collapse open={!zen}>
-            <div className="relative shrink-0">
+            <div
+              className={cn(
+                "relative shrink-0",
+                composing ? undefined : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
+              )}
+            >
 
               {/* The agent's statusline, re-surfaced as app chrome (its branch/model/ctx/permission mode
                   would otherwise vanish with the stripped input box). It is the LAST ROW OF THE MIRROR,
@@ -1737,38 +1696,11 @@ export function AgentChat({
                 )}
               </Collapse>
 
-              {/* Swipe-up / tap handle for the quick pane switcher — the sheet that switches AND closes
-                  panes (each row has a ✕). A tall, full-width hit area so the swipe is easy to land (and a
-                  tap always works). Shown whenever a pane is open — even the last one, so it stays
-                  closable now that the nav drawer is gone. `touch-none` so the gesture is ours, not a
-                  browser scroll.
-
-                  IT SITS DIRECTLY ABOVE THE COMPOSER, BELOW THE AGENT'S STATUSLINE, AND THAT ORDER IS
-                  THE FIX RATHER THAN A PREFERENCE. It used to render ABOVE the statusline, which made
-                  its position a function of pane state: on a pane whose agent prints a statusline the
-                  handle stood 50px further up than on one that does not, and the same handle moved
-                  again the moment the agent added or dropped a row (the strip is 1–3 rows, re-derived
-                  every poll). A control the thumb reaches for by muscle memory may not move because the
-                  terminal printed something — DESIGN.md §2. Rendered here it is always the last thing
-                  above the composer's status band, on every pane and in every state.
-
-                  It also puts the statusline back where it belongs: that strip is the mirror's own last
-                  row, cut from the pane tail, and a 34px gap with a grab handle in it read as a seam
-                  between the terminal and a piece of chrome that IS the terminal. */}
-              {/* THE CHROME BLOCK, DRAWN ONCE. Everything the thumb operates — the grab handle, the
-                  status band, the controls, the input — stands on ONE surface, closed against the
-                  terminal above by ONE rule. The handle used to stand OUTSIDE it, on the mirror's own
-                  black: the dock read as chrome and the handle floating above it read as part of the
-                  terminal, a control with no ground. That is what "hard to distinguish" meant in dark,
-                  where `--background` IS the mirror's fill (mirror-space.ts) and a 6px grip at
-                  `bg-muted-foreground/50` was the only thing on screen saying a control was there.
-                  Given the dock's own ground it is a handle ON the chrome, which is what it does.
-
-                  The rule and the fill live HERE rather than on the composer's dock so that boundary
-                  is UNCONDITIONAL: the handle inside is gated on there being a pane to switch to, this
-                  block is not, so the mirror is closed by one hairline in every state (DESIGN.md §2,
-                  §4). The composer keeps its own `bg-chrome` — the same value, so nothing changes
-                  visually — which leaves it self-sufficient wherever it is mounted alone.
+              {/* THE CHROME BLOCK, DRAWN ONCE. The status band, controls and input stand on ONE
+                  surface, closed against the terminal above by ONE rule. The rule and fill live HERE
+                  rather than on the composer's dock so that boundary is unconditional. Composer keeps
+                  its own `bg-chrome` — the same value — which leaves it self-sufficient wherever it is
+                  mounted alone.
 
                   THE FILL IS `--chrome`, NOT `--muted`. Chrome is normally the page colour separated
                   by a rule, and this is the one place that rule cannot hold: the block sits on the
@@ -1779,34 +1711,6 @@ export function AgentChat({
                   and unchanged at rgb(235) in light, where --card would be pure white and land
                   1.04:1 against the inverted mirror. index.css states the whole argument. */}
               <div data-slot="chrome-block" className="border-t border-rule bg-chrome">
-                {/* …and stands down while the keyboard is up, for 30px (`py-3` around the 6px
-                    grip, it was py-3.5/34px until the 2026-08-31 shave; the drag is tracked from
-                    the first pixel past useSheetPull's own slop, and the strip is full-width, so the
-                    gesture still lands). Switching panes is a
-                    BEFORE-typing act, so the row costs its height at the one moment it cannot be
-                    wanted. Nothing is stranded: the tab strip above still switches, the sheet is still
-                    reachable the instant the keyboard closes, and `Collapse` unmounts the button at
-                    the end of the exit so it leaves the tab order with the pixels.
-
-                    Also shown whenever launchers are declared, even with a single pane and no
-                    shells: a lone pane with launchers still needs a way to reach them. */}
-                <Collapse
-                  open={
-                    !composing &&
-                    (agents.length + shellPanes.length > 0 || launchers.length > 0)
-                  }
-                >
-                  <button
-                    type="button"
-                    aria-label={t("chat.switcher.aria")}
-                    ref={sheetPull.ref}
-                    onClick={() => setDrawer("switcher")}
-                    className="flex w-full touch-none items-center justify-center py-3 transition-colors active:bg-muted/50"
-                  >
-                    <span className="h-1.5 w-12 rounded-md bg-muted-foreground/50" />
-                  </button>
-                </Collapse>
-
                 <Composer
                   ref={composerRef}
                   paneId={paneId}
@@ -1843,17 +1747,15 @@ export function AgentChat({
           </Collapse>
         </div>
 
-        {/* Swipe-up quick switcher — just the panes (agents + shells), reached by the thumb gesture.
+        {/* Quick switcher — just the panes (agents + shells), reached from the pane actions menu.
             Switch-only for panes: pane closing lives in the pane pill's long-press sheet, not here.
             A trailing Launch section rides along (see ThreadSidebar): this is the launcher's other
             home now that the pane header's rocket is gone, and the one reachable from inside a pane
-            without going home first. `pull` is the only BottomSheet this drag reveal drives. */}
+            without going home first. */}
         <BottomSheet
           open={drawer === "switcher"}
           onClose={closeDrawer}
           title={t("chat.switcher.title")}
-          pull={pull}
-          pullFrom={pullFrom}
         >
           <ThreadSidebar
             agents={agents}
@@ -1920,6 +1822,7 @@ export function AgentChat({
           onClosed={(id) => (id === paneId ? onBack() : revalidator.revalidate())}
           onFind={display ? openFind : undefined}
           onHistory={historyAvailable ? () => navigate(historyPath(paneId, scope)) : undefined}
+          onSwitch={() => setDrawer("switcher")}
           // ZEN'S ONE ENTRY POINT, and the absence of this callback IS the gate — the sheet hides a
           // row it was given nothing for, exactly as it does for find and history. Gated twice: the
           // Settings toggle decides whether this phone offers zen at all, and `display` keeps it off

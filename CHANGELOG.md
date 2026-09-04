@@ -25,6 +25,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- Removed the standalone pane-switch grip and its entire layout row; **Switch pane** now lives in the pane actions sheet, leaving the composer directly below the agent statusline.
+- Reclaimed the resting iOS bottom inset around the composer so its controls occupy the safe area instead of leaving an empty strip below; keyboard-open layout keeps the uncompensated inset behavior.
+
 ## [1.5.0+collie.2] - 2026-09-04
 
 ### Changed

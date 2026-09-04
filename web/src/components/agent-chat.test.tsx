@@ -710,75 +710,30 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
     expect(screen.queryByText(/Context 11% left/)).toBeNull();
   });
 
-  it("docks the pane-switch handle between the statusline and the composer, always", () => {
-    // THE OPERATOR'S REPORT, verbatim: "the switch panel up drawer sits above the agent Statusline,
-    // it should always be right above the bottom status row."
-    //
-    // It did. MEASURED in the browser on the pane screen at a true 390px viewport, page-relative
-    // tops, with the agent's own statusline present (a 3-row Claude run):
-    //
-    //   BEFORE   mirror 217.8 → 629.8 · handle 629.8 → 663.8 · statusline 663.8 → 714 · composer 714
-    //   AFTER    mirror 217.8 → 629.8 · statusline 629.8 → 680 · handle 680 → 714 · composer 714
-    //
-    // The handle stood 50px further up on a pane whose agent prints a statusline than on one that
-    // does not — and it moved again whenever the agent added or dropped a row, because that strip
-    // is 1–3 rows re-derived from the pane tail on every poll. A control the thumb reaches for by
-    // muscle memory may not be relocated by something the terminal printed: DESIGN.md §2. "Always"
-    // is the whole claim, so BOTH cases are asserted below, and the handle must be the last thing
-    // before the composer in each.
-    //
-    // It also puts the statusline back against the mirror it was cut from — that strip is the
-    // mirror's own last row, and a 34px grab handle wedged into the seam read as a boundary
-    // between the terminal and a piece of chrome that IS the terminal.
+  it("removes the standalone switcher row and docks the composer directly below the statusline", () => {
     for (const text of [STATUS_TEXT, MENU_TEXT]) {
       const { container } = renderChat({ text });
-      const handle = screen.getByRole("button", { name: "Switch pane" });
       const band = container.querySelector('[data-slot="composer-status"]')!;
       const composer = band.parentElement!;
-      // ROW IDENTITY, NOT ELEMENT IDENTITY. The handle now stands inside a `Collapse` — it stands
-      // down while the soft keyboard is up — so its element is two wrappers deep. `Collapse` is a
-      // presence animation and nothing else (it "styles NOTHING", per its header), so the ROW in
-      // this column is the wrapper, and that is what the adjacency claim is about. Asserted through
-      // it rather than around it: the wrapper must be found, so a handle that quietly escaped its
-      // Collapse fails here too.
-      const handleRow = handle.closest('[data-slot="collapse"]')!;
-      expect(handleRow).not.toBeNull();
-      // Same parent, and the handle's row is the sibling immediately before the composer — so
-      // nothing, statusline or otherwise, can ever get between the two.
-      expect(handleRow.parentElement).toBe(composer.parentElement);
-      expect(handleRow.nextElementSibling).toBe(composer);
-      // THAT SHARED PARENT IS THE CHROME BLOCK, and it is what answers the operator's later report
-      // that the drawer was "really hard to distinguish" in dark. The handle used to stand on the
-      // mirror's own black — `--background` IS the mirror's fill in dark (mirror-space.ts) — so a
-      // 6px grip was the only thing on screen saying a control was there. The block gives the handle
-      // and the composer ONE ground and closes it against the terminal with ONE rule, above
-      // everything the thumb operates. Its fill and rule are unconditional; the handle inside it is
-      // not, so the seam is one hairline whether or not there is a pane to switch to (DESIGN.md §4).
-      const block = handleRow.parentElement!;
+      const block = composer.parentElement!;
+
+      expect(screen.queryByRole("button", { name: "Switch pane" })).toBeNull();
       expect(block.getAttribute("data-slot")).toBe("chrome-block");
-      // --chrome, and NOT --muted: DESIGN.md §4 forbids --muted behind chrome, and the value it
-      // carried in dark (rgb 38, under a rgb 10 terminal) was read as a bright slab. --chrome is the
-      // raised surface the sheets already stand on.
+      expect(block.firstElementChild).toBe(composer);
       expect(block.className).toMatch(/(?:^|\s)bg-chrome(?=\s|$)/);
       expect(block.className).not.toMatch(/(?:^|\s)bg-muted(?=\s|$)/);
       expect(block.className).toMatch(/(?:^|\s)border-t border-rule(?=\s|$)/);
-      // …and the composer's own dock draws neither, so the two never double the line.
       expect(composer.className).not.toMatch(/(?:^|\s)border/);
-      // …and where a statusline exists it is ABOVE the block, welded to the mirror's bottom edge.
-      // The handle is the FIRST thing inside the block, so it is still the first chrome the thumb
-      // meets coming up from the terminal.
-      const strip = screen.queryByText("[Opus 4.8] ~/webapp · main")?.closest("div.truncate")
-        ?.parentElement;
+
+      const strip = screen
+        .queryByText("[Opus 4.8] ~/webapp · main")
+        ?.closest("div.truncate")?.parentElement;
       if (strip) {
-        // Same reading as above: the statusline stands down with the keyboard too, so its row in
-        // this column is its own Collapse wrapper.
         expect(strip.closest('[data-slot="collapse"]')!.nextElementSibling).toBe(block);
-        expect(block.firstElementChild).toBe(handleRow);
       }
       cleanup();
     }
   });
-
   it("leaves an adapterless agent's input-box buffer fully raw — no status strip, box kept in the mirror", () => {
     renderChat({ text: STATUS_TEXT, agent: opencodeAgent });
     // The statusline is NOT hoisted into an app strip — it stays inside the raw <pre> mirror…
@@ -1501,6 +1456,10 @@ describe("the pane fits its viewport", () => {
     expect(bottom.className).toMatch(/(?:^|\s)shrink-0(?=\s|$)/);
     // And explicitly NOT the tempting repair: `min-h-0` here clips the composer from the bottom.
     expect(bottom.className).not.toMatch(/(?:^|\s)min-h-0(?=\s|$)/);
+    // Composer paints the safe area; this content node reclaims its layout height so the controls
+    // sit in that space. The animated row itself must remain geometry-neutral.
+    expect(bottom.className).toContain("mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]");
+    expect(bottomRow.className).not.toContain("safe-area-inset-bottom");
   });
 
   it("caps the agent statusline against the viewport, and scrolls rather than eating a row", () => {
@@ -1544,7 +1503,7 @@ describe("the pane fits its viewport", () => {
     };
   }
 
-  it("stands the switcher and the statusline down while the keyboard is up — and NOT the status band", async () => {
+  it("stands the statusline and safe-area compensation down while the keyboard is up — and NOT the status band", async () => {
     // THE OPERATOR'S OWN SUGGESTION, verbatim: "when the keyboard is open I have a feeling that we
     // could hide the scroll up row and status row could be hidden?" — taken, and half of it
     // declined, which is why this test names both halves.
@@ -1561,16 +1520,14 @@ describe("the pane fits its viewport", () => {
     const kb = withSoftKeyboard();
     try {
       const { container } = renderChat({ text: STATUS_TEXT });
-      expect(screen.queryByRole("button", { name: "Switch pane" })).not.toBeNull();
+      const bottom = container.querySelector('[data-slot="chrome-block"]')!.parentElement!;
+      expect(screen.queryByRole("button", { name: "Switch pane" })).toBeNull();
+      expect(bottom.className).toContain("mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]");
 
       kb.open(460); // a soft keyboard: -384px, well past the open threshold
 
-      // `Collapse` unmounts at the END of its exit, so both leave the tree — and leaving the tree is
-      // the a11y half of the claim: a control that is not on screen must not still be focusable.
-      await waitFor(() =>
-        expect(screen.queryByRole("button", { name: "Switch pane" })).toBeNull(),
-      );
-      expect(screen.queryByText("[Opus 4.8] ~/webapp · main")).toBeNull();
+      await waitFor(() => expect(screen.queryByText("[Opus 4.8] ~/webapp · main")).toBeNull());
+      expect(bottom.className).not.toContain("safe-area-inset-bottom");
 
       // THE NAVIGATION ROWS ARE ON A DIFFERENT LIST NOW, and the distinction is the point. They
       // were once declined here outright — "the tab row is how you know where you are, and losing
@@ -2108,6 +2065,11 @@ interface LaunchPostedBody {
 }
 
 describe("AgentChat: Launch section in the switcher", () => {
+  async function openSwitcher(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole("button", { name: "Pane actions" }));
+    await user.click(await screen.findByRole("button", { name: "Switch pane" }));
+  }
+
   function declareLaunchers() {
     server.use(
       http.get("/api/launchers", () =>
@@ -2135,7 +2097,7 @@ describe("AgentChat: Launch section in the switcher", () => {
     declareLaunchers();
     const user = userEvent.setup();
     renderChat();
-    await user.click(screen.getByRole("button", { name: "Switch pane" }));
+    await openSwitcher(user);
     expect(await screen.findByText("Launch")).toBeInTheDocument();
     expect(screen.getByText("Runs & quota")).toBeInTheDocument();
     expect(screen.getByText("rumen-peek")).toBeInTheDocument();
@@ -2145,11 +2107,11 @@ describe("AgentChat: Launch section in the switcher", () => {
     declareLaunchers();
     const user = userEvent.setup();
     renderChat();
-    await user.click(screen.getByRole("button", { name: "Switch pane" }));
+    await openSwitcher(user);
     await screen.findByText("rumen-peek");
 
     await user.click(screen.getByText("Runs & quota"));
-    // Closing is the launch's own signal that it landed: the sheet is gone and the switch handle is
+    // Closing is the launch's own signal that it landed: the sheet is gone before navigation.
     // reachable again, on a route that is about to change under it.
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
@@ -2176,7 +2138,7 @@ describe("AgentChat: Launch section in the switcher", () => {
     );
     const user = userEvent.setup();
     renderChat();
-    await user.click(screen.getByRole("button", { name: "Switch pane" }));
+    await openSwitcher(user);
     await user.click(await screen.findByText("Runs & quota"));
     await waitFor(() => expect(posted).toEqual({ command: "rumen-peek", paneId: agent.paneId }));
   });
@@ -2185,7 +2147,7 @@ describe("AgentChat: Launch section in the switcher", () => {
     declareLaunchers();
     const user = userEvent.setup();
     renderChat({ device: { enforced: true, device: "spare-phone", authorized: false } });
-    await user.click(screen.getByRole("button", { name: "Switch pane" }));
+    await openSwitcher(user);
     // The sheet itself still opens (it's switch-only otherwise), but nothing in it offers a write
     // this device isn't authorised to make.
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
@@ -2193,10 +2155,10 @@ describe("AgentChat: Launch section in the switcher", () => {
     expect(screen.queryByText("rumen-peek")).toBeNull();
   });
 
-  it("does not show the switch handle's launcher affordance when nothing is declared", async () => {
+  it("does not show a launcher section when nothing is declared", async () => {
     const user = userEvent.setup();
     renderChat();
-    await user.click(screen.getByRole("button", { name: "Switch pane" }));
+    await openSwitcher(user);
     expect(screen.queryByText("Launch")).toBeNull();
   });
 });

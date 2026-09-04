@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Maximize2, Monitor, Pencil, ScrollText, Search, XCircle } from "lucide-react";
+import { Maximize2, Monitor, PanelsTopLeft, Pencil, ScrollText, Search, XCircle } from "lucide-react";
 
 import { BottomSheet } from "@/components/ui/sheet";
 import { ActionRow, DestructiveActionRow, RenameView } from "@/components/action-sheet-rows";
@@ -33,7 +33,7 @@ interface PaneActionsSheetProps {
    *  pane currently open, or revalidates so it drops out of the list. */
   onClosed: (paneId: string) => void;
 
-  /* The READ rows. All are optional and all are omitted by the pane strip, because they only
+  /* The header-only rows. All are optional and all are omitted by the pane strip, because they only
    * mean anything for the pane you are LOOKING AT: "find in output" searches the buffer this screen
    * has already fetched, and a strip pill can open this sheet on a pane whose output was never
    * loaded. The pane header passes them; the strip does not. Each is `undefined` when the caller has
@@ -47,9 +47,11 @@ interface PaneActionsSheetProps {
   onFind?: () => void;
   /** Open the agent's own transcript. */
   onHistory?: () => void;
+  /** Open the pane switcher. The pane header uses this after the standalone bottom grip is removed. */
+  onSwitch?: () => void;
   /** Enter zen mode — hide every Collie surface and leave the mirror alone on the screen.
    *
-   *  The THIRD read row, and it is gated twice through this one prop: `Settings → Zen mode` decides
+   *  The zen row, and it is gated twice through this one prop: `Settings → Zen mode` decides
    *  whether this phone offers zen at all, and the pane header only passes a callback when there is
    *  buffered output to look at. Absence IS the gate, exactly as it is for find and history above —
    *  a device that never asked for zen sees a sheet byte-identical to today's. */
@@ -78,6 +80,7 @@ export function PaneActionsSheet({
   onClosed,
   onFind,
   onHistory,
+  onSwitch,
   onZen,
 }: PaneActionsSheetProps) {
   useLocale();
@@ -242,7 +245,7 @@ export function PaneActionsSheet({
         )
       }
     >
-      {/* The READ rows lead, and they sit OUTSIDE the read-only / host-unreachable gates below on
+      {/* The header-only rows lead, and they sit OUTSIDE the read-only / host-unreachable gates below on
           purpose. Neither of those refusals is about them: find searches a buffer this phone already
           holds, and history opens a transcript the lead reads off its own disk — a device that may
           not write, or a member machine that has stopped answering, takes away nothing either one
@@ -252,8 +255,18 @@ export function PaneActionsSheet({
           sheet; rename and close are the half you arrive at deliberately.
           Hidden in `rename` mode with the rest of the list — that view is a sub-screen, not a
           section. */}
-      {mode === "actions" && (onFind || onHistory || onZen) && (
+      {mode === "actions" && (onFind || onHistory || onSwitch || onZen) && (
         <div className="mb-1 flex flex-col gap-1">
+          {onSwitch && (
+            <ActionRow
+              icon={<PanelsTopLeft className="size-4 shrink-0 text-muted-foreground" />}
+              label={t("chat.switcher.aria")}
+              onClick={() => {
+                onClose();
+                onSwitch();
+              }}
+            />
+          )}
           {onFind && (
             <ActionRow
               icon={<Search className="size-4 shrink-0 text-muted-foreground" />}
