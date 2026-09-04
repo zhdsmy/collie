@@ -36,9 +36,23 @@ describe("push notification localization", () => {
       title: "2 个 Agent 需要查看",
       body: "claude, codex",
     });
-    expect(localizePushCopy({ kind: "update", version: "1.0.1" }, "ja").body).toContain(
-      "1.0.1",
-    );
+    expect(
+      localizePushCopy({ kind: "update", versions: ["1.0.1"], current: "1.0.0" }, "ja").body,
+    ).toContain("1.0.1");
+    // The digest shape mirrors upstream's updateDigestBody: an English subscriber sees the wire
+    // body verbatim; other locales get the count, the floor and every version.
+    expect(
+      localizePushCopy(
+        { kind: "update", versions: ["1.4.0", "1.5.0"], current: "1.3.0" },
+        "en",
+      ),
+    ).toEqual({ title: "Collie update available", body: "2 updates since 1.3.0: 1.4.0, 1.5.0" });
+    expect(
+      localizePushCopy(
+        { kind: "update", versions: ["1.4.0", "1.5.0"], current: "1.3.0" },
+        "zh",
+      ).body,
+    ).toBe("自 1.3.0 起已有 2 个更新：1.4.0, 1.5.0");
   });
 
   test("keeps a pack host in the localized body", () => {

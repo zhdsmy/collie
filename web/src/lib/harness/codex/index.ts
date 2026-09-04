@@ -25,9 +25,12 @@ import {
 import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
 import { detectTrustRegion } from "./trust";
+import { decorateCodexDisplay } from "./display";
 import { codexDraftCarriesSend } from "./paste";
 
-const CONVERSATION_RECAP = /^[-\u2500]+\s+Conversation recap(?:\s+[-\u2500]+)?$/;
+// `CONVERSATION_RECAP`/`DECORATIVE_RULE` and the completion-summary no-wrap pass they fed were
+// dropped for upstream's `decorateCodexDisplay` (codex/display.ts, PR #144): the labelled-separator
+// clipping there is the same fix, shape-based rather than content-based.
 const COMPLETION_SUMMARY = /^[-\u2500]+\s+Worked for\b/;
 const COMMAND_SUMMARY = /^•\s+Ran\s+\d+\s+commands\b/;
 const COMMAND_EVENT =
@@ -37,7 +40,7 @@ const PLAIN_ANSWER_ROW = /^ {2}\S/;
 const SUBMITTED_QUERY_LEAD = /^›(?:\s|$)/;
 const NESTED_ANSWER_CONTENT = /^(?:(?:[-+*•]|\d+[.)])(?:\s|$)|[│└┌┐┘┬├┤┼])/;
 const STRUCTURAL_ANSWER_CONTENT = /^(?:```|~~~|[|─━═])/;
-const DECORATIVE_RULE = /^[-\u2500]{40,}$/;
+
 const UPLOAD_IMAGE_PATH =
   /(?:^|\s)(\/(?:[^\s/]+\/)*uploads\/[^\s/]+\.(?:gif|jpe?g|png|webp))(?=\s|$)/gi;
 const IMAGE_PLACEHOLDER = /(?:^|\s)\[\s*Image\s+#\d+\s*\]/g;
@@ -226,35 +229,6 @@ export function compactCodexStatusLines(lines: StyledLine[]): StyledLine[] {
   }));
 }
 
-function normalizeCompletionSummaries(lines: StyledLine[]): StyledLine[] {
-  let normalized: StyledLine[] | undefined;
-
-  for (let index = 0; index < lines.length; index++) {
-    const line = lines[index]!;
-    if (CONVERSATION_RECAP.test(lineText(line).trim())) {
-      normalized ??= lines.slice(0, index);
-      normalized.push(line.noWrap ? line : { ...line, noWrap: true });
-      continue;
-    }
-
-    if (!isCompletionSummary(line)) {
-      normalized?.push(line);
-      continue;
-    }
-
-    normalized ??= lines.slice(0, index);
-    normalized.push(line.noWrap ? line : { ...line, noWrap: true });
-    while (
-      index + 1 < lines.length &&
-      DECORATIVE_RULE.test(lineText(lines[index + 1]!).trim())
-    ) {
-      index++;
-    }
-  }
-
-  return normalized ?? lines;
-}
-
 function uploadPaths(text: string): string[] {
   return [...text.matchAll(UPLOAD_IMAGE_PATH)].map((match) => match[1]!);
 }
@@ -321,10 +295,10 @@ function codexAdapterDraftCarriesSend(
     : codexDraftCarriesSend(sent, draft);
 }
 
-function codexRawBlock(lines: StyledLine[]): Block {
+function raw(lines: StyledLine[]): Block {
   return {
     kind: "raw",
-    lines: normalizeCompletionSummaries(normalizeWrappedAnswers(lines)),
+    lines: decorateCodexDisplay(normalizeWrappedAnswers(lines)),
   };
 }
 
@@ -333,7 +307,7 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   if (trust) {
     const before = trimTrailingBlank(lines.slice(0, trust.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(codexRawBlock(before));
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "prompt-select", prompt: trust.model, lines: lines.slice(trust.startLine) });
     return blocks;
   }
@@ -342,7 +316,7 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   if (approval) {
     const before = trimTrailingBlank(lines.slice(0, approval.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(codexRawBlock(before));
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({
       kind: "prompt-select",
       prompt: approval.model,
@@ -355,12 +329,12 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   if (ask) {
     const before = trimTrailingBlank(lines.slice(0, ask.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(codexRawBlock(before));
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "prompt-select", prompt: ask.model, lines: lines.slice(ask.startLine) });
     return blocks;
   }
 
-  return [codexRawBlock(stripChrome(lines))];
+  return [raw(stripChrome(lines))];
 }
 
 export { extractStatusLines, extractInputDraft };

@@ -86,6 +86,17 @@ interface ComposerProps {
    * will never be allowed to type", the other is "this machine is quiet, wait for the next poll".
    */
   hostBlock?: string;
+  /**
+   * The soft keyboard is up, so this dock is standing on it rather than on the screen's own bottom
+   * edge. Read ONCE by the pane (agent-chat.tsx, `composing`) and passed down — never re-derived
+   * here, or the boundary animates out of step with the two rows above that read the same fact.
+   *
+   * All it changes in this file is the bottom pad. `env(safe-area-inset-bottom)` reserves room for
+   * the home indicator, and the keyboard is already covering the home indicator: while it is up the
+   * inset is a second reservation for the same strip of glass, ~24px of it, paid at the exact moment
+   * the screen has none to give. The `0.5rem` of real breathing room stays, in both states.
+   */
+  composing?: boolean;
   /** A dialog (prompt/wizard/preview/multi-select) is on screen, so the TUI's keyboard belongs to it.
    * Free-text sending is refused while true — see send(). Answer it with its own buttons instead. */
   dialogPresent: boolean;
@@ -217,7 +228,7 @@ function ComposerDock({
 }
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-    { paneId, scope, agent, isShell, status, stale, gone, readOnly, hostBlock, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, onSent },
+  { paneId, scope, agent, isShell, status, stale, gone, readOnly, hostBlock, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, onSent },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -979,10 +990,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     <>
       <div
         className={cn(
-          // The route's 100dvh flex column owns the viewport edge. Keep safe-area values out of this
-          // row's outer geometry: iOS changes that env value across viewport states, and a negative
-          // margin then pushes part of the composer outside the clipped pane instead of docking it.
-          "bg-chrome px-3 pb-2",
+          "bg-chrome px-3",
+          // See `composing` on the props above: the inset reserves room for the home indicator, and
+          // while the keyboard is up the keyboard is already covering it. Paying it twice costs
+          // ~24px on the one screen that has none.
+          composing ? "pb-2" : "pb-[calc(env(safe-area-inset-bottom)_+_0.5rem)]",
         )}
       >
         {/* Pending-send preview: visible from send until the mirror echoes back (or 6s). Shows the
