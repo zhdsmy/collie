@@ -9,7 +9,7 @@ name: Release
 on:
   push:
     # Downstream iterations publish tags only, not GitHub Releases.
-    tags: ["v*.*.*", "!v*+collie.*"]
+    tags: ["v*.*.*", "!v*collie.*"]
 
 permissions:
   contents: write # create the release

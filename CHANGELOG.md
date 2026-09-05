@@ -25,6 +25,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- Corrected the tag-only workflow filter to use valid GitHub glob syntax.
+
 ## [1.5.0+collie.5] - 2026-09-05
 
 ### Fixed
