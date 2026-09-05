@@ -26,9 +26,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Remove repository GitHub Actions workflows; downstream versions are distributed as tags without GitHub Releases.
-- Remove previously published GitHub Releases and their attached binaries while retaining version tags.
-- Track upstream v1.5.1 and restore its behavior except for the full-height iPhone viewport and compact composer bottom clearance.
+## [1.5.1+collie.1] - 2026-09-05
+
+- Remove repository GitHub Actions workflows; downstream versions are distributed as tags without GitHub Releases. ([5717518](https://github.com/zhdsmy/collie/commit/5717518))
+- Remove previously published GitHub Releases and their attached binaries while retaining version tags. ([5717518](https://github.com/zhdsmy/collie/commit/5717518))
+- Track upstream v1.5.1 and restore its behavior except for the full-height iPhone viewport and compact composer bottom clearance. ([7abcbab](https://github.com/zhdsmy/collie/commit/7abcbab))
 
 ## [1.5.0+collie.7] - 2026-09-05
 
