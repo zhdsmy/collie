@@ -180,9 +180,10 @@ export function AppHeaderHost({ bridge, error, children }: AppHeaderHostProps) {
 
   return (
     <HeaderSlotContext.Provider value={slots}>
-      {/* A column, not a row: the sticky bar owns the safe-area inset and stacks the (usually absent)
+      {/* A column, not a row: the standalone bar owns the safe-area inset and stacks the (usually absent)
           prerelease strip above the header row proper, which keeps its original padding. On a stable
-          build AlphaBar renders null and the geometry is byte-for-byte what it always was — the inset +
+          build AlphaBar renders null. RootLayout consumes the inset once for the whole chrome stack;
+          outside it the env() fallback keeps the standalone geometry unchanged — the inset +
           the row's own py-2 reproduce the old `calc(safe-area + 0.5rem)` top padding exactly. The strip
           sits ABOVE everything including the find-bar override: while you're searching an alpha it is
           still an alpha. It is also mounted exactly ONCE now, for the first time — six routes each
@@ -199,7 +200,7 @@ export function AppHeaderHost({ bridge, error, children }: AppHeaderHostProps) {
           state it — otherwise the dashboard's 640px rule would silently become the viewport's. */}
       <header
         className={cn(
-          "sticky top-0 z-20 flex flex-col border-b bg-background [padding-top:env(safe-area-inset-top)]",
+          "sticky top-0 z-20 flex flex-col border-b bg-background [padding-top:var(--chrome-safe-top,env(safe-area-inset-top))]",
           // The rule is RECOLOURED, never removed — DESIGN.md §2's own technique, and the width stays
           // reserved in the base string above. While a route has the row hidden (zen) there are no
           // two regions left to cut apart, so the edge goes transparent; nothing moves by a pixel

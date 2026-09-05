@@ -66,7 +66,9 @@ export function codexBuildBlocks(lines: StyledLine[], { wrap = true } = {}): Blo
     return blocks;
   }
 
-  return [raw(stripChrome(lines), wrap)];
+  const content = stripChrome(lines);
+  // The removed composer owns its leading spacer rows, not the transcript above it.
+  return [raw(content === lines ? lines : trimTrailingBlank(content), wrap)];
 }
 
 export { extractStatusLines, extractInputDraft };

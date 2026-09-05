@@ -1219,7 +1219,7 @@ describe("AgentChat — the mirror's top edge", () => {
     // `pt-0` stated, not merely absent: the base `py-4` is still on the element and Tailwind's own
     // sheet order is what lets the later `pt-0` beat it, so dropping the class restores 16px.
     expect(scroller?.className).toMatch(/\bpt-0\b/);
-    expect(scroller?.className).toMatch(/\bpb-3\b/);
+    expect(scroller?.className).toMatch(/\bpb-1\b/);
   });
 });
 

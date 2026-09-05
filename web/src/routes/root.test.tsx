@@ -134,5 +134,9 @@ describe("RootLayout viewport column", () => {
       return el!;
     });
     expect(column.className).toMatch(/(?:^|\s)overflow-hidden(?=\s|$)/);
+    expect(column).toHaveClass("[padding-top:env(safe-area-inset-top)]", "[--chrome-safe-top:0px]");
+    expect(column.querySelector("header")).toHaveClass(
+      "[padding-top:var(--chrome-safe-top,env(safe-area-inset-top))]",
+    );
   });
 });

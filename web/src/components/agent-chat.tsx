@@ -1224,8 +1224,8 @@ export function AgentChat({
             "relative flex min-h-0 min-w-0 flex-1 flex-col",
             // The composer carried the bottom inset, and in zen the composer is gone — so this
             // region takes it over, or the mirror's last row runs under the home indicator. The TOP
-            // inset is deliberately NOT taken: the header element stays mounted with its own
-            // `env(safe-area-inset-top)` even while its row is collapsed away, so claiming it here
+            // inset is deliberately NOT taken: RootLayout retains it even while the header row
+            // is collapsed away (standalone headers keep the same fallback), so claiming it here
             // would pay for the notch twice.
             zen && "[padding-bottom:env(safe-area-inset-bottom)]",
           )}
@@ -1451,8 +1451,8 @@ export function AgentChat({
               the top of the buffer, and gone entirely the moment the mirror follows the tail, which
               is nearly always), so 12px of nothing became 9px of an actual boundary — the stack
               above the first terminal glyph got 3px SHORTER. A terminal draws to its own edges;
-              flush against its top rule is the honest rendering, and the bottom keeps its `pb-3`
-              because the tail wants clearance from the composer.
+              flush against its top rule is the honest rendering. The bottom keeps only 4px of
+              clearance from the statusline/composer so the last output does not float above it.
 
               THE RULE IS UNCONDITIONAL. THE GAP IS NOT, AND THE SPLIT IS THE WHOLE POINT.
               `border-t border-rule` is drawn in every state, always, at the same weight: it is the
@@ -1488,9 +1488,8 @@ export function AgentChat({
               // so dropping the `pt` from this override would let 16px BACK in, not 0. The 12px this
               // row used to carry paid for the mirror's new top rule above; it was never visible
               // anyway (page colour on page colour at the top of the buffer, and scrolled away the
-              // moment the mirror follows the tail). `pb-3` stays: the tail wants clearance from the
-              // composer.
-              className="px-2 pt-0 pb-3"
+              // moment the mirror follows the tail). Keep just 4px below the last output line.
+              className="px-2 pt-0 pb-1"
             >
               {display ? (
                 <>

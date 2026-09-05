@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Reclaim unused mobile space by applying the top safe-area inset once across connection/update banners and the header, trimming Codex's removed-composer spacer rows, and reducing the terminal tail padding to 4px without changing the bottom safe area.
+
 ## [1.5.1+collie.13] - 2026-09-05
 
 - Emphasize every line of submitted Codex input with semibold text on the existing gray surface; cover mixed Chinese/English terminal wraps and preserve explicit line breaks, image separators, links, and answer/diff styling. ([51dcf42](https://github.com/zhdsmy/collie/commit/51dcf42))

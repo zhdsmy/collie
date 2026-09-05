@@ -98,6 +98,32 @@ describe("composerReady — the gate the reply path pre-flights on", () => {
 });
 
 describe("chrome", () => {
+  it.each([true, false])("removes only the detected composer's leading spacer rows from the mirror (wrap=%s)", (wrap) => {
+    const transcript = ["• First paragraph", "", "  Another paragraph", "", "• Working (14m 34s · esc to interrupt)"];
+    const prompt = `\u001b[1m› \u001b[2m${PLACEHOLDER}\u001b[0m`;
+    const rows = [...transcript, "", "  ", "", prompt, "  gpt-6-astra xhigh · Ready · Context 82% left · main"];
+    const lines = splitLines(parseAnsi(rows.join("\n")));
+    const before = lines.map(lineText);
+    const blocks = codexAdapter.buildBlocks(lines, { wrap });
+    expect(blocks).toHaveLength(1);
+    const block = blocks[0]!;
+    expect(block.kind).toBe("raw");
+    if (block.kind !== "raw") throw new Error("Expected terminal mirror");
+    expect(block.lines.map(lineText)).toEqual(transcript);
+    expect(lines.map(lineText)).toEqual(before);
+    expect(codexAdapter.composerReady!(lines)).toBe(true);
+    expect(codexAdapter.extractInputDraft(lines)).toBeNull();
+  });
+
+  it("keeps trailing blanks when no live composer was identified", () => {
+    const rows = ["• Working (14m 34s)", "", "  "];
+    const blocks = codexAdapter.buildBlocks(splitLines(parseAnsi(rows.join("\n"))));
+    const block = blocks[0]!;
+    expect(block.kind).toBe("raw");
+    if (block.kind !== "raw") throw new Error("Expected terminal mirror");
+    expect(block.lines.map(lineText)).toEqual(rows);
+  });
+
   it("strips the prompt row and status row; the transcript stays", () => {
     const lines = fixtureLines("codex--fresh-idle.txt");
     const stripped = stripChrome(lines);

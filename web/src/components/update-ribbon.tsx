@@ -27,7 +27,8 @@ import { cn } from "@/lib/utils";
 // it absorbs entirely — there is no second top band for updates.
 //
 // ── IN-FLOW, NEVER OVER THE HEADER ───────────────────────────────────────────
-// A flex row in RootLayout's `h-[100dvh]` column, `shrink-0`, with the safe-area top inset. It
+// A shrink-0 flex row in RootLayout's column. The shell consumes the top inset; standalone use
+// retains the env() fallback. It
 // RESERVES space rather than overlaying, which is the whole reason a banner here can never cover a
 // route's sticky header. No `fixed`, no `absolute`, no z-index escape — asserted by a test.
 //
@@ -51,7 +52,7 @@ import { cn } from "@/lib/utils";
 
 /** The row itself. Exported so the tests can assert it is byte-identical across every state. */
 export const BAND_CLASS =
-  "flex w-full shrink-0 items-center gap-2 overflow-hidden border-b px-4 text-left text-xs font-medium text-foreground [height:calc(env(safe-area-inset-top)_+_1.75rem)] [padding-top:env(safe-area-inset-top)]";
+  "flex w-full shrink-0 items-center gap-2 overflow-hidden border-b px-4 text-left text-xs font-medium text-foreground [height:calc(var(--chrome-safe-top,env(safe-area-inset-top))_+_1.75rem)] [padding-top:var(--chrome-safe-top,env(safe-area-inset-top))]";
 
 /** Existing status tokens only — no new colour enters the app for this band. */
 const TINT = {

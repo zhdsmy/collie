@@ -371,5 +371,6 @@ describe("in-flow, never over the header", () => {
     expect(BAND_CLASS).not.toMatch(/(?:^|\s)z-/);
     expect(BAND_CLASS).toContain("shrink-0");
     expect(BAND_CLASS).toContain("env(safe-area-inset-top)");
+    expect(BAND_CLASS).toContain("var(--chrome-safe-top,env(safe-area-inset-top))");
   });
 });

@@ -185,6 +185,15 @@ describe("ConnectionBanner — the single connection surface", () => {
     expect(row.querySelector("span.truncate.flex-1")).not.toBeNull();
   });
 
+  it.each([false, true])("uses the shell's remaining inset with a standalone fallback (auth=%s)", async (authError) => {
+    h.lost = true;
+    renderBanner({ authError });
+    await act(async () => {});
+    expect(screen.getByRole("alert")).toHaveClass(
+      "[padding-top:calc(var(--chrome-safe-top,env(safe-area-inset-top))_+_0.25rem)]",
+    );
+  });
+
   it("flashes green 'Connected' only after a visible bar recovers, then collapses and unmounts", () => {
     h.trouble = true;
     renderBanner();

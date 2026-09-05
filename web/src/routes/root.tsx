@@ -95,7 +95,9 @@ export function RootLayout() {
     // second derivation of it, so the tolerance can never be computed against a cadence we aren't
     // using. That mattered more once the cadence gained inputs beyond the snapshot (#156).
     <PackProvider servers={data.servers} sessions={data.sessions} ts={data.ts} pollMs={pollMs}>
-      <div className="flex h-full flex-col overflow-hidden">
+      {/* Spend the notch inset once, outside the animated banners. Standalone chrome keeps its
+          env() fallback; within this shell its inherited inset is already consumed. */}
+      <div className="flex h-full flex-col overflow-hidden [padding-top:env(safe-area-inset-top)] [--chrome-safe-top:0px]">
         {/* THE update band, and the only one: a release on offer, a confirm just tapped, a run in
             flight, a new bridge this bundle is behind, and peers following — one fixed-height row
             that says whichever of those is true. Mounted unconditionally so the bundle self-updater's

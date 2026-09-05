@@ -89,7 +89,7 @@ function AuthErrorBanner() {
           role="alert"
           aria-live="polite"
           className={cn(
-            "flex items-center gap-2 border-b px-4 py-1 text-xs [padding-top:calc(env(safe-area-inset-top)_+_0.25rem)]",
+            "flex items-center gap-2 border-b px-4 py-1 text-xs [padding-top:calc(var(--chrome-safe-top,env(safe-area-inset-top))_+_0.25rem)]",
             TINT.blocked.row,
           )}
         >
@@ -237,7 +237,7 @@ function ConnectionStateBanner({
           aria-live="polite"
           className={cn(
             // Thin single row: text-xs, tight padding, safe-area top inset, never wraps.
-            "flex items-center gap-2 border-b px-4 py-1 text-xs [padding-top:calc(env(safe-area-inset-top)_+_0.25rem)]",
+            "flex items-center gap-2 border-b px-4 py-1 text-xs [padding-top:calc(var(--chrome-safe-top,env(safe-area-inset-top))_+_0.25rem)]",
             view.row,
           )}
         >
