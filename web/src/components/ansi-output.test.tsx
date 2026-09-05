@@ -78,6 +78,18 @@ describe("mirror line wrapping", () => {
     return container.querySelector("pre")!;
   }
 
+  it("reflows Codex prose only with Wrap on, including after toggling the view", () => {
+    const text = "• 已修复。\n\n  应用跟随\n  可视视口。";
+    const { container, rerender } = render(<AnsiOutput text={text} agent="codex" />);
+    expect(container.querySelector("pre")!.textContent).toBe("• 已修复。\n\n  应用跟随可视视口。");
+    rerender(<AnsiOutput text={text} agent="codex" wrap={false} />);
+    expect(container.querySelector("pre")!.textContent).toBe(text);
+    rerender(<AnsiOutput text={text} agent="codex" wrap />);
+    expect(container.querySelector("pre")!.textContent).toBe("• 已修复。\n\n  应用跟随可视视口。");
+    rerender(<AnsiOutput text={text} />);
+    expect(container.querySelector("pre")!.textContent).toBe(text);
+  });
+
   it("wraps by default rather than making the block a horizontal panner", () => {
     const cls = preFor({}).className;
     expect(cls).toContain("whitespace-pre-wrap");

@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Reflow Codex answer prose at the phone width instead of retaining host-terminal wraps, preserving paragraph breaks, structured output, ANSI styling, and upstream display handling.
+
 ## [1.5.1+collie.1] - 2026-09-05
 
 - Remove repository GitHub Actions workflows; downstream versions are distributed as tags without GitHub Releases. ([5717518](https://github.com/zhdsmy/collie/commit/5717518))

@@ -13,8 +13,8 @@ import { adapterFor, hasBlockGrammar } from "./registry";
  * that has no adapter) this is the trivial single-raw-block wrap it always was — conservative gating
  * lives entirely in the registry, so a non-adapter pane is never mis-parsed.
  */
-export function buildBlocks(lines: StyledLine[], ctx?: { agent?: string }): Block[] {
-  return adapterFor(ctx?.agent)?.buildBlocks(lines) ?? [{ kind: "raw", lines }];
+export function buildBlocks(lines: StyledLine[], ctx?: { agent?: string; wrap?: boolean }): Block[] {
+  return adapterFor(ctx?.agent)?.buildBlocks(lines, ctx) ?? [{ kind: "raw", lines }];
 }
 
 export { adapterFor, hasBlockGrammar };

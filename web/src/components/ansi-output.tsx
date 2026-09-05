@@ -219,7 +219,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   promptDisabled,
 }: AnsiOutputProps) {
   const segments = useMemo(() => parseAnsi(text), [text]);
-  const blocks = useMemo(() => buildBlocks(splitLines(segments), { agent }), [segments, agent]);
+  const blocks = useMemo(() => buildBlocks(splitLines(segments), { agent, wrap }), [segments, agent, wrap]);
 
   const rawBlocks = useMemo(
     () => blocks.filter((b): b is RawBlock => b.kind === "raw"),

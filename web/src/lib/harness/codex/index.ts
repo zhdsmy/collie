@@ -26,17 +26,19 @@ import { detectAskRegion } from "./ask";
 import { detectTrustRegion } from "./trust";
 import { decorateCodexDisplay } from "./display";
 import { codexDraftCarriesSend } from "./paste";
+import { reflowCodexAnswers } from "./reflow";
 
-function raw(lines: StyledLine[]): Block {
-  return { kind: "raw", lines: decorateCodexDisplay(lines) };
+function raw(lines: StyledLine[], wrap: boolean): Block {
+  const decorated = decorateCodexDisplay(lines);
+  return { kind: "raw", lines: wrap ? reflowCodexAnswers(decorated) : decorated };
 }
 
-export function codexBuildBlocks(lines: StyledLine[]): Block[] {
+export function codexBuildBlocks(lines: StyledLine[], { wrap = true } = {}): Block[] {
   const trust = detectTrustRegion(lines);
   if (trust) {
     const before = trimTrailingBlank(lines.slice(0, trust.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(raw(before));
+    if (before.length > 0) blocks.push(raw(before, wrap));
     blocks.push({ kind: "prompt-select", prompt: trust.model, lines: lines.slice(trust.startLine) });
     return blocks;
   }
@@ -45,7 +47,7 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   if (approval) {
     const before = trimTrailingBlank(lines.slice(0, approval.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(raw(before));
+    if (before.length > 0) blocks.push(raw(before, wrap));
     blocks.push({
       kind: "prompt-select",
       prompt: approval.model,
@@ -58,12 +60,12 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   if (ask) {
     const before = trimTrailingBlank(lines.slice(0, ask.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(raw(before));
+    if (before.length > 0) blocks.push(raw(before, wrap));
     blocks.push({ kind: "prompt-select", prompt: ask.model, lines: lines.slice(ask.startLine) });
     return blocks;
   }
 
-  return [raw(stripChrome(lines))];
+  return [raw(stripChrome(lines), wrap)];
 }
 
 export { extractStatusLines, extractInputDraft };
