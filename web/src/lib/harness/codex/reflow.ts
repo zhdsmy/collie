@@ -4,6 +4,7 @@ import { tableRuns } from "../../table-run";
 const ANSWER_LEAD = /^(?:\u2022| {2}-)\s+/;
 const TOOL_EVENT = /^\u2022\s+(?:Called|Edited|Explored|Ran|Read|Running|Searched|Viewed|Working|You have)(?:\s|$)/;
 const TURN_BOUNDARY = /^(?:\u203a(?:\s|$)|[\u2500\u2501\u2550]|-+\s+Worked for\b)/;
+const RECAP_HEADING = /^[-\u2500\u2501\u2550]+ +Conversation recap +[-\u2500\u2501\u2550]+\s*$/;
 const STRUCTURE = /^(?:(?:[-+*\u2022]|\d+[.)])(?:\s|$)|[|>#{}\u2500-\u257f]|`{3}|~{3})/;
 
 function proseAt(text: string, indent: number): boolean {
@@ -60,8 +61,10 @@ export function reflowCodexAnswers(lines: StyledLine[]): StyledLine[] {
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index]!;
     const text = lineText(line);
-    if (TOOL_EVENT.test(text) || TURN_BOUNDARY.test(text.trimStart())) {
-      insideAnswer = false;
+    const recap = RECAP_HEADING.test(text);
+    if (recap || TOOL_EVENT.test(text) || TURN_BOUNDARY.test(text.trimStart())) {
+      // A recap opens plain answer prose without the bullet that starts an ordinary response.
+      insideAnswer = recap;
       fence = undefined;
       output?.push(line);
       continue;
