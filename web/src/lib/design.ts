@@ -35,7 +35,7 @@ const STORAGE_KEY = "collie:design:v1";
  * index.css's @theme block, which is the stack index.html preloads. A device that never opens the
  * setting runs no JavaScript before its first paint.
  */
-export const SHIPPED_FONTS = ["system", "grotesk", "aldrich"] as const;
+export const SHIPPED_FONTS = ["system", "grotesk", "aldrich", "geist"] as const;
 
 export type ShippedFont = (typeof SHIPPED_FONTS)[number];
 
@@ -85,11 +85,12 @@ export function isDesignFont(value: string): boolean {
 export function fontClass(font: string): string {
   if (font === "system") return "font-system";
   if (font === "grotesk") return "font-grotesk";
+  if (font === "geist") return "font-geist";
   if (font.startsWith(OPERATOR_FONT_PREFIX)) return "font-operator";
   return "";
 }
 
-const FONT_CLASSES = ["font-system", "font-grotesk", "font-operator"] as const;
+const FONT_CLASSES = ["font-system", "font-grotesk", "font-geist", "font-operator"] as const;
 
 function load(): DesignPrefs {
   try {

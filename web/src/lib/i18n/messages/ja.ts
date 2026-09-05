@@ -150,6 +150,7 @@ export const ja: Dictionary = {
   "settings.typeface.note.grotesk": "Collieのロゴに合わせて設計されたフォントです。",
   "settings.typeface.note.aldrich": "ウェイトが1種類のみのため、太字も標準テキストと同じ太さで表示されます。",
   "settings.typeface.note.operator": "ホストの管理者が設定したフォントです。",
+  "settings.typeface.note.geist": "可変ウェイトに対応した幾何学的なサンセリフ体。",
 
   // --- settings.fonts ---
   "settings.fonts.title": "ターミナルフォント",

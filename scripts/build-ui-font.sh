@@ -10,11 +10,11 @@
 #   * SHIPPED faces are the ones the app can actually be set to — the Typeface card in Settings
 #     offers exactly these, and web/src/index.css declares exactly these. index.css MIRRORS the
 #     shipped list: a face is shipped when it has an @font-face block, a computed fallback twin and
-#     an entry in UI_FONT_URLS (web/src/lib/sw-routes.ts). Today: space-grotesk (the default) and
-#     aldrich. Adding one means all four edits, and web/src/fonts.test.ts fails until they agree.
+#     an entry in UI_FONT_URLS (web/src/lib/sw-routes.ts). Today: space-grotesk, aldrich (the
+#     default), and geist. Adding one means all four edits; web/src/fonts.test.ts pins them.
 #   * PLAYGROUND-ONLY auditions are candidates on disk that nothing in the app names. They exist so
 #     the "UI typeface" playground card can put a face beside the shipped ones at real sizes before
-#     anyone argues for it. Today: ibm-plex-sans, geist. An audition that never wins is deleted —
+#     anyone argues for it. Today: ibm-plex-sans. An audition that never wins is deleted —
 #     its .woff2 and its LICENSE go together.
 #
 # The app face was the maker's choice when this script was written; it is a per-device setting now

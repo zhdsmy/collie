@@ -154,6 +154,7 @@ export const de: Dictionary = {
   "settings.typeface.note.grotesk": "Eigene Collie-Schrift, abgestimmt auf das Logo.",
   "settings.typeface.note.aldrich": "Nur eine Schriftstärke: Fetter Text wird wie normaler Text dargestellt.",
   "settings.typeface.note.operator": "Vom Betreiber dieser Collie-Instanz hinterlegt.",
+  "settings.typeface.note.geist": "Geometrische Sans-Serif mit variablen Schriftstärken.",
 
   // --- settings.fonts ---
   "settings.fonts.title": "Terminal-Schrift",

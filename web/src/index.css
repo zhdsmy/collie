@@ -542,9 +542,44 @@
   line-gap-override: 4.22%;
 }
 
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/ui-geist-1.800-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Fallback";
+  src:
+    local("Arial"), local("Helvetica Neue"), local("Helvetica"),
+    local("Liberation Sans"), local("Arimo"), local("Roboto");
+  size-adjust: 103.03%;
+  ascent-override: 97.54%;
+  descent-override: 28.63%;
+  line-gap-override: 0%;
+}
+
+/* Official variable webfonts, pinned to their source revision. Loaded only when selected;
+ * Nerd Font Symbols remains first in the terminal stack for private-use icons. */
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/terminal-geist-mono-77f0563-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/terminal-geist-mono-77f0563-italic.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* ── The typeface setting: CSS owns every stack, JavaScript only swaps a class ───────────────────
  *
- * THE WHOLE MECHANISM IS THESE THREE BLOCKS. `public/theme-init.js` reads `collie:design:v1` before
+ * THE ROOT-CLASS BLOCKS BELOW OWN THIS SETTING. `public/theme-init.js` reads `collie:design:v1` before
  * first paint and adds ONE class to <html>; `lib/design.ts` swaps it at runtime. Neither ever holds
  * a font list, sets a family, or writes a custom property — because a font stack in JavaScript is a
  * second source of truth for something this file already states, and the two would drift.
@@ -559,6 +594,13 @@
  *
  * Specificity, since it is load-bearing: `:root.font-*` is (0,2,0) and unlayered, and the @theme
  * block emits (0,1,0) inside Tailwind's `theme` layer. These win on both counts. */
+:root.font-geist {
+  --font-sans:
+    "Geist", "Geist Fallback", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --default-font-family: var(--font-sans);
+}
+
 :root.font-system {
   /* No webfont, no stand-in, no bytes: the phone's own interface face. This is the same stack
      --font-content uses, spelled out rather than aliased — the two are equal today by coincidence

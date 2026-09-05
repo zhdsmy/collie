@@ -34,6 +34,25 @@ beforeEach(() => {
 });
 
 describe("TypefaceControl", () => {
+  it("persists Geist independently of the terminal face and clears its class on switching", async () => {
+    config({});
+    localStorage.setItem("collie:display-prefs:v4", JSON.stringify({ fontFamily: "courier" }));
+    const user = userEvent.setup();
+    const { unmount } = render(<TypefaceControl />);
+    await user.selectOptions(await screen.findByLabelText("Family"), "geist");
+    expect(document.documentElement).toHaveClass("font-geist");
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ font: "geist" });
+    expect(JSON.parse(localStorage.getItem("collie:display-prefs:v4")!).fontFamily).toBe("courier");
+    expect(screen.getByText("Geometric sans serif with variable weights.")).toBeInTheDocument();
+    unmount();
+    __resetDesign();
+    render(<TypefaceControl />);
+    const select = await screen.findByLabelText("Family");
+    expect(select).toHaveValue("geist");
+    await user.selectOptions(select, "grotesk");
+    expect(document.documentElement).toHaveClass("font-grotesk");
+    expect(document.documentElement).not.toHaveClass("font-geist");
+  });
   it("offers the shipped faces, with Space Grotesk selected and no class on the root", async () => {
     config({});
     render(<TypefaceControl />);
@@ -43,6 +62,7 @@ describe("TypefaceControl", () => {
       "System default",
       "Space Grotesk",
       "Aldrich",
+      "Geist",
     ]);
     expect(select).toHaveValue("aldrich");
     // The default wears no class — that is what keeps JavaScript off the first-paint path for a
@@ -84,6 +104,7 @@ describe("TypefaceControl", () => {
       "System default",
       "Space Grotesk",
       "Aldrich",
+      "Geist",
       "Departure Mono",
     ]);
 
@@ -104,7 +125,7 @@ describe("TypefaceControl", () => {
     render(<TypefaceControl />);
 
     const select = await screen.findByLabelText("Family");
-    expect(within(select).getAllByRole("option")).toHaveLength(3);
+    expect(within(select).getAllByRole("option")).toHaveLength(4);
   });
 
   // The offline / deleted-row case. The select must not silently show its first option ("System

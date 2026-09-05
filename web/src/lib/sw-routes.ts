@@ -111,12 +111,18 @@ export const DEFAULT_UI_FONT_URL = "/fonts/ui-aldrich-1.002-latin.woff2";
  * from the network like any other API call, and are neither precached nor swept. A URL added here
  * that does not sit under `/fonts/` would be swept out of the font cache on every activate.
  */
-export const UI_FONT_URLS = ["/fonts/ui-space-grotesk-2.000-latin.woff2", DEFAULT_UI_FONT_URL] as const;
+export const UI_FONT_URLS = [
+  "/fonts/ui-space-grotesk-2.000-latin.woff2",
+  DEFAULT_UI_FONT_URL,
+  "/fonts/ui-geist-1.800-latin.woff2",
+] as const;
 
 export const FONT_URLS = [
   "/fonts/nerd-symbols-3.5.0-pua.woff2",
   "/fonts/nerd-symbols-3.5.0-spua.woff2",
   ...UI_FONT_URLS,
+  "/fonts/terminal-geist-mono-77f0563-normal.woff2",
+  "/fonts/terminal-geist-mono-77f0563-italic.woff2",
 ] as const;
 
 /**

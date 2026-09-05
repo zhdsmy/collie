@@ -149,6 +149,7 @@ export const ko: Dictionary = {
   "settings.typeface.note.grotesk": "Collie 로고 디자인에 맞춰 구성된 전용 글꼴입니다.",
   "settings.typeface.note.aldrich": "두께가 한 종류뿐이어서 굵은 글씨도 일반 텍스트와 동일하게 표시됩니다.",
   "settings.typeface.note.operator": "서버 관리자가 직접 추가한 글꼴입니다.",
+  "settings.typeface.note.geist": "가변 굵기를 지원하는 기하학적 산세리프체.",
 
   // --- settings.fonts ---
   "settings.fonts.title": "터미널 글꼴",

@@ -63,6 +63,7 @@ export interface DisplayPrefs {
  *  invariants that a typed name cannot. */
 export const FONT_FAMILIES = [
   "system",
+  "geist",
   "jetbrains",
   "cascadia",
   "menlo",
@@ -100,6 +101,7 @@ const TAIL =
 /** family key → `font-family` value, or undefined for "system" (leave the stylesheet alone). */
 export const FONT_STACKS = {
   system: undefined,
+  geist: `${NERD}, "Geist Mono", ${TAIL}`,
   // Bundled with many editors and shipped by several Linux distributions; already first in the
   // app's own stack, so this is "prefer it, and say so".
   jetbrains: `${NERD}, "JetBrains Mono", ${TAIL}`,

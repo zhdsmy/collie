@@ -166,6 +166,7 @@ export const en = {
   // app suppresses synthesized bold, so bold text under it is not heavier than the rest.
   "settings.typeface.note.aldrich": "One weight, so bold text looks the same as regular.",
   "settings.typeface.note.operator": "Added by this collie's operator.",
+  "settings.typeface.note.geist": "Geometric sans serif with variable weights.",
 
   // --- settings.fonts (the terminal face: the mirror's size and the draft field's; NOT the app's own typeface) ---
   "settings.fonts.title": "Terminal font",

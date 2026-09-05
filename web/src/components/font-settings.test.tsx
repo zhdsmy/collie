@@ -10,6 +10,22 @@ import { FontSettingsControl } from "./font-settings";
 
 const STORAGE_KEY = "collie:display-prefs:v4";
 
+it("offers and persists Geist Mono without changing the interface font", async () => {
+  localStorage.setItem("collie:design:v1", JSON.stringify({ font: "aldrich" }));
+  const user = userEvent.setup();
+  const { container, unmount } = render(<FontSettingsControl />);
+  await user.selectOptions(screen.getByLabelText("Family"), "geist");
+  expect(screen.getByRole("option", { name: "Geist Mono" })).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).fontFamily).toBe("geist");
+  expect(JSON.parse(localStorage.getItem("collie:design:v1")!).font).toBe("aldrich");
+  expect(container.querySelector('[aria-hidden="true"][style]')).toHaveStyle({
+    fontFamily: '"Nerd Font Symbols", "Geist Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
+  });
+  unmount();
+  render(<FontSettingsControl />);
+  expect(screen.getByLabelText("Family")).toHaveValue("geist");
+});
+
 beforeEach(() => localStorage.clear());
 
 const decreaseDraft = () => screen.getByRole("button", { name: "Decrease draft text size" });

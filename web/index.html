@@ -116,6 +116,29 @@
         descent-override: 18.52%;
         line-gap-override: 4.22%;
       }
+      @font-face {
+        font-family: "Geist";
+        src: url("/fonts/ui-geist-1.800-latin.woff2") format("woff2");
+        font-weight: 400 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Geist Fallback";
+        src:
+          local("Arial"), local("Helvetica Neue"), local("Helvetica"),
+          local("Liberation Sans"), local("Arimo"), local("Roboto");
+        size-adjust: 103.03%;
+        ascent-override: 97.54%;
+        descent-override: 28.63%;
+        line-gap-override: 0%;
+      }
+      :root.font-geist {
+        --font-sans:
+          "Geist", "Geist Fallback", ui-sans-serif, system-ui, -apple-system,
+          "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --default-font-family: var(--font-sans);
+      }
       .boot-splash {
         position: fixed;
         inset: 0;

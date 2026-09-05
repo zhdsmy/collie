@@ -1,5 +1,6 @@
 import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import { runInNewContext } from "node:vm";
 
 import {
   DEFAULT_FONT,
@@ -11,7 +12,7 @@ import {
 import { acceptOperatorFonts, operatorFontCss, operatorFontUrl } from "@/lib/operator-fonts";
 import { DEFAULT_UI_FONT_URL, FONT_URLS, UI_FONT_URLS } from "@/lib/sw-routes";
 
-// Collie ships four webfonts — two Nerd Font symbol subsets and two UI typefaces — and the design
+// Collie ships symbol, interface and terminal webfonts, and the design
 // rests on facts that are silent when broken: the stylesheet, the service worker and the disk agree
 // on which files exist; the symbol faces stay range-restricted so they stay lazy; the UI face is
 // preloaded and metric-matched so its swap moves nothing; and none of them re-enters the precache.
@@ -113,7 +114,7 @@ describe("the UI typefaces", () => {
   // splash render in the system font and the app change voice on hand-off — which is the exact bug
   // this splash block exists to prevent, just for a different reader.
   it("re-declares every shipped face for the pre-CSS boot splash", () => {
-    for (const family of ["Space Grotesk", "Aldrich"]) {
+    for (const family of ["Space Grotesk", "Aldrich", "Geist"]) {
       expect(html).toContain(`font-family: "${family}";`);
       expect(html).toContain(`font-family: "${family} Fallback";`);
     }
@@ -124,6 +125,7 @@ describe("the UI typefaces", () => {
   it("mirrors the typeface root classes into the boot splash", () => {
     expect(html).toContain(":root.font-system");
     expect(html).toContain(":root.font-grotesk");
+    expect(html).toContain(":root.font-geist");
   });
 
   it("is small enough to sit on the critical path", () => {
@@ -238,6 +240,15 @@ describe("operator fonts stay off the shipped path", () => {
 describe("theme-init.js and lib/design.ts agree", () => {
   const init = read("public/theme-init.js");
   const design = read("src/lib/design.ts");
+
+  it("restores Geist before the application bundle runs", () => {
+    const classes: string[] = [];
+    runInNewContext(init, {
+      document: { documentElement: { classList: { add: (name: string) => classes.push(name) } } },
+      localStorage: { getItem: (key: string) => key === DESIGN_STORAGE_KEY ? '{"font":"geist"}' : null },
+    });
+    expect(classes).toEqual(["font-geist"]);
+  });
 
   it("uses the same storage key", () => {
     expect(DESIGN_STORAGE_KEY).toBe("collie:design:v1");

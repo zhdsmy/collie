@@ -140,6 +140,7 @@ export const zh: Dictionary = {
   "settings.typeface.note.grotesk": "Collie 定制无衬线体，匹配产品标识风格。",
   "settings.typeface.note.aldrich": "仅提供一种字重，粗体文本显示效果与常规文本相同。",
   "settings.typeface.note.operator": "由当前实例管理员配置添加。",
+  "settings.typeface.note.geist": "几何无衬线体，支持可变字重。",
 
   // --- settings.fonts ---
   "settings.fonts.title": "终端字体",

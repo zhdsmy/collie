@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 // only it has a message key. A font is named the same in every locale.
 
 const FAMILY_LABELS = {
+  geist: "Geist Mono",
   jetbrains: "JetBrains Mono",
   cascadia: "Cascadia Mono",
   menlo: "Menlo / SF Mono",
