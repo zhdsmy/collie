@@ -153,6 +153,6 @@ describe("Codex answer reflow", () => {
     expect(rows.map(lineText)).toEqual(["• Answer", rule, recap, "› Query", "  User text"]);
     expect(rows[1]!.noWrap).toBe(true);
     expect(rows[2]!.noWrap).toBe(true);
-    expect(rows[3]!.segments[0]!.mobileTransparentBg).toBe(true);
+    expect(rows[3]!.surface).toEqual({ kind: "user", background: "#1c1c1c" });
   });
 });

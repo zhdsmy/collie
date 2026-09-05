@@ -592,18 +592,15 @@ describe("Codex mobile display cleanup", () => {
     expect(lineText(clipped[0]!)).toContain("Worked for 3m 12s");
   });
 
-  it("marks the fixture's submitted-message fill, and leaves both diff rows alone", () => {
-    const marked = decoratedFixture().filter((line) =>
-      line.segments.some((segment) => segment.mobileTransparentBg),
-    );
+  it("marks the fixture's user and diff surfaces while preserving their ANSI segments", () => {
+    const lines = fixtureLines(FIXTURE);
+    const decorated = decorateCodexDisplay(lines);
+    const marked = decorated.filter((line) => line.surface?.kind === "user");
     expect(marked).toHaveLength(1);
     expect(lineText(marked[0]!)).toContain("move the screenshots across to the new blog post");
-
-    const diffBackgrounds = decoratedFixture()
-      .flatMap((line) => line.segments)
-      .filter((segment) => segment.bg && segment.bg !== "rgb(240,240,240)")
-      .map((segment) => segment.bg);
-    expect(diffBackgrounds).toEqual(["rgb(33,58,43)", "rgb(74,34,34)"]);
+    expect(decorated.filter((line) => line.surface?.kind === "diff").map((line) => line.surface?.background))
+      .toEqual(["rgb(33,58,43)", "rgb(74,34,34)"]);
+    decorated.forEach((line, index) => expect(line.segments).toBe(lines[index]!.segments));
   });
 
   it("changes not one byte of the fixture's visible text", () => {
@@ -637,15 +634,39 @@ describe("Codex mobile display cleanup", () => {
     expect(decorated!.noWrap).toBeUndefined();
   });
 
-  it("marks only Codex's observed user-message fill for mobile transparency", () => {
-    const user = `${String.fromCharCode(27)}[48;2;240;240;240m\u203a submitted message${" ".repeat(40)}${String.fromCharCode(27)}[0m`;
-    const diff = `${String.fromCharCode(27)}[48;2;33;58;43m+ semantic diff${String.fromCharCode(27)}[0m`;
-    const [userLine, diffLine] = decorateCodexDisplay(splitLines(parseAnsi(`${user}\n${diff}`)));
+  it("recognizes dim submitted markers, empty paragraphs and continuations, not the live composer", () => {
+    const esc = String.fromCharCode(27);
+    const text = [
+      `${esc}[1;2m› ${esc}[0mfirst paragraph`,
+      "  continued",
+      "",
+      "  - a user list item",
+      "",
+      "• Answer",
+      "  answer continuation",
+      "",
+      `${esc}[1m› ${esc}[0mlive draft`,
+      "  draft continuation",
+    ].join("\n");
+    const lines = splitLines(parseAnsi(text));
+    const decorated = decorateCodexDisplay(lines);
+    expect(decorated.map((line) => line.surface?.kind)).toEqual([
+      "user", "user", "user", "user", undefined, undefined, undefined, undefined, undefined, undefined,
+    ]);
+    expect(decorated.map(lineText)).toEqual(lines.map(lineText));
+    expect(lines.every((line) => !line.surface)).toBe(true);
+  });
 
-    expect(userLine!.segments[0]!.bg).toBe("rgb(240,240,240)");
-    expect(userLine!.segments[0]!.style.backgroundColor).toBe("rgb(240,240,240)");
-    expect(userLine!.segments[0]!.mobileTransparentBg).toBe(true);
-    expect(diffLine!.segments[0]!.bg).toBe("rgb(33,58,43)");
-    expect(diffLine!.segments[0]!.mobileTransparentBg).toBeUndefined();
+  it("keeps ANSI metadata unchanged for both legacy and current diff backgrounds", () => {
+    const esc = String.fromCharCode(27);
+    const text = [
+      `${esc}[48;2;240;240;240m› submitted message${esc}[0m`,
+      `${esc}[48;2;33;58;43m+ added${esc}[0m`,
+      `${esc}[48;2;74;34;29m- removed${esc}[0m`,
+    ].join("\n");
+    const lines = splitLines(parseAnsi(text));
+    const decorated = decorateCodexDisplay(lines);
+    expect(decorated.map((line) => line.surface?.background)).toEqual(["#1c1c1c", "rgb(33,58,43)", "rgb(74,34,29)"]);
+    decorated.forEach((line, index) => expect(line.segments).toBe(lines[index]!.segments));
   });
 });

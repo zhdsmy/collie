@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Paint Codex diff and submitted-message backgrounds as continuous full-width rectangles with balanced gutters, retaining inline diff highlights and a subtle gray message surface in both themes.
+
 ## [1.5.1+collie.4] - 2026-09-05
 
 - Reflow Codex Conversation recap paragraphs as well as regular answers, fixing terminal-wrap fragments while preserving recap separators, structured output, and the Wrap toggle. ([a0ccb07](https://github.com/zhdsmy/collie/commit/a0ccb07))

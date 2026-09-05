@@ -57,6 +57,8 @@ export interface StyledLine {
   segments: AnsiSegment[];
   /** Keep this known terminal-width border on one visual row when the mirror wraps. */
   noWrap?: true;
+  /** Adapter-owned, full-row surface; ANSI token highlights remain above its base fill. */
+  surface?: { kind: "diff" | "user"; background: string };
 }
 
 /** A run of raw terminal output. Renders as verbatim styled text (the T1 mirror). */

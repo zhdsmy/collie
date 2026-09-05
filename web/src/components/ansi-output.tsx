@@ -16,6 +16,7 @@ import {
   type WizardModel,
 } from "@/lib/blocks";
 import { tableRuns, type TableRun } from "@/lib/table-run";
+import { CODEX_USER_MESSAGE_BG } from "@/lib/harness/codex/display";
 import { MIRROR_SPACE, MIRROR_INVERT, styleFor } from "@/components/mirror-space";
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks } from "@/lib/links";
@@ -118,19 +119,12 @@ const NO_BLOCK_RUNS: readonly (readonly TableRun[])[] = Object.freeze([]);
 const LINK_CLASS =
   "underline decoration-1 underline-offset-2 break-all cursor-pointer py-[0.35em]";
 
-// A segment marked `mobileTransparentBg` hands its ANSI fill to a custom property instead of the
-// inline `background-color`, and `.terminal-mobile-transparent-bg` in index.css paints it: on a
-// desktop from the property, on a phone not at all. Inline styles beat a class, so the alternative
-// spelling is `!important` in the stylesheet. Every other segment takes the plain inline style, and
-// the other mirror surface (the statusline strip) calls styleFor directly and is unaffected.
-function segmentStyle(s: AnsiSegment): CSSProperties {
+// Paint the base once, below dim line numbers and across wrapped rows. Keep stronger token fills.
+function segmentStyle(s: AnsiSegment, surface: StyledLine["surface"]): CSSProperties {
   const style = styleFor(s);
-  if (!s.mobileTransparentBg) return style;
-  const { backgroundColor, ...rest } = style;
-  // SAFETY: a CSS custom property is a valid style key at runtime; React passes any `--*` key
-  // straight to the CSSOM. CSSProperties has no index signature for it, so the cast is the only
-  // spelling. The value is the backgroundColor just removed from the same object.
-  return { ...rest, "--terminal-seg-bg": backgroundColor } as CSSProperties;
+  if (!surface || (s.bg !== surface.background && !(surface.kind === "user" && s.bg === CODEX_USER_MESSAGE_BG))) return style;
+  const { backgroundColor: _backgroundColor, ...rest } = style;
+  return rest;
 }
 
 function preClass(wrap: boolean, className?: string): string {
@@ -139,7 +133,7 @@ function preClass(wrap: boolean, className?: string): string {
     MIRROR_SPACE,
     MIRROR_INVERT,
     wrap
-      ? "whitespace-pre-wrap break-words"
+      ? "min-w-0 w-full max-w-full whitespace-pre-wrap break-words"
       : // Horizontal pan for wide TUI tables. `overflow-x-auto` forces `overflow-y` to compute to
         // `auto` (CSS overflow quirk), and a flex item with non-visible overflow may shrink below its
         // content height — the <pre> then becomes the vertical scroller and ChatMessageList's
@@ -410,8 +404,7 @@ export const AnsiOutput = memo(function AnsiOutput({
       return (
         <span
           key={si}
-          style={segmentStyle(s)}
-          className={s.mobileTransparentBg ? "terminal-mobile-transparent-bg" : undefined}
+          style={segmentStyle(s, line.surface)}
         >
           {renderSegment(s.text, segStart)}
         </span>
@@ -427,7 +420,13 @@ export const AnsiOutput = memo(function AnsiOutput({
     return (
       <Fragment key={li}>
         {li > 0 && lead ? "\n" : null}
-        {content}
+        {line.surface ? (
+          <span
+            data-terminal-surface={line.surface.kind}
+            className={cn("inline-block min-w-full min-h-[1lh] align-bottom", wrap && "w-full max-w-full")}
+            style={{ backgroundColor: line.surface.background }}
+          >{content}</span>
+        ) : content}
       </Fragment>
     );
   };

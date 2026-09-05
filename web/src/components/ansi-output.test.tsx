@@ -151,33 +151,48 @@ describe("mirror line wrapping", () => {
     expect(pannedPre.querySelector("span.overflow-hidden")).toBeNull();
     expect(pannedPre.textContent).toBe(`${border}\n`);
   });
-  it("clips Codex's labelled rules and tags only its terminal-wide user fill for mobile transparency", () => {
+  it("paints Codex user/diff surfaces without changing text, links, or find offsets", () => {
     const user = `${ESC}[48;2;240;240;240m› submitted message${" ".repeat(32)}${ESC}[0m`;
-    const diff = `${ESC}[48;2;33;58;43m+ semantic diff${ESC}[0m`;
+    const diff = `${ESC}[48;2;33;58;43m ${ESC}[2m29 ${ESC}[22m+ see https://herdr.dev/docs${ESC}[0m`;
     const rule = `─ Worked for 31m ${"─".repeat(32)}`;
-    const { container } = render(<AnsiOutput text={`${user}\n${diff}\n${rule}\n`} agent="codex" />);
-    // SAFETY: the marked segment is a <span> the renderer just produced, so querySelector on the
-    // class it only ever sets on a span returns an HTMLElement or null; the assertions below
-    // dereference it and would fail loudly on null.
-    const userSpan = container.querySelector(".terminal-mobile-transparent-bg") as HTMLElement;
+    const text = `${user}\n${diff}\n${rule}\n`;
+    const { container } = render(<AnsiOutput text={text} agent="codex" query="docs" />);
+    const userRow = container.querySelector<HTMLElement>('[data-terminal-surface="user"]')!;
+    const diffRow = container.querySelector<HTMLElement>('[data-terminal-surface="diff"]')!;
+    expect(userRow.style.backgroundColor).toBe("rgb(28, 28, 28)");
+    expect(userRow.firstElementChild?.getAttribute("style") ?? "").not.toContain("background-color");
+    expect(diffRow.style.backgroundColor).toBe("rgb(33, 58, 43)");
+    expect(diffRow.querySelector('[style*="opacity"]')?.getAttribute("style")).not.toContain("background-color");
+    expect(diffRow.querySelector("a")?.getAttribute("href")).toBe("https://herdr.dev/docs");
+    expect(diffRow.querySelector("[data-find-match]")?.textContent).toBe("docs");
+    expect(container.querySelector("span.overflow-hidden")?.textContent).toBe(rule);
+    expect(container.querySelector("pre")?.textContent).toBe(`› submitted message${" ".repeat(32)}\n 29 + see https://herdr.dev/docs\n${rule}\n`);
+  });
 
-    expect(userSpan.textContent).toContain("submitted message");
-    // Desktop keeps Codex's native fill, carried in the custom property the stylesheet reads. The
-    // inline background-color is gone on purpose: a class cannot beat one without `!important`.
-    expect(userSpan.style.backgroundColor).toBe("");
-    expect(userSpan.style.getPropertyValue("--terminal-seg-bg")).toBe("rgb(240,240,240)");
-    const diffSpan = [...container.querySelectorAll("span")].find((node) =>
-      node.textContent?.includes("semantic diff"),
-    )!;
-    expect(diffSpan.classList.contains("terminal-mobile-transparent-bg")).toBe(false);
-    expect(diffSpan.getAttribute("style")).toContain("rgb(33, 58, 43)");
-    expect(container.querySelector("span.inline-block")?.textContent).toBe(rule);
+  it.each([true, false])("fills short, blank and wrapped diff rows, retaining inline highlights (wrap=%s)", (wrap) => {
+    const base = `${ESC}[48;2;33;58;43m`;
+    const text = [
+      `${base}+ ${"long addition ".repeat(20)}${ESC}[0m`,
+      `${base} ${ESC}[0m`,
+      `${base}+ base ${ESC}[48;2;50;100;60mchanged${base} tail${ESC}[0m`,
+    ].join("\n");
+    const { container } = render(<AnsiOutput text={text} agent="codex" wrap={wrap} />);
+    const rows = container.querySelectorAll<HTMLElement>('[data-terminal-surface="diff"]');
+    expect(rows).toHaveLength(3);
+    for (const row of rows) {
+      expect(row.className).toContain("min-w-full");
+      expect(row.className).toContain("align-bottom");
+      expect(row.style.backgroundColor).toBe("rgb(33, 58, 43)");
+    }
+    expect(rows[2]!.querySelector('[style*="background-color"]')?.textContent).toBe("changed");
+    expect(rows[2]!.querySelector('[style*="background-color"]')?.getAttribute("style")).toContain("rgb(50, 100, 60)");
   });
 
   it("does not suppress the same ANSI background for an unknown agent", () => {
     const user = `${ESC}[48;2;240;240;240mordinary terminal output${ESC}[0m`;
     const { container } = render(<AnsiOutput text={user} agent="shell" />);
-    expect(container.querySelector(".terminal-mobile-transparent-bg")).toBeNull();
+    expect(container.querySelector("[data-terminal-surface]")).toBeNull();
+    expect(container.querySelector("pre span")?.getAttribute("style")).toContain("rgb(240, 240, 240)");
   });
 });
 

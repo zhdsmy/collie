@@ -26,31 +26,52 @@ const LABELLED_RULE_ROW = new RegExp(
     `([${RULE}])\\2{${MIN_TRAILING_RULE_RUN - 1},}\\s*$`, // a rule to the row's end
 );
 
-// Codex fills submitted user-message rows to the terminal edge with this truecolor background.
-// The mirror is authored in dark space and inverted in the app's light theme, so #f0f0f0 becomes
-// #0f0f0f: a solid black 195-column bar on a phone. Keep the desktop TUI presentation intact and
-// mark only this exact, observed fill for the renderer's mobile-width transparency rule. Semantic
-// diff backgrounds use different colours and remain untouched.
-const CODEX_USER_MESSAGE_BG = "rgb(240,240,240)";
+// Legacy Codex user fill, replaced only on the message surface.
+export const CODEX_USER_MESSAGE_BG = "rgb(240,240,240)";
+// Dark-space gray also becomes a gentle gray after the light mirror's inversion.
+const USER_SURFACE = { kind: "user", background: "#1c1c1c" } as const;
+const DIFF_BACKGROUNDS = new Set(["rgb(33,58,43)", "rgb(74,34,29)", "rgb(74,34,34)"]);
 
-/** Presentation-only pass over Codex's raw lines: clip its labelled separators, and mark its
- *  user-message fill for mobile transparency. Not one byte of visible text changes. The input array
- *  is returned as-is when nothing matched, so a screen Codex does not paint this way stays
- *  identical, object for object. */
+function submittedStart(line: StyledLine): boolean {
+  if (!/^\u203a\s+\S/.test(lineText(line))) return false;
+  const marker = line.segments.find((segment) => segment.text.includes("\u203a"));
+  // The live composer uses a bold but non-dim marker. Only history echoes dim it.
+  return Boolean((marker?.bold && marker.dim) || marker?.bg === CODEX_USER_MESSAGE_BG);
+}
+
+function submittedRows(lines: StyledLine[]): Set<StyledLine> {
+  const rows = new Set<StyledLine>();
+  for (let i = 0; i < lines.length; i++) {
+    if (!submittedStart(lines[i]!)) continue;
+    let end = i + 1;
+    while (end < lines.length && /^(?: {2}|\s*$)/.test(lineText(lines[end]!))) {
+      if (lines[end]!.segments.some((segment) => segment.bg && DIFF_BACKGROUNDS.has(segment.bg))) break;
+      end++;
+    }
+    // Empty paragraphs belong to the message; its trailing separator does not.
+    while (end > i + 1 && lineText(lines[end - 1]!).trim() === "") end--;
+    for (; i < end; i++) rows.add(lines[i]!);
+    i--;
+  }
+  return rows;
+}
+
+/** Mark full-row diff/user surfaces and clip labelled rules without changing visible text.
+ * Unmatched screens retain their original array and line identities. */
 export function decorateCodexDisplay(lines: StyledLine[]): StyledLine[] {
+  const submitted = submittedRows(lines);
   let changedLines = false;
   const decorated = lines.map((line) => {
     const noWrap = line.noWrap || LABELLED_RULE_ROW.test(lineText(line));
-    let changedSegments = false;
-    const segments = line.segments.map((segment) => {
-      if (segment.bg !== CODEX_USER_MESSAGE_BG || segment.mobileTransparentBg) return segment;
-      changedSegments = true;
-      return { ...segment, mobileTransparentBg: true as const };
-    });
+    const background = line.segments.find((segment) => segment.text.length > 0)?.bg;
+    const user = submitted.has(line) || line.segments.some((segment) => segment.bg === CODEX_USER_MESSAGE_BG);
+    const surface = user ? USER_SURFACE
+      : background && DIFF_BACKGROUNDS.has(background) ? { kind: "diff" as const, background }
+      : line.surface;
 
-    if (!changedSegments && noWrap === Boolean(line.noWrap)) return line;
+    if (surface === line.surface && noWrap === Boolean(line.noWrap)) return line;
     changedLines = true;
-    const next: StyledLine = { ...line, segments: changedSegments ? segments : line.segments };
+    const next: StyledLine = { ...line, surface };
     if (noWrap) next.noWrap = true;
     return next;
   });
