@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Reclaim unused mobile space by applying the top safe-area inset once across connection/update banners and the header, trimming Codex's removed-composer spacer rows, and reducing the terminal tail padding to 4px without changing the bottom safe area.
+## [1.5.1+collie.14] - 2026-09-06
+
+- Reclaim unused mobile space by applying the top safe-area inset once across connection/update banners and the header, trimming Codex's removed-composer spacer rows, and reducing the terminal tail padding to 4px without changing the bottom safe area. ([cf19b26](https://github.com/zhdsmy/collie/commit/cf19b26))
 
 ## [1.5.1+collie.13] - 2026-09-05
 
