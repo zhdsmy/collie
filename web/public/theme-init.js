@@ -47,6 +47,7 @@
     if (!raw) return;
     var d = JSON.parse(raw);
     if (!d || typeof d !== "object") return;
+    if (d.theme === "animal-island") root.classList.add("theme-island");
     // The closed list, and the whole of it. `aldrich` is the default and wears NO class — no class
     // means the --font-sans already in index.css, which is the stack index.html preloads. Anything
     // else, including an `op:` value, falls through and leaves the element bare.

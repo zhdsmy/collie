@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 import { asJsonObject, asJsonString, parseJsonObject, type JsonValue } from "@/lib/json";
 import { OPERATOR_FONT_PREFIX, type OperatorFontFace } from "@/lib/operator-fonts";
 
-// The device's own look — today one field, `font`, and the shape is an OBJECT on purpose.
+// The device's own look — typeface and visual theme share one per-device record.
 //
 // WHY AN OBJECT FOR ONE FIELD. This is the seed of theming: an accent colour, a density, a corner
 // radius are all the same kind of decision and all belong in the same key. A bare string here would
@@ -42,9 +42,13 @@ export type ShippedFont = (typeof SHIPPED_FONTS)[number];
 /** The face a device gets before it says otherwise. */
 export const DEFAULT_FONT: ShippedFont = "aldrich";
 
+export type DesignTheme = "classic" | "animal-island";
+
 export interface DesignPrefs {
   /** A {@link ShippedFont}, or `op:<basename>`. Never validated by its type — always by a predicate. */
   font: string;
+  /** Absence is classic, keeping existing preferences and first paint unchanged. */
+  theme?: "animal-island";
   /**
    * The accepted face behind an `op:` choice, mirrored here at the moment it is chosen.
    *
@@ -122,6 +126,7 @@ export function parseDesignPrefs(raw: string): DesignPrefs {
   const stored = asJsonString(doc.font);
   const font = stored !== undefined && isDesignFont(stored) ? stored : DEFAULT_FONT;
   const next: DesignPrefs = { font };
+  if (doc.theme === "animal-island") next.theme = "animal-island";
   const face = readOperatorFace(doc.operatorFont);
   if (face !== undefined) next.operatorFont = face;
   return next;
@@ -170,6 +175,22 @@ export function designPrefs(): DesignPrefs {
   return prefs;
 }
 
+function applyDesignTheme(): void {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.toggle("theme-island", prefs.theme === "animal-island");
+}
+
+export function setDesignTheme(theme: DesignTheme): void {
+  if ((prefs.theme ?? "classic") === theme) return;
+  const next: DesignPrefs = { ...prefs };
+  if (theme === "animal-island") next.theme = theme;
+  else delete next.theme;
+  prefs = next;
+  persist();
+  applyDesignTheme();
+  for (const fn of listeners) fn();
+}
+
 /**
  * Choose a face. `face` is the accepted operator row when `font` is an `op:` value, and is what
  * gets mirrored into storage for the next cold load (see {@link DesignPrefs.operatorFont}).
@@ -177,6 +198,7 @@ export function designPrefs(): DesignPrefs {
 export function setDesignFont(font: string, face?: OperatorFontFace): void {
   if (!isDesignFont(font)) return;
   const next: DesignPrefs = { font };
+  if (prefs.theme !== undefined) next.theme = prefs.theme;
   if (face !== undefined) next.operatorFont = face;
   // A shipped choice drops the mirror: keeping a face nobody is using would leave the next cold load
   // injecting an `@font-face` for a font it does not render.
@@ -213,6 +235,7 @@ export function useDesignPrefs(): DesignPrefs {
  */
 export function initDesign(): void {
   applyFontClass(prefs.font);
+  applyDesignTheme();
 }
 
 /**
@@ -226,6 +249,7 @@ export function initDesign(): void {
 export function __resetDesign(): void {
   prefs = load();
   applyFontClass(prefs.font);
+  applyDesignTheme();
   for (const fn of listeners) fn();
 }
 
