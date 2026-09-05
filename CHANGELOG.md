@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Move pane switching into a header icon, remove the bottom handle and Agent status band, and show the send target below the statusline only for multi-host panes, including while typing.
+## [1.5.1+collie.10] - 2026-09-05
+
+- Move pane switching into a header icon, remove the bottom handle and Agent status band, and show the send target below the statusline only for multi-host panes, including while typing. ([20213e4](https://github.com/zhdsmy/collie/commit/20213e4))
 
 ## [1.5.1+collie.9] - 2026-09-05
 
