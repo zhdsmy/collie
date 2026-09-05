@@ -25,6 +25,11 @@ mark it superseded and write the next one.
 
 ## Versioning — MANDATORY
 
+**Downstream publishing override (`zhdsmy/collie`): commits and annotated version tags only.**
+Do not create GitHub Releases or restore `.github/workflows/` during upstream merges unless the
+operator explicitly requests it. This overrides the upstream automatic Release-publishing
+assumptions below; version consistency, CHANGELOG, build and test requirements still apply.
+
 Collie is **SemVer**ed, and the version is **enforced**, so it never silently drifts.
 
 **The version lives in three files that must always agree, plus a matching CHANGELOG entry:**

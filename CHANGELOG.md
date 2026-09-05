@@ -25,6 +25,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- Remove repository GitHub Actions workflows; downstream versions are distributed as tags without GitHub Releases.
+- Remove previously published GitHub Releases and their attached binaries while retaining version tags.
+
 ## [1.5.0+collie.7] - 2026-09-05
 
 ### Fixed
