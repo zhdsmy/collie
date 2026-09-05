@@ -18,11 +18,14 @@ import {
 import type { AnsiSegment } from "@/lib/ansi";
 import { lineText, type StyledLine } from "@/lib/blocks";
 import { styleFor } from "@/components/mirror-space";
+import { useLocale } from "@/hooks/use-locale";
+import { t } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
 const CODEX_FIELDS: { pattern: RegExp; icon: LucideIcon }[] = [
-  { pattern: /^(?:Context|Ctx) (\d+%(?: used)?)(?: left)?$/, icon: Gauge },
+  { pattern: /^(?:Context|Ctx) (\d+%)$/, icon: Gauge },
   { pattern: /^Ready$/, icon: CircleCheck },
   { pattern: /^Working$/, icon: Hourglass },
   { pattern: /^Approve(?: (?:for )?me)?$/, icon: ShieldCheck },
@@ -58,7 +61,64 @@ function StyledText({ segments }: { segments: AnsiSegment[] }) {
   ));
 }
 
+function ContextField({ segments, value, remaining }: {
+  segments: AnsiSegment[];
+  value: string;
+  remaining: boolean;
+}) {
+  const { locale } = useLocale();
+  const percent = Number.parseInt(value, 10);
+  const used = remaining ? 100 - percent : percent;
+  const label = t(remaining ? "statusline.context.remainingAria" : "statusline.context.usedAria", { percent: value });
+  const shortLabel = t(remaining ? "statusline.context.remainingShort" : "statusline.context.usedShort");
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none"
+    >
+      <span
+        aria-hidden="true"
+        data-status-icon="context"
+        data-value={percent}
+        data-used={used}
+        className="size-[12px] shrink-0 rounded-full"
+        style={{
+          // This strip is inverted in light mode: keep ring paint in the mirror's dark space.
+          color: used >= 95 ? "var(--ansi-9)" : used >= 80 ? "var(--ansi-11)" : "#fafafa",
+          background: `conic-gradient(currentColor ${percent}%, rgb(255 255 255 / 22%) 0)`,
+          WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0)",
+          mask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0)",
+        }}
+      />
+      <span
+        aria-hidden="true"
+        className={cn("inline-flex items-center gap-0.5", ["zh", "ja", "ko"].includes(locale) && "flex-row-reverse")}
+      >
+        <span className="inline-block w-[4ch] text-right tabular-nums">
+          <StyledText segments={segments} />
+        </span>
+        <span>{shortLabel}</span>
+      </span>
+    </span>
+  );
+}
+
 function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string }) {
+  // Only explicit units are safe to label; bare legacy "Ctx N%" stays ambiguous.
+  const context = /^(?:Context|Ctx) (\d+%) (left|used)$/.exec(text);
+  if (context?.[1] && Number.parseInt(context[1], 10) <= 100) {
+    const value = context[1];
+    const start = text.indexOf(value);
+    return (
+      <ContextField
+        segments={sliceSegments(segments, start, start + value.length)}
+        value={value}
+        remaining={context[2] === "left"}
+      />
+    );
+  }
   for (const { pattern, icon: Icon } of CODEX_FIELDS) {
     const match = pattern.exec(text);
     if (!match) continue;
@@ -69,11 +129,14 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
         role="img"
         aria-label={text}
         title={text}
-        className="inline-flex h-3.5 shrink-0 items-center gap-0.5"
+        className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none"
       >
         <Icon
           aria-hidden="true"
-          className="size-[11px] shrink-0"
+          className={cn(
+            "size-[12px] shrink-0",
+            text === "Working" && "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]",
+          )}
           strokeWidth={2.25}
           style={segments[0] && styleFor(segments[0])}
         />
@@ -86,8 +149,8 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
     );
   }
   return (
-    <span className="shrink-0" title={text}>
-      <StyledText segments={segments} />
+    <span className="inline-flex min-h-3.5 shrink-0 items-center" title={text}>
+      <span><StyledText segments={segments} /></span>
     </span>
   );
 }
@@ -103,7 +166,7 @@ export function StatuslineRow({ agent, row }: { agent?: string; row: StyledLine 
   return (
     <div
       data-slot="codex-statusline"
-      className="flex min-h-3.5 items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none]"
+      className="flex min-h-3.5 items-center gap-1.5 overflow-x-auto whitespace-nowrap leading-none tabular-nums [scrollbar-width:none]"
     >
       {lineText(row).split(" \u00b7 ").map((part, i) => {
         const text = part.trim();

@@ -777,6 +777,19 @@ html.app-viewport-locked body {
   }
 }
 
+/* Two settled pauses per full turn; motion-safe on the hourglass disables this when requested. */
+@keyframes statusline-hourglass {
+  0%, 30% {
+    transform: rotate(0deg);
+  }
+  45%, 75% {
+    transform: rotate(180deg);
+  }
+  90%, 100% {
+    transform: rotate(360deg);
+  }
+}
+
 /* The working status dot's "live" pulse (components/status-badge.tsx StatusDot, `live` prop) — a
    slow breathe, not a ping. One dot, opacity only, no second ring element and no scale: a phone
    screen can carry several of these at once (pane chip, pane header) and an unsynchronized scaling

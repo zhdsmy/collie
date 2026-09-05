@@ -380,6 +380,10 @@ export const ja: Dictionary = {
   "status.count.working.other": "{count}件が処理中です",
   "status.shellBadge": "シェル",
   "status.dismissAria": "閉じる",
+  "statusline.context.remainingShort": "残",
+  "statusline.context.usedShort": "使用",
+  "statusline.context.remainingAria": "コンテキスト残り {percent}",
+  "statusline.context.usedAria": "コンテキスト使用済み {percent}",
 
   // --- space (spaces overview/strip/view, tabs, panes, new-space) ---
   "space.overview.title": "Space",

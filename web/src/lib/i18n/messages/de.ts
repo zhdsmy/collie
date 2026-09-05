@@ -385,6 +385,10 @@ export const de: Dictionary = {
   "status.count.working.other": "{count} laufen",
   "status.shellBadge": "shell",
   "status.dismissAria": "Verwerfen",
+  "statusline.context.remainingShort": "frei",
+  "statusline.context.usedShort": "belegt",
+  "statusline.context.remainingAria": "Kontext {percent} frei",
+  "statusline.context.usedAria": "Kontext {percent} belegt",
 
   // --- space (spaces overview/strip/view, tabs, panes, new-space) ---
   "space.overview.title": "Spaces",

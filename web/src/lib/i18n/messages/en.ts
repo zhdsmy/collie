@@ -399,6 +399,10 @@ export const en = {
   "status.count.working.other": "{count} working",
   "status.shellBadge": "shell",
   "status.dismissAria": "Dismiss",
+  "statusline.context.remainingShort": "left",
+  "statusline.context.usedShort": "used",
+  "statusline.context.remainingAria": "Context {percent} left",
+  "statusline.context.usedAria": "Context {percent} used",
 
   // --- space (spaces overview/strip/view, tabs, panes, new-space) ---
   "space.overview.title": "Spaces",

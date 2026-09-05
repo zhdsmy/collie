@@ -26,6 +26,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [Unreleased]
+
+- Show explicit Codex context remaining/used labels with proportional rings and usage-based warning colors; animate working hourglasses with reduced-motion support and vertically align compact statusline fields.
+
 ## [1.5.1+collie.14] - 2026-09-06
 
 - Reclaim unused mobile space by applying the top safe-area inset once across connection/update banners and the header, trimming Codex's removed-composer spacer rows, and reducing the terminal tail padding to 4px without changing the bottom safe area. ([cf19b26](https://github.com/zhdsmy/collie/commit/cf19b26))

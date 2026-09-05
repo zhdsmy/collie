@@ -367,6 +367,10 @@ export const zh: Dictionary = {
   "status.count.working.other": "{count} 项运行中",
   "status.shellBadge": "shell",
   "status.dismissAria": "关闭",
+  "statusline.context.remainingShort": "余",
+  "statusline.context.usedShort": "用",
+  "statusline.context.remainingAria": "上下文剩余 {percent}",
+  "statusline.context.usedAria": "上下文已用 {percent}",
 
   // --- space (spaces overview/strip/view, tabs, panes, new-space) ---
   "space.overview.title": "工作区",

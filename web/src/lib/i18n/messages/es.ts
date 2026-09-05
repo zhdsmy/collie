@@ -384,6 +384,10 @@ export const es: Dictionary = {
   "status.count.working.other": "{count} en ejecución",
   "status.shellBadge": "shell",
   "status.dismissAria": "Descartar",
+  "statusline.context.remainingShort": "libre",
+  "statusline.context.usedShort": "usado",
+  "statusline.context.remainingAria": "Contexto {percent} libre",
+  "statusline.context.usedAria": "Contexto {percent} usado",
 
   // --- space (spaces overview/strip/view, tabs, panes, new-space) ---
   "space.overview.title": "Espacios",
