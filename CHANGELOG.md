@@ -25,9 +25,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.5.0+collie.6] - 2026-09-05
+
 ### Fixed
 
-- Corrected the tag-only workflow filter to use valid GitHub glob syntax.
+- Corrected the tag-only workflow filter to use valid GitHub glob syntax. ([be0b24c](https://github.com/zhdsmy/collie/commit/be0b24c))
 
 ## [1.5.0+collie.5] - 2026-09-05
 
