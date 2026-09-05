@@ -1627,15 +1627,18 @@ export function AgentChat({
               siblings — so zen takes it out as one row, through `Collapse`. The negative margin
               pairs with Composer's resting safe-area padding: the chrome paints through the home
               indicator while the input itself sits at the bottom, instead of reserving an empty
-              safe-area strip below it. It belongs on this real content node, inside `Collapse`, so
-              the wrapper remains only an animation row and never distorts the compensation. */}
-          <Collapse open={!zen}>
-            <div
-              className={cn(
-                "relative shrink-0",
-                composing ? undefined : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
-              )}
-            >
+              safe-area strip below it. It belongs on `Collapse`'s direct content box so iOS updates
+              the grid row and its painted composer together after the keyboard closes. */}
+          <Collapse
+            open={!zen}
+            contentClassName={
+              // Keep the compensation on Collapse's direct grid child. On iOS Safari, placing it
+              // one node deeper can leave the row at its pre-keyboard height after the viewport
+              // expands, exposing an empty safe-area strip below the painted composer.
+              composing ? undefined : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]"
+            }
+          >
+            <div className="relative shrink-0">
 
               {/* The agent's statusline, re-surfaced as app chrome (its branch/model/ctx/permission mode
                   would otherwise vanish with the stripped input box). It is the LAST ROW OF THE MIRROR,

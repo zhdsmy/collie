@@ -25,6 +25,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- Kept the iOS composer safe-area compensation on the `Collapse` content box so dismissing the keyboard cannot leave a reproducible blank row beneath the reply field.
+
 ## [1.5.0+collie.3] - 2026-09-04
 
 ### Fixed

@@ -1440,6 +1440,7 @@ describe("the pane fits its viewport", () => {
     // wrapper, and the adjacency claim is about the row. Asserted through it rather than around it:
     // the wrapper must be found, so a bottom region that quietly escaped its Collapse fails here too.
     const bottomRow = bottom.closest('[data-slot="collapse"]')!;
+    const bottomContent = bottom.parentElement!;
     expect(bottomRow).not.toBeNull();
     // The mirror is the bottom row's own previous sibling — taken that way rather than by a
     // selector, so this asserts the ADJACENCY the argument rests on instead of merely finding two
@@ -1458,7 +1459,11 @@ describe("the pane fits its viewport", () => {
     expect(bottom.className).not.toMatch(/(?:^|\s)min-h-0(?=\s|$)/);
     // Composer paints the safe area; this content node reclaims its layout height so the controls
     // sit in that space. The animated row itself must remain geometry-neutral.
-    expect(bottom.className).toContain("mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]");
+    expect(bottomContent.parentElement).toBe(bottomRow);
+    expect(bottomContent.className).toContain(
+      "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
+    );
+    expect(bottom.className).not.toContain("safe-area-inset-bottom");
     expect(bottomRow.className).not.toContain("safe-area-inset-bottom");
   });
 
@@ -1521,13 +1526,16 @@ describe("the pane fits its viewport", () => {
     try {
       const { container } = renderChat({ text: STATUS_TEXT });
       const bottom = container.querySelector('[data-slot="chrome-block"]')!.parentElement!;
+      const bottomContent = bottom.parentElement!;
       expect(screen.queryByRole("button", { name: "Switch pane" })).toBeNull();
-      expect(bottom.className).toContain("mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]");
+      expect(bottomContent.className).toContain(
+        "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
+      );
 
       kb.open(460); // a soft keyboard: -384px, well past the open threshold
 
       await waitFor(() => expect(screen.queryByText("[Opus 4.8] ~/webapp · main")).toBeNull());
-      expect(bottom.className).not.toContain("safe-area-inset-bottom");
+      expect(bottomContent.className).not.toContain("safe-area-inset-bottom");
 
       // THE NAVIGATION ROWS ARE ON A DIFFERENT LIST NOW, and the distinction is the point. They
       // were once declined here outright — "the tab row is how you know where you are, and losing
@@ -1544,6 +1552,15 @@ describe("the pane fits its viewport", () => {
       const dock = container.querySelector('[data-slot="composer-status"]')!.parentElement!;
       expect(dock.className).toMatch(/(?:^|\s)pb-2(?=\s|$)/);
       expect(dock.className).not.toMatch(/safe-area-inset-bottom/);
+
+      kb.open(844); // keyboard closes and the visual viewport returns to its baseline
+
+      await waitFor(() =>
+        expect(bottomContent.className).toContain(
+          "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
+        ),
+      );
+      expect(dock.className).toContain("pb-[calc(env(safe-area-inset-bottom)_+_0.5rem)]");
     } finally {
       kb.restore();
     }
