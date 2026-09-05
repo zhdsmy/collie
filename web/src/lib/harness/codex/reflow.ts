@@ -1,5 +1,6 @@
 import { lineText, type StyledLine } from "../../blocks";
 import { tableRuns } from "../../table-run";
+import { displayWidth } from "../../text-width";
 
 const ANSWER_LEAD = /^(?:\u2022| {2}-)\s+/;
 const TOOL_EVENT = /^\u2022\s+(?:Called|Edited|Explored|Ran|Read|Running|Searched|Viewed|Working|You have)(?:\s|$)/;
@@ -13,7 +14,7 @@ function proseAt(text: string, indent: number): boolean {
 }
 
 function protectedLine(line: StyledLine): boolean {
-  return Boolean(line.noWrap) || line.segments.some((segment) => segment.bg !== undefined);
+  return Boolean(line.noWrap || line.surface) || line.segments.some((segment) => segment.bg !== undefined);
 }
 
 function trimEnd(line: StyledLine): StyledLine {
@@ -34,9 +35,9 @@ function joiner(previous: string, next: string): string {
   return (words && latin) || punctuation ? " " : "";
 }
 
-function mergeLine(previous: StyledLine, next: StyledLine, indent: number): StyledLine {
+function mergeLine(previous: StyledLine, next: StyledLine, indent: number, separator?: string): StyledLine {
   const trimmed = trimEnd(previous);
-  let prefix = joiner(lineText(trimmed), lineText(next).slice(indent));
+  let prefix = separator ?? joiner(lineText(trimmed), lineText(next).slice(indent));
   let remaining = indent;
   const segments = [...trimmed.segments];
   for (const segment of next.segments) {
@@ -101,6 +102,74 @@ export function reflowCodexAnswers(lines: StyledLine[]): StyledLine[] {
       output ??= lines.slice(0, index);
       merged = mergeLine(merged, next, indent);
       index++;
+    }
+    output?.push(merged);
+  }
+  return output ?? lines;
+}
+
+function messageProse(line: StyledLine): boolean {
+  const text = lineText(line);
+  const content = text.slice(2);
+  return line.surface?.kind === "user" && !line.noWrap
+    && /^(?:\u203a | {2})\S/.test(text) && !STRUCTURE.test(content)
+    && !/^\[Image #\d+\](?:\s|$)/.test(content);
+}
+
+function messageJoiner(previous: StyledLine, next: StyledLine, columns: number): string | null {
+  const before = lineText(previous).trimEnd();
+  const after = lineText(next).slice(2).trimEnd();
+  // Only compare cells whose widths agree with Codex's terminal renderer. Emoji/combining
+  // clusters can differ between width implementations; ambiguous rows keep their newline.
+  if (!/^[\x20-\x7e\u203a\u3000-\u9fff\uac00-\ud7a3\uff01-\uff60]+$/u.test(before + after)) return null;
+  const remaining = columns - displayWidth(before);
+  const nextWord = /^[A-Za-z0-9_/'-]+/.exec(after)?.[0] ?? after.charAt(0);
+  if (remaining < 0 || remaining >= displayWidth(nextWord)) return null;
+  // A terminal split inside an overlong path/URL/token must not insert a space into it.
+  const lastToken = /\S+$/.exec(before)?.[0] ?? "";
+  if (remaining === 0 && (lastToken.includes("/") || displayWidth(lastToken) >= columns - 2)) return "";
+  return joiner(before, after);
+}
+
+function terminalRuler(line: StyledLine): boolean {
+  return Boolean(line.noWrap) && /^[-\u2500\u2501\u2550]/.test(lineText(line));
+}
+
+/** Rejoin only submitted echoes that reach a known terminal edge. Short explicit newlines,
+ * image markers, paragraphs and structured content stay intact; draft/send logic never sees this. */
+export function reflowCodexMessages(lines: StyledLine[]): StyledLine[] {
+  // The first ruler also supplies a width for history before it. Later rulers follow resizes.
+  const firstRuler = lines.find(terminalRuler);
+  if (!firstRuler) return lines;
+  let columns = displayWidth(lineText(firstRuler).trimEnd());
+  const tables = new Set(tableRuns(lines).flatMap(({ start, end }) => lines.slice(start, end + 1)));
+  let output: StyledLine[] | undefined;
+  let fence: string | undefined;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (terminalRuler(line)) columns = displayWidth(lineText(line).trimEnd());
+    const content = lineText(line).slice(2);
+    const marker = /^(?:`{3,}|~{3,})/.exec(content)?.[0];
+    if (line.surface?.kind !== "user" || lineText(line).startsWith("\u203a ")) fence = undefined;
+    if (line.surface?.kind === "user" && marker) {
+      if (!fence) fence = marker;
+      else if (marker.startsWith(fence) && content.slice(marker.length).trim() === "") fence = undefined;
+      output?.push(line);
+      continue;
+    }
+    if (fence || tables.has(line) || !messageProse(line)) {
+      output?.push(line);
+      continue;
+    }
+    let merged = line;
+    while (i + 1 < lines.length) {
+      const next = lines[i + 1]!;
+      if (!lineText(next).startsWith("  ") || tables.has(next) || !messageProse(next)) break;
+      const separator = messageJoiner(lines[i]!, next, columns);
+      if (separator === null) break;
+      output ??= lines.slice(0, i);
+      merged = mergeLine(merged, next, 2, separator);
+      i++;
     }
     output?.push(merged);
   }

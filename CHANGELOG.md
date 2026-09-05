@@ -27,6 +27,7 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 ## [Unreleased]
 
 - Paint Codex diff and submitted-message backgrounds as continuous full-width rectangles with balanced gutters, retaining inline diff highlights and a subtle gray message surface in both themes.
+- Reflow terminal-width wraps in submitted Codex messages independently of answer prose, preserving explicit short lines, paragraphs, image markers, code and table structure, and wrapped paths.
 
 ## [1.5.1+collie.4] - 2026-09-05
 

@@ -26,11 +26,11 @@ import { detectAskRegion } from "./ask";
 import { detectTrustRegion } from "./trust";
 import { decorateCodexDisplay } from "./display";
 import { codexDraftCarriesSend } from "./paste";
-import { reflowCodexAnswers } from "./reflow";
+import { reflowCodexAnswers, reflowCodexMessages } from "./reflow";
 
 function raw(lines: StyledLine[], wrap: boolean): Block {
   const decorated = decorateCodexDisplay(lines);
-  return { kind: "raw", lines: wrap ? reflowCodexAnswers(decorated) : decorated };
+  return { kind: "raw", lines: wrap ? reflowCodexAnswers(reflowCodexMessages(decorated)) : decorated };
 }
 
 export function codexBuildBlocks(lines: StyledLine[], { wrap = true } = {}): Block[] {

@@ -188,6 +188,20 @@ describe("mirror line wrapping", () => {
     expect(rows[2]!.querySelector('[style*="background-color"]')?.getAttribute("style")).toContain("rgb(50, 100, 60)");
   });
 
+  it("reflows submitted paths without corrupting find or link offsets", () => {
+    const rule = "─ Worked for 1m ".padEnd(44, "─");
+    const first = "https://example.com/".padEnd(42, "x");
+    const local = "/Users/michael/".padEnd(42, "y");
+    const input = [rule, `${ESC}[1;2m› ${ESC}[0m${first}`, "  tail", "", `  ${local}`, "  end"].join("\n");
+    const { container } = render(<AnsiOutput text={input} agent="codex" query="tail" />);
+    const pre = container.querySelector("pre")!;
+    expect(pre.textContent).toBe(`${rule}\n› ${first}tail\n\n  ${local}end`);
+    expect(pre.querySelector("[data-find-match]")?.textContent).toBe("tail");
+    expect([...pre.querySelectorAll("a")].every((link) => link.href === `${first}tail`)).toBe(true);
+    expect([...pre.querySelectorAll('[data-terminal-surface="user"] span.break-all')]
+      .some((node) => node.textContent === local)).toBe(true);
+  });
+
   it("does not suppress the same ANSI background for an unknown agent", () => {
     const user = `${ESC}[48;2;240;240;240mordinary terminal output${ESC}[0m`;
     const { container } = render(<AnsiOutput text={user} agent="shell" />);

@@ -383,6 +383,19 @@ export const AnsiOutput = memo(function AnsiOutput({
     });
   };
 
+  // Local attachment paths need the same character-level wrapping as URL anchors. Otherwise
+  // WebKit can move the entire first path after the prompt marker, leaving the marker alone.
+  const renderMessageSegment = (run: string, start: number): ReactNode => {
+    let at = start;
+    return run.split(/(\/\S+)/u).map((piece, i) => {
+      const pieceStart = at;
+      at += piece.length;
+      return i % 2 ? (
+        <span key={i} className="break-all">{renderSegment(piece, pieceStart)}</span>
+      ) : <Fragment key={i}>{renderSegment(piece, pieceStart)}</Fragment>;
+    });
+  };
+
   // One mirror line. `lead` says whether this line emits the "\n" that separates it from the one
   // before: the first line of a table run does NOT, because that newline is hoisted out to sit
   // before the run's scroller (inside it, it would open the table with a blank row). The offset is
@@ -406,7 +419,9 @@ export const AnsiOutput = memo(function AnsiOutput({
           key={si}
           style={segmentStyle(s, line.surface)}
         >
-          {renderSegment(s.text, segStart)}
+          {wrap && line.surface?.kind === "user"
+            ? renderMessageSegment(s.text, segStart)
+            : renderSegment(s.text, segStart)}
         </span>
       );
     });
@@ -423,7 +438,10 @@ export const AnsiOutput = memo(function AnsiOutput({
         {line.surface ? (
           <span
             data-terminal-surface={line.surface.kind}
-            className={cn("inline-block min-w-full min-h-[1lh] align-bottom", wrap && "w-full max-w-full")}
+            className={cn(
+              "inline-block min-w-full min-h-[1lh] align-bottom",
+              wrap && "w-full max-w-full",
+            )}
             style={{ backgroundColor: line.surface.background }}
           >{content}</span>
         ) : content}
