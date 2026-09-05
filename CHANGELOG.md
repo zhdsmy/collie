@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Make direct-input keys easier to identify with compact icon-and-name legends, a standard Escape symbol, bolder direction arrows, and labeled Fn/navigation switching without changing key sizes or input behavior.
+
 ## [1.5.1+collie.11] - 2026-09-05
 
 - Merge Keys into direct input with the v0.36.1+collie.2 navigation/function keyboard, modifier locks and arrow repeat; keep activation keyboard-free and arrange all four Composer controls as equal-width icon-and-text buttons without changing the bottom safe area. ([92eab3f](https://github.com/zhdsmy/collie/commit/92eab3f))

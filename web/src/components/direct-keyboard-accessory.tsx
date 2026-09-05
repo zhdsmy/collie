@@ -11,12 +11,12 @@ import {
   ArrowRightToLine,
   ArrowUp,
   ChevronUp,
+  CircleArrowOutUpLeft,
   CornerDownLeft,
   Keyboard,
   LockKeyhole,
   Option,
   SquareFunction,
-  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -42,15 +42,16 @@ const NAVIGATION_KEYS: ReadonlyArray<{
   key: string;
   icon: LucideIcon;
   ariaLabel: string;
+  label?: string;
   repeatable?: boolean;
 }> = [
-  { key: "Escape", icon: X, ariaLabel: "Escape" },
-  { key: "Tab", icon: ArrowRightToLine, ariaLabel: "Tab" },
+  { key: "Escape", icon: CircleArrowOutUpLeft, ariaLabel: "Escape", label: "Esc" },
+  { key: "Tab", icon: ArrowRightToLine, ariaLabel: "Tab", label: "Tab" },
   { key: "Up", icon: ArrowUp, ariaLabel: "Up", repeatable: true },
   { key: "Down", icon: ArrowDown, ariaLabel: "Down", repeatable: true },
   { key: "Left", icon: ArrowLeft, ariaLabel: "Left", repeatable: true },
   { key: "Right", icon: ArrowRight, ariaLabel: "Right", repeatable: true },
-  { key: "Enter", icon: CornerDownLeft, ariaLabel: "Enter" },
+  { key: "Enter", icon: CornerDownLeft, ariaLabel: "Enter", label: "Enter" },
 ];
 
 const KEY_ICON_CLASS = "size-[18px] shrink-0";
@@ -60,6 +61,15 @@ const NO_REFUSED_KEYS: readonly string[] = [];
 
 function preserveTextareaFocus(event: ReactPointerEvent<HTMLButtonElement>) {
   event.preventDefault();
+}
+
+function KeyLegend({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+  return (
+    <span aria-hidden="true" className="flex flex-col items-center gap-0.5">
+      <Icon className={KEY_ICON_CLASS} />
+      <span className="text-[10px] font-medium leading-3">{label}</span>
+    </span>
+  );
 }
 
 export function DirectKeyboardAccessory({
@@ -101,9 +111,9 @@ export function DirectKeyboardAccessory({
           mode === "off" && RESTING_KEY_CLASS,
         )}
       >
-        <Icon aria-hidden="true" className={KEY_ICON_CLASS} />
+        <KeyLegend icon={Icon} label={label} />
         {mode === "locked" && (
-          <LockKeyhole aria-hidden="true" className="absolute right-1 top-1 size-2.5" />
+          <LockKeyhole aria-hidden="true" className="absolute right-0.5 top-0.5 size-2" />
         )}
       </Button>
     );
@@ -172,9 +182,9 @@ export function DirectKeyboardAccessory({
         className={cn("size-11 shrink-0 touch-manipulation", RESTING_KEY_CLASS)}
       >
         {row === "navigation" ? (
-          <SquareFunction aria-hidden="true" className={KEY_ICON_CLASS} />
+          <KeyLegend icon={SquareFunction} label="Fn" />
         ) : (
-          <Keyboard aria-hidden="true" className={KEY_ICON_CLASS} />
+          <KeyLegend icon={Keyboard} label={t("keys.navigation.short")} />
         )}
       </Button>
       <div aria-hidden="true" className="h-7 w-px shrink-0 bg-border" />
@@ -186,10 +196,14 @@ export function DirectKeyboardAccessory({
         {row === "navigation" ? (
           <>
             {modifierButton("ctrl", ChevronUp, "Ctrl")}
-            {NAVIGATION_KEYS.map(({ key, icon: Icon, ariaLabel, repeatable }) =>
+            {NAVIGATION_KEYS.map(({ key, icon: Icon, ariaLabel, label, repeatable }) =>
               keyButton(
                 key,
-                <Icon aria-hidden="true" className={KEY_ICON_CLASS} />,
+                label ? (
+                  <KeyLegend icon={Icon} label={label} />
+                ) : (
+                  <Icon aria-hidden="true" className={KEY_ICON_CLASS} strokeWidth={2.5} />
+                ),
                 ariaLabel,
                 repeatable,
               ),

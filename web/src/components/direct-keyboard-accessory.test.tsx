@@ -22,7 +22,7 @@ describe("DirectKeyboardAccessory", () => {
     expect(screen.getByRole("button", { name: "F1" })).toBeEnabled();
   });
 
-  it("keeps the switch fixed beside an icon-only navigation rail in keyboard order", () => {
+  it("keeps the switch fixed beside labeled special keys and icon-only arrows in keyboard order", () => {
     const onSendKeys = vi.fn();
     render(
       <DirectKeyboardAccessory
@@ -47,6 +47,7 @@ describe("DirectKeyboardAccessory", () => {
       "lucide-square-function",
       "size-[18px]",
     );
+    expect(switcher).toHaveTextContent("Fn");
     for (const button of root.querySelectorAll("button")) {
       expect(button).toHaveClass("size-11", "shrink-0");
     }
@@ -77,7 +78,7 @@ describe("DirectKeyboardAccessory", () => {
     ]);
     const expectedIcons = [
       "lucide-chevron-up",
-      "lucide-x",
+      "lucide-circle-arrow-out-up-left",
       "lucide-arrow-right-to-line",
       "lucide-arrow-up",
       "lucide-arrow-down",
@@ -87,37 +88,83 @@ describe("DirectKeyboardAccessory", () => {
       "lucide-arrow-big-up",
       "lucide-option",
     ];
+    const expectedLabels = ["Ctrl", "Esc", "Tab", "", "", "", "", "Enter", "Shift", "Alt"];
     within(rail)
       .getAllByRole("button")
       .forEach((button, index) => {
-        expect(button).toHaveTextContent("");
+        expect(button.textContent).toBe(expectedLabels[index]);
         expect(button.querySelector("svg")).toHaveClass(expectedIcons[index], "size-[18px]");
+        if (expectedLabels[index]) {
+          const label = within(button).getByText(expectedLabels[index]);
+          expect(label).toHaveClass("text-[10px]", "leading-3", "font-medium");
+          expect(label.parentElement).toHaveClass("flex-col", "items-center", "gap-0.5");
+        } else {
+          expect(button.querySelector("svg")).toHaveAttribute("stroke-width", "2.5");
+        }
       });
 
     fireEvent.click(screen.getByRole("button", { name: "Enter" }));
     expect(onSendKeys).toHaveBeenCalledWith(["Enter"]);
   });
 
-  it("overlays a locked modifier badge without moving or resizing its main icon", () => {
-    render(
-      <DirectKeyboardAccessory
-        row="navigation"
-        modifiers={{ ...ALL_OFF, ctrl: "locked" }}
-        onToggleRow={vi.fn()}
-        onToggleModifier={vi.fn()}
-        onSendKeys={vi.fn()}
-      />,
-    );
+  it("preserves modifier legends and dimensions when armed, locked, or disabled", () => {
+    const props = {
+      row: "navigation" as const,
+      onToggleRow: vi.fn(),
+      onToggleModifier: vi.fn(),
+      onSendKeys: vi.fn(),
+    };
+    const { rerender } = render(<DirectKeyboardAccessory {...props} modifiers={ALL_OFF} />);
+    for (const mode of ["off", "once", "locked"] as const) {
+      for (const disabled of [false, true]) {
+        rerender(
+          <DirectKeyboardAccessory
+            {...props}
+            modifiers={{ ...ALL_OFF, ctrl: mode }}
+            disabled={disabled}
+          />,
+        );
+        const ctrl = screen.getByRole("button", { name: "Ctrl" });
+        expect(ctrl).toHaveClass("relative", "size-11", "shrink-0");
+        expect(ctrl).toHaveAttribute("aria-pressed", String(mode !== "off"));
+        expect(ctrl).toHaveTextContent("Ctrl");
+        expect(ctrl.querySelector(".lucide-chevron-up")).toHaveClass("size-[18px]");
+        expect(ctrl.matches(":disabled")).toBe(disabled);
+        if (mode === "locked") {
+          expect(ctrl.querySelector(".lucide-lock-keyhole")).toHaveClass(
+            "absolute", "right-0.5", "top-0.5", "size-2",
+          );
+        } else {
+          expect(ctrl.querySelector(".lucide-lock-keyhole")).toBeNull();
+        }
+      }
+    }
+  });
 
-    const ctrl = screen.getByRole("button", { name: "Ctrl" });
-    expect(ctrl).toHaveClass("relative");
-    expect(ctrl.querySelector(".lucide-chevron-up")).toHaveClass("size-[18px]");
-    expect(ctrl.querySelector(".lucide-lock-keyhole")).toHaveClass(
-      "absolute",
-      "right-1",
-      "top-1",
-      "size-2.5",
-    );
+  it("labels the row switch without changing function key legends or sending behavior", () => {
+    const props = {
+      modifiers: ALL_OFF,
+      onToggleRow: vi.fn(),
+      onToggleModifier: vi.fn(),
+      onSendKeys: vi.fn(),
+    };
+    const { rerender } = render(<DirectKeyboardAccessory {...props} row="navigation" />);
+    fireEvent.click(screen.getByRole("button", { name: "Show function keys" }));
+    expect(props.onToggleRow).toHaveBeenCalledOnce();
+    rerender(<DirectKeyboardAccessory {...props} row="function" />);
+    const switcher = screen.getByRole("button", { name: "Show navigation keys" });
+    expect(switcher).toHaveTextContent("Nav");
+    expect(switcher.querySelector("svg")).toHaveClass("lucide-keyboard", "size-[18px]");
+    for (let index = 1; index <= 12; index++) {
+      const key = screen.getByRole("button", { name: `F${index}` });
+      expect(key.textContent).toBe(`F${index}`);
+      expect(key.querySelector("svg")).toBeNull();
+      expect(key).toHaveClass("size-11", "shrink-0");
+      fireEvent.click(key);
+      expect(props.onSendKeys).toHaveBeenLastCalledWith([`F${index}`]);
+    }
+    fireEvent.click(switcher);
+    expect(props.onToggleRow).toHaveBeenCalledTimes(2);
   });
 
   it("preserves arrow hold-repeat through the accessory sender", async () => {

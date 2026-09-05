@@ -353,6 +353,7 @@ export const en = {
   "keys.fkeys.label": "F keys",
   "keys.showFunctionKeys": "Show function keys",
   "keys.showNavigationKeys": "Show navigation keys",
+  "keys.navigation.short": "Nav",
   "keys.confirm.label": "Confirm?",
   "keys.queue.removeAria": "Remove {label}",
   "keys.queue.charPlaceholder": "key",

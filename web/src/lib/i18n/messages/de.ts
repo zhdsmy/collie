@@ -339,6 +339,7 @@ export const de: Dictionary = {
   "keys.fkeys.label": "F-Tasten",
   "keys.showFunctionKeys": "Funktionstasten anzeigen",
   "keys.showNavigationKeys": "Navigationstasten anzeigen",
+  "keys.navigation.short": "Nav",
   "keys.confirm.label": "Bestätigen",
   "keys.queue.removeAria": "{label} entfernen",
   "keys.queue.charPlaceholder": "Taste",

@@ -321,6 +321,7 @@ export const zh: Dictionary = {
   "keys.fkeys.label": "功能键",
   "keys.showFunctionKeys": "显示功能键",
   "keys.showNavigationKeys": "显示导航键",
+  "keys.navigation.short": "导航",
   "keys.confirm.label": "确认操作？",
   "keys.queue.removeAria": "移除 {label}",
   "keys.queue.charPlaceholder": "键位",
