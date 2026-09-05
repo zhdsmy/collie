@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Add Geist to the interface typeface picker and Geist Mono to terminal fonts as self-hosted, offline-cached web fonts, keeping both preferences independent and existing defaults unchanged.
+## [1.5.1+collie.8] - 2026-09-05
+
+- Add Geist to the interface typeface picker and Geist Mono to terminal fonts as self-hosted, offline-cached web fonts, keeping both preferences independent and existing defaults unchanged. ([8c5a0ef](https://github.com/zhdsmy/collie/commit/8c5a0ef))
 
 ## [1.5.1+collie.7] - 2026-09-05
 
