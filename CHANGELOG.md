@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Compact Codex statusline fields into icons and values, preserving ANSI colors, full labels, and access to long rows without changing composer behavior.
+## [1.5.1+collie.9] - 2026-09-05
+
+- Compact Codex statusline fields into icons and values, preserving ANSI colors, full labels, and access to long rows without changing composer behavior. ([a79e7f9](https://github.com/zhdsmy/collie/commit/a79e7f9))
 
 ## [1.5.1+collie.8] - 2026-09-05
 
