@@ -1,3 +1,5 @@
+import { imageDraftCarriesSend } from "./images";
+
 // Codex replaces a sufficiently large paste with one atomic token while keeping the full payload
 // internally: `[Pasted Content N chars]` (optionally suffixed ` #2`, ` #3`, … when equal-sized
 // placeholders coexist). This is public, documented Codex TUI behavior. The reply guard cannot find
@@ -8,9 +10,9 @@
 const LARGE_PASTE_CHAR_THRESHOLD = 1000;
 const PASTED_CONTENT = /^\[Pasted Content ([1-9]\d*) chars\](?: #(?:[2-9]|[1-9]\d+))?$/;
 
-export function codexDraftCarriesSend(sent: string, draft: string): boolean {
+export function codexDraftCarriesSend(sent: string, draft: string, beforeDraft?: string | null): boolean {
   const match = PASTED_CONTENT.exec(draft.trim());
-  if (match === null) return false;
+  if (match === null) return imageDraftCarriesSend(sent, draft, beforeDraft);
   const count = Number(match[1]);
   return count > LARGE_PASTE_CHAR_THRESHOLD && count === [...sent].length;
 }

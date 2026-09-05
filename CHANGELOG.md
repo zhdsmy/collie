@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Verify Codex image placeholders for single images, multiple images, and interleaved captions; preserve upstream text/paste guards and require a fresh empty input before image-only submission.
+
 ## [1.5.1+collie.2] - 2026-09-05
 
 - Reflow Codex answer prose at the phone width instead of retaining host-terminal wraps, preserving paragraph breaks, structured output, ANSI styling, and upstream display handling. ([d0bce86](https://github.com/zhdsmy/collie/commit/d0bce86))
