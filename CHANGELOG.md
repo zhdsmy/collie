@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Verify Codex image placeholders for single images, multiple images, and interleaved captions; preserve upstream text/paste guards and require a fresh empty input before image-only submission.
+## [1.5.1+collie.3] - 2026-09-05
+
+- Verify Codex image placeholders for single images, multiple images, and interleaved captions; preserve upstream text/paste guards and require a fresh empty input before image-only submission. ([edd08e6](https://github.com/zhdsmy/collie/commit/edd08e6))
 
 ## [1.5.1+collie.2] - 2026-09-05
 
