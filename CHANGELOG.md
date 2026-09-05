@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Move pane switching into a header icon, remove the bottom handle and Agent status band, and show the send target below the statusline only for multi-host panes, including while typing.
+
 ## [1.5.1+collie.9] - 2026-09-05
 
 - Compact Codex statusline fields into icons and values, preserving ANSI colors, full labels, and access to long rows without changing composer behavior. ([a79e7f9](https://github.com/zhdsmy/collie/commit/a79e7f9))

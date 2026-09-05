@@ -5,7 +5,6 @@ import { Check, ImagePlus, Keyboard, Loader2, Mic, Send, Settings2, Slash, Squar
 
 import { applyDraftFontSize, fontStack, inputFocusZoomsPage } from "@/hooks/use-display-prefs";
 import type { DisplayPrefs } from "@/hooks/use-display-prefs";
-import type { AgentStatus } from "@/lib/types";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { useDirectTyping } from "@/hooks/use-direct-typing";
 import { useLocale } from "@/hooks/use-locale";
@@ -30,7 +29,6 @@ import { useOperatorCommands, useOperatorKeys } from "@/lib/operator-config";
 import { ctrlPresetsFor } from "@/lib/operator-keys";
 import { isDestructiveInput } from "@/lib/destructive";
 import { HostChip } from "@/components/host-chip";
-import { StatusWordSlot } from "@/components/status-badge";
 import { useAmbientHost, useHostLabel } from "@/components/pack-provider";
 import { clearDraft, fitsDraftStore, loadDraft, saveDraft } from "@/lib/drafts";
 import { useHoldReload } from "@/lib/reload-guard";
@@ -56,22 +54,8 @@ interface ComposerProps {
   scope?: Scope;
   /** The pane's agent name — drives the slash-command palette and the reply-vs-shell placeholder. */
   agent: string | undefined | null;
-  /** True for a bare shell pane (tweaks the placeholder copy, and is its own status word). */
+  /** True for a bare shell pane (tweaks the placeholder copy). */
   isShell: boolean;
-  /**
-   * What the pane is DOING, as the word on the status strip above the controls row. Undefined only
-   * when there is no pane left to describe (`gone`), where the strip stands empty.
-   *
-   * It lives here rather than in the pane header because that is where the operator's question is:
-   * the header's caption line held this one word and nothing else, so the top of a 60px row was
-   * spent on it. Beside the host it completes a sentence — which machine, and what is it doing —
-   * at the surface being typed into. The header keeps the DOT badged on the agent's own tile; the
-   * word is the half of that pair a colour-blind reader can use (status-badge.tsx measures why),
-   * so it moved rather than went.
-   */
-  status?: AgentStatus;
-  /** The reading is the last snapshot's, not live — dims the word exactly as the header's dot dims. */
-  stale?: boolean;
   /** Pane is gone (no agent) — locks the composer with a distinct placeholder. */
   gone: boolean;
   /** This device isn't authorised to type — locks the composer with a distinct placeholder. */
@@ -228,7 +212,7 @@ function ComposerDock({
 }
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, scope, agent, isShell, status, stale, gone, readOnly, hostBlock, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, onSent },
+  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, onSent },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -266,10 +250,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // carried in `?h=` since the row was opened), so the ambient scope IS the target here. Undefined on
   // a solo install, which renders no chip and leaves every confirm string unchanged.
   const writeHost = useAmbientHost(scope?.host);
-  // The word for the status strip. A bare shell has no agent and therefore no agent status, but it
-  // still owes the strip a word or a solo install's strip would be empty; a GONE pane has nothing
-  // left to describe, and the strip stands empty rather than reporting a stale state as current.
-  const statusWord: AgentStatus | "shell" | undefined = isShell ? "shell" : status;
+
   // Its display name, or undefined when there is no pack — the copy-level half of the hide rule.
   const writeHostLabel = useHostLabel(scope?.host);
   // …and a ref alongside it, for the ONE caller that reads it after an await. `send()` checks
@@ -989,6 +970,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   return (
     <>
       <div
+        data-slot="composer"
         className={cn(
           "bg-chrome px-3",
           // The viewport shell reaches the bottom. Keep controls above the home
@@ -1072,117 +1054,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
             keeping it to one square (44px, its tap target and nothing more) leaves the labelled
             buttons the rest of a 390px phone. */}
-        {/* THE STATUS BAND — A STATUS LINE, NOT A HEADING, AND NOW A REGION OF ITS OWN.
-
-            It used to be 12px of `pt-3` reserved at the top of the controls row, with its two runs
-            lifted out of the flex flow into one `absolute` box. It is now a real box, a sibling
-            above the row, because the operator asked for a bottom rule, and a rule cannot be drawn
-            on padding. What it SAYS is unchanged: it reads as ONE SENTENCE —
-            the machine every button on the row (and the field below) writes to, and what that
-            machine's pane is doing. It replaced the word "Controls", which named a row whose five
-            buttons already carry their own labels.
-
-            WHY HERE AND NOT IN THE FIELD. The host was docked inside the text box for one round.
-            The reasoning survives ("which machine will this land on" is asked while writing, not
-            while reading) but the price does not: docked, it took 60px out of the typing area, the
-            widest and most contested part of the composer. This band is at the same write surface
-            and costs the typing area nothing.
-
-            WHY THE STATUS WORD CAME DOWN HERE. It was the pane header's caption line, and once the
-            host left that line it was ONE word holding a whole line of a 60px row — the operator
-            asked for the top back. It could not simply be deleted: on the app's own `--status-*`
-            tokens a deuteranope reads blocked / working / done as one colour in light theme, and
-            "needs you" against "done" collapses in both, so the DOT alone cannot carry the range
-            (status-badge.tsx holds the measurement). The dot stays badged on the agent's tile in the
-            header, welded to its subject; the word stands here, where the same question is being
-            asked about the same machine.
-
-            NOTHING HERE CAN MOVE ANYTHING. Both runs state the same 12px line box (`text-[10px]/3`,
-            one utility — tailwind-merge deletes an earlier `leading-*` when a later `text-<size>`
-            follows it in the same cn()). `h-[14px]` then STATES the band's height rather than
-            letting it be the sum of whatever stands in it, so a solo install (where HostChip renders
-            null, its hide rule unchanged, leaving the word alone), a pack, and a gone pane (no word
-            at all) are identical BY CONSTRUCTION and not by three occupants happening to agree.
-            `text-[10px]/3` is stated on the BAND as
-            well as on both runs, and that is load-bearing rather than decorative: a block layer
-            inside the slot takes its line box from its OWN inherited strut, so without it the 14px
-            page strut won and the band measured 25px instead of 14px.
-            The WORD's own width is the case padding cannot reserve — "needs you" is 54.6px and
-            "done" 27.9px — so it stands in a slot sized to every word it can hold, which is what
-            `StatusWordSlot` is for; the machine's name truncates into what is left, always the same
-            amount of it. DESIGN.md §2: reserve, never reflow.
-
-            THE GROUND IS THE PAGE COLOUR, PER DESIGN.md §4: CHROME SEPARATES WITH A RULE, NOT A
-            FILL. A fill was tried here and measured — 1.19:1 against the dock below, 1.09:1 /
-            1.10:1 against the terminal mirror above, both themes, against a `border-b border-rule`
-            doing 1.45:1 light and 2.19:1 dark — and the rule was doing between 1.2x and 2x more of
-            the separating in light, and all of it in dark, where the fill read as a continuation of
-            the terminal rather than as a band of chrome. It is gone; the band is unpainted, and the
-            two rules are what tell it apart from what stands either side of it.
-
-            THE RULES ARE `--border`, NOT `--rule`, SINCE THE 2026-08-31 ROUND. The operator read
-            the pair as too loud — two 24% hairlines 14px apart make a bright sandwich around 10px
-            type — and the token doctrine agrees with the eye: --rule cuts BETWEEN regions of
-            chrome, and both of this band's neighbours are the same chrome surface (the handle
-            above, the controls below; the regional cut against the terminal is the chrome block's
-            own top rule in agent-chat.tsx). These are component edges inside one surface, which is
-            what --border (12%) is for. Nothing about the geometry below changes: the centring fix
-            was the SYMMETRY of `border-y`, never the weight of the lines.
-
-            IT IS BOUNDED ON BOTH EDGES NOW — `border-y`, and that is the round's actual fix. The
-            band had a rule below it and 10px of the dock's own `pt-2.5` above it, which is why it
-            read as uncentred no matter what the numbers said: the box the EYE draws ran from the
-            dock's top rule to the band's bottom rule, ~23px of one unbroken ground, and the words
-            sat at the bottom of it. Measured on the page (390px, DPR 3, dark) the geometry inside
-            the 13px band was already right to half a pixel — caps 3.0 → 10.0 in a 0 → 13 box — so
-            there was nothing to centre BETTER. There was a box to state. The band now states it:
-            a rule above, a rule below, nothing between them but the two runs.
-
-            The 10px did not vanish, it moved BELOW the band, onto the controls row — `mt-2.5`
-            then, `mt-2` since the 2026-08-31 shave (with `mb-2` going to `mb-1.5` beside it, 4px
-            returned in all) — where it separates the band from the buttons instead of pretending
-            to be part of it.
-            The dock therefore takes NO top padding at all, and its top rule and fill moved out to
-            the chrome block in `agent-chat.tsx` — the swipe handle stands on that same ground, so
-            the boundary against the terminal is drawn once, above everything the thumb operates.
-            Two components drawing one boundary is a fault this codebase has already fixed twice
-            (`space-strip.tsx` / `tab-strip.tsx`).
-
-            THE STACK GOT 9px SHORTER: −10px of dock padding, +1px for the band's new top rule.
-
-            AND THE 1px NUDGE IS GONE WITH IT. The band used to carry `pt-px`, which existed to pay
-            for a rule on ONE edge: `items-center` centres in the CONTENT box, the band the eye read
-            was the border box, and with a hairline below and none above the two centres were half a
-            pixel apart. `border-y` makes the box symmetric by construction, so there is nothing left
-            to compensate for and a compensation still applied would tip it the other way. Both
-            spellings were measured on the page, 390px at DPR 3, as ink rows in the band's own 14px
-            border box (rules at 0 → 1 and 13 → 14):
-
-              with `pt-px`   caps 4.00 → 11.00, centroid 7.33 · all ink centroid 7.83
-              without        caps 3.00 → 10.00, centroid 6.33 · all ink centroid 6.83
-
-            against a border-box centre of 7.00. The eye centres the CLUSTER, not the capital
-            letters — the host's glyph is part of the line — so the all-ink number is the one that
-            decides, and it goes from 0.83px low to 0.17px high. The height is simply stated
-            (14px = 1 + 12 + 1) and `items-center` does the rest. The host's glyph stays `size-2.5`
-            in this variant (host-chip.tsx states why at the line): 10px in a 12px content box
-            clears both rules instead of touching one.
-
-            Nothing about the reserve changes: the slot still stacks every word (§2), and the height
-            is the same 14px solo, on a pack, and on a gone pane.
-
-            FULL-BLEED, and the content still at 10px. `-mx-3` cancels the dock's `px-3` so both
-            rules run edge to edge — one that stopped short would not separate the regions it
-            sits between. `px-2.5` then puts the content back at the 10px inset the controls row
-            asked for, so nothing on this line moved by a pixel: the band is what absorbs the old
-            `-mx-0.5`, a 2px overhang that was invisible on this unpainted strip either way. */}
-        <div
-          data-slot="composer-status"
-          className="-mx-3 flex h-[14px] items-center justify-end gap-1.5 border-y border-border px-2.5 text-[10px]/3"
-        >
-          <HostChip host={writeHost} variant="caption" className="min-w-0" />
-          <StatusWordSlot status={statusWord} stale={stale} />
-        </div>
+        {/* The pane owns the optional write-target row above this composer. */}
         {/* `gap-1.5` rather than `gap-2`: four gaps at 8px is 32px of a 366px row, and 6px reads the
             same. The group still carries `aria-labelledby` to the word "Controls" — the word is now
             `sr-only` rather than deleted, because it was doing TWO jobs and only one of them was
