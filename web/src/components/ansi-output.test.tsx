@@ -177,6 +177,8 @@ describe("mirror line wrapping", () => {
     const userRow = container.querySelector<HTMLElement>('[data-terminal-surface="user"]')!;
     const diffRow = container.querySelector<HTMLElement>('[data-terminal-surface="diff"]')!;
     expect(userRow.style.backgroundColor).toBe("rgb(28, 28, 28)");
+    expect(userRow).toHaveClass("font-semibold");
+    expect(diffRow).not.toHaveClass("font-semibold");
     expect(userRow.firstElementChild?.getAttribute("style") ?? "").not.toContain("background-color");
     expect(diffRow.style.backgroundColor).toBe("rgb(33, 58, 43)");
     expect(diffRow.querySelector('[style*="opacity"]')?.getAttribute("style")).not.toContain("background-color");
@@ -203,6 +205,24 @@ describe("mirror line wrapping", () => {
     }
     expect(rows[2]!.querySelector('[style*="background-color"]')?.textContent).toBe("changed");
     expect(rows[2]!.querySelector('[style*="background-color"]')?.getAttribute("style")).toContain("rgb(50, 100, 60)");
+  });
+
+  it.each([true, false])("emphasizes all submitted rows without changing explicit breaks or other output (wrap=%s)", (wrap) => {
+    const text = [
+      `${ESC}[1;2m› ${ESC}[0mFirst input line`,
+      "  Second input line", "", "  [Image #1]", "  Final paragraph",
+      "", "• Normal answer", "", `${ESC}[1m  Emphasized answer${ESC}[0m`,
+    ].join("\n");
+    const { container } = render(<AnsiOutput text={text} agent="codex" wrap={wrap} query="input" />);
+    const rows = container.querySelectorAll('[data-terminal-surface="user"]');
+    expect(rows).toHaveLength(5);
+    for (const row of rows) expect(row).toHaveClass("font-semibold");
+    expect(container.querySelector("pre")).not.toHaveClass("font-semibold");
+    expect(container.querySelector("pre")?.textContent).toBe(
+      "› First input line\n  Second input line\n\n  [Image #1]\n  Final paragraph\n\n• Normal answer\n\n  Emphasized answer",
+    );
+    expect(container.querySelectorAll("[data-find-match]")).toHaveLength(2);
+    expect(container.querySelector('[style*="font-weight"]')?.getAttribute("style")).toContain("600");
   });
 
   it("reflows submitted paths without corrupting find or link offsets", () => {

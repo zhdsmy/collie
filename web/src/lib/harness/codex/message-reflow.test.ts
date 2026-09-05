@@ -16,6 +16,17 @@ function display(rows: string[], wrap = true) {
 }
 
 describe("Codex submitted-message reflow", () => {
+  it.each([130, 132])("rejoins the pane-switching request across a %i-column terminal boundary", (columns) => {
+    const input = "窗格切换放入右上角三个点旁边，用 icon 显示。Agent 状态就不用保留了，多主机发送目标放在 statusline 下面一行，没有的话默认隐藏。你觉得呢";
+    const tailLength = columns === 130 ? 3 : 2;
+    const rows = display([
+      rule(columns), "", lead(input.slice(0, -tailLength)),
+      `  ${input.slice(-tailLength)}`, "", "• Working (6s)",
+    ]);
+    expect(rows.map(lineText)).toEqual([rule(columns), "", `› ${input}`, "", "• Working (6s)"]);
+    expect(rows.filter((row) => row.surface?.kind === "user")).toHaveLength(1);
+  });
+
   it("rejoins the screenshot's live 132-column capture at the CJK cell boundary", () => {
     const first = "/Users/michael/.local/state/collie/uploads/w6_p1-mto7yuue-450995cf.jpg 帮我处理 diff 底色，效果是希望相同颜色行之间没有间隙，然后";
     const second = "底色从左侧延伸到右侧，整体是一个长方形的区块，右侧保留和左侧一样的一个小留白间隙。先看看你理解了没，先别着急动手";
