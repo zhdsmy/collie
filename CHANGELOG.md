@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Make direct-input keys easier to identify with compact icon-and-name legends, a standard Escape symbol, bolder direction arrows, and labeled Fn/navigation switching without changing key sizes or input behavior.
+## [1.5.1+collie.12] - 2026-09-05
+
+- Make direct-input keys easier to identify with compact icon-and-name legends, a standard Escape symbol, bolder direction arrows, and labeled Fn/navigation switching without changing key sizes or input behavior. ([b077934](https://github.com/zhdsmy/collie/commit/b077934))
 
 ## [1.5.1+collie.11] - 2026-09-05
 
