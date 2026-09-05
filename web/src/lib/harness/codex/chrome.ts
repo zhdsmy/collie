@@ -21,10 +21,8 @@ import {
 export interface ComposerBox {
   /** The `› ` prompt row. */
   promptRow: number;
-  /** The first row after the draft run (the status row, or the autocomplete list). */
-  draftEndRow: number;
-  /** The status row under it; absent while slash autocomplete replaces the status row. */
-  statusRow: number | null;
+  /** The status row under it (last non-blank row of the frame). */
+  statusRow: number;
 }
 
 // A draft wraps onto indented continuation rows between the prompt row and the status row.
@@ -46,46 +44,6 @@ const MAX_DRAFT_ROWS = 100;
 // or `• ` row still starts at column 0, so neither can pass as a continuation.
 const CONTINUATION = /^ {2}\s*\S/;
 const PROMPT_PREFIX = "› ";
-const SLASH_COMMAND = /^\/[a-z][a-z0-9-]*$/i;
-const SLASH_SUGGESTION = /^\/[a-z][a-z0-9-]*\s+\S/i;
-
-function isSlashSuggestionRow(line: StyledLine): boolean {
-  return (
-    line.segments.some((segment) => segment.fg !== undefined) &&
-    line.segments.every((segment) => segment.bg === undefined) &&
-    SLASH_SUGGESTION.test(lineText(line).trim())
-  );
-}
-
-function suggestionMatchesDraft(line: StyledLine, draft: string): boolean {
-  if (!SLASH_COMMAND.test(draft) || !isSlashSuggestionRow(line)) return false;
-  const escaped = draft.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`^${escaped}\\s+\\S`, "i").test(lineText(line).trim());
-}
-
-/** Locate the temporary frame where Codex replaces the status row with slash suggestions. */
-function locateAutocompleteComposer(
-  lines: StyledLine[],
-  texts: string[],
-  end: number,
-): ComposerBox | null {
-  let suggestionStart = end;
-  while (suggestionStart > 0 && isSlashSuggestionRow(lines[suggestionStart - 1]!)) {
-    suggestionStart--;
-  }
-  if (suggestionStart === end) return null;
-
-  const promptRow = skipBlanksUp(texts, suggestionStart - 1);
-  if (promptRow < 0) return null;
-  const draft = promptText(texts[promptRow]!);
-  if (
-    draft === null ||
-    !lines.slice(suggestionStart, end).some((line) => suggestionMatchesDraft(line, draft))
-  ) {
-    return null;
-  }
-  return { promptRow, draftEndRow: suggestionStart, statusRow: null };
-}
 
 /** The exact placeholder text is still a valid thing an operator might deliberately type. Codex
  * distinguishes its empty hint by painting the whole body dim, so extraction should use that
@@ -113,12 +71,8 @@ function isEmptyPlaceholder(line: StyledLine): boolean {
 /** The composer at the buffer tail, or null (a dialog owns the screen, or the frame is torn). */
 export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   const texts = lines.map((l) => rstrip(lineText(l)));
-  const end = lastNonBlankIndex(texts);
-  if (end < 0) return null;
-  if (!isStatusRow(texts[end]!, lines[end])) {
-    return locateAutocompleteComposer(lines, texts, end + 1);
-  }
-  const statusRow = end;
+  const statusRow = lastNonBlankIndex(texts);
+  if (statusRow < 0 || !isStatusRow(texts[statusRow]!, lines[statusRow])) return null;
 
   // One blank row separates the prompt/draft run from the status row (every capture); above the
   // gap the run is CONTIGUOUS non-blank rows — wrapped-draft continuations under the `› ` prompt.
@@ -126,7 +80,7 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   if (top < 0) return null;
   for (let i = top; i >= 0 && top - i < MAX_DRAFT_ROWS; i--) {
     const t = texts[i]!;
-    if (promptText(t) !== null) return { promptRow: i, draftEndRow: statusRow, statusRow };
+    if (promptText(t) !== null) return { promptRow: i, statusRow };
     // A blank or foreign-shaped row inside the run means this status row is not under a composer.
     if (isBlank(t) || !CONTINUATION.test(t) || isStatusRow(t, lines[i])) return null;
   }
@@ -140,24 +94,13 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
 export function stripChrome(lines: StyledLine[]): StyledLine[] {
   const box = locateComposer(lines);
   if (box === null) return lines;
-
-  let end = box.promptRow;
-  const autocomplete = box.statusRow === null;
-  while (end > 0) {
-    const line = lines[end - 1]!;
-    const paintedBlank =
-      isBlank(lineText(line)) &&
-      line.segments.some((segment) => segment.style.backgroundColor !== undefined);
-    if (!paintedBlank && !(autocomplete && isBlank(lineText(line)))) break;
-    end--;
-  }
-  return lines.slice(0, end);
+  return lines.slice(0, box.promptRow);
 }
 
 /** The status row, styled, for the strip above the phone composer. Empty when no composer. */
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   const box = locateComposer(lines);
-  if (box?.statusRow == null) return [];
+  if (box === null) return [];
   return [lines[box.statusRow]!];
 }
 
@@ -175,7 +118,7 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
   const texts = lines.map((l) => rstrip(lineText(l)));
   const first = promptText(texts[box.promptRow]!) ?? "";
   const parts = [first.trim()];
-  for (let i = box.promptRow + 1; i < box.draftEndRow; i++) {
+  for (let i = box.promptRow + 1; i < box.statusRow; i++) {
     parts.push(texts[i]!.trim());
   }
   const draft = parts.filter((p) => p !== "").join(" ");
@@ -196,7 +139,7 @@ export function composerReady(lines: StyledLine[]): boolean {
 export function composerPrompt(lines: StyledLine[]): string | null {
   const box = locateComposer(lines);
   if (box === null) return null;
-  let end = box.draftEndRow;
+  let end = box.statusRow;
   while (end > box.promptRow + 1 && isBlank(lineText(lines[end - 1]!))) end--;
   return lines
     .slice(box.promptRow, end)

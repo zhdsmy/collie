@@ -591,9 +591,6 @@ const updateMonitor = new UpdateMonitor({
       // release page carry the location-independent Herdr actions. Keeps this off the cwd-dependent path.
       title: "Collie update available",
       body: updateDigestBody(currentVersion, versions),
-      // The localized rendering of the SAME digest (push-localization is downstream-only): the `en`
-      // case renders the identical sentence, so an English subscriber sees the wire body verbatim.
-      copy: { kind: "update", versions, current: currentVersion },
       target: "settings",
     }),
 });

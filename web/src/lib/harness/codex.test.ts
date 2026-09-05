@@ -107,26 +107,6 @@ describe("chrome", () => {
     expect(text).toContain("OpenAI Codex");
   });
 
-  it.each([
-    "codex--v0150-idle.txt",
-    "codex--v0150-nogit-idle.txt",
-    "codex--working.txt",
-  ])("%s: strips the painted blank row above the composer", (name) => {
-    const lines = fixtureLines(name);
-    const box = locateComposer(lines)!;
-    const spacer = lines[box.promptRow - 1]!;
-    expect(lineText(spacer).trim()).toBe("");
-    expect(spacer.segments.some((segment) => segment.style.backgroundColor !== undefined)).toBe(
-      true,
-    );
-
-    const last = stripChrome(lines).at(-1)!;
-    const paintedBlank =
-      lineText(last).trim() === "" &&
-      last.segments.some((segment) => segment.style.backgroundColor !== undefined);
-    expect(paintedBlank).toBe(false);
-  });
-
   it("extracts a one-line draft, and null for the placeholder", () => {
     expect(codexAdapter.extractInputDraft(fixtureLines("codex--draft.txt"))).toBe("hi there");
     expect(codexAdapter.extractInputDraft(fixtureLines("codex--fresh-idle.txt"))).toBeNull();
@@ -211,66 +191,6 @@ describe("chrome", () => {
     expect(locateComposer(lines)).not.toBeNull();
     expect(codexAdapter.composerReady!(lines)).toBe(true);
     expect(codexAdapter.extractInputDraft(lines)).toBe("a message waiting to send");
-  });
-
-  it("keeps a complete slash command writable while autocomplete replaces the status row", () => {
-    const lines = splitLines(
-      parseAnsi(
-        [
-          "earlier output",
-          "",
-          "\x1b[1m›\x1b[0m /status",
-          "",
-          "  \x1b[38;2;6;182;212m/status     show current session configuration\x1b[0m",
-          "  \x1b[38;2;6;182;212m/statusline configure status line items\x1b[0m",
-          "  \x1b[38;2;6;182;212m/stats      show usage statistics\x1b[0m",
-        ].join("\n"),
-      ),
-    );
-
-    expect(codexAdapter.composerReady!(lines)).toBe(true);
-    expect(codexAdapter.extractInputDraft(lines)).toBe("/status");
-    expect(codexAdapter.extractStatusLines(lines)).toEqual([]);
-    expect(stripChrome(lines).map(lineText)).toEqual(["earlier output"]);
-    expect(codexAdapter.composerPrompt!(lines)).toBe("› /status");
-  });
-
-  it("does not accept slash suggestions when none exactly matches the draft", () => {
-    const lines = splitLines(
-      parseAnsi(
-        [
-          "earlier output",
-          "",
-          "\x1b[1m›\x1b[0m /status",
-          "",
-          "  \x1b[38;2;6;182;212m/statusline configure status line items\x1b[0m",
-          "  \x1b[38;2;6;182;212m/stats      show usage statistics\x1b[0m",
-        ].join("\n"),
-      ),
-    );
-
-    expect(locateComposer(lines)).toBeNull();
-    expect(codexAdapter.composerReady!(lines)).toBe(false);
-    expect(codexAdapter.extractInputDraft(lines)).toBeNull();
-  });
-
-  it("does not accept a malformed row inside a slash autocomplete tail", () => {
-    const lines = splitLines(
-      parseAnsi(
-        [
-          "earlier output",
-          "",
-          "\x1b[1m›\x1b[0m /status",
-          "",
-          "  \x1b[38;2;6;182;212m/status show current session configuration\x1b[0m",
-          "  \x1b[38;2;6;182;212mnot a slash suggestion\x1b[0m",
-          "  \x1b[38;2;6;182;212m/statusline configure status line items\x1b[0m",
-        ].join("\n"),
-      ),
-    );
-
-    expect(locateComposer(lines)).toBeNull();
-    expect(codexAdapter.composerReady!(lines)).toBe(false);
   });
 
   it("a wrapped row whose own text starts with spaces is still a continuation", () => {
@@ -365,9 +285,7 @@ describe("the 0.150.1 default status row", () => {
     expect(lineText(status[0]!)).not.toContain("Context");
     expect(lineText(status[0]!).trimEnd()).toMatch(/^ {2}\S.* · \S/);
     // The located row is the LAST non-blank row — the status row, not a transcript line.
-    const statusRow = locateComposer(lines)!.statusRow;
-    expect(statusRow).not.toBeNull();
-    expect(status[0]).toBe(lines[statusRow!]);
+    expect(status[0]).toBe(lines[locateComposer(lines)!.statusRow]);
   });
 
   it.each(["codex--v0150-idle.txt", "codex--v0150-nogit-idle.txt"])(
@@ -493,73 +411,6 @@ describe("the styled status-row acceptor fails closed", () => {
 });
 
 describe("codexBuildBlocks", () => {
-  it("keeps the Codex 0.150 conversation recap separator on one mobile row", () => {
-    const recap = `\u2500 Conversation recap ${"\u2500".repeat(108)}`;
-    const [block] = codexAdapter.buildBlocks(
-      splitLines(parseAnsi(["earlier output", recap, "recap body"].join("\n"))),
-    );
-
-    expect(block?.kind).toBe("raw");
-    if (block?.kind !== "raw") return;
-    expect(block.lines.map(lineText)).toEqual(["earlier output", recap, "recap body"]);
-    expect(block.lines[1]?.noWrap).toBe(true);
-  });
-
-  it("rejoins hard-wrapped CJK and Latin answer continuations before mobile wrapping", () => {
-    const lines = splitLines(
-      parseAnsi(
-        [
-          "• 已定位并修复。v1.1.0 没有修改核心发送链路；真正的问题是 v1 重写",
-          "  Codex 解析器时漏掉了旧版分支。输入 /status 时，顶栏报",
-          "  错且不提交。",
-          "",
-          "  下一段保留为独立段落。",
-        ].join("\n"),
-      ),
-    );
-    const [block] = codexAdapter.buildBlocks(lines);
-    expect(block?.kind).toBe("raw");
-    if (block?.kind !== "raw") return;
-
-    expect(block.lines.map(lineText)).toEqual([
-      "• 已定位并修复。v1.1.0 没有修改核心发送链路；真正的问题是 v1 重写 Codex 解析器时漏掉了旧版分支。输入 /status 时，顶栏报错且不提交。",
-      "",
-      "  下一段保留为独立段落。",
-    ]);
-  });
-
-  it("keeps the Worked for row and clips its trailing rules to one row each", () => {
-    const worked = "─ Worked for 16m 47s";
-    const rule = "─".repeat(80);
-    const [block] = codexAdapter.buildBlocks(
-      splitLines(
-        parseAnsi(["answer", `\x1b[2m${worked}\x1b[22m`, rule, rule, "next"].join("\n")),
-      ),
-    );
-    expect(block?.kind).toBe("raw");
-    if (block?.kind !== "raw") return;
-
-    // Upstream's decorateCodexDisplay keeps every row — the fork used to DROP the bare rules after
-    // a completion summary. The bare rules are clipped by blocks.ts's own border rule; a labelled
-    // row without a trailing rule run stays a wrapping row (upstream's "tail is too short" case).
-    expect(block.lines.map(lineText)).toEqual(["answer", worked, rule, rule, "next"]);
-    expect(block.lines[1]?.noWrap).toBeUndefined();
-    expect(block.lines[2]?.noWrap).toBe(true);
-    expect(block.lines[3]?.noWrap).toBe(true);
-  });
-
-  it("compacts verbose Codex status fields without changing the captured row", () => {
-    const [line] = splitLines(
-      parseAnsi(" gpt-5.6-sol xhigh · Ready · Context 11% left · Fast off · Approve for me"),
-    );
-    const compacted = codexAdapter.compactStatusLines!([line!]);
-
-    expect(lineText(line!)).toContain("Context 11% left");
-    expect(lineText(compacted[0]!)).toBe(
-      " gpt-5.6-sol xhigh· Ready· Ctx 11%· Fast:off· Approve",
-    );
-  });
-
   it("stays raw on every neutral capture", () => {
     for (const name of neutralFixtures) {
       const blocks = codexAdapter.buildBlocks(fixtureLines(name));

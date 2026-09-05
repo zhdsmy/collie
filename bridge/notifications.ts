@@ -1,5 +1,4 @@
 import type { PushMessage } from "./push.ts";
-import type { PushCopy } from "./push-localization.ts";
 import type { AgentStatus, AgentView } from "./types.ts";
 
 // A notification shouldn't be fire-and-forget. This coordinator gives every blocked/done alert a
@@ -35,8 +34,6 @@ export interface HerdSummary {
   paneId?: string;
   /** Re-alert (buzz) the device — true when a new alert arrived, false on a silent retraction update. */
   renotify: boolean;
-  /** Locale-neutral fields rendered per subscribed device. */
-  copy?: PushCopy;
 }
 
 export interface NotifySink {
@@ -92,17 +89,7 @@ export function makeNotifySink(
     render: (s) => {
       if (mute.isMuted()) return;
       const body = host === undefined ? s.body : `${host} · ${s.body}`;
-      const msg: PushMessage = {
-        title: s.title,
-        body,
-        tag: herdTag,
-        paneId: s.paneId,
-        renotify: s.renotify,
-      };
-      if (s.copy !== undefined) {
-        msg.copy =
-          host === undefined || s.copy.kind === "update" ? s.copy : { ...s.copy, host };
-      }
+      const msg: PushMessage = { title: s.title, body, tag: herdTag, paneId: s.paneId, renotify: s.renotify };
       if (sessionName !== undefined) msg.session = sessionName;
       if (host !== undefined) msg.host = host;
       void push.send(msg);
@@ -228,13 +215,6 @@ export class NotificationCoordinator<H = unknown> {
         body: `${a.workspaceLabel} · ${a.cwd}`,
         paneId,
         renotify,
-        copy: {
-          kind: "agent",
-          agent: a.agent,
-          status: a.status,
-          workspaceLabel: a.workspaceLabel,
-          cwd: a.cwd,
-        },
       };
     }
     const alerts = entries.map(([, a]) => a);
@@ -246,17 +226,7 @@ export class NotificationCoordinator<H = unknown> {
       : allDone
         ? `${n} agents done`
         : `${n} agents need attention`;
-    return {
-      title,
-      body: alerts.map((a) => a.agent).join(", "),
-      renotify,
-      copy: {
-        kind: "agents",
-        count: n,
-        status: allBlocked ? "blocked" : allDone ? "done" : "mixed",
-        agents: alerts.map((a) => a.agent),
-      },
-    };
+    return { title, body: alerts.map((a) => a.agent).join(", "), renotify };
   }
 
   private cancelPending(id: string): void {

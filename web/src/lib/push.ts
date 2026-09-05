@@ -1,5 +1,4 @@
 import { fetchConfig, XHR_HEADER, XHR_HEADER_VALUE } from "@/lib/api";
-import { getLocaleSnapshot, type Locale } from "@/lib/i18n";
 import type { BridgeConfig } from "@/lib/types";
 
 // Client-side control of Web Push: the browser subscription plus a per-device preference. We persist
@@ -81,8 +80,6 @@ function rememberEndpoint(endpoint: string | null): void {
 export interface SubscribeBody {
   endpoint: string;
   keys: { p256dh: string; auth: string };
-  /** Concrete UI locale for notification copy. */
-  locale: Locale;
   /** The endpoint this registration supersedes — absent when there is nothing to supersede. */
   replaces?: string;
 }
@@ -90,13 +87,11 @@ export interface SubscribeBody {
 export function subscribeBody(
   json: PushSubscriptionJSON,
   previous: string | null,
-  locale: Locale = "en",
 ): SubscribeBody {
   const endpoint = json.endpoint ?? "";
   const body = {
     endpoint,
     keys: { p256dh: json.keys?.p256dh ?? "", auth: json.keys?.auth ?? "" },
-    locale,
   };
   if (previous === null || previous === "" || previous === endpoint) return body;
   return { ...body, replaces: previous };
@@ -156,7 +151,7 @@ export async function enablePush(): Promise<EnableResult> {
       applicationServerKey: serverKey,
     });
   }
-  const body = subscribeBody(sub.toJSON(), rememberedEndpoint(), getLocaleSnapshot().locale);
+  const body = subscribeBody(sub.toJSON(), rememberedEndpoint());
   const res = await fetch("/api/subscribe", {
     method: "POST",
     headers: { "content-type": "application/json", [XHR_HEADER]: XHR_HEADER_VALUE },

@@ -95,18 +95,11 @@ describe("NotificationCoordinator — debounce", () => {
     coord.onTransition(agent("p1", "blocked"), "working", "blocked");
     expect(sink.events).toEqual([]); // armed, not yet fired
     clock.fireAll();
-    expect(sink.last).toMatchObject({
+    expect(sink.last).toEqual({
       title: "claude needs you",
       body: "demo · /home/you/demo",
       paneId: "p1",
       renotify: true,
-    });
-    expect(sink.last?.copy).toEqual({
-      kind: "agent",
-      agent: "claude",
-      status: "blocked",
-      workspaceLabel: "demo",
-      cwd: "/home/you/demo",
     });
   });
 
@@ -134,9 +127,10 @@ describe("NotificationCoordinator — coalescing", () => {
     coord.onTransition(agentNamed("p2", "codex", "blocked"), "working", "blocked");
     clock.fireAll();
     // p1 renders as a single, then p2 promotes it to a digest.
-    expect(sink.renders.at(-1)).toMatchObject({
+    expect(sink.renders.at(-1)).toEqual({
       title: "2 agents need you",
       body: "claude, codex",
+      paneId: undefined,
       renotify: true,
     });
   });
@@ -155,7 +149,7 @@ describe("NotificationCoordinator — coalescing", () => {
     coord.onTransition(agentNamed("p2", "codex", "blocked"), "working", "blocked");
     clock.fireAll();
     coord.onTransition(agentNamed("p2", "codex", "idle"), "blocked", "idle"); // codex handled
-    expect(sink.last).toMatchObject({
+    expect(sink.last).toEqual({
       title: "claude needs you",
       body: "demo · /home/you/demo",
       paneId: "p1",

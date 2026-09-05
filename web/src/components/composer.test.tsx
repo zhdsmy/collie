@@ -623,14 +623,10 @@ describe("Composer — typing into the terminal", () => {
     return screen.getByPlaceholderText(/type into the terminal/i);
   }
 
-  it("arms without focusing the textarea or opening the phone keyboard", () => {
+  it("focuses the textarea synchronously so the activation gesture opens the phone keyboard", () => {
     renderComposer();
 
-    const box = startDirectTyping();
-    expect(box).not.toHaveFocus();
-
-    box.focus();
-    expect(box).toHaveFocus();
+    expect(startDirectTyping()).toHaveFocus();
   });
 
   // The entry point must be a deliberate press and nothing else: it sits in a row of dock toggles,

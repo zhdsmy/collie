@@ -25,9 +25,6 @@ export interface HarnessAdapter {
    *  readable at a glance. Empty = no box at the tail (a menu is up, or a foreign/torn buffer), so
    *  nothing to surface. */
   extractStatusLines(lines: StyledLine[]): StyledLine[];
-  /** Display-only normalization for the re-surfaced status strip. The captured rows stay untouched
-   *  for detection; adapters may shorten verbose labels so the same fields survive on a phone. */
-  compactStatusLines?(lines: StyledLine[]): StyledLine[];
   /** Re-surface a user draft stranded on the input box's prompt line (null = no box / empty / a
    *  known placeholder). */
   extractInputDraft(lines: StyledLine[]): string | null;
@@ -69,10 +66,9 @@ export interface HarnessAdapter {
    * OPTIONAL, and consulted ONLY after the generic match has already failed (lib/reply-action.ts) —
    * it can widen what counts as evidence, never narrow it. The contract is strict-or-false: return
    * true only when the token on screen is CONSISTENT with this exact send, because a `true` here fires
-   * the submit key. `beforeDraft` is the trusted pre-type input state; `undefined` means pre-flight
-   * could not establish one. An adapter that can't tell omits it and keeps today's stall.
+   * the submit key. An adapter that can't tell omits it and keeps today's stall.
    */
-  draftCarriesSend?(sent: string, draft: string, beforeDraft?: string | null): boolean;
+  draftCarriesSend?(sent: string, draft: string): boolean;
   /**
    * Whether the draft on the input line is the harness's OWN opaque token rather than the user's text
    * — the same placeholder as above, sitting stranded. The stranded-draft preview keeps showing it

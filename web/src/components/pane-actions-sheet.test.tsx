@@ -256,7 +256,7 @@ describe("PaneActionsSheet — a pane on an unreachable machine", () => {
   });
 });
 
-// The header-only rows the pane header hands this sheet when the ⋮ opens it. The pane STRIP passes
+// The two READ rows the pane header hands this sheet when the ⋮ opens it. The pane STRIP passes
 // neither, and that asymmetry is the design: find searches the buffer the open pane already fetched,
 // and a strip pill can open this sheet on a pane whose output was never loaded.
 describe("PaneActionsSheet — the read rows", () => {
@@ -270,20 +270,6 @@ describe("PaneActionsSheet — the read rows", () => {
     renderSheet({ onFind: vi.fn() });
     expect(screen.getByRole("button", { name: "Find in output" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Conversation history" })).toBeNull();
-  });
-
-  it("opens the pane switcher after closing the actions sheet", async () => {
-    const user = userEvent.setup();
-    const onSwitch = vi.fn();
-    const props = renderSheet({ onSwitch });
-
-    await user.click(screen.getByRole("button", { name: "Switch pane" }));
-
-    expect(props.onClose).toHaveBeenCalledTimes(1);
-    expect(onSwitch).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(props.onClose).mock.invocationCallOrder[0]!).toBeLessThan(
-      onSwitch.mock.invocationCallOrder[0]!,
-    );
   });
 
   it("closes the sheet BEFORE it acts, so the surface the row leads to arrives alone", async () => {

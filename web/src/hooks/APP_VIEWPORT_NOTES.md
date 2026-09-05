@@ -30,6 +30,13 @@ inspected. Web Inspector snapshots exclude native keyboard and status-bar pixels
 
 ## Verification Boundary
 
+Earlier attempts changed composer padding, moved negative safe-area margins
+between Collapse wrappers, and tied recovery to keyboard dismissal. Those changes
+never established which layer owned the gap. Matching its size to the TOP inset,
+then changing only the root height in repeated A/B tests, isolated the cause on
+this device. A related WebKit bug report was a lead, not proof that CSS could not
+repair Collie's own root layout.
+
 Desktop WebKit/Chromium and mocked visualViewport tests do not reproduce this iOS
 standalone geometry. An assertion that the footer equals visualViewport.bottom is
 necessary but insufficient: both can be wrong by the same 59 pixels.
@@ -40,3 +47,8 @@ the bottom edge, and hit-test inside the input where the missing band used to be
 Repeat after keyboard dismissal, foreground return, rotation, and a cold launch.
 While the keyboard is open, compare the composer with the visual viewport instead
 of the full screen. Preserve drafts; no terminal sends are needed for these checks.
+
+The v1.5.1 integration retains only this root/shell/route height contract and the
+composer's ordinary bottom clearance. Codex rendering, send verification, push
+localization, icon and switcher customizations are independent and return to
+upstream. The former Collapse content-class extension is not needed by this fix.
