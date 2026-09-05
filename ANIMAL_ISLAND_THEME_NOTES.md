@@ -21,15 +21,20 @@ and the real library components, with their actual public TypeScript declaration
 | Demo | https://guokaigdg.github.io/animal-island-ui/#/ |
 | Candidate package | `animal-island-ui@1.9.0` |
 | Published | 2026-09-04 07:49:16 UTC |
+| Required icon dependency | `lucide-react@^1.40.0`; `1.40.0` published 2026-09-03 08:56:22 UTC |
 | License | CC BY-NC 4.0, noncommercial only, attribution required |
 | Repository cooldown | 604800 seconds (7 days), unchanged |
-| Installation | Not installed; a narrowly scoped cooldown exception is awaiting approval |
+| Installation | Not installed; cooldown exceptions for the library and its required icon dependency are awaiting approval |
 
 The upstream history was rewritten for a DMCA cleanup. Do not use an older package
 or recover removed assets to work around the cooldown. Inspect the publication
 against the cleaned source and retain license and attribution before integration.
-Transitive dependencies remain subject to the age gate. Source vendoring is not a
-way around that gate.
+Transitive dependencies remain subject to the age gate. A live registry check on
+2026-09-06 found no cooldown-eligible Lucide release satisfying `^1.40.0`, so an
+exception for the theme library alone would not unblock installation. Request
+approval for exactly `animal-island-ui@1.9.0` and `lucide-react@1.40.0`, leaving all
+other dependency rules intact. Both become eligible by 2026-09-11 07:49:17 UTC.
+Source vendoring is not a way around that gate.
 
 ## Theme Boundary
 
