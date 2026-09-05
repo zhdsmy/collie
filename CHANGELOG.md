@@ -28,7 +28,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Show explicit Codex context remaining/used labels with proportional rings and usage-based warning colors; animate working hourglasses with reduced-motion support and vertically align compact statusline fields.
+## [1.5.1+collie.15] - 2026-09-06
+
+- Show explicit Codex context remaining/used labels with proportional rings and usage-based warning colors; animate working hourglasses with reduced-motion support and vertically align compact statusline fields. ([0cef8e7](https://github.com/zhdsmy/collie/commit/0cef8e7))
 
 ## [1.5.1+collie.14] - 2026-09-06
 
