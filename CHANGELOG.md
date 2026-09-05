@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Emphasize every line of submitted Codex input with semibold text on the existing gray surface; cover mixed Chinese/English terminal wraps and preserve explicit line breaks, image separators, links, and answer/diff styling.
+## [1.5.1+collie.13] - 2026-09-05
+
+- Emphasize every line of submitted Codex input with semibold text on the existing gray surface; cover mixed Chinese/English terminal wraps and preserve explicit line breaks, image separators, links, and answer/diff styling. ([51dcf42](https://github.com/zhdsmy/collie/commit/51dcf42))
 
 ## [1.5.1+collie.12] - 2026-09-05
 
