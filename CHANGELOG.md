@@ -25,6 +25,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- Use the large viewport height for the locked document root to prevent a status-bar-sized bottom gap in iPhone standalone PWAs.
+
 ## [1.5.0+collie.6] - 2026-09-05
 
 ### Fixed

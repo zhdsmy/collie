@@ -648,9 +648,13 @@
 }
 
 /* Only the app locks document scrolling; the playground remains a normal page.
-   iOS can otherwise leave a scrollable safe-area strip outside the route scroller. */
+   iOS can otherwise leave a scrollable safe-area strip outside the route scroller.
+   A percentage root height makes standalone WebKit subtract the TOP safe area from
+   the usable viewport. Keep the root at the large viewport height; useAppViewport
+   still sizes the app to the live visual viewport when the keyboard opens.
+   Real-device A/B evidence: hooks/APP_VIEWPORT_NOTES.md. */
 html.app-viewport-locked {
-  height: 100%;
+  height: 100lvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
