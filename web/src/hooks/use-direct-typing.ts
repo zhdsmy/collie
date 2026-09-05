@@ -8,7 +8,14 @@ import type {
 
 import { useOrderedKeySender } from "@/hooks/use-ordered-key-sender";
 import { t } from "@/lib/i18n";
-import { textToKeySequence } from "@/lib/key-queue";
+import type { Modifier, ModMode } from "@/lib/key-queue";
+import {
+  MODIFIER_ORDER,
+  composeKey,
+  nextModMode,
+  normalizeBaseChar,
+  textToKeySequence,
+} from "@/lib/key-queue";
 import { setStatus } from "@/lib/status";
 
 // Physical-keyboard events that do not change a textarea value still need wire names. Printable
@@ -24,6 +31,27 @@ const SPECIAL_KEYS = new Map([
   ["ArrowLeft", "Left"],
   ["ArrowRight", "Right"],
 ]);
+
+export type DirectKeyRow = "navigation" | "function";
+export type DirectModifierState = Record<Modifier, ModMode>;
+
+const ALL_MODIFIERS_OFF = { ctrl: "off", alt: "off", shift: "off" } satisfies DirectModifierState;
+const COMPOSABLE_SPECIAL_KEYS = new Set([
+  "Backspace",
+  "Enter",
+  "Escape",
+  "Tab",
+  "Space",
+  "Up",
+  "Down",
+  "Left",
+  "Right",
+  ...Array.from({ length: 12 }, (_, index) => `F${index + 1}`),
+]);
+
+function isComposableKey(key: string): boolean {
+  return normalizeBaseChar(key) !== null || COMPOSABLE_SPECIAL_KEYS.has(key);
+}
 
 function keyForInputType(inputType: string): string | null {
   if (inputType === "deleteContentBackward") return "Backspace";
@@ -51,7 +79,6 @@ interface DirectTypingOptions {
   suspended: boolean;
   sendKeys: (keys: string[]) => Promise<boolean>;
   onActivate: () => void;
-  focusInput: () => void;
 }
 
 // The composer textarea's direct-terminal mode: what you type goes to the pane as keystrokes,
@@ -61,7 +88,7 @@ interface DirectTypingOptions {
 // Herdr writes.
 //
 // It does NOT own the entry point. Arming is an explicit NAMED choice — the "Type" toggle in the
-// composer's Controls row, beside Keys.
+// composer's Controls row.
 //
 // WHY A NAMED CHOICE AND NOT A GESTURE. The submitted version of this feature armed the mode on a
 // bare long press of the Send button. That reads as a saving of one tap, but the tap is priced per
@@ -92,10 +119,14 @@ export function useDirectTyping({
   suspended,
   sendKeys,
   onActivate,
-  focusInput,
 }: DirectTypingOptions) {
   const [active, setActive] = useState(false);
   const [value, setValue] = useState("");
+  const [row, setRow] = useState<DirectKeyRow>("navigation");
+  const [modifiers, setModifiers] = useState<DirectModifierState>(ALL_MODIFIERS_OFF);
+  const modifiersRef = useRef<DirectModifierState>(ALL_MODIFIERS_OFF);
+  const accessorySession = useRef(0);
+
   // Live read for the visibility listener below, which outlives any one armed session. Written at
   // the transitions themselves, not during render: the listener fires between renders, and a ref
   // that only catches up on the next one would let it misread which state it is reporting on.
@@ -111,6 +142,76 @@ export function useDirectTyping({
     dropKeyboard();
   });
 
+  function resetAccessory() {
+    modifiersRef.current = ALL_MODIFIERS_OFF;
+    setModifiers(ALL_MODIFIERS_OFF);
+    setRow("navigation");
+  }
+
+  function toggleModifier(modifier: Modifier) {
+    const next = {
+      ...modifiersRef.current,
+      [modifier]: nextModMode(modifiersRef.current[modifier]),
+    };
+    // Update the live value in the gesture itself. A software-keyboard input can arrive before
+    // React renders the filled button, and must still see the modifier the operator just tapped.
+    modifiersRef.current = next;
+    setModifiers(next);
+  }
+
+  function toggleRow() {
+    setRow((current) => (current === "navigation" ? "function" : "navigation"));
+  }
+
+  function settleOneShotModifiers() {
+    const current = modifiersRef.current;
+    const next = {
+      ctrl: current.ctrl === "once" ? "off" : current.ctrl,
+      alt: current.alt === "once" ? "off" : current.alt,
+      shift: current.shift === "once" ? "off" : current.shift,
+    } satisfies DirectModifierState;
+    if (
+      next.ctrl === current.ctrl &&
+      next.alt === current.alt &&
+      next.shift === current.shift
+    ) {
+      return;
+    }
+    modifiersRef.current = next;
+    setModifiers(next);
+  }
+
+  /**
+   * Apply the currently armed chord to at most one valid key in this input event. A paste or an IME
+   * commit can contain many characters; turning all of them into modifier chords would make one
+   * phone action explode into a different command sequence. Locked modifiers remain armed for the
+   * next event, while one-shot modifiers are spent only after a composable base actually appears.
+   */
+  function enqueueWithModifiers(keys: string[], normalizePrintable = false) {
+    if (!activeRef.current || keys.length === 0) return;
+    const activeModifiers = MODIFIER_ORDER.filter(
+      (modifier) => modifiersRef.current[modifier] !== "off",
+    );
+    if (activeModifiers.length === 0) {
+      sender.enqueue(keys);
+      return;
+    }
+
+    let composed = false;
+    const sequence = keys.map((key) => {
+      if (composed || !isComposableKey(key)) return key;
+      composed = true;
+      const base = normalizePrintable ? (normalizeBaseChar(key) ?? key) : key;
+      return composeKey(activeModifiers, base);
+    });
+    sender.enqueue(sequence);
+    if (composed) settleOneShotModifiers();
+  }
+
+  function sendAccessoryKeys(keys: string[]) {
+    enqueueWithModifiers(keys);
+  }
+
   function activate() {
     if (!canActivate()) return;
     // A buffered reply and live keystrokes cannot safely share one field. Keep the durable draft
@@ -120,21 +221,18 @@ export function useDirectTyping({
       return;
     }
     onActivate();
+    accessorySession.current += 1;
     // A new armed session owns the field from here: any blur still pending belongs to an older one,
     // and this cancellation is what keeps it from landing on the session that replaced it.
     cancelPendingBlur();
     setValue("");
+    resetAccessory();
     composing.current = false;
     committedComposition.current = null;
     activeRef.current = true;
     setActive(true);
     setStatus(t("directTyping.status.armed"), "success");
-    // Focus synchronously while the long-press/contextmenu gesture still carries browser user
-    // activation; a deferred focus selects the field but mobile browsers may refuse to open their
-    // software keyboard once that activation has expired. The existing callback still runs after
-    // React swaps the controlled value so selection lands at the end.
-    inputRef.current?.focus();
-    focusInput();
+    // Arming exposes the accessory without claiming the textarea or opening the phone keyboard.
   }
 
   /** Disarm and forget the transient state. Leaves the field alone — callers decide about focus. */
@@ -144,11 +242,7 @@ export function useDirectTyping({
     setValue("");
     composing.current = false;
     committedComposition.current = null;
-  }
-
-  function clearMode() {
-    resetMode();
-    focusInput();
+    resetAccessory();
   }
 
   function cancelPendingBlur() {
@@ -167,12 +261,6 @@ export function useDirectTyping({
    * second disarm — cancels the pending blur first. An old disarm therefore never reaches a live
    * session, because it no longer exists by the time one begins.
    *
-   * Do not read that as "every path that focuses the field cancels": three don't, and don't need to.
-   * `deactivate`/`clearMode`, the `suspended` disarm, and the composer's own takeOverDraft /
-   * insertCommand / uploadImage all focus without cancelling — they are safe because a blur is only
-   * ever pending while the mode is DISARMED (both schedulers call resetMode() in the same frame, and
-   * the first two gate on `active`), and because their focus is itself deferred, so it queues behind
-   * any pending blur and lands last.
    */
   function dropKeyboard() {
     cancelPendingBlur();
@@ -183,26 +271,24 @@ export function useDirectTyping({
   }
 
   function deactivate() {
-    clearMode();
+    resetMode();
     setStatus(t("directTyping.status.disarmed"), "info");
   }
 
   function deactivateSilently() {
-    clearMode();
+    resetMode();
   }
 
   // The effects below are LIFECYCLE handlers, not reactive computations: they must fire on the
-  // condition in their dependency list and on nothing else. `clearMode`/`dropKeyboard`/`resetMode`
+  // condition in their dependency list and on nothing else. `dropKeyboard`/`resetMode`
   // are re-created every render, so naming them as dependencies would re-run — and in the pane-key
   // effect, re-RESET — on every render instead. A latest-value ref says that intent outright, and
   // keeps each effect calling the current closure rather than a stale capture.
-  const lifecycle = useRef({ clearMode, dropKeyboard, resetMode });
-  lifecycle.current = { clearMode, dropKeyboard, resetMode };
+  const lifecycle = useRef({ dropKeyboard, resetMode, enqueueWithModifiers });
+  lifecycle.current = { dropKeyboard, resetMode, enqueueWithModifiers };
 
-  // The sender's members are destructured rather than reached through `sender.x` in a dependency
-  // list: the hook returns a fresh object each render (its `busy` flag changes as keys fly), so the
-  // OBJECT is not the dependency — these two stable callbacks are.
-  const { enqueue: enqueueKeys, reset: resetSender } = sender;
+  // Depend on the stable reset callback, not the sender object that changes with each busy state.
+  const { reset: resetSender } = sender;
 
   // Arming dies with the view it belongs to. A backgrounded tab, an idle pause and a lost bridge
   // all mean the same thing: the mirror on screen has stopped tracking the pane, and the next
@@ -211,13 +297,13 @@ export function useDirectTyping({
   // blind. Never persisted, never restored — see the lifecycle note in send-mode-menu.tsx.
   useEffect(() => {
     if (!active || !suspended) return;
-    lifecycle.current.clearMode();
+    lifecycle.current.resetMode();
     setStatus(t("directTyping.status.interrupted"), "info");
   }, [active, suspended]);
 
   // The backgrounded-tab disarm has to announce itself on the way BACK, not on the way out. A
   // status set while the document is hidden is gone before anyone can read it (lib/status.ts
-  // auto-clears non-errors after 2.5s), so the old silent clearMode() produced the one genuinely
+  // auto-clears non-errors after 2.5s), so the old silent reset produced the one genuinely
   // confusing failure this mode has: you switch apps mid-command, return to a still-focused field
   // with the keyboard still up, and the next characters land in the REPLY DRAFT instead of the
   // terminal — a different action, with an eventual Enter attached. Deferring the message to the
@@ -273,11 +359,11 @@ export function useDirectTyping({
       // the terminal. Gboard commonly marks that insertParagraph event as composing.
       if (event.isComposing && key === "Backspace") return;
       event.preventDefault();
-      enqueueKeys([key]);
+      lifecycle.current.enqueueWithModifiers([key]);
     };
     inputEl.addEventListener("beforeinput", onBeforeInput);
     return () => inputEl.removeEventListener("beforeinput", onBeforeInput);
-  }, [active, inputRef, enqueueKeys]);
+  }, [active, inputRef]);
 
   function onChange(event: ChangeEvent<HTMLTextAreaElement>) {
     const next = event.target.value;
@@ -295,13 +381,13 @@ export function useDirectTyping({
     if (committed !== null) {
       committedComposition.current = null;
       const remainder = next.startsWith(committed) ? next.slice(committed.length) : next;
-      if (remainder.length > 0) sender.enqueue(textToKeySequence(remainder));
+      if (remainder.length > 0) enqueueWithModifiers(textToKeySequence(remainder), true);
       setValue("");
       return;
     }
 
     if (next.length === 0) return;
-    sender.enqueue(textToKeySequence(next));
+    enqueueWithModifiers(textToKeySequence(next), true);
     setValue("");
   }
 
@@ -315,7 +401,7 @@ export function useDirectTyping({
     const committed = event.currentTarget.value || event.data;
     if (committed.length === 0) return;
     committedComposition.current = committed;
-    sender.enqueue(textToKeySequence(committed));
+    enqueueWithModifiers(textToKeySequence(committed), true);
     setValue("");
   }
 
@@ -323,12 +409,18 @@ export function useDirectTyping({
     const key = keyForKeyDown(event.key);
     if (key === undefined) return;
     event.preventDefault();
-    sender.enqueue([key]);
+    enqueueWithModifiers([key]);
   }
 
   return {
     active,
     value,
+    row,
+    modifiers,
+    accessorySession: accessorySession.current,
+    toggleRow,
+    toggleModifier,
+    sendAccessoryKeys,
     busy: sender.busy,
     activate,
     deactivate,

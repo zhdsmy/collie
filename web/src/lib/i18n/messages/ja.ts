@@ -332,6 +332,8 @@ export const ja: Dictionary = {
   "keys.tab.keys": "キー",
   "keys.presets.label": "プリセット",
   "keys.fkeys.label": "ファンクションキー",
+  "keys.showFunctionKeys": "ファンクションキーを表示",
+  "keys.showNavigationKeys": "ナビゲーションキーを表示",
   "keys.confirm.label": "確認",
   "keys.queue.removeAria": "{label}を削除",
   "keys.queue.charPlaceholder": "キー",

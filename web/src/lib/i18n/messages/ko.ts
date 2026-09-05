@@ -330,6 +330,8 @@ export const ko: Dictionary = {
   "keys.tab.keys": "키",
   "keys.presets.label": "프리셋",
   "keys.fkeys.label": "기능 키",
+  "keys.showFunctionKeys": "기능 키 표시",
+  "keys.showNavigationKeys": "탐색 키 표시",
   "keys.confirm.label": "확인",
   "keys.queue.removeAria": "{label} 제거",
   "keys.queue.charPlaceholder": "키 입력",

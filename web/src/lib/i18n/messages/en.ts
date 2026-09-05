@@ -351,6 +351,8 @@ export const en = {
   "keys.tab.keys": "Keys",
   "keys.presets.label": "Presets",
   "keys.fkeys.label": "F keys",
+  "keys.showFunctionKeys": "Show function keys",
+  "keys.showNavigationKeys": "Show navigation keys",
   "keys.confirm.label": "Confirm?",
   "keys.queue.removeAria": "Remove {label}",
   "keys.queue.charPlaceholder": "key",

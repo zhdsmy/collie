@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Merge Keys into direct input with the v0.36.1+collie.2 navigation/function keyboard, modifier locks and arrow repeat; keep activation keyboard-free and arrange all four Composer controls as equal-width icon-and-text buttons without changing the bottom safe area.
+
 ## [1.5.1+collie.10] - 2026-09-05
 
 - Move pane switching into a header icon, remove the bottom handle and Agent status band, and show the send target below the statusline only for multi-host panes, including while typing. ([20213e4](https://github.com/zhdsmy/collie/commit/20213e4))
