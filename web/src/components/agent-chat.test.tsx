@@ -686,6 +686,20 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
     expect(screen.queryByText(/❯/)).toBeNull(); // the input box was stripped off the mirror
   });
 
+  it("compacts Codex status fields above the unchanged composer chrome", () => {
+    const { container } = renderChat({
+      agent: { ...fixtureAgents[0]!, agent: "codex" },
+      text: "Answer\n\n\u203a Write a follow-up\n  gpt-6-astra xhigh \u00b7 Working \u00b7 Context 85% left \u00b7 Fast off \u00b7 main",
+    });
+    const row = container.querySelector<HTMLElement>('[data-slot="codex-statusline"]')!;
+    expect(row).not.toBeNull();
+    expect(within(row).getByRole("img", { name: "Context 85% left" })).toHaveTextContent("85%");
+    expect(row.closest("pre")).toBeNull();
+    expect(row.closest('[data-slot="collapse"]')!.nextElementSibling).toBe(
+      container.querySelector('[data-slot="chrome-block"]'),
+    );
+  });
+
   it("docks the pane-switch handle between the statusline and the composer, always", () => {
     // THE OPERATOR'S REPORT, verbatim: "the switch panel up drawer sits above the agent Statusline,
     // it should always be right above the bottom status row."

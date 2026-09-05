@@ -31,7 +31,8 @@ import { Collapse, CollapseSwap } from "@/components/ui/collapse";
 import { RouteHeader } from "@/components/app-header";
 import { HeaderStatus } from "@/components/header-status";
 import { AnsiOutput } from "@/components/ansi-output";
-import { MIRROR_SPACE, MIRROR_INVERT, styleFor } from "@/components/mirror-space";
+import { MIRROR_SPACE, MIRROR_INVERT } from "@/components/mirror-space";
+import { StatuslineRow } from "@/components/statusline-row";
 import { cn } from "@/lib/utils";
 import { paneTag } from "@/lib/pane-tag";
 import { parseAnsi } from "@/lib/ansi";
@@ -1720,6 +1721,7 @@ export function AgentChat({
                   arrives or leaves — a bare conditional here is the §2 fault at its full height, the
                   mirror teleporting 50px twice per message. `Collapse` also UNMOUNTS at the end of the
                   exit, so nothing is left focusable behind a row that is not on screen. */}
+              {/* Codex alone compacts its fields to icons/values and scrolls long rows horizontally. */}
               <Collapse open={!composing && statusLines.length > 0}>
                 {statusLines.length > 0 && (
                 <div
@@ -1739,15 +1741,7 @@ export function AgentChat({
                   {statusLines.map((row, i) => (
                     // Index key: these rows are a positional snapshot of the pane tail, re-derived on
                     // every poll — there is no identity to preserve across renders.
-                    <div key={i} className="truncate">
-                      {row.segments.map((s, si) => (
-                        // Text nodes only — colour and weight come from the ANSI parse, never markup.
-                        // Same XSS boundary as the mirror.
-                        <span key={si} style={styleFor(s)}>
-                          {s.text}
-                        </span>
-                      ))}
-                    </div>
+                    <StatuslineRow key={i} agent={agent?.agent} row={row} />
                   ))}
                 </div>
                 )}
