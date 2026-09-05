@@ -12,7 +12,7 @@ function codexPane(draft: string): string {
   return [
     "some output",
     "",
-    draft ? `› ${draft.replace(/\n/g, "\n  ")}` : "\x1b[2m› Ask Codex to do anything\x1b[0m",
+    draft ? `\x1b[1m›\x1b[0m ${draft.replace(/\n/g, "\n  ")}` : "\x1b[2m› Ask Codex to do anything\x1b[0m",
     "",
     "  gpt-6-astra xhigh · Ready · Context 18% left",
   ].join("\n");
@@ -49,6 +49,10 @@ describe("guarded Codex image sends", () => {
     ["single image", A, "[Image #1]"],
     ["multiple images", `${A}\n${B}\n${C}`, "[Image #1] [Image #2] [Image #3]"],
     ["screenshot caption", `${A}\n帮我修复 codex 换行问题`, "[Image #1] 帮我修复 codex 换行问题"],
+    ["image then empty paragraph", `${A}\n\n修复输入问题`, "[Image #1]\n\n修复输入问题"],
+    ["multiple images with empty paragraphs", `${A}\n\n${B}\n\n${C}`, "[Image #1]\n\n[Image #2]\n\n[Image #3]"],
+    ["interleaved empty paragraphs", `第一段 ${A}\n\n第二段 ${B}\n\n比较差异`, "第一段 [Image #1]\n\n第二段 [Image #2]\n\n比较差异"],
+    ["plain text paragraphs", "第一段消息\n\n第二段消息", "第一段消息\n\n第二段消息"],
     ["short caption", `${A} 看下`, "[Image #1] 看下"],
     ["interleaved text", `第一张 ${A}\n第二张 ${B}\n比较差异`, "第一张 [Image #1]\n第二张 [Image #2]\n比较差异"],
     ["token wraps", `${A} ${B}`, "[Ima\nge #1] [Image\n#2]"],
@@ -81,8 +85,8 @@ describe("guarded Codex image sends", () => {
     expect(calls).toEqual([{ text, submit: false }]);
   });
 
-  it("uses the post-clear empty input, not the old image token, as its baseline", async () => {
-    const { state, calls } = composer("[Image #1]", () => "[Image #2]");
+  it.each(["[Image #1]", "[Image #1]\n\n旧说明"])("uses the post-clear empty input, not the stranded draft %j, as its baseline", async (before) => {
+    const { state, calls } = composer(before, () => "[Image #2]");
     const result = await sendGuardedReply({
       paneId: "w1:p1", text: A, agent: "codex", ...instant,
       onComposerSeen: async ({ promptRegion }) => {

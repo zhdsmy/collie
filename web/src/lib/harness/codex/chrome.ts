@@ -31,17 +31,9 @@ export interface ComposerBox {
 // Claude. A run deeper than this is not a composer (fail closed — locateComposer returns null).
 const MAX_DRAFT_ROWS = 100;
 
-// A continuation row is the composer's TWO-SPACE GUTTER followed by the draft's own text — and
-// that text may ITSELF begin with spaces. Type two spaces mid-sentence, or let a soft wrap land
-// inside a run of them, and Codex paints a four-space-indented row that is a perfectly healthy
-// continuation. The old `/^ {2}\S/` demanded a non-space at column 2, read that row as foreign,
-// and made `locateComposer` return null — which refused EVERY send in the pane with "the input
-// box isn't on screen — a menu or dialog is probably up" for as long as the draft sat there. That
-// is a DEADLOCK, not a transient: the refusal is itself what keeps the draft from being sent, so
-// the pane never recovers on its own. Only the gutter is asserted here, because only the gutter is
-// the renderer's; what the walk actually bounds the run with is the blank row above it (`isBlank`,
-// checked first in the same test), and Codex separates every section of a screen with one. A `› `
-// or `• ` row still starts at column 0, so neither can pass as a continuation.
+// A continuation starts with Codex's two-space gutter; the draft may add its own indent.
+// Empty paragraphs are handled separately by the bounded walk below. Column-zero output
+// (including tool/answer bullets) still cannot be crossed on the way to the live prompt.
 const CONTINUATION = /^ {2}\s*\S/;
 const PROMPT_PREFIX = "› ";
 
@@ -74,15 +66,23 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   const statusRow = lastNonBlankIndex(texts);
   if (statusRow < 0 || !isStatusRow(texts[statusRow]!, lines[statusRow])) return null;
 
-  // One blank row separates the prompt/draft run from the status row (every capture); above the
-  // gap the run is CONTIGUOUS non-blank rows — wrapped-draft continuations under the `› ` prompt.
+  // Separate layout padding from the draft. Internal empty paragraphs are valid, but crossing
+  // one requires the live marker's paint so a dim submitted echo cannot claim later output.
   const top = skipBlanksUp(texts, statusRow - 1);
   if (top < 0) return null;
+  let crossedBlank = false;
   for (let i = top; i >= 0 && top - i < MAX_DRAFT_ROWS; i--) {
     const t = texts[i]!;
-    if (promptText(t) !== null) return { promptRow: i, statusRow };
-    // A blank or foreign-shaped row inside the run means this status row is not under a composer.
-    if (isBlank(t) || !CONTINUATION.test(t) || isStatusRow(t, lines[i])) return null;
+    if (promptText(t) !== null) {
+      const marker = lines[i]!.segments.find((segment) => segment.text.startsWith("›"));
+      if (crossedBlank && (!marker?.bold || marker.dim)) return null;
+      return { promptRow: i, statusRow };
+    }
+    if (isBlank(t)) {
+      crossedBlank = true;
+      continue;
+    }
+    if (!CONTINUATION.test(t) || isStatusRow(t, lines[i])) return null;
   }
   return null;
 }

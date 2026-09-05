@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Recognize empty paragraphs inside the active Codex composer, fixing stalled image, mixed-media and text sends while keeping submitted echoes, dialog boundaries and the bounded Enter-verification guard protected.
+
 ## [1.5.1+collie.5] - 2026-09-05
 
 - Paint Codex diff and submitted-message backgrounds as continuous full-width rectangles with balanced gutters, retaining inline diff highlights and a subtle gray message surface in both themes. ([b3fefe3](https://github.com/zhdsmy/collie/commit/b3fefe3))

@@ -193,6 +193,39 @@ describe("chrome", () => {
     expect(codexAdapter.extractInputDraft(lines)).toBe("a message waiting to send");
   });
 
+  it.each(["", "  ", "      "])("keeps an internal blank paragraph (%j) inside a live composer", (blank) => {
+    const prompt = "\u001b[1m›\u001b[0m [Image #1]";
+    const caption = "  是的，输入这里也做同样的处理。";
+    const status = "  gpt-6-astra xhigh · Ready · Context 28% left · Fast off · main · 0.153.4";
+    const lines = splitLines(parseAnsi(["• Previous answer", "", prompt, blank, caption, "", status].join("\n")));
+    expect(locateComposer(lines)).toEqual({ promptRow: 2, statusRow: 6 });
+    expect(codexAdapter.composerReady!(lines)).toBe(true);
+    expect(codexAdapter.extractInputDraft(lines)).toBe("[Image #1] 是的，输入这里也做同样的处理。");
+    expect(codexAdapter.composerPrompt!(lines)).toBe(`› [Image #1]\n\n${caption}`);
+    expect(codexAdapter.extractStatusLines(lines).map(lineText)).toEqual([status]);
+    expect(stripChrome(lines).map(lineText)).toEqual(["• Previous answer", ""]);
+  });
+
+  it.each(["› old message", "\u001b[1;2m›\u001b[0m old message", "\u001b[2m›\u001b[0m old message"])(
+    "does not cross paragraph gaps to an unverified or submitted prompt (%j)", (prompt) => {
+      const screen = [prompt, "", "  Some later output", "", "  model x · Ready · Context 28% left"].join("\n");
+      const lines = splitLines(parseAnsi(screen));
+      expect(locateComposer(lines)).toBeNull();
+      expect(codexAdapter.composerPrompt!(lines)).toBeNull();
+      expect(codexAdapter.extractInputDraft(lines)).toBeNull();
+    },
+  );
+
+  it("does not cross a foreign row to a bold prompt, even with a status-like tail", () => {
+    const screen = ["\u001b[1m›\u001b[0m old prompt", "", "• Tool output", "", "  caption", "", "  model x · Ready · Context 28% left"].join("\n");
+    expect(locateComposer(splitLines(parseAnsi(screen)))).toBeNull();
+  });
+
+  it.each([[98, true], [99, false]] as const)("counts internal blank rows toward the scan limit (%i blanks)", (count, ready) => {
+    const screen = ["\u001b[1m›\u001b[0m first", ...Array<string>(count).fill(""), "  last", "", "  model x · Ready · Context 28% left"].join("\n");
+    expect(codexAdapter.composerReady!(splitLines(parseAnsi(screen)))).toBe(ready);
+  });
+
   it("a wrapped row whose own text starts with spaces is still a continuation", () => {
     // The shape, pinned without a capture: two spaces of gutter, then the operator's own text,
     // which may itself begin with spaces. `codex--v0151-draft-indented-line.txt` below is the
