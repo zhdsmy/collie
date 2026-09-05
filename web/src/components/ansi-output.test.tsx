@@ -3,8 +3,25 @@ import { render } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
 import { AnsiOutput } from "./ansi-output";
+import diffCapture from "@/lib/harness/codex/diff-reflow.fixture.txt?raw";
 
 const ESC = "\x1b";
+
+describe("Codex diff continuation rendering", () => {
+  it("keeps complete words, find offsets, links and surfaces across native wraps", () => {
+    const { container, rerender } = render(<AnsiOutput text={diffCapture.trimEnd()} agent="codex" query="keeping" />);
+    expect(container.querySelectorAll('[data-terminal-surface="diff"]')).toHaveLength(4);
+    expect([...container.querySelectorAll("[data-find-match]")].map((el) => el.textContent).join("")).toBe("keepingkeeping");
+    const links = [...container.querySelectorAll("a")];
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.every((a) => a.getAttribute("href") === "https://github.com/zhdsmy/collie/commit/ed3857d")).toBe(true);
+    expect(links.map((a) => a.textContent).join("")).toBe("https://github.com/zhdsmy/collie/commit/ed3857d");
+    rerender(<AnsiOutput text={diffCapture.trimEnd()} agent="codex" wrap={false} />);
+    expect(container.querySelectorAll('[data-terminal-surface="diff"]')).toHaveLength(7);
+    rerender(<AnsiOutput text={diffCapture.trimEnd()} />);
+    expect(container.querySelector("pre")!.textContent).not.toContain("keeping");
+  });
+});
 
 // The mirror renders in DARK space under every theme, and the light theme inverts it wholesale
 // (.adr/0002). These guard the two ways that arrangement silently breaks.

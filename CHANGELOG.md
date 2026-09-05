@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Rejoin Codex diff continuations before mobile wrapping so words and links stay intact, preserving source newlines, indentation, highlights and continuous row backgrounds.
+
 ## [1.5.1+collie.6] - 2026-09-05
 
 - Recognize empty paragraphs inside the active Codex composer, fixing stalled image, mixed-media and text sends while keeping submitted echoes, dialog boundaries and the bounded Enter-verification guard protected. ([ed3857d](https://github.com/zhdsmy/collie/commit/ed3857d))
