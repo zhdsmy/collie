@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Recognize empty paragraphs inside the active Codex composer, fixing stalled image, mixed-media and text sends while keeping submitted echoes, dialog boundaries and the bounded Enter-verification guard protected.
+## [1.5.1+collie.6] - 2026-09-05
+
+- Recognize empty paragraphs inside the active Codex composer, fixing stalled image, mixed-media and text sends while keeping submitted echoes, dialog boundaries and the bounded Enter-verification guard protected. ([ed3857d](https://github.com/zhdsmy/collie/commit/ed3857d))
 
 ## [1.5.1+collie.5] - 2026-09-05
 
