@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Reflow Codex Conversation recap paragraphs as well as regular answers, fixing terminal-wrap fragments while preserving recap separators, structured output, and the Wrap toggle.
+## [1.5.1+collie.4] - 2026-09-05
+
+- Reflow Codex Conversation recap paragraphs as well as regular answers, fixing terminal-wrap fragments while preserving recap separators, structured output, and the Wrap toggle. ([a0ccb07](https://github.com/zhdsmy/collie/commit/a0ccb07))
 
 ## [1.5.1+collie.3] - 2026-09-05
 
