@@ -8,7 +8,8 @@ name: Release
 # URLs only, so nothing here may ever emit a download URL into a document (M14/01 §2.1).
 on:
   push:
-    tags: ["v*.*.*"]
+    # Downstream iterations publish tags only, not GitHub Releases.
+    tags: ["v*.*.*", "!v*+collie.*"]
 
 permissions:
   contents: write # create the release

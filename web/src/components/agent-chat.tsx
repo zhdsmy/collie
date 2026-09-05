@@ -1622,22 +1622,9 @@ export function AgentChat({
               already tracks the keyboard — the viewport meta is `interactive-widget=resizes-content`
               (hooks/use-keyboard.ts) — so the bound follows the real device instead of encoding one
               phone's pixels. `shrink-0` is what makes that bound the whole story. */}
-          {/* …AND THE CHROME BELOW IT, the same way. The whole bottom region is ONE row of this
-              column — the statusline, the status band and the composer are its parts, not its
-              siblings — so zen takes it out as one row, through `Collapse`. The negative margin
-              pairs with Composer's resting safe-area padding: the chrome paints through the home
-              indicator while the input itself sits at the bottom, instead of reserving an empty
-              safe-area strip below it. It belongs on `Collapse`'s direct content box so iOS updates
-              the grid row and its painted composer together after the keyboard closes. */}
-          <Collapse
-            open={!zen}
-            contentClassName={
-              // Keep the compensation on Collapse's direct grid child. On iOS Safari, placing it
-              // one node deeper can leave the row at its pre-keyboard height after the viewport
-              // expands, exposing an empty safe-area strip below the painted composer.
-              composing ? undefined : "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]"
-            }
-          >
+          {/* Keep the footer in normal flow inside the viewport shell. Its own padding
+              provides bottom clearance; no safe-area overflow or grid compensation. */}
+          <Collapse open={!zen}>
             <div className="relative shrink-0">
 
               {/* The agent's statusline, re-surfaced as app chrome (its branch/model/ctx/permission mode

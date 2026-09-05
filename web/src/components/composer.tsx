@@ -991,10 +991,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       <div
         className={cn(
           "bg-chrome px-3",
-          // See `composing` on the props above: the inset reserves room for the home indicator, and
-          // while the keyboard is up the keyboard is already covering it. Paying it twice costs
-          // ~24px on the one screen that has none.
-          composing ? "pb-2" : "pb-[calc(env(safe-area-inset-bottom)_+_0.5rem)]",
+          // The viewport shell reaches the bottom. Keep controls above the home
+          // indicator without an additional inset or overflowing margins.
+          composing ? "pb-2" : "pb-4",
         )}
       >
         {/* Pending-send preview: visible from send until the mirror echoes back (or 6s). Shows the

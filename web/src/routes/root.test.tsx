@@ -117,14 +117,10 @@ describe("which 'last seen' the connection bar shows", () => {
   });
 });
 
-// The root wrapper is the ONE flex column the whole app renders inside (banners + header + outlet, all
-// in-flow). It must never itself become a scrolling element: a scrollport nested inside it that hits
-// its own bound (the statusline strip, the mirror) would otherwise chain an over-drag into the
-// document, dragging the banners and header off screen with it and leaving no scroll position to
-// snap back from. `overflow-hidden` here is what forces every scroll to stay inside a scrollport that
-// actually declares one.
-describe("RootLayout — the document itself never scrolls", () => {
-  it("renders its flex column with overflow-hidden", async () => {
+// The route column inherits the live viewport shell's height. It clips its own
+// overflow; useAppViewport separately locks document scrolling and tracks iOS panning.
+describe("RootLayout viewport column", () => {
+  it("inherits the app viewport height and clips overflow", async () => {
     const router = createMemoryRouter(
       [{ id: ROOT_ROUTE_ID, path: "/", loader: () => home(AFTERNOON), element: <RootLayout /> }],
       { initialEntries: ["/"] },
@@ -133,7 +129,7 @@ describe("RootLayout — the document itself never scrolls", () => {
     // The loader resolves on a microtask even though it's synchronous — the route isn't hydrated yet
     // on the first render.
     const column = await waitFor(() => {
-      const el = container.querySelector(".flex.h-\\[100dvh\\].flex-col");
+      const el = container.querySelector(".flex.h-full.flex-col");
       expect(el).not.toBeNull();
       return el!;
     });

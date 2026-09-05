@@ -647,6 +647,20 @@
   view-transition-name: none;
 }
 
+/* Only the app locks document scrolling; the playground remains a normal page.
+   iOS can otherwise leave a scrollable safe-area strip outside the route scroller. */
+html.app-viewport-locked {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.app-viewport-locked body {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
 /* ── Collie gallop loader ────────────────────────────────────────────────────────────────────────
    The mascot as the app's activity indicator (components/dog-gallop.tsx). A horizontal sprite strip
    — public/dog-gallop.png, 768×128 = six 128px cells — stepped through with steps(6): one frame per

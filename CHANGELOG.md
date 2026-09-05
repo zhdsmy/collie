@@ -25,6 +25,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- Anchored the app to the live visual viewport and locked document scrolling; removed composer safe-area margin compensation that left intermittent bottom gaps on iOS.
+- Excluded downstream `+collie.x` tags from automatic GitHub Release publishing.
+
 ## [1.5.0+collie.4] - 2026-09-05
 
 ### Fixed

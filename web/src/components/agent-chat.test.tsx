@@ -1457,12 +1457,9 @@ describe("the pane fits its viewport", () => {
     expect(bottom.className).toMatch(/(?:^|\s)shrink-0(?=\s|$)/);
     // And explicitly NOT the tempting repair: `min-h-0` here clips the composer from the bottom.
     expect(bottom.className).not.toMatch(/(?:^|\s)min-h-0(?=\s|$)/);
-    // Composer paints the safe area; this content node reclaims its layout height so the controls
-    // sit in that space. The animated row itself must remain geometry-neutral.
+    // The footer stays in normal flow: no inset compensation on the grid.
     expect(bottomContent.parentElement).toBe(bottomRow);
-    expect(bottomContent.className).toContain(
-      "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
-    );
+    expect(bottomContent.className).not.toContain("mb-[calc(");
     expect(bottom.className).not.toContain("safe-area-inset-bottom");
     expect(bottomRow.className).not.toContain("safe-area-inset-bottom");
   });
@@ -1508,7 +1505,7 @@ describe("the pane fits its viewport", () => {
     };
   }
 
-  it("stands the statusline and safe-area compensation down while the keyboard is up — and NOT the status band", async () => {
+  it("stands the statusline down without footer margin compensation", async () => {
     // THE OPERATOR'S OWN SUGGESTION, verbatim: "when the keyboard is open I have a feeling that we
     // could hide the scroll up row and status row could be hidden?" — taken, and half of it
     // declined, which is why this test names both halves.
@@ -1528,9 +1525,7 @@ describe("the pane fits its viewport", () => {
       const bottom = container.querySelector('[data-slot="chrome-block"]')!.parentElement!;
       const bottomContent = bottom.parentElement!;
       expect(screen.queryByRole("button", { name: "Switch pane" })).toBeNull();
-      expect(bottomContent.className).toContain(
-        "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
-      );
+      expect(bottomContent.className).not.toContain("mb-[calc(");
 
       kb.open(460); // a soft keyboard: -384px, well past the open threshold
 
@@ -1555,12 +1550,8 @@ describe("the pane fits its viewport", () => {
 
       kb.open(844); // keyboard closes and the visual viewport returns to its baseline
 
-      await waitFor(() =>
-        expect(bottomContent.className).toContain(
-          "mb-[calc(0.5rem_-_env(safe-area-inset-bottom))]",
-        ),
-      );
-      expect(dock.className).toContain("pb-[calc(env(safe-area-inset-bottom)_+_0.5rem)]");
+      await waitFor(() => expect(dock).toHaveClass("pb-4"));
+      expect(dock.className).not.toContain("safe-area-inset-bottom");
     } finally {
       kb.restore();
     }
