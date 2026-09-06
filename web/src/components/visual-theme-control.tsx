@@ -31,7 +31,9 @@ export function VisualThemeControl() {
           onClick={() => setDesignTheme(active ? "classic" : "animal-island")}
         >
           <Sparkles size={16} aria-hidden="true" />
-          {active ? t("settings.visualTheme.action.classic") : t("settings.visualTheme.action.island")}
+          <span className="visual-theme-control__action-label">
+            {active ? t("settings.visualTheme.action.classic") : t("settings.visualTheme.action.island")}
+          </span>
         </Button>
       </div>
     </>
@@ -59,7 +61,9 @@ export function VisualThemeControl() {
           aria-pressed={active}
           onClick={() => setDesignTheme(active ? "classic" : "animal-island")}
         >
-          {active ? t("settings.visualTheme.action.classic") : t("settings.visualTheme.action.island")}
+          <span className="visual-theme-control__action-label">
+            {active ? t("settings.visualTheme.action.classic") : t("settings.visualTheme.action.island")}
+          </span>
         </IslandButton>
       </div>
     </IslandCard>
