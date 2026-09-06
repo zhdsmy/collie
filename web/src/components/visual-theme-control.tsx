@@ -16,7 +16,7 @@ export function VisualThemeControl() {
   const content = (
     <>
       <div className="visual-theme-control__header">
-        <Palette size={20} aria-hidden="true" />
+        <Palette className="mt-0.5 shrink-0" size={20} aria-hidden="true" />
         <div>
           <div id="visual-theme-title" className="visual-theme-control__title">
             {t("settings.visualTheme.title")}
@@ -44,7 +44,7 @@ export function VisualThemeControl() {
   return (
     <IslandCard className="visual-theme-control" aria-labelledby="visual-theme-title">
       <div className="visual-theme-control__header">
-        <IslandIcon icon={Palette} size={20} aria-hidden="true" />
+        <IslandIcon className="mt-0.5 shrink-0" icon={Palette} size={20} aria-hidden="true" />
         <div>
           <div id="visual-theme-title" className="visual-theme-control__title">
             {t("settings.visualTheme.title")}
