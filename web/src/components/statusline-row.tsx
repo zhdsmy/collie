@@ -14,6 +14,7 @@ import {
   ZapOff,
   type LucideIcon,
 } from "lucide-react";
+import type { ReactNode } from "react";
 
 import type { AnsiSegment } from "@/lib/ansi";
 import { lineText, type StyledLine } from "@/lib/blocks";
@@ -155,9 +156,27 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
   );
 }
 
-export function StatuslineRow({ agent, row }: { agent?: string; row: StyledLine }) {
+const ROW_CLASS =
+  "flex min-w-0 min-h-3.5 items-center gap-1.5 overflow-x-auto overscroll-x-contain whitespace-nowrap leading-none tabular-nums [scrollbar-width:none]";
+
+export function StatuslineRow({
+  agent,
+  row,
+  leading,
+}: {
+  agent?: string;
+  row: StyledLine;
+  leading?: ReactNode;
+}) {
   if (agent !== "codex") {
-    return <div className="truncate"><StyledText segments={row.segments} /></div>;
+    return (
+      <div data-slot="statusline-row" className={ROW_CLASS}>
+        {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
+        <span className="inline-flex min-w-max shrink-0 items-center">
+          <StyledText segments={row.segments} />
+        </span>
+      </div>
+    );
   }
 
   // Split the joined text, not each ANSI span: a field's label and value can have different paint.
@@ -166,8 +185,9 @@ export function StatuslineRow({ agent, row }: { agent?: string; row: StyledLine 
   return (
     <div
       data-slot="codex-statusline"
-      className="flex min-h-3.5 items-center gap-1.5 overflow-x-auto whitespace-nowrap leading-none tabular-nums [scrollbar-width:none]"
+      className={ROW_CLASS}
     >
+      {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
       {lineText(row).split(" \u00b7 ").map((part, i) => {
         const text = part.trim();
         const start = offset + part.indexOf(text);

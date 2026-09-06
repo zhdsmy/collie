@@ -29,6 +29,25 @@ it("compacts the current Codex statusline without abbreviating model, effort, br
   expect(strip).not.toHaveClass("truncate");
 });
 
+it("keeps a leading target inside the same horizontally scrollable row", () => {
+  const row = splitLines(parseAnsi("model · Working · main"))[0]!;
+  const { container } = render(
+    <StatuslineRow agent="codex" row={row} leading={<span>workshop</span>} />,
+  );
+  const strip = container.querySelector<HTMLElement>('[data-slot="codex-statusline"]')!;
+  expect(strip.firstElementChild).toHaveAttribute("data-slot", "statusline-target");
+  expect(strip.textContent).toContain("workshop");
+  expect(strip).toHaveClass("overflow-x-auto", "whitespace-nowrap");
+});
+
+it("can render a target-only row when the agent has no status text", () => {
+  const { container } = render(
+    <StatuslineRow agent="claude" row={{ segments: [] }} leading={<span>workshop</span>} />,
+  );
+  expect(container.querySelector('[data-slot="statusline-target"]')).toBeInTheDocument();
+  expect(container.firstElementChild).toHaveClass("overflow-x-auto", "whitespace-nowrap");
+});
+
 it.each([
   ["Ctx 62%", "62%", "lucide-gauge"],
   ["Ready", "", "lucide-circle-check"],
@@ -173,7 +192,7 @@ it.each(["claude", "pi", "opencode", "unknown"])("leaves %s status rows verbatim
   const text = "  \x1b[36mContext 73% left\x1b[0m \u00b7 Working \u00b7 Fast on   ";
   const { container, row } = renderRow(text, agent);
   expect(container.textContent).toBe(lineText(row));
-  expect(container.firstElementChild).toHaveClass("truncate");
+    expect(container.firstElementChild).toHaveClass("overflow-x-auto", "whitespace-nowrap");
   expect(within(container).queryAllByRole("img")).toHaveLength(0);
   expect(within(container).getByText("Context 73% left").style.color).toBe("var(--ansi-6)");
 });
