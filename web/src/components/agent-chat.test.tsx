@@ -185,7 +185,7 @@ describe("AgentChat — the pane header's identity block", () => {
       const agent = { ...fixtureAgents[0]!, status };
       const { container } = renderChat({ agent, agents: [agent] });
       expect(container.querySelector('[data-slot="composer-status"]')).toBeNull();
-      expect(container.querySelector('[data-slot="composer-target"]')).toBeNull();
+    expect(container.querySelector('[data-slot="statusline-target"]')).toBeNull();
       expect(slot(container, "caption")).toBeNull();
       expect(names(container)).toContain(statusLabel(status));
       cleanup();
@@ -196,7 +196,7 @@ describe("AgentChat — the pane header's identity block", () => {
     const { container } = renderPackChat("workshop");
     expect(slot(container, "caption")).toBeNull();
     expect(identity(container)?.textContent).not.toMatch(/workshop|needs you/i);
-    const target = container.querySelector<HTMLElement>('[data-slot="composer-target"]')!;
+    const target = container.querySelector<HTMLElement>('[data-slot="statusline-target"]')!;
     expect(within(target).getByLabelText(/^sends to host: workshop \(unreachable\)$/i)).toBeInTheDocument();
     expect(target.textContent).not.toContain("needs you");
     expect(container.querySelector('[data-slot="composer-status"]')).toBeNull();
@@ -204,10 +204,10 @@ describe("AgentChat — the pane header's identity block", () => {
 
   it("hides an explicit host on a solo install and resolves the ambient lead on a pack", () => {
     const solo = renderChat({ scope: { host: "bluefin" } });
-    expect(solo.container.querySelector('[data-slot="composer-target"]')).toBeNull();
+    expect(solo.container.querySelector('[data-slot="statusline-target"]')).toBeNull();
     cleanup();
     const pack = renderPackChat("bluefin", { scope: undefined });
-    const target = pack.container.querySelector<HTMLElement>('[data-slot="composer-target"]')!;
+    const target = pack.container.querySelector<HTMLElement>('[data-slot="statusline-target"]')!;
     expect(within(target).getByLabelText("Sends to host: bluefin")).toBeInTheDocument();
   });
 
@@ -624,7 +624,8 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
     expect(second.closest("pre")).toBeNull();
     // Stacked in the one strip. Compared at the ROW level: each row renders one <span> per ANSI
     // segment (colour is carried through now), so the text node's own parent is a span, not the row.
-    const row = (el: HTMLElement) => el.closest("div.truncate");
+    const row = (el: HTMLElement) =>
+      el.closest('[data-slot="statusline-row"], [data-slot="codex-statusline"]');
     expect(row(second)).not.toBe(row(strip));
     expect(row(second)?.parentElement).toBe(row(strip)?.parentElement);
     expect(screen.queryByText(/❯/)).toBeNull(); // the input box was stripped off the mirror
@@ -660,7 +661,7 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
       expect(block.querySelector('[data-slot="composer-status"]')).toBeNull();
       expect(block.querySelector('[data-slot="composer-target"]')).toBeNull();
       expect(block.querySelector('[data-slot="composer"]')?.parentElement).toBe(block);
-      const strip = screen.queryByText("[Opus 4.8] ~/webapp \u00b7 main")?.closest("div.truncate")?.parentElement;
+    const strip = screen.queryByText("[Opus 4.8] ~/webapp \u00b7 main")?.closest('[data-slot="statusline-row"], [data-slot="codex-statusline"]')?.parentElement;
       if (strip) expect(strip.closest('[data-slot="collapse"]')!.nextElementSibling).toBe(block);
       cleanup();
     }
@@ -1436,13 +1437,13 @@ describe("the pane fits its viewport", () => {
         ? renderPackChat("bluefin", { text: STATUS_TEXT })
         : renderChat({ text: STATUS_TEXT });
       const switcher = screen.getByRole("button", { name: "Switch pane" });
-      const target = container.querySelector('[data-slot="composer-target"]');
+      const target = container.querySelector('[data-slot="statusline-target"]');
       expect(target !== null).toBe(packed);
       kb.open(460);
-      await waitFor(() => expect(screen.queryByText("[Opus 4.8] ~/webapp \u00b7 main")).toBeNull());
+      await waitFor(() => expect(screen.getByText("[Opus 4.8] ~/webapp \u00b7 main")).toBeVisible());
       expect(switcher).toBeVisible();
       expect(switcher.closest("header")).not.toBeNull();
-      expect(container.querySelector('[data-slot="composer-target"]')).toBe(target);
+      expect(container.querySelector('[data-slot="statusline-target"]')).toBe(target);
       if (packed) expect(screen.getByLabelText("Sends to host: bluefin")).toBeVisible();
       expect(container.querySelector('[data-slot="composer-status"]')).toBeNull();
       const dock = container.querySelector('[data-slot="composer"]')!;
@@ -1451,7 +1452,7 @@ describe("the pane fits its viewport", () => {
       kb.open(844);
       await waitFor(() => expect(screen.getByText("[Opus 4.8] ~/webapp \u00b7 main")).toBeVisible());
       expect(dock).toHaveClass("pb-4");
-      expect(container.querySelector('[data-slot="composer-target"]')).toBe(target);
+      expect(container.querySelector('[data-slot="statusline-target"]')).toBe(target);
     } finally {
       kb.restore();
     }
@@ -1459,9 +1460,9 @@ describe("the pane fits its viewport", () => {
 
   it.each([STATUS_TEXT, "Plain output without a terminal statusline"])("keeps the target immediately above the composer: %s", (text) => {
     const { container } = renderPackChat("bluefin", { text });
-    const target = container.querySelector('[data-slot="composer-target"]')!;
+    const target = container.querySelector('[data-slot="statusline-target"]')!;
     const composer = container.querySelector('[data-slot="composer"]')!;
-    expect(target.closest('[data-slot="collapse"]')!.nextElementSibling).toBe(composer);
+    expect(target.closest('[data-slot="collapse"]')!.nextElementSibling).toBe(composer.parentElement);
     expect(screen.getByLabelText("Sends to host: bluefin")).toBeVisible();
     expect(container.querySelector('[data-slot="composer-status"]')).toBeNull();
   });

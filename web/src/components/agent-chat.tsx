@@ -481,11 +481,11 @@ export function AgentChat({
 
   // The agent's own statusline (model · ctx% · cwd · branch · tokens · permission mode) is stripped
   // off the mirror by stripChrome so it doesn't duplicate the composer — but it carries real context
-  // (the branch, most notably), so we re-surface it as app chrome just above the composer, where it
-  // sat in the TUI. ALL its rows: a configured statusline is routinely 2–3 rows tall, and we used to
-  // surface only the first, silently losing the rest. Routed through the SAME adapter (adapterFor)
-  // whose buildBlocks strips the chrome, so the two can't drift; empty when there's no adapter for
-  // the agent, a menu is up, or no box at the tail, in which case the strip is hidden. A second parse
+  // (the branch, most notably), so we re-surface every row in one compact, horizontally scrollable
+  // app strip just above the composer. The optional multi-host target joins the first row, keeping
+  // the answer to "where will this send?" in the same stable line. Routed through the SAME adapter
+  // (adapterFor) whose buildBlocks strips the chrome, so the two can't drift; an adapterless agent
+  // may still have only the target row. A second parse
   // of `display`, but memoised on it, so it only recomputes when the buffer content changes — off the
   // render hot path.
   const statusLines = useMemo(
@@ -493,6 +493,7 @@ export function AgentChat({
       grammarsOn ? adapterFor(agent?.agent)?.extractStatusLines(splitLines(parseAnsi(display))) ?? [] : [],
     [display, agent?.agent, grammarsOn],
   );
+  const statuslineVisible = statusLines.length > 0 || showWriteHost;
 
   // A user draft stranded on the input box's "❯" line — a message queued while the agent was busy
   // then recalled, which persists across turns. stripChrome peels the box off the mirror so it goes
@@ -1633,9 +1634,10 @@ export function AgentChat({
                   arrives or leaves — a bare conditional here is the §2 fault at its full height, the
                   mirror teleporting 50px twice per message. `Collapse` also UNMOUNTS at the end of the
                   exit, so nothing is left focusable behind a row that is not on screen. */}
-              {/* Codex alone compacts its fields to icons/values and scrolls long rows horizontally. */}
-              <Collapse open={!composing && statusLines.length > 0}>
-                {statusLines.length > 0 && (
+              {/* Statusline stays visible while typing: it is already a narrow strip, and keeping it
+                  mounted prevents the multi-host target from jumping between separate rows. */}
+              <Collapse open={statuslineVisible}>
+                {statuslineVisible && (
                 <div
                   className={cn(
                     "max-h-[18dvh] overflow-y-auto overscroll-contain border-t border-border/40 px-3 py-1 font-mono text-[11px] leading-tight",
@@ -1650,27 +1652,30 @@ export function AgentChat({
                   )}
                   style={mirrorFace.style}
                 >
-                  {statusLines.map((row, i) => (
+                  {statusLines.length > 0 ? statusLines.map((row, i) => (
                     // Index key: these rows are a positional snapshot of the pane tail, re-derived on
                     // every poll — there is no identity to preserve across renders.
-                    <StatuslineRow key={i} agent={agent?.agent} row={row} />
-                  ))}
+                    <StatuslineRow
+                      key={i}
+                      agent={agent?.agent}
+                      row={row}
+                      leading={i === 0 && showWriteHost ? (
+                        <HostChip host={writeHost} variant="caption" className="shrink-0" />
+                      ) : undefined}
+                    />
+                  )) : (
+                    <StatuslineRow
+                      agent={agent?.agent}
+                      row={{ segments: [] }}
+                      leading={<HostChip host={writeHost} variant="caption" className="shrink-0" />}
+                    />
+                  )}
                 </div>
                 )}
               </Collapse>
 
-              {/* One boundary separates the terminal from the optional target and input controls. */}
+              {/* One boundary separates the terminal status strip from the input controls. */}
               <div data-slot="chrome-block" className="border-t border-rule bg-chrome">
-                <Collapse open={showWriteHost}>
-                  {showWriteHost && (
-                    <div
-                      data-slot="composer-target"
-                      className="flex min-h-5 items-center border-b border-border px-3 py-1 text-[10px]/3"
-                    >
-                      <HostChip host={writeHost} variant="caption" className="min-w-0" />
-                    </div>
-                  )}
-                </Collapse>
                 <Composer
                   ref={composerRef}
                   paneId={paneId}
