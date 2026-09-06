@@ -26,15 +26,14 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Keep statusline visible while typing, allow horizontal overflow scrolling, and place multi-host send targets at the start of the same row.
+## [1.5.2+collie.1] - 2026-09-06
 
-- Recognize Codex working-turn composers and wrapped image paths without weakening send verification; wrap terminal tokens at punctuation while preserving text and search offsets.
+- Keep statusline visible while typing, allow horizontal overflow scrolling, and place multi-host send targets at the start of the same row. ([7ca2f75](https://github.com/zhdsmy/collie/commit/7ca2f75))
 
-- Draw context rings with a clockwise used segment and a remaining hollow segment, keeping percentages and accessible semantics without extra visible labels.
-
-- Hide dev and dirty markers in human-facing version labels while preserving internal build identity and cache update checks.
-
-- Merge upstream v1.5.2: adopt shared labelled-rule clipping, bounded STT cancellation, Traditional Chinese and wider desktop panes; retain downstream composer, input verification, terminal surfaces and statusline behavior.
+- Recognize Codex working-turn composers and wrapped image paths without weakening send verification; wrap terminal tokens at punctuation while preserving text and search offsets. ([a0f7bd6](https://github.com/zhdsmy/collie/commit/a0f7bd6))
+- Draw context rings with a clockwise used segment and a remaining hollow segment, keeping percentages and accessible semantics without extra visible labels. ([9f6e574](https://github.com/zhdsmy/collie/commit/9f6e574))
+- Hide dev and dirty markers in human-facing version labels while preserving internal build identity and cache update checks. ([3e3d28b](https://github.com/zhdsmy/collie/commit/3e3d28b))
+- Merge upstream v1.5.2: adopt shared labelled-rule clipping, bounded STT cancellation, Traditional Chinese and wider desktop panes; retain downstream composer, input verification, terminal surfaces and statusline behavior. ([ebab2de](https://github.com/zhdsmy/collie/commit/ebab2de))
 
 ## [1.5.1+collie.15] - 2026-09-06
 
