@@ -26,11 +26,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Restore upstream Codex line wrapping for answers, submitted input, diffs and recap; remove local row-joining and soft-break heuristics while retaining message surfaces and send safeguards.
+## [1.5.3+collie.1] - 2026-09-06
 
-- Let pane errors open full, selectable details without expanding the header, and distinguish unverified terminal input from undelivered text.
+- Restore upstream Codex line wrapping for answers, submitted input, diffs and recap; remove local row-joining and soft-break heuristics while retaining message surfaces and send safeguards. ([d4c3cba](https://github.com/zhdsmy/collie/commit/d4c3cba))
 
-- Merge upstream v1.5.3: keep release checks and tag fetches on HTTPS despite Git SSH rewrite rules (#170).
+- Let pane errors open full, selectable details without expanding the header, and distinguish unverified terminal input from undelivered text. ([4af0d60](https://github.com/zhdsmy/collie/commit/4af0d60))
+
+- Merge upstream v1.5.3: keep release checks and tag fetches on HTTPS despite Git SSH rewrite rules, thanks @magoz (#170). ([d5d033f](https://github.com/zhdsmy/collie/commit/d5d033f))
 
 ## [1.5.2+collie.1] - 2026-09-06
 
