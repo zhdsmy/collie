@@ -9,3 +9,7 @@ declare const __BUILD_INFO__: {
   time: string;
   id: string;
 };
+
+declare module "animal-island-ui/style" {
+  // The package intentionally exports a stylesheet without a TypeScript module.
+}

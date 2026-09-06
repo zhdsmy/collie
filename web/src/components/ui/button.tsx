@@ -1,7 +1,9 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Button as IslandButton } from "animal-island-ui";
 
 import { cn } from "@/lib/utils";
+import { useDesignPrefs } from "@/lib/design";
 
 // Every variant shares ONE box. `border border-transparent` lives in the base string, so a
 // component that flips `default` ↔ `outline` (nav-tray's keypad, the quick-reply dock) no longer
@@ -46,6 +48,23 @@ function Button({
   size,
   ...props
 }: React.ComponentProps<"button"> & VariantProps<typeof buttonVariants>) {
+  const island = useDesignPrefs().theme === "animal-island";
+  if (island) {
+    const islandType = variant === "destructive" ? "primary" : variant === "outline" ? "dashed" : variant === "ghost" ? "text" : variant === "link" ? "link" : variant === "secondary" ? "default" : "primary";
+    const islandSize = size === "sm" ? "small" : size === "lg" ? "large" : "middle";
+    const { type: htmlType, ...rest } = props;
+    return (
+      <IslandButton
+        type={islandType}
+        size={islandSize}
+        danger={variant === "destructive"}
+        htmlType={htmlType}
+        data-slot="button"
+        className={cn("collie-island-button", className)}
+        {...rest}
+      />
+    );
+  }
   return (
     <button
       data-slot="button"

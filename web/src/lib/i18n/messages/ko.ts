@@ -17,6 +17,10 @@ export const ko: Dictionary = {
   "settings.theme.option.system": "시스템 기본값",
   "settings.theme.option.light": "라이트",
   "settings.theme.option.dark": "다크",
+  "settings.visualTheme.title": "시각 테마",
+  "settings.visualTheme.description": "클래식 Collie 또는 따뜻한 Animal Island 스타일을 사용합니다.",
+  "settings.visualTheme.action.island": "Animal Island 사용",
+  "settings.visualTheme.action.classic": "클래식 Collie 사용",
 
   // --- settings.haptics ---
   "settings.haptics.title": "햅틱 피드백",

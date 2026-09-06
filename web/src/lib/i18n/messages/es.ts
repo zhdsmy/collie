@@ -16,6 +16,10 @@ export const es: Dictionary = {
   "settings.theme.option.system": "Sistema",
   "settings.theme.option.light": "Claro",
   "settings.theme.option.dark": "Oscuro",
+  "settings.visualTheme.title": "Tema visual",
+  "settings.visualTheme.description": "Conserva Collie clásico o prueba el estilo cálido de Animal Island.",
+  "settings.visualTheme.action.island": "Usar Animal Island",
+  "settings.visualTheme.action.classic": "Usar Collie clásico",
 
   // --- settings.haptics ---
   "settings.haptics.title": "Respuesta háptica",

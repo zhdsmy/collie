@@ -31,6 +31,7 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 ## [Unreleased]
 
 - Prepare isolated Animal Island theme preferences and pre-paint restoration on the experimental branch without changing the classic theme or exposing unfinished controls.
+- Add the approved Animal Island UI dependency, official style entrypoint, visual theme switcher, warm light/dark tokens, and theme-aware controls across shared chrome and Composer surfaces.
 
 ## [1.5.1+collie.15] - 2026-09-06
 

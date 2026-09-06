@@ -812,3 +812,243 @@ html.app-viewport-locked body {
     animation: none;
   }
 }
+
+/* The visual-theme row uses the same compact geometry in both skins. */
+.visual-theme-control__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.visual-theme-control__title {
+  font-weight: 600;
+}
+
+.visual-theme-control__description {
+  margin: 0.25rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.visual-theme-control__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Animal Island visual skin ─────────────────────────────────────────────
+   This layer is opt-in through <html class="theme-island">. The classic token
+   graph above remains the default, while the official library supplies the
+   --animal-* source values and its real controls are used in Settings. */
+:root.theme-island {
+  --animal-font-family: Nunito, "Noto Sans SC", -apple-system, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --animal-bg-color: #f8f8f0;
+  --animal-bg-color-secondary: #f0e8d8;
+  --animal-text-color: #794f27;
+  --animal-text-color-secondary: #9f927d;
+  --animal-border-color: #aaa69d;
+  --animal-border-color-light: #e8e2d6;
+  --animal-primary-color: #19c8b9;
+  --animal-primary-color-hover: #3dd4c6;
+  --animal-primary-color-active: #11a89b;
+  --animal-primary-color-bg: #e6f9f6;
+  --animal-focus-yellow: #ffcc00;
+  --animal-radius-sm: 12px;
+  --animal-radius-base: 18px;
+  --animal-radius-lg: 24px;
+  --animal-radius-pill: 50px;
+  --animal-shadow-btn: #bdaea0;
+  --animal-shadow-input: #d4c9b4;
+  --animal-success-color: #6fba2c;
+  --animal-warning-color: #f5c31c;
+  --animal-error-color: #e05a5a;
+  --animal-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --background: var(--animal-bg-color);
+  --foreground: var(--animal-text-color);
+  --card: var(--animal-bg-color);
+  --card-foreground: var(--animal-text-color);
+  --chrome: var(--animal-bg-color-secondary);
+  --popover: var(--animal-bg-color);
+  --popover-foreground: var(--animal-text-color);
+  --primary: var(--animal-primary-color);
+  --primary-foreground: #fff;
+  --secondary: var(--animal-bg-color-secondary);
+  --secondary-foreground: var(--animal-text-color);
+  --muted: var(--animal-bg-color-secondary);
+  --muted-foreground: var(--animal-text-color-secondary);
+  --accent: var(--animal-primary-color-bg);
+  --accent-foreground: var(--animal-text-color);
+  --destructive: var(--animal-error-color);
+  --destructive-foreground: #fff;
+  --border: var(--animal-border-color-light);
+  --input: var(--animal-border-color);
+  --rule: var(--animal-border-color);
+  --ring: var(--animal-focus-yellow);
+  --radius: var(--animal-radius-base);
+  --radius-sm: var(--animal-radius-sm);
+  --radius-md: var(--animal-radius-base);
+  --radius-lg: var(--animal-radius-lg);
+  --radius-xl: var(--animal-radius-lg);
+  --font-sans: var(--animal-font-family);
+  --default-font-family: var(--animal-font-family);
+}
+
+:root.dark.theme-island {
+  --animal-bg-color: #33281f;
+  --animal-bg-color-secondary: #493628;
+  --animal-text-color: #f4dfbe;
+  --animal-text-color-secondary: #d5b891;
+  --animal-border-color: #9b7952;
+  --animal-border-color-light: #654b35;
+  --animal-primary-color: #38d7c6;
+  --animal-primary-color-hover: #61e2d3;
+  --animal-primary-color-active: #20b7a8;
+  --animal-primary-color-bg: #244c48;
+  --animal-shadow-btn: #1c726a;
+  --animal-shadow-input: #1e1712;
+  --animal-success-color: #9cda51;
+  --animal-warning-color: #ffd65a;
+  --animal-error-color: #ff8b7f;
+}
+
+:root.theme-island body {
+  background: var(--animal-bg-color);
+  color: var(--animal-text-color);
+  font-family: var(--animal-font-family);
+}
+
+:root.theme-island :where(h1, h2, h3, h4, h5, h6, label, button, [role="button"],
+  [role="radio"], [role="switch"]) {
+  font-weight: 700;
+}
+
+:root.theme-island :where(button, input, select, textarea, [role="button"],
+  [role="radio"], [role="switch"]) {
+  border-radius: var(--animal-radius-pill);
+  transition: background-color 0.25s var(--animal-ease), border-color 0.25s var(--animal-ease),
+    box-shadow 0.25s var(--animal-ease), transform 0.15s var(--animal-ease);
+}
+
+:root.theme-island :where(input, select, textarea) {
+  border: 2px solid var(--animal-border-color-light);
+  background: var(--animal-bg-color-secondary);
+  color: var(--animal-text-color);
+}
+
+:root.theme-island :where(input, select, textarea):focus-visible {
+  border-color: var(--animal-focus-yellow);
+  outline: 3px solid color-mix(in srgb, var(--animal-focus-yellow) 35%, transparent);
+  outline-offset: 2px;
+}
+
+:root.theme-island :where(button, [role="button"], [role="radio"], [role="switch"]):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--animal-primary-color) 42%, transparent);
+  outline-offset: 2px;
+}
+
+:root.theme-island :where(button[class*="bg-primary"], [data-slot="button"][class*="bg-primary"]) {
+  box-shadow: 0 4px 0 var(--animal-shadow-btn);
+}
+
+:root.theme-island :where(button[class*="bg-primary"], [data-slot="button"][class*="bg-primary"]):active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--animal-shadow-btn);
+}
+
+:root.theme-island :where([data-slot="card"], [data-slot="composer"], [data-slot="chrome-block"]) {
+  border-color: var(--animal-border-color-light);
+}
+
+:root.theme-island :where([data-slot="card"]) {
+  border-radius: var(--animal-radius-lg);
+  box-shadow: none;
+}
+
+:root.theme-island :where([class*="animal-card"]) {
+  background: var(--animal-bg-color-secondary);
+  color: var(--animal-text-color);
+  border-color: var(--animal-border-color-light);
+  border-radius: var(--animal-radius-lg);
+  box-shadow: none;
+}
+
+:root.theme-island :where([data-slot="composer"], [data-slot="chrome-block"]) {
+  background: var(--animal-bg-color-secondary);
+}
+
+:root.theme-island :where([data-slot="composer-controls"]) {
+  gap: 0.5rem;
+}
+
+:root.theme-island :where([data-slot="composer-controls"] > button) {
+  min-height: 44px;
+  border: 2px solid transparent;
+  background: var(--animal-bg-color);
+  color: var(--animal-text-color);
+}
+
+:root.theme-island :where([data-slot="composer-controls"] > button:hover,
+  [data-slot="composer-controls"] > button[aria-pressed="true"]) {
+  border-color: var(--animal-primary-color);
+  background: var(--animal-primary-color-bg);
+  color: var(--animal-text-color);
+}
+
+:root.theme-island :where([data-slot="composer"] textarea) {
+  min-height: 50px;
+  border-radius: var(--animal-radius-lg);
+  background: var(--animal-bg-color);
+  box-shadow: inset 0 0 0 1px var(--animal-shadow-input);
+  font-weight: 600;
+}
+
+:root.theme-island :where([data-slot="composer-target"], [data-slot="codex-statusline"]) {
+  border-color: var(--animal-border-color);
+}
+
+:root.theme-island :where([role="dialog"], [data-slot="sheet"], [data-slot="drawer"],
+  [data-slot="command-palette"]) {
+  background: var(--animal-bg-color);
+  color: var(--animal-text-color);
+  border-color: var(--animal-border-color-light);
+}
+
+:root.theme-island :where(.visual-theme-control) {
+  gap: 1rem;
+}
+
+:root.theme-island .visual-theme-control[class*="animal-card"] {
+  background: var(--animal-bg-color-secondary);
+  color: var(--animal-text-color);
+  border-color: var(--animal-border-color-light);
+}
+
+:root.theme-island :where(.visual-theme-control__header) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  color: var(--animal-text-color);
+}
+
+:root.theme-island :where(.visual-theme-control__title) {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+:root.theme-island :where(.visual-theme-control__description) {
+  margin: 0.25rem 0 0;
+  color: var(--animal-text-color-secondary);
+  font-size: 0.875rem;
+}
+
+:root.theme-island :where(.visual-theme-control__actions) {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.theme-island :where(button, input, select, textarea, [role="button"], [role="radio"], [role="switch"]) {
+    transition: none;
+  }
+}

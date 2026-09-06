@@ -215,6 +215,10 @@ export default defineConfig({
   ],
   resolve: {
     alias: { "@": resolve(import.meta.dirname, "src") },
+    // animal-island-ui ships a partial dist/es/node_modules tree. Dedupe the
+    // peer runtimes so Vite/Vitest use the app's React pair rather than looking
+    // for the package's missing nested react-dom/index.js.
+    dedupe: ["react", "react-dom"],
   },
   build: {
     outDir: "dist",

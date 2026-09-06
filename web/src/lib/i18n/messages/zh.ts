@@ -17,6 +17,10 @@ export const zh: Dictionary = {
   "settings.theme.option.system": "跟随系统",
   "settings.theme.option.light": "浅色",
   "settings.theme.option.dark": "深色",
+  "settings.visualTheme.title": "视觉主题",
+  "settings.visualTheme.description": "保留经典 Collie 外观，或试用温暖的 Animal Island 主题。",
+  "settings.visualTheme.action.island": "使用 Animal Island",
+  "settings.visualTheme.action.classic": "使用经典 Collie",
 
   // --- settings.haptics ---
   "settings.haptics.title": "触觉反馈",

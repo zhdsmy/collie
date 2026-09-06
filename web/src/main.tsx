@@ -1,4 +1,5 @@
 import { StrictMode } from "react";
+import "animal-island-ui/style";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App";

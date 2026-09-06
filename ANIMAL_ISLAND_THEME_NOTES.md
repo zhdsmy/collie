@@ -24,7 +24,7 @@ and the real library components, with their actual public TypeScript declaration
 | Required icon dependency | `lucide-react@^1.40.0`; `1.40.0` published 2026-09-03 08:56:22 UTC |
 | License | CC BY-NC 4.0, noncommercial only, attribution required |
 | Repository cooldown | 604800 seconds (7 days), unchanged |
-| Installation | Not installed; cooldown exceptions for the library and its required icon dependency are awaiting approval |
+| Installation | Installed after the approved cooldown exception: `animal-island-ui@1.9.0` and `lucide-react@1.40.0` |
 
 The upstream history was rewritten for a DMCA cleanup. Do not use an older package
 or recover removed assets to work around the cooldown. Inspect the publication
@@ -73,6 +73,9 @@ Status is updated as each surface is implemented and verified.
 | Surface | Required coverage | Status |
 | --- | --- | --- |
 | Preference foundation | Storage, font independence, cold start, switch-back, unavailable storage | Verified: 25 new cases and existing preference tests pass |
+| Dependency integration | Approved exception for exact package and required icon version; public style import; license retained | Installed and typechecked; package API integration verified in Settings |
+| Theme switcher | Classic/Animal Island independent of light/dark and fonts | Implemented; control test and mobile preview pass |
+| Shared chrome token layer | Header, cards, forms, sheets, Composer, status target and statusline boundary | Implemented; full route audit and screenshot matrix pending |
 | Shared primitives | Button/link, card, badge/chip, switch, sheet, notices, lists, labels, strips, toasts, chat input/list | Pending |
 | Startup and root | Static pre-CSS splash, React splash, loading, root error, idle lock, foreground recovery | Pending |
 | `/` | Dashboard cards/list, spaces, host labels, sidebar, empty/filter/loading/error states | Pending |
@@ -105,8 +108,7 @@ boundary explicitly unless the new theme has also been checked on the real PWA.
 
 ### Foundation Checkpoint, 2026-09-06
 
-The nonvisual foundation passes all 190 frontend suites: 5,267 passed, 30 existing
-todo. Full-tree lint and the root atomic build pass, including both typechecks and
-version consistency. Dependencies and lockfiles are unchanged. The separate
-production checkout remains at `8d5eb1f` (`v1.5.1+collie.15`). No theme screenshots
-or visual-completeness claim are possible yet; component integration is pending.
+The nonvisual foundation passes all 190 frontend suites: 5,267 passed and 30 existing
+todo. Full-tree lint, root and web typechecks, and the atomic build pass with version
+consistency. Dependencies and lockfiles contain the approved package versions. The
+separate production checkout remains at `8d5eb1f` (`v1.5.1+collie.15`).

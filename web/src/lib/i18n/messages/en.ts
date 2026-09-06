@@ -26,6 +26,10 @@ export const en = {
   "settings.theme.option.system": "System",
   "settings.theme.option.light": "Light",
   "settings.theme.option.dark": "Dark",
+  "settings.visualTheme.title": "Visual theme",
+  "settings.visualTheme.description": "Keep the classic Collie face or try the warm Animal Island skin.",
+  "settings.visualTheme.action.island": "Use Animal Island",
+  "settings.visualTheme.action.classic": "Use classic Collie",
 
   // --- settings.haptics ---
   "settings.haptics.title": "Haptics",

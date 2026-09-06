@@ -16,6 +16,10 @@ export const ja: Dictionary = {
   "settings.theme.option.system": "システム",
   "settings.theme.option.light": "ライト",
   "settings.theme.option.dark": "ダーク",
+  "settings.visualTheme.title": "ビジュアルテーマ",
+  "settings.visualTheme.description": "クラシックな Collie、または温かい Animal Island を選べます。",
+  "settings.visualTheme.action.island": "Animal Island を使う",
+  "settings.visualTheme.action.classic": "クラシック Collie を使う",
 
   // --- settings.haptics ---
   "settings.haptics.title": "ハプティクス",
