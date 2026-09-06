@@ -67,11 +67,10 @@ function ContextField({ segments, value, remaining }: {
   value: string;
   remaining: boolean;
 }) {
-  const { locale } = useLocale();
+  useLocale();
   const percent = Number.parseInt(value, 10);
   const used = remaining ? 100 - percent : percent;
   const label = t(remaining ? "statusline.context.remainingAria" : "statusline.context.usedAria", { percent: value });
-  const shortLabel = t(remaining ? "statusline.context.remainingShort" : "statusline.context.usedShort");
   return (
     <span
       role="img"
@@ -88,19 +87,13 @@ function ContextField({ segments, value, remaining }: {
         style={{
           // This strip is inverted in light mode: keep ring paint in the mirror's dark space.
           color: used >= 95 ? "var(--ansi-9)" : used >= 80 ? "var(--ansi-11)" : "#fafafa",
-          background: `conic-gradient(currentColor ${percent}%, rgb(255 255 255 / 22%) 0)`,
+          background: `conic-gradient(currentColor ${used}%, rgb(255 255 255 / 22%) 0)`,
           WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0)",
           mask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0)",
         }}
       />
-      <span
-        aria-hidden="true"
-        className={cn("inline-flex items-center gap-0.5", ["zh", "ja", "ko"].includes(locale) && "flex-row-reverse")}
-      >
-        <span className="inline-block w-[4ch] text-right tabular-nums">
-          <StyledText segments={segments} />
-        </span>
-        <span>{shortLabel}</span>
+      <span aria-hidden="true" className="inline-block w-[4ch] text-right tabular-nums">
+        <StyledText segments={segments} />
       </span>
     </span>
   );

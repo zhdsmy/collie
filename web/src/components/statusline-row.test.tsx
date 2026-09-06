@@ -17,7 +17,7 @@ function renderRow(text: string, agent: string | undefined = "codex") {
 it("compacts the current Codex statusline without abbreviating model, effort, branch or version", () => {
   const text = "  gpt-6-astra xhigh \u00b7 Working \u00b7 Context 85% left \u00b7 Fast off \u00b7 main \u00b7 0.153.4   ";
   const { container, row } = renderRow(text);
-  expect(container.textContent).toBe("gpt-6-astra xhigh85%leftmain0.153.4");
+  expect(container.textContent).toBe("gpt-6-astra xhigh85%main0.153.4");
   for (const label of ["Working", "Context 85% left", "Fast off"]) {
     const field = within(container).getByRole("img", { name: label });
     expect(field).toHaveAttribute("title", label);
@@ -84,14 +84,14 @@ it("matches fields across ANSI boundaries and retains the value's own paint", ()
 });
 
 it.each([
-  ["Context 77% left", "77%left", 77, 23],
-  ["Context 23% used", "23%used", 23, 23],
-  ["Ctx 77% left", "77%left", 77, 23],
-  ["Ctx 23% used", "23%used", 23, 23],
-  ["Context 0% left", "0%left", 0, 100],
-  ["Context 100% left", "100%left", 100, 0],
-  ["Context 0% used", "0%used", 0, 0],
-  ["Context 100% used", "100%used", 100, 100],
+  ["Context 77% left", "77%", 77, 23],
+  ["Context 23% used", "23%", 23, 23],
+  ["Ctx 77% left", "77%", 77, 23],
+  ["Ctx 23% used", "23%", 23, 23],
+  ["Context 0% left", "0%", 0, 100],
+  ["Context 100% left", "100%", 100, 0],
+  ["Context 0% used", "0%", 0, 0],
+  ["Context 100% used", "100%", 100, 100],
 ])("draws the displayed proportion with an explicit unit: %s", (text, visible, percent, used) => {
   const { container, row } = renderRow(text);
   const field = within(container).getByRole("img");
@@ -101,7 +101,7 @@ it.each([
   expect(ring).toHaveAttribute("data-used", String(used));
   // jsdom drops these gradients; verify the emitted paint here and rendered pixels in a browser.
   const markup = renderToStaticMarkup(<StatuslineRow agent="codex" row={row} />);
-  expect(markup).toContain(`conic-gradient(currentColor ${percent}%`);
+  expect(markup).toContain(`conic-gradient(currentColor ${used}%`);
   expect(markup).toContain("mask:radial-gradient(farthest-side, transparent calc(100% - 1.5px)");
   expect(lineText(row)).toBe(text);
 });
@@ -138,26 +138,21 @@ it("keeps plain fields' ANSI spans in one inline flow inside the centered box", 
   expect(field.firstElementChild?.children).toHaveLength(2);
 });
 
-it.each<[Locale, string, string, boolean]>([
-  ["zh", "余", "用", true],
-  ["ja", "残", "使用", true],
-  ["ko", "잔여", "사용", true],
-  ["de", "frei", "belegt", false],
-  ["es", "libre", "usado", false],
-])("updates context labels in place when switching to %s", async (locale, remaining, used, prefix) => {
+it.each<[Locale, string, string]>([
+  ["zh", "上下文剩余 77%", "上下文已用 23%"],
+  ["ja", "コンテキスト残り 77%", "コンテキスト使用済み 23%"],
+  ["ko", "컨텍스트 잔여 77%", "컨텍스트 사용 23%"],
+  ["de", "Kontext 77% frei", "Kontext 23% belegt"],
+  ["es", "Contexto 77% libre", "Contexto 23% usado"],
+])("keeps context semantics accessible when switching to %s", async (locale, remaining, used) => {
   const { container } = renderRow("Context 77% left \u00b7 Context 23% used");
   await act(async () => {
     setLocale(locale);
     await whenLocaleReady(locale);
   });
-  for (const label of [remaining, used]) {
-    const node = within(container).getByText(label);
-    expect(node.parentElement?.classList.contains("flex-row-reverse")).toBe(prefix);
-  }
-  if (locale === "zh") {
-    expect(within(container).getByRole("img", { name: "上下文剩余 77%" })).toBeInTheDocument();
-    expect(within(container).getByRole("img", { name: "上下文已用 23%" })).toBeInTheDocument();
-  }
+  expect(within(container).getByRole("img", { name: remaining })).toBeInTheDocument();
+  expect(within(container).getByRole("img", { name: used })).toBeInTheDocument();
+  expect(container.textContent).not.toMatch(/余|用|残|使用|잔여|사용|frei|belegt|libre|usado/);
 });
 
 it("animates only Working and removes the animation when the state changes", () => {
