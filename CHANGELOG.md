@@ -30,6 +30,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 - Let pane errors open full, selectable details without expanding the header, and distinguish unverified terminal input from undelivered text.
 
+- Merge upstream v1.5.3: keep release checks and tag fetches on HTTPS despite Git SSH rewrite rules (#170).
+
 ## [1.5.2+collie.1] - 2026-09-06
 
 - Keep statusline visible while typing, allow horizontal overflow scrolling, and place multi-host send targets at the start of the same row. ([7ca2f75](https://github.com/zhdsmy/collie/commit/7ca2f75))
