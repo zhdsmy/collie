@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 import { clearStatus, setStatus } from "@/lib/status";
 import { HeaderStatus } from "./header-status";
@@ -50,7 +50,7 @@ describe("HeaderStatus — swaps the title for a live status, in place", () => {
     expect(screen.getByText("webapp › main")).toBeInTheDocument();
   });
 
-  it("an error status stays until tapped away, same as the toast it replaced", () => {
+  it("keeps errors until explicitly dismissed from their details", () => {
     render(
       <HeaderStatus>
         <span>webapp › main</span>
@@ -59,7 +59,45 @@ describe("HeaderStatus — swaps the title for a live status, in place", () => {
     act(() => setStatus("send failed", "error"));
     act(() => vi.advanceTimersByTime(10_000));
     expect(screen.getByRole("status")).toHaveTextContent("send failed");
-    act(() => clearStatus());
+    fireEvent.click(screen.getByRole("button", { name: "Error details" }));
+    const dialog = screen.getByRole("dialog", { name: "Error details" });
+    expect(dialog).toHaveTextContent("send failed");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByText("webapp › main")).toBeInTheDocument();
+  });
+
+  it("opens complete multiline errors outside the clipped header and preserves them when details close", () => {
+    const { container } = render(<HeaderStatus><span>webapp</span></HeaderStatus>);
+    const message = `Could not verify the terminal input.\n${"A long error detail. ".repeat(30)}\nNothing was submitted.`;
+    act(() => setStatus(message, "error"));
+    const trigger = screen.getByRole("button", { name: "Error details" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    const dialog = screen.getByRole("dialog", { name: "Error details" });
+    const detail = dialog.querySelector('[data-slot="status-details-text"]')!;
+    expect(detail.textContent).toBe(message);
+    expect(detail).toHaveClass("whitespace-pre-wrap", "break-words", "select-text");
+    expect(detail).not.toHaveClass("truncate");
+    expect(container).not.toContainElement(dialog);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status").textContent).toBe(message);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("does not leave old details open when a newer status replaces an error", () => {
+    render(<HeaderStatus><span>webapp</span></HeaderStatus>);
+    act(() => setStatus("First failure", "error"));
+    fireEvent.click(screen.getByRole("button", { name: "Error details" }));
+    act(() => setStatus("Second failure", "error"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Second failure");
+    fireEvent.click(screen.getByRole("button", { name: "Error details" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("Second failure");
+    act(() => setStatus("Sent", "success"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Error details" })).not.toBeInTheDocument();
   });
 });

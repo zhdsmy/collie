@@ -399,6 +399,7 @@ export const en = {
   "status.count.working.other": "{count} working",
   "status.shellBadge": "shell",
   "status.dismissAria": "Dismiss",
+  "status.errorDetails": "Error details",
   "statusline.context.remainingShort": "left",
   "statusline.context.usedShort": "used",
   "statusline.context.remainingAria": "Context {percent} left",
@@ -661,7 +662,7 @@ export const en = {
   "reply.stalled.noEcho":
     "That's a password prompt — it shows nothing as you type, so the text can't be confirmed and nothing was submitted. What you typed is already in the pane.",
   "reply.stalled.generic":
-    "Message didn't reach the input box — a dialog may be waiting, and if you were answering it by key that key likely landed. Nothing was submitted.",
+    "Text was sent to the pane, but could not be verified in the agent's input box. No Enter was sent. A dialog shortcut may already have taken effect; check the terminal before retrying.",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "Note input didn't open — check the pane",

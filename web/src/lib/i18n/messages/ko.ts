@@ -378,6 +378,7 @@ export const ko: Dictionary = {
   "status.count.working.other": "{count}개 작업 중",
   "status.shellBadge": "셸",
   "status.dismissAria": "닫기",
+  "status.errorDetails": "오류 상세 정보",
   "statusline.context.remainingShort": "잔여",
   "statusline.context.usedShort": "사용",
   "statusline.context.remainingAria": "컨텍스트 잔여 {percent}",
@@ -638,7 +639,7 @@ export const ko: Dictionary = {
   "reply.stalled.noEcho":
     "비밀번호 입력 프롬프트에서는 화면 표시가 없어 전송 여부를 검증할 수 없습니다. 작성한 내용은 창에 남아 있습니다.",
   "reply.stalled.generic":
-    "메시지가 입력창에 전달되지 않았습니다. 대화상자가 입력을 기다리는 중일 수 있으며, 키 입력을 전송했다면 해당 키만 반영되었을 수 있습니다. 제출된 내용은 없습니다.",
+    "텍스트를 창으로 보냈지만 에이전트 입력창에서 확인하지 못했습니다. Enter는 보내지 않았습니다. 대화상자 단축키는 이미 실행되었을 수 있으므로 다시 시도하기 전에 터미널을 확인하세요.",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "메모 입력창이 열리지 않았습니다. 창 상태를 확인하십시오.",

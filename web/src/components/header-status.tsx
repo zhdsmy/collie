@@ -1,10 +1,13 @@
-import { AlertCircle, AlertTriangle, CheckCircle2, Info } from "lucide-react";
-import type { ReactNode } from "react";
+import { AlertCircle, AlertTriangle, CheckCircle2, ChevronRight, Info, X } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
 import { clearStatus, useStatus, type StatusTone } from "@/lib/status";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
+import { Button } from "@/components/ui/button";
+import { BottomSheet } from "@/components/ui/sheet";
 
 /**
  * The pane screen's status (lib/status.ts), living in the header's TITLE SLOT instead of floating
@@ -44,38 +47,58 @@ const ICONS = {
 export function HeaderStatus({ children }: { children: ReactNode }) {
   useLocale();
   const status = useStatus();
+  const [detailId, setDetailId] = useState<number | null>(null);
+  const messageId = useId();
   if (!status) return <>{children}</>;
   const Icon = ICONS[status.tone];
-  // Errors persist (lib/status.ts's own default ttl) until dismissed — StatusArea's toast let you
-  // tap it away; this is the same contract in the new spot, a tap-sized button laid over the same
-  // box rather than a visible ✕, so the status text isn't crowded on a row this narrow.
+  // Keep the header's height fixed; tapping an error opens its full text instead of losing it.
   const dismissable = status.tone === "error";
+  const detailsOpen = dismissable && detailId === status.id;
   return (
-    <div
-      key={status.id}
-      data-slot="header-status"
-      className={cn("relative flex min-h-11 min-w-0 flex-1 items-center", dismissable && "pointer-events-auto")}
-    >
-      {/* `<output>` carries an implicit ARIA role of "status" — the same announcement contract
-          StatusArea's own `<output>` made, kept verbatim. */}
-      <output
-        aria-live="polite"
-        className={cn(
-          "flex min-w-0 flex-1 items-center gap-1.5 truncate text-sm font-semibold",
-          TONE[status.tone],
-        )}
+    <>
+      <div
+        key={status.id}
+        data-slot="header-status"
+        className={cn("relative flex min-h-11 min-w-0 flex-1 items-center", dismissable && "pointer-events-auto")}
       >
-        <Icon className="size-4 shrink-0" />
-        <span className="truncate">{status.text}</span>
-      </output>
-      {dismissable && (
-        <button
-          type="button"
-          aria-label={t("status.dismissAria")}
-          onClick={() => clearStatus()}
-          className="absolute inset-0 rounded-lg"
-        />
+        {/* `<output>` carries an implicit ARIA role of "status" — the same announcement contract
+            StatusArea's own `<output>` made, kept verbatim. */}
+        <output
+          aria-live="polite"
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-1.5 truncate text-sm font-semibold",
+            TONE[status.tone],
+          )}
+        >
+          <Icon className="size-4 shrink-0" />
+          <span id={messageId} className="truncate">{status.text}</span>
+          {dismissable && <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />}
+        </output>
+        {dismissable && (
+          <button
+            type="button"
+            aria-label={t("status.errorDetails")}
+            aria-describedby={messageId}
+            aria-haspopup="dialog"
+            aria-expanded={detailsOpen}
+            title={status.text}
+            onClick={() => setDetailId(status.id)}
+            className="absolute inset-0 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          />
+        )}
+      </div>
+      {dismissable && createPortal(
+        <BottomSheet open={detailsOpen} onClose={() => setDetailId(null)} title={t("status.errorDetails")}>
+          <p data-slot="status-details-text" className="whitespace-pre-wrap break-words text-sm leading-relaxed select-text">
+            {status.text}
+          </p>
+          <Button variant="outline" className="mt-4 w-full" onClick={() => clearStatus()}>
+            <X className="size-4" />
+            {t("status.dismissAria")}
+          </Button>
+        </BottomSheet>,
+        document.body,
       )}
-    </div>
+    </>
   );
 }

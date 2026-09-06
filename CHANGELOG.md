@@ -28,6 +28,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 - Restore upstream Codex line wrapping for answers, submitted input, diffs and recap; remove local row-joining and soft-break heuristics while retaining message surfaces and send safeguards.
 
+- Let pane errors open full, selectable details without expanding the header, and distinguish unverified terminal input from undelivered text.
+
 ## [1.5.2+collie.1] - 2026-09-06
 
 - Keep statusline visible while typing, allow horizontal overflow scrolling, and place multi-host send targets at the start of the same row. ([7ca2f75](https://github.com/zhdsmy/collie/commit/7ca2f75))

@@ -366,7 +366,7 @@ describe("sendGuardedReply", () => {
     expect(calls).toEqual([{ text: "please do not approve anything", submit: false }]);
   });
 
-  it("the stalled message warns that a key answer probably landed", async () => {
+  it("distinguishes unverified input from a missing send and warns that a dialog shortcut may have acted", async () => {
     harness(() => paneWithDialog);
     const out = await sendGuardedReply({
       paneId: "w1:p1",
@@ -375,7 +375,8 @@ describe("sendGuardedReply", () => {
       force: true,
       ...instant,
     });
-    expect(out).toMatchObject({ error: expect.stringMatching(/that key likely landed/i) });
+    expect(out).toMatchObject({ error: expect.stringMatching(/dialog shortcut may already have taken effect/i) });
+    expect(out).toMatchObject({ error: expect.stringMatching(/No Enter was sent/) });
   });
 
   it("#34: does not mistake somebody else's stranded draft for our text", async () => {
@@ -795,6 +796,11 @@ describe("the pre-type work is handed the region its keys must be bound to", () 
 
   it.each([
     ["plain text", "please continue this investigation", "please continue this investigation"],
+    [
+      "Chinese guidance from the reported screenshot",
+      "要的结果是应该换行的就保持，不应该换行的就拼接在一起，所以能不能做到准确",
+      "要的结果是应该换行的就保持，不应该换行的就拼接在一起，所以能不能做\n  到准确",
+    ],
     ["blank lines", "第一行\n\n第三行", "第一行 第三行"],
     ["image token", "/Users/michael/.local/state/collie/uploads/one.png", "[image #1]"],
     [

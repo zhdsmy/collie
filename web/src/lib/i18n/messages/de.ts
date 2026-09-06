@@ -385,6 +385,7 @@ export const de: Dictionary = {
   "status.count.working.other": "{count} laufen",
   "status.shellBadge": "shell",
   "status.dismissAria": "Verwerfen",
+  "status.errorDetails": "Fehlerdetails",
   "statusline.context.remainingShort": "frei",
   "statusline.context.usedShort": "belegt",
   "statusline.context.remainingAria": "Kontext {percent} frei",
@@ -648,7 +649,7 @@ export const de: Dictionary = {
   "reply.stalled.noEcho":
     "Dies ist eine Passwortabfrage ohne Zeichenecho. Der Text konnte nicht bestätigt und daher nicht übermittelt werden. Die Eingabe steht bereits im Pane.",
   "reply.stalled.generic":
-    "Die Nachricht hat das Eingabefeld nicht erreicht. Vermutlich wartet ein Dialog. Einzelne Tastendrücke zur Bestätigung wurden eventuell verarbeitet. Es wurde nichts gesendet.",
+    "Der Text wurde an das Terminal gesendet, konnte aber nicht im Eingabefeld des Agents bestätigt werden. Enter wurde nicht gesendet. Ein Dialogkürzel könnte bereits gewirkt haben; prüfe das Terminal vor einem erneuten Versuch.",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "Notizfeld konnte nicht geöffnet werden. Pane prüfen.",

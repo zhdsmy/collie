@@ -380,6 +380,7 @@ export const ja: Dictionary = {
   "status.count.working.other": "{count}件が処理中です",
   "status.shellBadge": "シェル",
   "status.dismissAria": "閉じる",
+  "status.errorDetails": "エラーの詳細",
   "statusline.context.remainingShort": "残",
   "statusline.context.usedShort": "使用",
   "statusline.context.remainingAria": "コンテキスト残り {percent}",
@@ -640,7 +641,7 @@ export const ja: Dictionary = {
   "reply.stalled.noEcho":
     "パスワード入力プロンプトです。エコーバックがないため到達確認ができず、送信されませんでした。入力内容はペイン側に残っています。",
   "reply.stalled.generic":
-    "メッセージが入力欄に届きませんでした。ダイアログの応答待ちの可能性があります。キー操作で応答した場合は入力されている可能性があります。送信は実行されていません。",
+    "テキストはペインに送られましたが、エージェントの入力欄では確認できませんでした。Enter は送られていません。ダイアログのショートカットは既に実行された可能性があります。再試行する前にターミナルを確認してください。",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "ノート入力を開けませんでした。ペインを確認してください。",

@@ -367,6 +367,7 @@ export const zh: Dictionary = {
   "status.count.working.other": "{count} 项运行中",
   "status.shellBadge": "shell",
   "status.dismissAria": "关闭",
+  "status.errorDetails": "错误详情",
   "statusline.context.remainingShort": "余",
   "statusline.context.usedShort": "用",
   "statusline.context.remainingAria": "上下文剩余 {percent}",
@@ -626,7 +627,7 @@ export const zh: Dictionary = {
   "reply.stalled.noEcho":
     "当前处于密码提示状态，终端无回显导致无法确认文本且未提交。输入的内容已写入窗格。",
   "reply.stalled.generic":
-    "消息未送达输入框。可能有对话框正在等待输入；如果是按键响应，该按键可能已生效。未提交任何内容。",
+    "文字已发送到窗格，但暂时无法确认 Agent 输入框中的内容。未自动按 Enter 提交。如果输入的是弹窗快捷键，该操作可能已生效；请先检查终端，再决定是否重试。",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "备注输入框未能打开，请检查对应窗格",

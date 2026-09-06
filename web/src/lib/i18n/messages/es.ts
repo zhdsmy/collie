@@ -384,6 +384,7 @@ export const es: Dictionary = {
   "status.count.working.other": "{count} en ejecución",
   "status.shellBadge": "shell",
   "status.dismissAria": "Descartar",
+  "status.errorDetails": "Detalles del error",
   "statusline.context.remainingShort": "libre",
   "statusline.context.usedShort": "usado",
   "statusline.context.remainingAria": "Contexto {percent} libre",
@@ -647,7 +648,7 @@ export const es: Dictionary = {
   "reply.stalled.noEcho":
     "Es una solicitud de contraseña. No muestra salida al escribir, por lo que el texto no se pudo confirmar ni enviar. El contenido introducido permanece en el panel.",
   "reply.stalled.generic":
-    "El mensaje no llegó al campo de entrada. Puede haber un diálogo activo y, si se pulsó una tecla para responderlo, es probable que se haya registrado. No se envió nada.",
+    "El texto se envió al panel, pero no pudo verificarse en el campo de entrada del agente. No se envió Enter. Un atajo de diálogo podría haber surtido efecto; revisa el terminal antes de reintentar.",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "El campo de nota no se abrió. Revisa el panel.",

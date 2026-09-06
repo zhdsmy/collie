@@ -6,6 +6,7 @@ import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { clearStatus, useStatus } from "@/lib/status";
+import { t as translate } from "@/lib/i18n";
 import { isReloadHeld, __resetReloadGuard } from "@/lib/reload-guard";
 import { loadDraft } from "@/lib/drafts";
 import { server } from "@/test/setup";
@@ -92,7 +93,7 @@ function renderComposer(overrides: Partial<ComponentProps<typeof Composer>> = {}
  */
 async function awaitTerminalStall() {
   await waitFor(
-    () => expect(screen.getByTestId("status")).toHaveTextContent(/didn't reach the input box/i),
+    () => expect(screen.getByTestId("status")).toHaveTextContent(translate("reply.stalled.generic")),
     { timeout: 5000 },
   );
 }
@@ -333,7 +334,7 @@ describe("Composer — send", () => {
     // ~2.8s after the type (POLL_ATTEMPTS × POLL_DELAY_MS), and a test that ended first would have
     // it write into whichever test was running by then, past this file's `clearStatus()`.
     await waitFor(
-      () => expect(screen.getByTestId("status")).toHaveTextContent(/didn't reach the input box/i),
+      () => expect(screen.getByTestId("status")).toHaveTextContent(translate("reply.stalled.generic")),
       { timeout: 5000 },
     );
     // No `ctrl+k` + 41 Backspaces into the picker. The override is about the MESSAGE; the keys the
