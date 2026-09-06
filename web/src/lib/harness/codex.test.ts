@@ -97,14 +97,42 @@ describe("composerReady — the gate the reply path pre-flights on", () => {
   });
 });
 
+describe("Codex raw row preservation", () => {
+  it.each([
+    { name: "answer prose", rows: ["\u2022 Answer", "  First line", "  Second line", "", "  Next paragraph"] },
+    { name: "CJK prose", rows: ["\u2022 \u7b54\u590d", "  \u7b2c\u4e00\u6bb5", "  \u7b2c\u4e8c\u6bb5"] },
+    { name: "recap", rows: ["\u2500 Conversation recap \u2500", "", "  First line", "  Second line"] },
+    { name: "code and lists", rows: ["\u2022 Answer", "  ```ts", "  const a = 1;", "    a++;", "  ```", "", "  - first", "    continued", "  - second"] },
+    {
+      name: "submitted input at the terminal edge",
+      rows: [
+        "\u2500 Worked for 1m ".padEnd(44, "\u2500"),
+        `\u001b[1;2m\u203a \u001b[0m${"x".repeat(42)}`,
+        "  next line", "", "  [Image #1]", "  /Users/michael/image.png", "  final paragraph",
+      ],
+    },
+  ])("preserves $name without rewriting text or mutating input", ({ rows }) => {
+    const lines = splitLines(parseAnsi(rows.join("\n")));
+    const before = structuredClone(lines);
+    const blocks = codexAdapter.buildBlocks(lines);
+    expect(blocks).toHaveLength(1);
+    const block = blocks[0]!;
+    expect(block.kind).toBe("raw");
+    if (block.kind !== "raw") throw new Error("Expected terminal mirror");
+    expect(block.lines.map(lineText)).toEqual(lines.map(lineText));
+    block.lines.forEach((line, index) => expect(line.segments).toBe(lines[index]!.segments));
+    expect(lines).toEqual(before);
+  });
+});
+
 describe("chrome", () => {
-  it.each([true, false])("removes only the detected composer's leading spacer rows from the mirror (wrap=%s)", (wrap) => {
+  it("removes only the detected composer's leading spacer rows from the mirror", () => {
     const transcript = ["• First paragraph", "", "  Another paragraph", "", "• Working (14m 34s · esc to interrupt)"];
     const prompt = `\u001b[1m› \u001b[2m${PLACEHOLDER}\u001b[0m`;
     const rows = [...transcript, "", "  ", "", prompt, "  gpt-6-astra xhigh · Ready · Context 82% left · main"];
     const lines = splitLines(parseAnsi(rows.join("\n")));
     const before = lines.map(lineText);
-    const blocks = codexAdapter.buildBlocks(lines, { wrap });
+    const blocks = codexAdapter.buildBlocks(lines);
     expect(blocks).toHaveLength(1);
     const block = blocks[0]!;
     expect(block.kind).toBe("raw");

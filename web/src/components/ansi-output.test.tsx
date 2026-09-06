@@ -3,24 +3,22 @@ import { render } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
 import { AnsiOutput } from "./ansi-output";
+import { parseAnsi } from "@/lib/ansi";
+import { lineText, splitLines } from "@/lib/blocks";
 import diffCapture from "@/lib/harness/codex/diff-reflow.fixture.txt?raw";
 
 const ESC = "\x1b";
 const MUTED_RULE_COLOUR = "rgb(161, 161, 161)"; // #a1a1a1, --muted-foreground's dark half
 
 describe("Codex diff continuation rendering", () => {
-  it("keeps complete words, find offsets, links and surfaces across native wraps", () => {
-    const { container, rerender } = render(<AnsiOutput text={diffCapture.trimEnd()} agent="codex" query="keeping" />);
-    expect(container.querySelectorAll('[data-terminal-surface="diff"]')).toHaveLength(4);
-    expect([...container.querySelectorAll("[data-find-match]")].map((el) => el.textContent).join("")).toBe("keepingkeeping");
-    const links = [...container.querySelectorAll("a")];
-    expect(links.length).toBeGreaterThan(0);
-    expect(links.every((a) => a.getAttribute("href") === "https://github.com/zhdsmy/collie/commit/ed3857d")).toBe(true);
-    expect(links.map((a) => a.textContent).join("")).toBe("https://github.com/zhdsmy/collie/commit/ed3857d");
-    rerender(<AnsiOutput text={diffCapture.trimEnd()} agent="codex" wrap={false} />);
+  it.each([true, false])("preserves captured diff rows, gutters and find offsets (wrap=%s)", (wrap) => {
+    const text = diffCapture.trimEnd();
+    const expected = splitLines(parseAnsi(text)).map(lineText).join("\n");
+    const { container } = render(<AnsiOutput text={text} agent="codex" wrap={wrap} query="submitted" />);
     expect(container.querySelectorAll('[data-terminal-surface="diff"]')).toHaveLength(7);
-    rerender(<AnsiOutput text={diffCapture.trimEnd()} />);
-    expect(container.querySelector("pre")!.textContent).not.toContain("keeping");
+    expect(container.querySelector("pre")!.textContent).toBe(expected);
+    expect([...container.querySelectorAll("[data-find-match]")].map((el) => el.textContent).join("")).toBe("submittedsubmitted");
+    expect(container.querySelector("wbr")).toBeNull();
   });
 });
 
@@ -94,15 +92,15 @@ describe("mirror line wrapping", () => {
   }
 
   it.each(["• 已修复。", `─ Conversation recap ${"─".repeat(80)}`])(
-    "reflows Codex prose under %s only with Wrap on, including after toggling",
+    "preserves Codex prose rows under %s with Wrap on or off, including after toggling",
     (heading) => {
       const text = `${heading}\n\n  应用跟随\n  可视视口。`;
       const { container, rerender } = render(<AnsiOutput text={text} agent="codex" />);
-      expect(container.querySelector("pre")!.textContent).toBe(`${heading}\n\n  应用跟随可视视口。`);
+      expect(container.querySelector("pre")!.textContent).toBe(text);
       rerender(<AnsiOutput text={text} agent="codex" wrap={false} />);
       expect(container.querySelector("pre")!.textContent).toBe(text);
       rerender(<AnsiOutput text={text} agent="codex" wrap />);
-      expect(container.querySelector("pre")!.textContent).toBe(`${heading}\n\n  应用跟随可视视口。`);
+      expect(container.querySelector("pre")!.textContent).toBe(text);
       rerender(<AnsiOutput text={text} />);
       expect(container.querySelector("pre")!.textContent).toBe(text);
     },
@@ -214,10 +212,9 @@ describe("mirror line wrapping", () => {
     const { container: plain } = render(<AnsiOutput text={`${border}\n`} />);
     expect(plain.querySelector("span.overflow-hidden")?.textContent).toBe(border);
 
-    const { container: wrapped } = render(<AnsiOutput text={`path=/Users/michael/Documents/${"x".repeat(40)}\n`} />);
+    const { container: wrapped } = render(<AnsiOutput text={`unbroken-${"x".repeat(40)}\n`} />);
     const wrappedPre = wrapped.querySelector("pre")!;
-    expect(wrappedPre.className).toContain("break-normal");
-    expect(wrappedPre.querySelectorAll("wbr")).toHaveLength(5);
+    expect(wrappedPre.className).toContain("break-words");
     expect(wrappedPre.querySelector("span.overflow-hidden")).toBeNull();
 
     const { container: panned } = render(<AnsiOutput text={`${border}\n`} wrap={false} />);
@@ -283,28 +280,29 @@ describe("mirror line wrapping", () => {
     expect(container.querySelector('[style*="font-weight"]')?.getAttribute("style")).toContain("600");
   });
 
-  it("reflows submitted paths without corrupting find or link offsets", () => {
+  it.each([true, false])("preserves submitted path rows and find/link offsets at the terminal edge (wrap=%s)", (wrap) => {
     const rule = "─ Worked for 1m ".padEnd(44, "─");
     const first = "https://example.com/".padEnd(42, "x");
     const local = "/Users/michael/".padEnd(42, "y");
     const input = [rule, `${ESC}[1;2m› ${ESC}[0m${first}`, "  tail", "", `  ${local}`, "  end"].join("\n");
-    const { container } = render(<AnsiOutput text={input} agent="codex" query="tail" />);
+    const { container } = render(<AnsiOutput text={input} agent="codex" wrap={wrap} query="tail" />);
     const pre = container.querySelector("pre")!;
-    expect(pre.textContent).toBe(`${rule}\n› ${first}tail\n\n  ${local}end`);
+    expect(pre.textContent).toBe(`${rule}\n› ${first}\n  tail\n\n  ${local}\n  end`);
     expect(pre.querySelector("[data-find-match]")?.textContent).toBe("tail");
-    expect([...pre.querySelectorAll("a")].every((link) => link.href === `${first}tail`)).toBe(true);
-    expect([...pre.querySelectorAll('[data-terminal-surface="user"] span.break-normal')]
-      .some((node) => node.textContent === local)).toBe(true);
+    const links = [...pre.querySelectorAll("a")];
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.every((link) => link.href === first)).toBe(true);
+    expect(pre.querySelector("wbr")).toBeNull();
   });
 
-  it("adds soft breaks for terminal tokens without changing their text", () => {
+  it.each([undefined, "codex"])("uses upstream wrapping without injecting soft breaks (agent=%s)", (agent) => {
     const text = `rg --glob='*.tsx' /Users/michael/Documents/collie {"path":"src/app.tsx","ok":true}`;
-    const { container } = render(<AnsiOutput text={text} />);
+    const { container } = render(<AnsiOutput text={text} agent={agent} />);
     const pre = container.querySelector("pre")!;
     expect(pre.textContent).toBe(text);
-    expect(pre.querySelectorAll("wbr").length).toBeGreaterThan(8);
-    expect(pre.className).toContain("break-normal");
-    expect(pre.className).not.toContain("break-words");
+    expect(pre.querySelector("wbr")).toBeNull();
+    expect(pre.className).toContain("break-words");
+    expect(pre.className).not.toContain("break-normal");
   });
 
   it("does not suppress the same ANSI background for an unknown agent", () => {

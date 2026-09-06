@@ -25,21 +25,18 @@ import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
 import { detectTrustRegion } from "./trust";
 import { decorateCodexDisplay } from "./display";
-import { reflowCodexDiffs } from "./diff-reflow";
 import { codexDraftCarriesSend } from "./paste";
-import { reflowCodexAnswers, reflowCodexMessages } from "./reflow";
 
-function raw(lines: StyledLine[], wrap: boolean): Block {
-  const decorated = decorateCodexDisplay(lines);
-  return { kind: "raw", lines: wrap ? reflowCodexAnswers(reflowCodexMessages(reflowCodexDiffs(decorated))) : decorated };
+function raw(lines: StyledLine[]): Block {
+  return { kind: "raw", lines: decorateCodexDisplay(lines) };
 }
 
-export function codexBuildBlocks(lines: StyledLine[], { wrap = true } = {}): Block[] {
+export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   const trust = detectTrustRegion(lines);
   if (trust) {
     const before = trimTrailingBlank(lines.slice(0, trust.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(raw(before, wrap));
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "prompt-select", prompt: trust.model, lines: lines.slice(trust.startLine) });
     return blocks;
   }
@@ -48,7 +45,7 @@ export function codexBuildBlocks(lines: StyledLine[], { wrap = true } = {}): Blo
   if (approval) {
     const before = trimTrailingBlank(lines.slice(0, approval.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(raw(before, wrap));
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({
       kind: "prompt-select",
       prompt: approval.model,
@@ -61,14 +58,14 @@ export function codexBuildBlocks(lines: StyledLine[], { wrap = true } = {}): Blo
   if (ask) {
     const before = trimTrailingBlank(lines.slice(0, ask.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(raw(before, wrap));
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "prompt-select", prompt: ask.model, lines: lines.slice(ask.startLine) });
     return blocks;
   }
 
   const content = stripChrome(lines);
   // The removed composer owns its leading spacer rows, not the transcript above it.
-  return [raw(content === lines ? lines : trimTrailingBlank(content), wrap)];
+  return [raw(content === lines ? lines : trimTrailingBlank(content))];
 }
 
 export { extractStatusLines, extractInputDraft };

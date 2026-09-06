@@ -119,31 +119,6 @@ const NO_BLOCK_RUNS: readonly (readonly TableRun[])[] = Object.freeze([]);
 const LINK_CLASS =
   "underline decoration-1 underline-offset-2 break-all cursor-pointer py-[0.35em]";
 
-// Browser wrapping should prefer real word boundaries. Long terminal tokens still need a few
-// deliberate opportunities so paths, URLs, commands and JSON can fit a phone without being cut at
-// an arbitrary character. `<wbr>` has no text value, so find/link offsets and clipboard text remain
-// byte-for-byte identical.
-const SOFT_BREAK_PUNCTUATION = new Set([
-  "/", "\\", ".", ",", ":", ";", "!", "?", "&", "=", "{", "}", "[", "]", "(", ")",
-  "<", ">", "'", '"', "`", "|", "+", "-",
-]);
-
-function softWrap(run: string): ReactNode {
-  const parts: ReactNode[] = [];
-  let chunk = "";
-  let hasBreak = false;
-  for (const char of run) {
-    chunk += char;
-    if (SOFT_BREAK_PUNCTUATION.has(char)) {
-      parts.push(<Fragment key={parts.length}>{chunk}<wbr /></Fragment>);
-      chunk = "";
-      hasBreak = true;
-    }
-  }
-  if (chunk) parts.push(chunk);
-  return hasBreak ? parts : run;
-}
-
 // Paint the base once, below dim line numbers and across wrapped rows. Keep stronger token fills.
 function segmentStyle(s: AnsiSegment, surface: StyledLine["surface"]): CSSProperties {
   const style = styleFor(s);
@@ -158,7 +133,7 @@ function preClass(wrap: boolean, className?: string): string {
     MIRROR_SPACE,
     MIRROR_INVERT,
     wrap
-      ? "min-w-0 w-full max-w-full whitespace-pre-wrap break-normal"
+      ? "whitespace-pre-wrap break-words"
       : // Horizontal pan for wide TUI tables. `overflow-x-auto` forces `overflow-y` to compute to
         // `auto` (CSS overflow quirk), and a flex item with non-visible overflow may shrink below its
         // content height — the <pre> then becomes the vertical scroller and ChatMessageList's
@@ -238,7 +213,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   promptDisabled,
 }: AnsiOutputProps) {
   const segments = useMemo(() => parseAnsi(text), [text]);
-  const blocks = useMemo(() => buildBlocks(splitLines(segments), { agent, wrap }), [segments, agent, wrap]);
+  const blocks = useMemo(() => buildBlocks(splitLines(segments), { agent }), [segments, agent]);
 
   const rawBlocks = useMemo(
     () => blocks.filter((b): b is RawBlock => b.kind === "raw"),
@@ -354,10 +329,10 @@ export const AnsiOutput = memo(function AnsiOutput({
   // A run of plain text at global offset `start` → nodes, with find matches split out and
   // highlighted. `currentAssigned` refs only the first slice of the focused match (a match can span
   // segments on a colour change) so scrollIntoView targets one stable node.
-  const renderFind = (run: string, start: number, allowSoftWrap = true): ReactNode => {
-    if (matches.length === 0) return wrap && allowSoftWrap ? softWrap(run) : run;
+  const renderFind = (run: string, start: number): ReactNode => {
+    if (matches.length === 0) return run;
     return splitSegment(run, start, matches).map((p, j) => {
-      if (p.matchIndex === null) return wrap && allowSoftWrap ? softWrap(p.text) : p.text;
+      if (p.matchIndex === null) return p.text;
       const isCurrent = p.matchIndex === currentMatch;
       const attach = isCurrent && !currentAssigned;
       if (attach) currentAssigned = true;
@@ -384,7 +359,7 @@ export const AnsiOutput = memo(function AnsiOutput({
             isCurrent ? cn(MIRROR_INVERT, "bg-yellow-400 text-black") : "bg-yellow-400/30",
           )}
         >
-          {wrap && allowSoftWrap ? softWrap(p.text) : p.text}
+          {p.text}
         </span>
       );
     });
@@ -402,22 +377,9 @@ export const AnsiOutput = memo(function AnsiOutput({
       if (p.matchIndex === null) return <Fragment key={i}>{renderFind(p.text, pieceStart)}</Fragment>;
       return (
         <a key={i} href={links[p.matchIndex]!.href} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
-          {renderFind(p.text, pieceStart, false)}
+          {renderFind(p.text, pieceStart)}
         </a>
       );
-    });
-  };
-
-  // Local attachment paths need the same character-level wrapping as URL anchors. Otherwise
-  // WebKit can move the entire first path after the prompt marker, leaving the marker alone.
-  const renderMessageSegment = (run: string, start: number): ReactNode => {
-    let at = start;
-    return run.split(/(\/\S+)/u).map((piece, i) => {
-      const pieceStart = at;
-      at += piece.length;
-      return i % 2 ? (
-        <span key={i} className="break-normal">{renderSegment(piece, pieceStart)}</span>
-      ) : <Fragment key={i}>{renderSegment(piece, pieceStart)}</Fragment>;
     });
   };
 
@@ -444,9 +406,7 @@ export const AnsiOutput = memo(function AnsiOutput({
           key={si}
           style={segmentStyle(s, line.surface)}
         >
-          {wrap && line.surface?.kind === "user"
-            ? renderMessageSegment(s.text, segStart)
-            : renderSegment(s.text, segStart)}
+          {renderSegment(s.text, segStart)}
         </span>
       );
     });
