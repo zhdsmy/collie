@@ -36,6 +36,7 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 - Reduce duplicated Animal Island settings-card padding and align visual-theme icon/title colors with other settings groups.
 - Keep Composer control labels beside their icons and match the image button's 44px baseline to Send.
 - Stabilize Animal Island settings action sizing and keep Composer controls horizontal on narrow screens.
+- Reuse shared settings-card structure and make the Composer control override target explicit.
 - Keep statusline visible while typing, allow horizontal overflow scrolling, and place multi-host send targets at the start of the same row.
 
 ## [1.5.1+collie.15] - 2026-09-06

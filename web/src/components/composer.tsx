@@ -126,7 +126,7 @@ const CONTROL_OFF = "text-muted-foreground";
 
 // Four equal-width controls, with the icon beside a wrapping label and a 44px tap floor.
 const CONTROL_BUTTON =
-  "min-h-11 h-auto min-w-0 w-full shrink flex-row gap-1.5 whitespace-nowrap px-0.5 has-[>svg]:px-0.5 py-1 text-[10px] font-medium leading-tight [&>svg]:shrink-0";
+  "collie-composer-control min-h-11 h-auto min-w-0 w-full shrink flex-row gap-1.5 whitespace-nowrap px-0.5 has-[>svg]:px-0.5 py-1 text-[10px] font-medium leading-tight [&>svg]:shrink-0";
 const CONTROL_LABEL = "min-w-0 whitespace-nowrap";
 
 // Pause after clearing a stranded terminal draft so the TUI settles before pane.send_text. Exported
