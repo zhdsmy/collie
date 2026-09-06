@@ -6,6 +6,7 @@ import { AnsiOutput } from "./ansi-output";
 import diffCapture from "@/lib/harness/codex/diff-reflow.fixture.txt?raw";
 
 const ESC = "\x1b";
+const MUTED_RULE_COLOUR = "rgb(161, 161, 161)"; // #a1a1a1, --muted-foreground's dark half
 
 describe("Codex diff continuation rendering", () => {
   it("keeps complete words, find offsets, links and surfaces across native wraps", () => {
@@ -59,8 +60,6 @@ describe("terminal mirror colour space", () => {
       (s) => s.textContent?.includes(has) && s.querySelector("span") === null,
     );
 
-  const MUTED_RULE_COLOUR = "rgb(161, 161, 161)"; // #a1a1a1, --muted-foreground's dark half
-
   it("keeps muted rule glyphs on a literal dark-space grey", () => {
     const span = leafSpan(mirror("├────────────┤\n"), "─");
     expect(span).toBeDefined();
@@ -86,9 +85,8 @@ describe("terminal mirror colour space", () => {
 });
 
 // Wrap defaults ON (#53): the mirror is mostly agent prose and a phone shows far fewer columns than
-// the desktop width panes are spawned at. The no-wrap branch is still the right rendering for TUI
-// tables and box drawing, but it is now reachable ONLY through the View toggle — so it is exactly
-// the kind of code a later refactor can drop without any test noticing.
+// the desktop width panes are spawned at. Structural clipping applies only in this wrap-on path;
+// with View's Wrap off, the full pre pans instead, so both paths need coverage.
 describe("mirror line wrapping", () => {
   function preFor(props: Partial<ComponentProps<typeof AnsiOutput>>) {
     const { container } = render(<AnsiOutput text="a very long line" {...props} />);
@@ -123,10 +121,20 @@ describe("mirror line wrapping", () => {
     expect(cls).not.toContain("whitespace-pre-wrap");
   });
 
-  it("keeps a marked ANSI border to one clipped row without changing its text, styles, links, or find offsets", () => {
-    const border = `  ${"─".repeat(20)}  `;
-    const text = `ordinary prose\n${ESC}[41m${border.slice(0, 12)}${ESC}[44m${border.slice(12)}${ESC}[0m\nsee https://herdr.dev/docs\n`;
-    const { container } = render(<AnsiOutput text={text} query="───" />);
+  it("keeps a live-shaped ANSI labelled rule clipped while muting only its rule runs", () => {
+    const purple = "rgb(209, 131, 232)";
+    const leadBg = "rgb(24, 25, 26)";
+    const labelBg = "rgb(27, 28, 29)";
+    const url = "https://herdr.dev/docs";
+    const tail = "─".repeat(20);
+    const visibleRule = `── ⠴ Working ${url} ${tail}`;
+    const rule =
+      `${ESC}[0m${ESC}[38;2;209;131;232;48;2;24;25;26m── ⠴${ESC}[0m ` +
+      `${ESC}[0m${ESC}[38;2;209;131;232;48;2;27;28;29mWorking ${url} ${tail}${ESC}[0m`;
+    const text = `ordinary prose\n${rule}\n`;
+    const visibleText = `ordinary prose\n${visibleRule}\n`;
+    const query = `${url} ─`; // crosses the label → tail split introduced by structural refinement
+    const { container, rerender } = render(<AnsiOutput text={text} query={query} currentMatch={0} agent="pi" />);
     const pre = container.querySelector("pre")!;
     // `span.overflow-hidden`, not `span.inline-block`: the table-run scroller is an inline-block too.
     const clipped = pre.querySelector("span.overflow-hidden")!;
@@ -139,17 +147,66 @@ describe("mirror line wrapping", () => {
     expect(clipped.className).toContain("whitespace-pre");
     expect(clipped.className).not.toContain("whitespace-nowrap");
     expect(clipped.className).toContain("break-normal");
-    expect(clipped.textContent).toBe(border);
-    expect(clipped.children).toHaveLength(2);
-    // SAFETY: `children` is typed `Element`, but the mirror renders every segment as a <span> with
-    // an inline style — which is exactly what these two lines assert. Two assertions, two reasons,
-    // same reason.
-    const [first, second] = [clipped.children[0] as HTMLElement, clipped.children[1] as HTMLElement];
-    expect(first.style.backgroundColor).toBe("var(--ansi-1)");
-    expect(second.style.backgroundColor).toBe("var(--ansi-4)");
-    expect(clipped.querySelector("[data-find-match]")).not.toBeNull();
-    expect(pre.querySelector("a")?.textContent).toBe("https://herdr.dev/docs");
-    expect(pre.textContent).toBe(`ordinary prose\n${border}\nsee https://herdr.dev/docs\n`);
+    // Firefox must not restore LINK_CLASS's break-all inside a no-wrap row.
+    expect(clipped.className).toContain("[&_a]:break-normal");
+    expect(clipped.textContent).toBe(visibleRule);
+    expect(clipped.children).toHaveLength(5);
+    // SAFETY: `children` is typed Element, but these five nodes are the renderer's segment spans.
+    const [lead, spinner, separator, label, trailing] = [...clipped.children] as HTMLElement[];
+    expect(lead.style.color).toBe(MUTED_RULE_COLOUR);
+    expect(lead.style.fontWeight).toBe("400");
+    expect(lead.style.opacity).toBe("1");
+    expect(lead.style.backgroundColor).toBe(leadBg);
+    expect(spinner.style.color).toBe(purple);
+    expect(spinner.style.backgroundColor).toBe(leadBg);
+    expect(separator.style.color).toBe("");
+    expect(label.style.color).toBe(purple);
+    expect(label.style.backgroundColor).toBe(labelBg);
+    expect(trailing.style.color).toBe(MUTED_RULE_COLOUR);
+    expect(trailing.style.fontWeight).toBe("400");
+    expect(trailing.style.opacity).toBe("1");
+    expect(trailing.style.backgroundColor).toBe(labelBg);
+    const anchor = clipped.querySelector("a")!;
+    expect(anchor.getAttribute("href")).toBe(url);
+    expect(anchor.getAttribute("target")).toBe("_blank");
+    expect(anchor.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(anchor.className).toContain("underline");
+    expect(anchor.className).toContain("cursor-pointer");
+    expect(anchor.className).toContain("py-[0.35em]");
+    const match = anchor.querySelector('[data-find-match="current"]')!;
+    expect(match.textContent).toBe(url);
+    const offsetsOf = (selector: string) => {
+      const walker = document.createTreeWalker(pre, NodeFilter.SHOW_TEXT);
+      const offsets: number[] = [];
+      let offset = 0;
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (node.parentElement?.closest(selector) && !offsets.includes(offset)) offsets.push(offset);
+        offset += node.textContent!.length;
+      }
+      return offsets;
+    };
+    expect(offsetsOf('[data-find-match]')).toEqual([
+      visibleText.indexOf(url),
+      visibleText.indexOf(url) + url.length,
+      visibleText.indexOf(url) + url.length + 1,
+    ]);
+    expect(offsetsOf("a")).toEqual([visibleText.indexOf(url)]);
+    const textNodes = document.createTreeWalker(clipped, NodeFilter.SHOW_TEXT);
+    const nodes: Node[] = [];
+    for (let node = textNodes.nextNode(); node; node = textNodes.nextNode()) nodes.push(node);
+    const selection = document.getSelection()!;
+    const range = document.createRange();
+    range.setStart(nodes[0]!, 0);
+    range.setEnd(nodes.at(-1)!, nodes.at(-1)!.textContent!.length);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    expect(selection.toString()).toBe(visibleRule);
+    selection.removeAllRanges();
+    expect(pre.textContent).toBe(visibleText);
+
+    rerender(<AnsiOutput text={text} query={query} currentMatch={0} agent="pi" wrap={false} />);
+    expect(container.querySelector("span.overflow-hidden")).toBeNull();
+    expect(container.querySelector("pre")!.textContent).toBe(visibleText);
   });
 
   it("clips a plain border only while wrapping, leaving ordinary output and wrap-off panning alone", () => {
@@ -471,6 +528,7 @@ describe("clickable links in the mirror", () => {
   it("underlines in currentColor rather than a fixed colour", () => {
     const a = mirror({ text: "https://herdr.dev\n" }).querySelector("a")!;
     expect(a.className).toContain("underline");
+    expect(a.className).toContain("break-all");
     expect(a.className).not.toMatch(/decoration-\[#/);
   });
 

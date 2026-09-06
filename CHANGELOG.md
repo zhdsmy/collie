@@ -34,6 +34,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 - Hide dev and dirty markers in human-facing version labels while preserving internal build identity and cache update checks.
 
+- Merge upstream v1.5.2: adopt shared labelled-rule clipping, bounded STT cancellation, Traditional Chinese and wider desktop panes; retain downstream composer, input verification, terminal surfaces and statusline behavior.
+
 ## [1.5.1+collie.15] - 2026-09-06
 
 - Show explicit Codex context remaining/used labels with proportional rings and usage-based warning colors; animate working hourglasses with reduced-motion support and vertically align compact statusline fields. ([0cef8e7](https://github.com/zhdsmy/collie/commit/0cef8e7))
@@ -144,6 +146,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 ### Fixed
 
 - The downstream Codex labelled-separator and iOS safe-area fixes were dropped in favour of upstream's implementations; the fork's Codex image and slash-command send verification, answer reflow and status-strip compaction remain on the v1.5.0 codebase.
+## [1.5.2] - 2026-09-05
+
+- STT releases its admission slot immediately when a recording is cancelled, thanks @en-ver (#163). ([43c9cfe](https://github.com/AltanS/collie/commit/43c9cfe))
+- Labelled terminal rules now fit on a single line across all harnesses, and only the rule glyphs are dimmed, thanks @en-ver (#168). ([d980f37](https://github.com/AltanS/collie/commit/d980f37))
+- Collie speaks Traditional Chinese, thanks @lekoOwO (#165). ([1cec9ea](https://github.com/AltanS/collie/commit/1cec9ea))
+- The pane and history screens now widen with the window on a desktop, up to 1400px, so a wide terminal mirror stops wrapping (#166). ([3870c1c](https://github.com/AltanS/collie/commit/3870c1c))
+
 ## [1.5.1] - 2026-09-04
 
 - Docs carry phone screenshots of the update flow. ([23dfb1a](https://github.com/AltanS/collie/commit/23dfb1a))

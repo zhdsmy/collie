@@ -660,16 +660,6 @@ describe("Codex mobile display cleanup", () => {
   // fixtures/panes/README.md says so, and says to replace it with a capture when one is reachable.
   const FIXTURE = "codex--submitted-fill-labelled-rule.txt";
 
-  function decoratedFixture() {
-    return decorateCodexDisplay(fixtureLines(FIXTURE));
-  }
-
-  it("clips the fixture's labelled rule, and nothing else on the screen", () => {
-    const clipped = decoratedFixture().filter((line) => line.noWrap);
-    expect(clipped).toHaveLength(1);
-    expect(lineText(clipped[0]!)).toContain("Worked for 3m 12s");
-  });
-
   it("marks the fixture's user and diff surfaces while preserving their ANSI segments", () => {
     const lines = fixtureLines(FIXTURE);
     const decorated = decorateCodexDisplay(lines);
@@ -681,35 +671,20 @@ describe("Codex mobile display cleanup", () => {
     decorated.forEach((line, index) => expect(line.segments).toBe(lines[index]!.segments));
   });
 
-  it("changes not one byte of the fixture's visible text", () => {
+  it("changes not one byte and leaves the already-refined labelled rule untouched", () => {
     const lines = fixtureLines(FIXTURE);
-    expect(decorateCodexDisplay(lines).map(lineText)).toEqual(lines.map(lineText));
+    const decorated = decorateCodexDisplay(lines);
+    const rule = lines.find((line) => lineText(line).includes("Worked for 3m 12s"))!;
+    const decoratedRule = decorated.find((line) => lineText(line).includes("Worked for 3m 12s"));
+
+    expect(decorated.map(lineText)).toEqual(lines.map(lineText));
+    expect(decoratedRule).toBe(rule);
+    expect(decoratedRule!.segments).toBe(rule.segments);
   });
 
   it("returns the same array when a screen carries neither row", () => {
     const lines = fixtureLines("codex--fresh-idle.txt");
     expect(decorateCodexDisplay(lines)).toBe(lines);
-  });
-
-  it("clips a labelled rule without changing its text", () => {
-    const rule = `\u2500 Worked for 31m 11s ${"\u2500".repeat(80)}`;
-    const [decorated] = decorateCodexDisplay(splitLines(parseAnsi(rule)));
-
-    expect(decorated!.noWrap).toBe(true);
-    expect(lineText(decorated!)).toBe(rule);
-  });
-
-  // The shape is the guard: a long rule run somewhere inside a row is ordinary Codex output, and
-  // clipping it would hide the row's right edge on a phone.
-  it.each([
-    ["a table row with a long inner rule", `| id | ${"\u2500".repeat(40)} | note |`],
-    ["a rule with text after it", `${"\u2500".repeat(40)} and then some prose about it`],
-    ["a labelled rule whose tail is too short", `\u2500 Worked for 3s ${"\u2500".repeat(8)}`],
-    ["a label carrying its own rule glyph", `\u2500 a \u2500 b ${"\u2500".repeat(40)}`],
-    ["a long leading rule before the label", `${"\u2500".repeat(9)} label ${"\u2500".repeat(40)}`],
-  ])("leaves %s wrapping", (_name, text) => {
-    const [decorated] = decorateCodexDisplay(splitLines(parseAnsi(text)));
-    expect(decorated!.noWrap).toBeUndefined();
   });
 
   it("recognizes dim submitted markers, empty paragraphs and continuations, not the live composer", () => {
