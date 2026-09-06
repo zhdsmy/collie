@@ -126,8 +126,8 @@ const CONTROL_OFF = "text-muted-foreground";
 
 // Four equal-width controls, with the icon beside a wrapping label and a 44px tap floor.
 const CONTROL_BUTTON =
-  "min-h-11 h-auto min-w-0 w-full shrink gap-1 px-0.5 has-[>svg]:px-0.5 py-1 text-[10px] font-medium leading-tight [&>svg]:shrink-0";
-const CONTROL_LABEL = "min-w-0 whitespace-normal [overflow-wrap:anywhere]";
+  "min-h-11 h-auto min-w-0 w-full shrink flex-row gap-1.5 whitespace-nowrap px-0.5 has-[>svg]:px-0.5 py-1 text-[10px] font-medium leading-tight [&>svg]:shrink-0";
+const CONTROL_LABEL = "min-w-0 whitespace-nowrap";
 
 // Pause after clearing a stranded terminal draft so the TUI settles before pane.send_text. Exported
 // so the test can pin the WAIT ITSELF (the reply never overtakes the sweep) against the constant
@@ -1231,7 +1231,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               // bottom-1, not centred: the field grows upward as the draft wraps, and a vertically
               // centred button would drift up with it, away from the thumb and away from the send
               // button it pairs with. Pinned to the bottom it stays put at any height.
-              className="absolute bottom-1 right-1 size-9 rounded-full text-muted-foreground"
+          className="absolute bottom-0 right-1 size-11 rounded-full text-muted-foreground"
               disabled={uploading || locked || direct.active}
               onPointerDown={(e) => e.preventDefault()}
               onClick={() => fileRef.current?.click()}

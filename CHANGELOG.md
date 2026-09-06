@@ -34,6 +34,7 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 - Add the approved Animal Island UI dependency, official style entrypoint, visual theme switcher, warm light/dark tokens, and theme-aware controls across shared chrome and Composer surfaces.
 - Align visual theme settings card icons, headings, and action buttons across classic and Animal Island skins.
 - Reduce duplicated Animal Island settings-card padding and align visual-theme icon/title colors with other settings groups.
+- Keep Composer control labels beside their icons and match the image button's 44px baseline to Send.
 - Keep statusline visible while typing, allow horizontal overflow scrolling, and place multi-host send targets at the start of the same row.
 
 ## [1.5.1+collie.15] - 2026-09-06
