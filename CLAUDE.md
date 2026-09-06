@@ -25,6 +25,12 @@ mark it superseded and write the next one.
 
 ## Versioning — MANDATORY
 
+**Default downstream delivery:** after implementing and validating a requested change, commit it,
+push `main` and the specific annotated version tag, and deploy the local Herdr-managed installation
+unless the operator explicitly limits the task to discussion, review, or source-only work. Use the
+upstream version plus `+collie.N`; verify the deployed build locally and through the configured
+access URL before reporting completion. Do not create a GitHub Release.
+
 **Downstream publishing override (`zhdsmy/collie`): commits and annotated version tags only.**
 Do not create GitHub Releases or restore `.github/workflows/` during upstream merges unless the
 operator explicitly requests it. This overrides the upstream automatic Release-publishing

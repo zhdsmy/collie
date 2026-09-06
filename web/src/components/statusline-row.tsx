@@ -11,7 +11,6 @@ import {
   Target,
   Timer,
   Zap,
-  ZapOff,
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -25,13 +24,13 @@ import { cn } from "@/lib/utils";
 
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
-const CODEX_FIELDS: { pattern: RegExp; icon: LucideIcon }[] = [
+const CODEX_FIELDS: { pattern: RegExp; icon: LucideIcon; fill?: "currentColor"; color?: string }[] = [
   { pattern: /^(?:Context|Ctx) (\d+%)$/, icon: Gauge },
   { pattern: /^Ready$/, icon: CircleCheck },
   { pattern: /^Working$/, icon: Hourglass },
   { pattern: /^Approve(?: (?:for )?me)?$/, icon: ShieldCheck },
-  { pattern: /^Fast[ :]on$/, icon: Zap },
-  { pattern: /^Fast[ :]off$/, icon: ZapOff },
+  { pattern: /^Fast[ :]on$/, icon: Zap, fill: "currentColor", color: "var(--ansi-12)" },
+  { pattern: /^Fast[ :]off$/, icon: Zap, color: "#a1a1a1" },
   { pattern: /^Tasks (\d+\/\d+)$/, icon: ListChecks },
   { pattern: /^weekly (\d+%(?: used)?)(?: left)?$/i, icon: CalendarDays },
   { pattern: /^5h (\d+%(?: used)?)(?: left)?$/i, icon: Timer },
@@ -62,14 +61,14 @@ function StyledText({ segments }: { segments: AnsiSegment[] }) {
   ));
 }
 
-function ContextField({ segments, value, remaining }: {
-  segments: AnsiSegment[];
+function ContextField({ value, remaining }: {
   value: string;
   remaining: boolean;
 }) {
   useLocale();
   const percent = Number.parseInt(value, 10);
   const used = remaining ? 100 - percent : percent;
+  const left = 100 - used;
   const label = t(remaining ? "statusline.context.remainingAria" : "statusline.context.usedAria", { percent: value });
   return (
     <span
@@ -77,6 +76,8 @@ function ContextField({ segments, value, remaining }: {
       aria-label={label}
       title={label}
       className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none"
+      // Dark-space paint shared by ring and number; gold and pale red stay distinct after inversion.
+      style={{ color: left <= 10 ? "#fca5a5" : left <= 30 ? "#c4aa2b" : "var(--ansi-10)" }}
     >
       <span
         aria-hidden="true"
@@ -85,15 +86,13 @@ function ContextField({ segments, value, remaining }: {
         data-used={used}
         className="size-[12px] shrink-0 rounded-full"
         style={{
-          // This strip is inverted in light mode: keep ring paint in the mirror's dark space.
-          color: used >= 95 ? "var(--ansi-9)" : used >= 80 ? "var(--ansi-11)" : "#fafafa",
           background: `conic-gradient(currentColor ${used}%, rgb(255 255 255 / 22%) 0)`,
           WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0)",
           mask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0)",
         }}
       />
       <span aria-hidden="true" className="inline-block w-[4ch] text-right tabular-nums">
-        <StyledText segments={segments} />
+        {value}
       </span>
     </span>
   );
@@ -104,16 +103,14 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
   const context = /^(?:Context|Ctx) (\d+%) (left|used)$/.exec(text);
   if (context?.[1] && Number.parseInt(context[1], 10) <= 100) {
     const value = context[1];
-    const start = text.indexOf(value);
     return (
       <ContextField
-        segments={sliceSegments(segments, start, start + value.length)}
         value={value}
         remaining={context[2] === "left"}
       />
     );
   }
-  for (const { pattern, icon: Icon } of CODEX_FIELDS) {
+  for (const { pattern, icon: Icon, fill, color } of CODEX_FIELDS) {
     const match = pattern.exec(text);
     if (!match) continue;
     const value = match[1];
@@ -132,7 +129,8 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
             text === "Working" && "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]",
           )}
           strokeWidth={2.25}
-          style={segments[0] && styleFor(segments[0])}
+          fill={fill ?? "none"}
+          style={color ? { color } : segments[0] && styleFor(segments[0])}
         />
         {value && (
           <span aria-hidden="true">

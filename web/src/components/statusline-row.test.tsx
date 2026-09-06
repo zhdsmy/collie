@@ -55,7 +55,7 @@ it.each([
   ["Approve for me", "", "lucide-shield-check"],
   ["Approve me", "", "lucide-shield-check"],
   ["Fast on", "", "lucide-zap"],
-  ["Fast off", "", "lucide-zap-off"],
+  ["Fast off", "", "lucide-zap"],
   ["Tasks 2/4", "2/4", "lucide-list-checks"],
   ["weekly 91% left", "91%", "lucide-calendar-days"],
   ["5h 9% used", "9% used", "lucide-timer"],
@@ -74,13 +74,15 @@ it.each([
   expect(field.querySelector("svg")).toHaveClass(icon);
 });
 
-it("matches fields across ANSI boundaries and retains the value's own paint", () => {
+it("matches context across ANSI boundaries and gives the ring and value one capacity color", () => {
   const { container } = renderRow(
     "  \x1b[33mmodel\x1b[0m \u00b7 \x1b[33mCon\x1b[32mtext \x1b[36m73%\x1b[33m left\x1b[0m \u00b7 main",
   );
   const field = within(container).getByRole("img", { name: "Context 73% left" });
-  expect(field.querySelector<HTMLElement>('[data-status-icon="context"]')?.style.color).toBe("rgb(250, 250, 250)");
-  expect(within(field).getByText("73%").style.color).toBe("var(--ansi-6)");
+  expect(field.style.color).toBe("var(--ansi-10)");
+  expect(field.querySelector<HTMLElement>('[data-status-icon="context"]')?.style.color).toBe("");
+  expect(within(field).getByText("73%").style.color).toBe("");
+  expect(within(container).getByText("model").style.color).toBe("var(--ansi-3)");
 });
 
 it.each([
@@ -107,14 +109,16 @@ it.each([
 });
 
 it.each([
-  [79, "rgb(250, 250, 250)"],
-  [80, "var(--ansi-11)"],
-  [94, "var(--ansi-11)"],
-  [95, "var(--ansi-9)"],
-])("uses the same warning color at %s percent used in either mode", (used, color) => {
-  const { container } = renderRow(`Context ${100 - used}% left \u00b7 Context ${used}% used`);
-  for (const ring of container.querySelectorAll<HTMLElement>('[data-status-icon="context"]')) {
-    expect(ring.style.color).toBe(color);
+  [100, "var(--ansi-10)"],
+  [31, "var(--ansi-10)"],
+  [30, "rgb(196, 170, 43)"],
+  [11, "rgb(196, 170, 43)"],
+  [10, "rgb(252, 165, 165)"],
+  [0, "rgb(252, 165, 165)"],
+])("uses the same capacity color at %s percent remaining in either mode", (left, color) => {
+  const { container } = renderRow(`Context ${left}% left \u00b7 Context ${100 - left}% used`);
+  for (const field of within(container).getAllByRole("img")) {
+    expect(field.style.color).toBe(color);
   }
 });
 
@@ -124,10 +128,35 @@ it.each(["Context 101% left", "Context 200% used", "Context -1% left", "Ctx 77%"
   expect(container.textContent).toContain(text.match(/\d+%/)![0]);
 });
 
-it("preserves colors even when a percentage itself crosses ANSI spans", () => {
+it("uses one capacity color even when a percentage crosses ANSI spans", () => {
   const { container } = renderRow("Context \x1b[36m7\x1b[35m7%\x1b[0m left");
-  expect(within(container).getByText("7").style.color).toBe("var(--ansi-6)");
-  expect(within(container).getByText("7%").style.color).toBe("var(--ansi-5)");
+  expect(within(container).getByText("77%").style.color).toBe("");
+  expect(within(container).getByRole("img").style.color).toBe("var(--ansi-10)");
+});
+
+it.each([" ", ":"])("uses the same lightning outline for Fast OFF and ON with separator %j", (separator) => {
+  const { container, rerender } = renderRow(`\x1b[31mFast${separator}off\x1b[0m`);
+  const off = within(container).getByRole("img", { name: `Fast${separator}off` }).querySelector("svg")!;
+  const outline = off.innerHTML;
+  expect(off).toHaveClass("lucide-zap", "size-[12px]", "shrink-0");
+  expect(off).toHaveAttribute("fill", "none");
+  expect(off.style.color).toBe("rgb(161, 161, 161)");
+  rerender(<StatuslineRow agent="codex" row={splitLines(parseAnsi(`\x1b[31mFast${separator}on\x1b[0m`))[0]!} />);
+  const on = within(container).getByRole("img", { name: `Fast${separator}on` }).querySelector("svg")!;
+  expect(on).toHaveClass("lucide-zap", "size-[12px]", "shrink-0");
+  expect(on).toHaveAttribute("fill", "currentColor");
+  expect(on.style.color).toBe("var(--ansi-12)");
+  expect(on.innerHTML).toBe(outline);
+  expect(container.textContent).toBe("");
+});
+
+it.each(["Ready", "Working", "Approve for me", "Tasks 2/4", "weekly 91% left", "5h 9% used", "Goal:active", "Goal:done"])("keeps Codex's own color for %s", (text) => {
+  const { container } = renderRow(`\x1b[35m${text}\x1b[0m`);
+  const field = within(container).getByRole("img", { name: text });
+  expect(field.querySelector("svg")?.style.color).toBe("var(--ansi-5)");
+  for (const span of field.querySelectorAll<HTMLElement>("span[style]")) {
+    expect(span.style.color).toBe("var(--ansi-5)");
+  }
 });
 
 it("keeps plain fields' ANSI spans in one inline flow inside the centered box", () => {
@@ -170,7 +199,7 @@ it("gives icons, values and plain fields the same centered line box", () => {
   const strip = container.querySelector<HTMLElement>('[data-slot="codex-statusline"]')!;
   expect(strip).toHaveClass("items-center", "leading-none", "tabular-nums");
   for (const field of strip.children) expect(field).toHaveClass("min-h-3.5", "items-center");
-  expect(within(strip).getByText("77%").parentElement).toHaveClass("w-[4ch]", "tabular-nums");
+  expect(within(strip).getByText("77%")).toHaveClass("w-[4ch]", "tabular-nums");
 });
 
 it("preserves unknown fields, terminal colors and literal text, without matching partial labels", () => {
