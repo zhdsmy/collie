@@ -823,6 +823,7 @@ html.app-viewport-locked body {
 
 .visual-theme-control__title {
   font-size: 1rem;
+  color: var(--foreground);
   font-weight: 600;
   line-height: 1.5;
 }
@@ -1021,6 +1022,10 @@ html.app-viewport-locked body {
   gap: 1rem;
 }
 
+:root.theme-island [data-slot="settings-page"] > :where([data-slot="card"], .visual-theme-control) {
+  padding: 0;
+}
+
 :root.theme-island .visual-theme-control[class*="animal-card"] {
   background: var(--animal-bg-color-secondary);
   color: var(--animal-text-color);
@@ -1034,9 +1039,14 @@ html.app-viewport-locked body {
   color: var(--animal-text-color);
 }
 
+:root.theme-island :where(.visual-theme-control__header > :first-child) {
+  color: var(--muted-foreground);
+}
+
 :root.theme-island :where(.visual-theme-control__title) {
+  color: var(--foreground);
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 :root.theme-island :where(.visual-theme-control__description) {

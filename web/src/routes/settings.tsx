@@ -109,7 +109,10 @@ export function SettingsRoute() {
       {/* `relative` for the same reason the home scroller carries it: an `sr-only` (position: absolute)
           deep in this page would otherwise escape the scroller and grow the document's own
           scrollbar. */}
-      <main className="relative flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4">
+      <main
+        data-slot="settings-page"
+        className="relative flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4"
+      >
         {/* Above even Theme, because it is not a setting: it is a one-shot offer the browser makes
             and then stops making. Renders NOTHING unless that offer is actually on the table
             (lib/install.ts), so on most visits this line costs the page no height at all — and when

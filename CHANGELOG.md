@@ -33,6 +33,7 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 - Prepare isolated Animal Island theme preferences and pre-paint restoration on the experimental branch without changing the classic theme or exposing unfinished controls.
 - Add the approved Animal Island UI dependency, official style entrypoint, visual theme switcher, warm light/dark tokens, and theme-aware controls across shared chrome and Composer surfaces.
 - Align visual theme settings card icons, headings, and action buttons across classic and Animal Island skins.
+- Reduce duplicated Animal Island settings-card padding and align visual-theme icon/title colors with other settings groups.
 - Keep statusline visible while typing, allow horizontal overflow scrolling, and place multi-host send targets at the start of the same row.
 
 ## [1.5.1+collie.15] - 2026-09-06
