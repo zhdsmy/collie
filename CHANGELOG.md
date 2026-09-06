@@ -32,6 +32,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 - Draw context rings with a clockwise used segment and a remaining hollow segment, keeping percentages and accessible semantics without extra visible labels.
 
+- Hide dev and dirty markers in human-facing version labels while preserving internal build identity and cache update checks.
+
 ## [1.5.1+collie.15] - 2026-09-06
 
 - Show explicit Codex context remaining/used labels with proportional rings and usage-based warning colors; animate working hourglasses with reduced-motion support and vertically align compact statusline fields. ([0cef8e7](https://github.com/zhdsmy/collie/commit/0cef8e7))

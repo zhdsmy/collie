@@ -1,7 +1,7 @@
 import { join } from "node:path";
 
 import { ensureBuild } from "./build.ts";
-import { collieVersion, type CliContext, type Environment, type EnvVars } from "./context.ts";
+import { collieVersion, displayVersion, type CliContext, type Environment, type EnvVars } from "./context.ts";
 import { EXIT, type Io } from "./io.ts";
 import { ensureMuxChosen } from "./mux.ts";
 import type { StatusView, Ui } from "./render.ts";
@@ -545,7 +545,7 @@ export async function statusBanner(deps: LifecycleDeps): Promise<string[]> {
  * and the URLs can never say two different things depending on where you looked.
  */
 export async function statusView(deps: LifecycleDeps): Promise<StatusView> {
-  const version = collieVersion(deps.ctx.root);
+  const version = displayVersion(collieVersion(deps.ctx.root));
   // The bridge does not always bind loopback (a peer sets COLLIE_HOST to its tailnet address — the
   // documented Variant-E shape). Probing 127.0.0.1 there would find nothing home and print "isn't
   // answering" against a bridge that is in fact up; probe — and, in the warning, name — whatever

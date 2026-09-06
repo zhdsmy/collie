@@ -97,6 +97,11 @@ export function collieVersion(root: string, read: (p: string) => string | null =
   return collieVersionFrom(...versionFiles(root, read));
 }
 
+/** Remove local-build markers from human-facing version output without changing build identity. */
+export function displayVersion(version: string): string {
+  return version.replace(/-dev(?=\+|$)/, "").replace(/-dirty$/, "");
+}
+
 /** {@link bareVersionFrom} over the same two files — the spelling the pack wire takes. */
 export function collieVersionBare(root: string, read: (p: string) => string | null = readIfPresent): string {
   return bareVersionFrom(...versionFiles(root, read));

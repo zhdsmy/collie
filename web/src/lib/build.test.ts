@@ -60,4 +60,14 @@ describe("buildLabel", () => {
       "v0.3.0 · c9167c3 · 2026-06-30 00:12 UTC",
     );
   });
+
+  it("hides local dev and dirty markers from the human-facing label", () => {
+    expect(
+      buildLabel({
+        version: "1.5.1+collie.15-dev",
+        sha: "7ca2f75-dirty",
+        time: "2026-09-06T00:12:34.000Z",
+      }),
+    ).toBe("v1.5.1+collie.15 · 7ca2f75 · 2026-09-06 00:12 UTC");
+  });
 });

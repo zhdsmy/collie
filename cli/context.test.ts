@@ -6,7 +6,7 @@ import { join } from "node:path";
 // The version resolver itself lives in `bridge/version.ts` (the bridge answers `hello` with it and
 // cannot import from `cli/`); `collieVersion*` are re-exported from here, so these cases exercise
 // one implementation either way.
-import { bareVersionFrom } from "../bridge/version.ts";
+import { bareVersionFrom, displayVersion } from "../bridge/version.ts";
 import {
   collieVersion,
   collieVersionBare,
@@ -25,6 +25,11 @@ import {
   upsertEnvVars,
   type Environment,
 } from "./context.ts";
+
+test("displayVersion hides local build markers without changing the release version", () => {
+  expect(displayVersion("1.5.1+collie.15-dev+7ca2f75-dirty")).toBe("1.5.1+collie.15+7ca2f75");
+  expect(displayVersion("1.5.1+collie.15")).toBe("1.5.1+collie.15");
+});
 
 // Ported behaviour, so these tests are written against the shell they replace: the config-dir
 // precedence of the pre-shim collie-ctl.sh and its three-way version string. If the binary and

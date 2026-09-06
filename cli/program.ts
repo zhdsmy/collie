@@ -2,7 +2,7 @@ import { Command as Program, CommanderError } from "commander";
 
 import { type BeaconEmitDeps, runBeaconEmit } from "./beacon.ts";
 import { cmdBuild } from "./build.ts";
-import { collieVersion, loadContext } from "./context.ts";
+import { collieVersion, displayVersion, loadContext } from "./context.ts";
 import {
   cmdHooks,
   cmdHooksInstall,
@@ -332,7 +332,7 @@ export const COMMANDS: readonly Command[] = [
     summary: "print the version actually being served",
     run(_args, s) {
       const ctx = loadContext(s.io.err);
-      s.io.out(collieVersion(ctx.root));
+    s.io.out(displayVersion(collieVersion(ctx.root)));
       return EXIT.OK;
     },
   },
