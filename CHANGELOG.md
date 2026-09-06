@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Color Codex context rings and percentages by remaining capacity (green above 30%, yellow above 10%, red at 10% or less), and distinguish Fast OFF/ON with hollow/filled lightning while preserving other TUI field colors.
+## [1.5.3+collie.2] - 2026-09-06
+
+- Color Codex context rings and percentages by remaining capacity (green above 30%, yellow above 10%, red at 10% or less), and distinguish Fast OFF/ON with hollow/filled lightning while preserving other TUI field colors. ([c86e76a](https://github.com/zhdsmy/collie/commit/c86e76a))
 
 ## [1.5.3+collie.1] - 2026-09-06
 
