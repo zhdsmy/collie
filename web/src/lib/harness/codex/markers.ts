@@ -59,6 +59,12 @@ export function rstrip(text: string): string {
 const STATUS_ROW =
   /^ {2}\S.* · (?:(?:.* · )+Context \d+% (?:left|used)\b|Context \d+% (?:left|used)\b · \S)/;
 
+// While a turn is running Codex replaces the normal status row with a two-line footer:
+// `tab to queue message` followed by `50% context left`. It is still composer chrome,
+// but it has no dot separators or model field, so it needs a narrow explicit grammar.
+const WORKING_QUEUE_ROW = /^\s*tab\s+to\s+queue\s+message\b/i;
+const WORKING_CONTEXT_ROW = /^\s*\d+%\s+context\s+(?:left|used)\b/i;
+
 /** The exact separator paint Codex renders between status fields. */
 const STATUS_SEPARATOR = " \u00b7 ";
 /** Bounds. A status field is a model name, a path or a branch — never a paragraph. */
@@ -180,6 +186,14 @@ function isStyledStatusRow(text: string, line: StyledLine): boolean {
 export function isStatusRow(text: string, line?: StyledLine): boolean {
   if (STATUS_ROW.test(rstrip(text))) return true;
   return line !== undefined && isStyledStatusRow(text, line);
+}
+
+export function isWorkingQueueRow(text: string): boolean {
+  return WORKING_QUEUE_ROW.test(rstrip(text));
+}
+
+export function isWorkingContextRow(text: string): boolean {
+  return WORKING_CONTEXT_ROW.test(rstrip(text));
 }
 
 // The `› ` prompt row. Column 0 — but transcript ECHOES of submitted messages paint the same

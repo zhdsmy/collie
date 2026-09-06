@@ -9,6 +9,8 @@
 import type { StyledLine } from "../../blocks";
 import {
   isBlank,
+  isWorkingContextRow,
+  isWorkingQueueRow,
   isStatusRow,
   lastNonBlankIndex,
   lineText,
@@ -64,24 +66,31 @@ function isEmptyPlaceholder(line: StyledLine): boolean {
 export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   const texts = lines.map((l) => rstrip(lineText(l)));
   const statusRow = lastNonBlankIndex(texts);
-  if (statusRow < 0 || !isStatusRow(texts[statusRow]!, lines[statusRow])) return null;
+  if (statusRow < 0) return null;
+  const regularStatus = isStatusRow(texts[statusRow]!, lines[statusRow]);
+  const workingStatus = isWorkingContextRow(texts[statusRow]!);
+  if (!regularStatus && !workingStatus) return null;
 
   // Separate layout padding from the draft. Internal empty paragraphs are valid, but crossing
   // one requires the live marker's paint so a dim submitted echo cannot claim later output.
   const top = skipBlanksUp(texts, statusRow - 1);
   if (top < 0) return null;
+  // A working footer is valid only as the exact queue-hint + context pair. This prevents a
+  // transcript line that happens to end in `50% context left` from becoming an input box.
+  if (workingStatus && !isWorkingQueueRow(texts[top]!)) return null;
   let crossedBlank = false;
   for (let i = top; i >= 0 && top - i < MAX_DRAFT_ROWS; i--) {
     const t = texts[i]!;
     if (promptText(t) !== null) {
       const marker = lines[i]!.segments.find((segment) => segment.text.startsWith("›"));
-      if (crossedBlank && (!marker?.bold || marker.dim)) return null;
+      if (crossedBlank && !workingStatus && (!marker?.bold || marker.dim)) return null;
       return { promptRow: i, statusRow };
     }
     if (isBlank(t)) {
       crossedBlank = true;
       continue;
     }
+    if (workingStatus && i === top && isWorkingQueueRow(t)) continue;
     if (!CONTINUATION.test(t) || isStatusRow(t, lines[i])) return null;
   }
   return null;
@@ -118,7 +127,9 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
   const texts = lines.map((l) => rstrip(lineText(l)));
   const first = promptText(texts[box.promptRow]!) ?? "";
   const parts = [first.trim()];
+  const workingStatus = isWorkingContextRow(texts[box.statusRow]!);
   for (let i = box.promptRow + 1; i < box.statusRow; i++) {
+    if (workingStatus && isWorkingQueueRow(texts[i]!)) continue;
     parts.push(texts[i]!.trim());
   }
   const draft = parts.filter((p) => p !== "").join(" ");

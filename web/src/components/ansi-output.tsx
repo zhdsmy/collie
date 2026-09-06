@@ -119,6 +119,31 @@ const NO_BLOCK_RUNS: readonly (readonly TableRun[])[] = Object.freeze([]);
 const LINK_CLASS =
   "underline decoration-1 underline-offset-2 break-all cursor-pointer py-[0.35em]";
 
+// Browser wrapping should prefer real word boundaries. Long terminal tokens still need a few
+// deliberate opportunities so paths, URLs, commands and JSON can fit a phone without being cut at
+// an arbitrary character. `<wbr>` has no text value, so find/link offsets and clipboard text remain
+// byte-for-byte identical.
+const SOFT_BREAK_PUNCTUATION = new Set([
+  "/", "\\", ".", ",", ":", ";", "!", "?", "&", "=", "{", "}", "[", "]", "(", ")",
+  "<", ">", "'", '"', "`", "|", "+", "-",
+]);
+
+function softWrap(run: string): ReactNode {
+  const parts: ReactNode[] = [];
+  let chunk = "";
+  let hasBreak = false;
+  for (const char of run) {
+    chunk += char;
+    if (SOFT_BREAK_PUNCTUATION.has(char)) {
+      parts.push(<Fragment key={parts.length}>{chunk}<wbr /></Fragment>);
+      chunk = "";
+      hasBreak = true;
+    }
+  }
+  if (chunk) parts.push(chunk);
+  return hasBreak ? parts : run;
+}
+
 // Paint the base once, below dim line numbers and across wrapped rows. Keep stronger token fills.
 function segmentStyle(s: AnsiSegment, surface: StyledLine["surface"]): CSSProperties {
   const style = styleFor(s);
@@ -133,7 +158,7 @@ function preClass(wrap: boolean, className?: string): string {
     MIRROR_SPACE,
     MIRROR_INVERT,
     wrap
-      ? "min-w-0 w-full max-w-full whitespace-pre-wrap break-words"
+      ? "min-w-0 w-full max-w-full whitespace-pre-wrap break-normal"
       : // Horizontal pan for wide TUI tables. `overflow-x-auto` forces `overflow-y` to compute to
         // `auto` (CSS overflow quirk), and a flex item with non-visible overflow may shrink below its
         // content height — the <pre> then becomes the vertical scroller and ChatMessageList's
@@ -329,10 +354,10 @@ export const AnsiOutput = memo(function AnsiOutput({
   // A run of plain text at global offset `start` → nodes, with find matches split out and
   // highlighted. `currentAssigned` refs only the first slice of the focused match (a match can span
   // segments on a colour change) so scrollIntoView targets one stable node.
-  const renderFind = (run: string, start: number): ReactNode => {
-    if (matches.length === 0) return run;
+  const renderFind = (run: string, start: number, allowSoftWrap = true): ReactNode => {
+    if (matches.length === 0) return wrap && allowSoftWrap ? softWrap(run) : run;
     return splitSegment(run, start, matches).map((p, j) => {
-      if (p.matchIndex === null) return p.text;
+      if (p.matchIndex === null) return wrap && allowSoftWrap ? softWrap(p.text) : p.text;
       const isCurrent = p.matchIndex === currentMatch;
       const attach = isCurrent && !currentAssigned;
       if (attach) currentAssigned = true;
@@ -359,7 +384,7 @@ export const AnsiOutput = memo(function AnsiOutput({
             isCurrent ? cn(MIRROR_INVERT, "bg-yellow-400 text-black") : "bg-yellow-400/30",
           )}
         >
-          {p.text}
+          {wrap && allowSoftWrap ? softWrap(p.text) : p.text}
         </span>
       );
     });
@@ -377,7 +402,7 @@ export const AnsiOutput = memo(function AnsiOutput({
       if (p.matchIndex === null) return <Fragment key={i}>{renderFind(p.text, pieceStart)}</Fragment>;
       return (
         <a key={i} href={links[p.matchIndex]!.href} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
-          {renderFind(p.text, pieceStart)}
+          {renderFind(p.text, pieceStart, false)}
         </a>
       );
     });
@@ -391,7 +416,7 @@ export const AnsiOutput = memo(function AnsiOutput({
       const pieceStart = at;
       at += piece.length;
       return i % 2 ? (
-        <span key={i} className="break-all">{renderSegment(piece, pieceStart)}</span>
+        <span key={i} className="break-normal">{renderSegment(piece, pieceStart)}</span>
       ) : <Fragment key={i}>{renderSegment(piece, pieceStart)}</Fragment>;
     });
   };

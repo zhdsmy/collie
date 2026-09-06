@@ -54,6 +54,16 @@ describe("guarded Codex image sends", () => {
     ["interleaved empty paragraphs", `第一段 ${A}\n\n第二段 ${B}\n\n比较差异`, "第一段 [Image #1]\n\n第二段 [Image #2]\n\n比较差异"],
     ["plain text paragraphs", "第一段消息\n\n第二段消息", "第一段消息\n\n第二段消息"],
     ["short caption", `${A} 看下`, "[Image #1] 看下"],
+    [
+      "wrapped upload path with mixed image token",
+      `${A}\n${B}\n仍然有换行不正确的问题`,
+      `${A.slice(0, 19)} ${A.slice(19)} [Image #2] 仍然有换行不正确的问题`,
+    ],
+    [
+      "wrapped literal upload paths",
+      `${A}\n${B}\n仍然有换行不正确的问题`,
+      `${A.slice(0, 19)} ${A.slice(19)} ${B.slice(0, 42)} ${B.slice(42)} 仍然有换行不正确的问题`,
+    ],
     ["interleaved text", `第一张 ${A}\n第二张 ${B}\n比较差异`, "第一张 [Image #1]\n第二张 [Image #2]\n比较差异"],
     ["token wraps", `${A} ${B}`, "[Ima\nge #1] [Image\n#2]"],
   ])("types once and submits once for %s", async (_name, text, draft) => {

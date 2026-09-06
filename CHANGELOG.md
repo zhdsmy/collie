@@ -26,9 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-## [Unreleased]
-
 - Keep statusline visible while typing, allow horizontal overflow scrolling, and place multi-host send targets at the start of the same row.
+
+- Recognize Codex working-turn composers and wrapped image paths without weakening send verification; wrap terminal tokens at punctuation while preserving text and search offsets.
 
 ## [1.5.1+collie.15] - 2026-09-06
 

@@ -13,6 +13,10 @@ const BOX_RULE = "─".repeat(40); // clears the 20-glyph border threshold in ha
 const paneWithDraft = (draft: string) => `some output\n${BOX_RULE}\n❯ ${draft}\n${BOX_RULE}`;
 // A focused permission dialog: no input box at the tail at all, so extractInputDraft sees nothing.
 const paneWithDialog = "Do you want to proceed?\n ❯ 1. Yes\n   2. No\n\n Esc to cancel";
+const paneWithWorkingDraft = (draft: string) =>
+  ["• Working (3s • esc to interrupt)", `› ${draft}`, "", "tab to queue message", "50% context left"].join(
+    "\n",
+  );
 
 /** Record every reply POST, and let the fake pane's screen be swapped per test. */
 function harness(screen: () => string) {
@@ -787,5 +791,27 @@ describe("the pre-type work is handed the region its keys must be bound to", () 
 
     expect(out.status).toBe("blocked");
     expect(log).toEqual([]);
+  });
+
+  it.each([
+    ["plain text", "please continue this investigation", "please continue this investigation"],
+    ["blank lines", "第一行\n\n第三行", "第一行 第三行"],
+    ["image token", "/Users/michael/.local/state/collie/uploads/one.png", "[image #1]"],
+    [
+      "mixed image and text",
+      "先看 /Users/michael/.local/state/collie/uploads/one.png 然后继续",
+      "先看 [Image #1] 然后继续",
+    ],
+  ])("verifies %s in Codex's working footer before Enter", async (_name, text, draft) => {
+    let reads = 0;
+    const calls = harness(() =>
+      paneWithWorkingDraft(reads++ === 0 ? "\u001b[2mAsk Codex to do anything\u001b[0m" : draft),
+    );
+    const out = await sendGuardedReply({ paneId: "w1:p1", text, agent: "codex", ...instant });
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text, submit: false },
+      { text: "", submit: true },
+    ]);
   });
 });

@@ -3,7 +3,25 @@ import { draftCarriesSend } from "../../draft-match";
 // Collie inserts absolute upload paths. Codex replaces image paths with atomic image tokens.
 const UPLOAD_IMAGE = /(?:^|\s)(\/(?:[^\s/]+\/)*uploads\/[^\s/]+\.(?:gif|jpe?g|png|webp))(?=\s|$)/gi;
 // The draft extractor folds terminal rows with spaces, including a wrap inside the token label.
-const IMAGE_TOKEN = /\[\s*I\s*m\s*a\s*g\s*e\s*#\s*([1-9](?:\s*\d)*)\s*\]/g;
+const IMAGE_TOKEN = /\[\s*I\s*m\s*a\s*g\s*e\s*#\s*([1-9](?:\s*\d)*)\s*\]/gi;
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * The terminal folds visual rows with one space. A long absolute upload path can therefore be
+ * observed as `/.../first. jpg`, even though the bridge typed the path without that space. Only
+ * paths that are present in this send are normalised; captions and unrelated paths remain exact.
+ */
+function normalizeSentPaths(sentPaths: string[], draft: string): string {
+  return [...new Set(sentPaths)]
+    .reduce((current, path) => {
+      const folded = [...path].map((character) => escapeRegExp(character)).join("\\s*");
+      const matcher = new RegExp(`(^|\\s)(${folded})(?=\\s|$)`, "g");
+      return current.replace(matcher, (_match, prefix: string) => `${prefix}${path}`);
+    }, draft);
+}
 
 function caption(text: string): string {
   return text.split(UPLOAD_IMAGE).filter((_part, i) => i % 2 === 0)
@@ -17,11 +35,12 @@ export function imageDraftCarriesSend(sent: string, draft: string, beforeDraft?:
   const paths = [...sent.matchAll(UPLOAD_IMAGE)].map((match) => match[1]!);
   if (paths.length === 0) return false;
   if (beforeDraft?.trim()) return false;
-  const tokens = [...draft.matchAll(IMAGE_TOKEN)].map((match) => match[1]!.replace(/\s/g, ""));
-  if (tokens.length === 0 || new Set(tokens).size !== tokens.length) return false;
+  const normalizedDraft = normalizeSentPaths(paths, draft);
+  const tokens = [...normalizedDraft.matchAll(IMAGE_TOKEN)].map((match) => match[1]!.replace(/\s/g, ""));
+  if (new Set(tokens).size !== tokens.length) return false;
 
   const remaining = [...paths];
-  for (const match of draft.matchAll(UPLOAD_IMAGE)) {
+  for (const match of normalizedDraft.matchAll(UPLOAD_IMAGE)) {
     const index = remaining.indexOf(match[1]!);
     if (index < 0) return false;
     remaining.splice(index, 1);
@@ -29,7 +48,7 @@ export function imageDraftCarriesSend(sent: string, draft: string, beforeDraft?:
   if (tokens.length !== remaining.length) return false;
 
   const sentCaption = caption(sent);
-  const draftCaption = caption(draft);
+  const draftCaption = caption(normalizedDraft);
   if (!sentCaption) {
     return beforeDraft !== undefined && !beforeDraft?.trim() && !draftCaption;
   }

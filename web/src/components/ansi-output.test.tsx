@@ -157,9 +157,10 @@ describe("mirror line wrapping", () => {
     const { container: plain } = render(<AnsiOutput text={`${border}\n`} />);
     expect(plain.querySelector("span.overflow-hidden")?.textContent).toBe(border);
 
-    const { container: wrapped } = render(<AnsiOutput text={`unbroken-${"x".repeat(40)}\n`} />);
+    const { container: wrapped } = render(<AnsiOutput text={`path=/Users/michael/Documents/${"x".repeat(40)}\n`} />);
     const wrappedPre = wrapped.querySelector("pre")!;
-    expect(wrappedPre.className).toContain("break-words");
+    expect(wrappedPre.className).toContain("break-normal");
+    expect(wrappedPre.querySelectorAll("wbr")).toHaveLength(5);
     expect(wrappedPre.querySelector("span.overflow-hidden")).toBeNull();
 
     const { container: panned } = render(<AnsiOutput text={`${border}\n`} wrap={false} />);
@@ -235,8 +236,18 @@ describe("mirror line wrapping", () => {
     expect(pre.textContent).toBe(`${rule}\n› ${first}tail\n\n  ${local}end`);
     expect(pre.querySelector("[data-find-match]")?.textContent).toBe("tail");
     expect([...pre.querySelectorAll("a")].every((link) => link.href === `${first}tail`)).toBe(true);
-    expect([...pre.querySelectorAll('[data-terminal-surface="user"] span.break-all')]
+    expect([...pre.querySelectorAll('[data-terminal-surface="user"] span.break-normal')]
       .some((node) => node.textContent === local)).toBe(true);
+  });
+
+  it("adds soft breaks for terminal tokens without changing their text", () => {
+    const text = `rg --glob='*.tsx' /Users/michael/Documents/collie {"path":"src/app.tsx","ok":true}`;
+    const { container } = render(<AnsiOutput text={text} />);
+    const pre = container.querySelector("pre")!;
+    expect(pre.textContent).toBe(text);
+    expect(pre.querySelectorAll("wbr").length).toBeGreaterThan(8);
+    expect(pre.className).toContain("break-normal");
+    expect(pre.className).not.toContain("break-words");
   });
 
   it("does not suppress the same ANSI background for an unknown agent", () => {

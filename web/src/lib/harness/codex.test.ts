@@ -206,6 +206,25 @@ describe("chrome", () => {
     expect(locateComposer(splitLines(parseAnsi(real)))).not.toBeNull();
   });
 
+  it("locates the two-line working footer and excludes its queue hint from the draft", () => {
+    const workingScreen = [
+      "• Working (3s • esc to interrupt)",
+      "› please continue this investigation",
+      "",
+      "tab to queue message",
+      "50% context left",
+    ].join("\n");
+    const workingLines = splitLines(parseAnsi(workingScreen));
+    expect(codexAdapter.composerReady!(workingLines)).toBe(true);
+    expect(codexAdapter.extractInputDraft(workingLines)).toBe("please continue this investigation");
+  });
+
+  it("does not treat an isolated working context line as a composer", () => {
+    const lines = splitLines(parseAnsi(["› submitted message", "50% context left"].join("\n")));
+    expect(codexAdapter.composerReady!(lines)).toBe(false);
+    expect(codexAdapter.extractInputDraft(lines)).toBeNull();
+  });
+
   it("locates the v0.150.1 status row with Context directly after the model", () => {
     const screen = [
       "› a message waiting to send",
