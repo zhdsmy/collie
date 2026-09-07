@@ -133,7 +133,8 @@ export function RenameView({
           onChange={(e) => onLabelChange(e.target.value)}
           onKeyDown={onInputKeyDown}
           placeholder={placeholder}
-          className="h-11 rounded-lg border border-border bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          // iOS zooms the whole page on focus below 16px; both tab and pane rename use this input.
+          className="h-11 rounded-lg border border-border bg-background px-3 text-[16px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         />
       </label>
       <Button onClick={onSave} disabled={saving || !canSave} className="h-11">

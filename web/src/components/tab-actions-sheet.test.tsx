@@ -62,11 +62,14 @@ describe("TabActionsSheet — rename", () => {
     expect(screen.getByPlaceholderText("name this tab")).toHaveValue("deploy");
   });
 
-  it("autofocuses the input once rename mode opens", async () => {
+  it("autofocuses a 16px rename input without the small-text iOS zoom trigger", async () => {
     const user = userEvent.setup();
     renderSheet();
     await user.click(screen.getByRole("button", { name: "Rename" }));
-    await waitFor(() => expect(screen.getByPlaceholderText("name this tab")).toHaveFocus());
+    const input = screen.getByPlaceholderText("name this tab");
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(input).toHaveClass("text-[16px]", "h-11");
+    expect(input).not.toHaveClass("text-sm");
   });
 
   it("Back returns to the action list without saving", async () => {
