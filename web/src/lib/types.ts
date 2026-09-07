@@ -385,7 +385,7 @@ export interface UpdateInfo {
    * Herdr-managed (detached) checkout, every other kind is told the `collie` verbs. Absent on an
    * older bridge (pre-M14, the git-install era), which reads as Herdr-managed.
    */
-  installKind?: "linked-clone" | "detached-checkout" | "binary" | "unknown";
+  installKind?: "linked-clone" | "detached-checkout" | "binary" | "packaged" | "unknown";
   /** The running bridge PROCESS is behind the on-disk code — a `systemctl restart` picks it up. */
   bridgeStale: boolean;
   /** When the upstream check last ran (epoch ms), or null if it hasn't. */
@@ -885,6 +885,27 @@ export interface BridgeConfig {
    * feature is absent, not disabled.
    */
   stt?: SttCapability;
+  /**
+   * What this collie accepts as an attachment. Mirrors `UploadCapability` in bridge/types.ts.
+   *
+   * **Absent is a bridge older than the field**, and the phone reads that as the contract that
+   * shipped before it: 10 MB, images only (lib/attachments.ts owns that fallback). So a
+   * mid-upgrade operator sees the old picker rather than an empty one.
+   */
+  upload?: UploadCapability;
+}
+
+/**
+ * What `/api/config` says about attachments — the two facts the picker needs before it opens.
+ * Both are the HOST's own settings, so a pack member with a different cap answers for itself.
+ */
+export interface UploadCapability {
+  /** Largest attachment accepted, decoded, in bytes. */
+  maxBytes: number;
+  /** Image extensions accepted, bare and lowercase. The bridge sniffs these from the bytes. */
+  imageTypes: string[];
+  /** Text extensions accepted, bare and lowercase. The bridge takes these from the name. */
+  textTypes: string[];
 }
 
 /**

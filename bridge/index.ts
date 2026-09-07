@@ -127,7 +127,7 @@ import {
   updateDigestBody,
 } from "./update.ts";
 import { SWEEP_INTERVAL_MS, sweepUploads } from "./uploads.ts";
-import { readUpdateRun, updateLockHeld } from "./update-run.ts";
+import { packTurnStart, readUpdateRun, updateLockHeld } from "./update-run.ts";
 import {
   FreshPreflightGate,
   parsePreflightReport,
@@ -564,7 +564,10 @@ const updateRepo = process.env.COLLIE_UPDATE_REPO?.trim() || "AltanS/collie";
 // The banner spells its commands from this: Herdr actions for a Herdr-managed checkout, the `collie`
 // verbs for everything else (M14/01 §5.3).
 const installKind = classifyInstall(
-  probeInstall({ exec: realExec(process.env, homedir()), files: realFiles, link: realLinkFs }, rootDir),
+  probeInstall(
+    { ctx: { home: homedir() }, exec: realExec(process.env, homedir()), files: realFiles, link: realLinkFs },
+    rootDir,
+  ),
 ).kind;
 const updateMonitor = new UpdateMonitor({
   repo: updateRepo,
@@ -767,6 +770,7 @@ updateTimer.unref();
 const packFollower =
   pack.mode === "peer" && canRunUpdate
     ? new PackFollower({
+        installKind,
         self: () => ({ version: packVersion, self: trustStore.current()?.self.memberId ?? "" }),
         // Re-read on every decision, never captured: it IS the memory, and the record on disk is
         // what survives this machine's own restart.
@@ -1168,6 +1172,8 @@ const packLead = (() => {
   const client = packPeerClient(data);
   return new PackLead({
     registry: packRegistry,
+    // §13's refuse-before-forward budget: this lead's own cap, not a constant (COLLIE_MAX_UPLOAD_MB).
+    maxUploadBytes: cfg.maxUploadBytes,
     snapshot: (link, freshPreflight, follow) => client.snapshot(link, undefined, freshPreflight, follow),
     // §20's half of the sweep: what this lead may state about itself, and the queue that hands out
     // one turn at a time. Every member of it is read through, never captured — a lead settles
@@ -1325,11 +1331,16 @@ const packStatus =
  */
 let settledRunId: string | null = null;
 function settleUpdateGate(): void {
-  const run = readUpdateRun(cfg.stateDir);
-  if (run === null || run.state !== "done" || run.runId === undefined || run.to === null) return;
-  if (run.runId === settledRunId) return;
-  settledRunId = run.runId;
-  updateTurns.begin(run.runId, run.to);
+  const start = packTurnStart(readUpdateRun(cfg.stateDir));
+  if (start === null) return;
+  if (start.runId === settledRunId) return;
+  settledRunId = start.runId;
+  // The one line an operator can grep for in the BRIDGE's own journal, which is the journal they
+  // are already tailing. The update that wrote this record ran under a transient `--collect` unit
+  // whose name nobody knows and whose journal outlives it by nothing, so a trace left only there is
+  // a trace left nowhere. Once per run id per process, so a poll tick cannot make it a stream.
+  console.log(`[pack] update ${start.runId}: levelling peers to ${start.to}`);
+  updateTurns.begin(start.runId, start.to);
   packLead?.resweep();
 }
 

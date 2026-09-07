@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Merge upstream v1.5.4: text-file attachments and configurable upload limits, package-managed installs, update/Bun discovery fixes and pinned build tools; use upstream's copyable header error details while retaining downstream composer and statusline behavior.
+
 ## [1.5.3+collie.2] - 2026-09-06
 
 - Color Codex context rings and percentages by remaining capacity (green above 30%, yellow above 10%, red at 10% or less), and distinguish Fast OFF/ON with hollow/filled lightning while preserving other TUI field colors. ([c86e76a](https://github.com/zhdsmy/collie/commit/c86e76a))
