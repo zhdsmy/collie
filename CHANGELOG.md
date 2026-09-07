@@ -7,7 +7,9 @@ there is one.
 
 ## [Unreleased]
 
-- Restore the v0.36.1+collie.2 seen-notification cleanup so handled conversations do not reappear in later alerts; extend it to peers, name summaries by conversation, and keep retraction updates silent without reviving dismissed notifications.
+## [1.5.5+collie.2] - 2026-09-07
+
+- Restore the v0.36.1+collie.2 seen-notification cleanup so handled conversations do not reappear in later alerts; extend it to peers, name summaries by conversation, and keep retraction updates silent without reviving dismissed notifications. ([6b62cfc](https://github.com/zhdsmy/collie/commit/6b62cfc))
 
 ## [1.5.5+collie.1] - 2026-09-07
 
