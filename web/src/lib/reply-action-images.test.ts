@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/setup";
 import { sendGuardedReply } from "./reply-action";
+import { t } from "./i18n";
 
 const A = "/test-state/uploads/first.jpg";
 const B = "/test-state/uploads/second.png";
@@ -18,9 +19,13 @@ function codexPane(draft: string): string {
   ].join("\n");
 }
 
+function expectedPrompt(draft: string): string {
+  return `› ${draft.replace(/\n/g, "\n  ")}`.split("\n").map((line) => line.trimEnd()).join("\n");
+}
+
 function composer(before: string, after: () => string) {
-  const state = { before, typed: false, failRead: false };
-  const calls: Array<{ text: string; submit: boolean }> = [];
+  const state = { before, typed: false, failRead: false, promptChanged: false };
+  const calls: Array<{ text: string; submit: boolean; expected_prompt?: string }> = [];
   server.use(
     http.get(/\/api\/pane\/[^/]+$/, () => {
       if (state.failRead) {
@@ -34,9 +39,12 @@ function composer(before: string, after: () => string) {
         revision: 1,
       });
     }),
-    http.post<never, { text: string; submit: boolean }>(/\/api\/pane\/[^/]+\/reply$/, async ({ request }) => {
+    http.post<never, { text: string; submit: boolean; expected_prompt?: string }>(/\/api\/pane\/[^/]+\/reply$/, async ({ request }) => {
       const body = await request.json();
       calls.push(body);
+      if (body.submit && state.promptChanged) {
+        return HttpResponse.json({ ok: false, code: "prompt_changed", error: "prompt changed" }, { status: 409 });
+      }
       if (!body.submit) state.typed = true;
       return HttpResponse.json({ ok: true });
     }),
@@ -70,7 +78,10 @@ describe("guarded Codex image sends", () => {
     const { calls } = composer("", () => draft);
     const result = await sendGuardedReply({ paneId: "w1:p1", text, agent: "codex", ...instant });
     expect(result).toEqual({ status: "sent" });
-    expect(calls).toEqual([{ text, submit: false }, { text: "", submit: true }]);
+    expect(calls).toEqual([
+      { text, submit: false },
+      { text: "", submit: true, expected_prompt: expectedPrompt(draft) },
+    ]);
   });
 
   it("waits until all image tokens are visible without typing a second copy", async () => {
@@ -80,7 +91,10 @@ describe("guarded Codex image sends", () => {
     const result = await sendGuardedReply({ paneId: "w1:p1", text, agent: "codex", ...instant });
     expect(result.status).toBe("sent");
     expect(reads).toBe(2);
-    expect(calls).toEqual([{ text, submit: false }, { text: "", submit: true }]);
+    expect(calls).toEqual([
+      { text, submit: false },
+      { text: "", submit: true, expected_prompt: "› [Image #1] [Image #2]" },
+    ]);
   });
 
   it.each([
@@ -106,7 +120,25 @@ describe("guarded Codex image sends", () => {
       },
     });
     expect(result.status).toBe("sent");
-    expect(calls).toEqual([{ text: A, submit: false }, { text: "", submit: true }]);
+    expect(calls).toEqual([
+      { text: A, submit: false },
+      { text: "", submit: true, expected_prompt: "› [Image #2]" },
+    ]);
+  });
+
+  it.each([
+    ["single image", A, "[Image #1]"],
+    ["multiple images", `${A}\n${B}`, "[Image #1] [Image #2]"],
+    ["interleaved caption", `Compare ${A}\n\nwith ${B}`, "Compare [Image #1]\n\nwith [Image #2]"],
+  ])("reports a changed prompt without retyping %s", async (_name, text, draft) => {
+    const { state, calls } = composer("", () => draft);
+    state.promptChanged = true;
+    const result = await sendGuardedReply({ paneId: "w1:p1", text, agent: "codex", ...instant });
+    expect(result).toEqual({ status: "error", error: t("apiError.prompt_changed"), textDelivered: true });
+    expect(calls).toEqual([
+      { text, submit: false },
+      { text: "", submit: true, expected_prompt: expectedPrompt(draft) },
+    ]);
   });
 
   it("does not assume a successful clear when the confirming read fails", async () => {
