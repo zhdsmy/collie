@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Merge upstream v1.5.4: text-file attachments and configurable upload limits, package-managed installs, update/Bun discovery fixes and pinned build tools; use upstream's copyable header error details while retaining downstream composer and statusline behavior.
+## [1.5.4+collie.1] - 2026-09-07
+
+- Merge upstream v1.5.4: text-file attachments and configurable upload limits, package-managed installs, update/Bun discovery fixes and pinned build tools; use upstream's copyable header error details while retaining downstream composer and statusline behavior. ([886c8e3](https://github.com/zhdsmy/collie/commit/886c8e3))
 
 ## [1.5.3+collie.2] - 2026-09-06
 
