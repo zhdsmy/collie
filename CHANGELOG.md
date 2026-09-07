@@ -7,6 +7,8 @@ there is one.
 
 ## [Unreleased]
 
+- Normalize submitted Codex input to one continuous neutral rectangle across current and legacy ANSI palettes, preserving the diff-aligned equal gutters, explicit newlines, and text emphasis.
+
 ## [1.5.5+collie.2] - 2026-09-07
 
 - Restore the v0.36.1+collie.2 seen-notification cleanup so handled conversations do not reappear in later alerts; extend it to peers, name summaries by conversation, and keep retraction updates silent without reviving dismissed notifications. ([6b62cfc](https://github.com/zhdsmy/collie/commit/6b62cfc))

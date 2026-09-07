@@ -16,7 +16,6 @@ import {
   type WizardModel,
 } from "@/lib/blocks";
 import { tableRuns, type TableRun } from "@/lib/table-run";
-import { CODEX_USER_MESSAGE_BG } from "@/lib/harness/codex/display";
 import { MIRROR_SPACE, MIRROR_INVERT, styleFor } from "@/components/mirror-space";
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks } from "@/lib/links";
@@ -119,10 +118,11 @@ const NO_BLOCK_RUNS: readonly (readonly TableRun[])[] = Object.freeze([]);
 const LINK_CLASS =
   "underline decoration-1 underline-offset-2 break-all cursor-pointer py-[0.35em]";
 
-// Paint the base once, below dim line numbers and across wrapped rows. Keep stronger token fills.
+// User echoes have one neutral surface regardless of Codex's current ANSI palette.
+// Diff rows still retain stronger token fills above their full-row base.
 function segmentStyle(s: AnsiSegment, surface: StyledLine["surface"]): CSSProperties {
   const style = styleFor(s);
-  if (!surface || (s.bg !== surface.background && !(surface.kind === "user" && s.bg === CODEX_USER_MESSAGE_BG))) return style;
+  if (!surface || (surface.kind !== "user" && s.bg !== surface.background)) return style;
   const { backgroundColor: _backgroundColor, ...rest } = style;
   return rest;
 }

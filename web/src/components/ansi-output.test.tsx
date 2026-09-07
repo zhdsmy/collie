@@ -223,6 +223,42 @@ describe("mirror line wrapping", () => {
     expect(pannedPre.querySelector("span.overflow-hidden")).toBeNull();
     expect(pannedPre.textContent).toBe(`${border}\n`);
   });
+  it.each([true, false])("paints current Codex input as one neutral surface without per-segment stripes (wrap=%s)", (wrap) => {
+    const bg = `${ESC}[48;2;57;57;71m`;
+    const text = [
+      `${bg}${ESC}[1;2m\u203a ${ESC}[22mheadroom upgrade to the latest release${" ".repeat(80)}${ESC}[0m`,
+      `${bg}  Keep explicit newlines and https://example.com/ readable.${ESC}[0m`,
+      `${bg}  ${ESC}[0m`,
+      `${bg}  [Image #1]${ESC}[0m`,
+      "", "\u2022 Normal answer",
+    ].join("\n");
+    const { container } = render(<AnsiOutput text={text} agent="codex" wrap={wrap} query="release" />);
+    const rows = container.querySelectorAll<HTMLElement>('[data-terminal-surface="user"]');
+    expect(rows).toHaveLength(4);
+    for (const row of rows) {
+      expect(row.style.backgroundColor).toBe("rgb(28, 28, 28)");
+      expect(row).toHaveClass("min-w-full", "min-h-[1lh]", "align-bottom", "font-semibold");
+      if (wrap) expect(row).toHaveClass("w-full", "max-w-full");
+      expect(row.querySelector('[style*="background-color"]')).toBeNull();
+    }
+    expect(rows[0]!.firstElementChild).toHaveStyle({ opacity: "0.6" });
+    expect(container.querySelector("[data-find-match]")?.textContent).toBe("release");
+    expect(container.querySelector("a")?.getAttribute("href")).toBe("https://example.com/");
+    expect(container.querySelector("pre")?.textContent).toBe(
+      `\u203a headroom upgrade to the latest release${" ".repeat(80)}\n  Keep explicit newlines and https://example.com/ readable.\n  \n  [Image #1]\n\n\u2022 Normal answer`,
+    );
+  });
+
+  it("retains the current ANSI fill outside a recognized submitted input", () => {
+    const text = `${ESC}[48;2;57;57;71mordinary terminal output${ESC}[0m`;
+    for (const agent of ["codex", "shell"]) {
+      const { container, unmount } = render(<AnsiOutput text={text} agent={agent} />);
+      expect(container.querySelector("[data-terminal-surface]")).toBeNull();
+      expect(container.querySelector("pre span")).toHaveStyle({ backgroundColor: "rgb(57, 57, 71)" });
+      unmount();
+    }
+  });
+
   it("paints Codex user/diff surfaces without changing text, links, or find offsets", () => {
     const user = `${ESC}[48;2;240;240;240m› submitted message${" ".repeat(32)}${ESC}[0m`;
     const diff = `${ESC}[48;2;33;58;43m ${ESC}[2m29 ${ESC}[22m+ see https://herdr.dev/docs${ESC}[0m`;
