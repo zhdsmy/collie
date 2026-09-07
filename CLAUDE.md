@@ -31,6 +31,15 @@ unless the operator explicitly limits the task to discussion, review, or source-
 upstream version plus `+collie.N`; verify the deployed build locally and through the configured
 access URL before reporting completion. Do not create a GitHub Release.
 
+**Upstream release handoff:** report the full upstream release changes in Chinese, not only
+selected highlights. Cross-check the release notes and CHANGELOG against the actual tag-to-tag
+diff, covering features, fixes, compatibility, docs, and build/tooling changes; link the upstream
+release and relevant PRs or commits. Separately list each downstream implementation replaced by
+upstream, with its old behavior, upstream replacement, and user-visible differences. State explicitly
+when none were replaced. Also name retained downstream differences and why they remain. Keep the
+complete report in the final handoff, or link a checked-in report when it is too long; do not leave
+these details only in progress updates.
+
 **Downstream publishing override (`zhdsmy/collie`): commits and annotated version tags only.**
 Do not create GitHub Releases or restore `.github/workflows/` during upstream merges unless the
 operator explicitly requests it. This overrides the upstream automatic Release-publishing
