@@ -7,6 +7,8 @@ there is one.
 
 ## [Unreleased]
 
+- Restore the v0.36.1+collie.2 seen-notification cleanup so handled conversations do not reappear in later alerts; extend it to peers, name summaries by conversation, and keep retraction updates silent without reviving dismissed notifications.
+
 ## [1.5.5+collie.1] - 2026-09-07
 
 - Merge upstream v1.5.5: use its photo/file picker, anchored attach menu, guarded-submit prompt binding and inline Codex queue recognition; retain downstream multi-image safeguards, direct-input controls, statusline and iOS viewport fixes. [Complete upstream changes and integration decisions](./docs/upstream-v1.5.5.md). ([dbda134](https://github.com/zhdsmy/collie/commit/dbda134))

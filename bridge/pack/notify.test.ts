@@ -76,6 +76,34 @@ function notifier(opts: { notifiable?: (s: AgentStatus) => boolean; muted?: () =
 // ── The diff ─────────────────────────────────────────────────────────────────
 
 describe("diffPeerAgents", () => {
+  test("a peer read cancels pending and delivered alerts using its own activity ledger", () => {
+    for (const delivered of [false, true]) {
+      const { clock, push, peer } = notifier();
+      peer.observe("laptop", body([pane("p1", "working")]));
+      peer.observe("laptop", body([{ ...pane("p1", "done"), lastActiveAt: 20, lastSeenAt: 10 }]));
+      if (delivered) clock.fireAll();
+      peer.observe("laptop", body([{ ...pane("p1", "done"), lastActiveAt: 20, lastSeenAt: 30 }]));
+      clock.fireAll();
+      if (delivered) expect(push.sent.at(-1)).toEqual({ type: "clear", tag: "collie:herd@laptop" });
+      else expect(push.sent).toEqual([]);
+    }
+  });
+
+  test("seen on one host does not clear another host or suppress a newer transition", () => {
+    const { clock, push, peer } = notifier();
+    for (const host of ["laptop", "desktop"]) {
+      peer.observe(host, body([pane("p1", "working")]));
+      peer.observe(host, body([{ ...pane("p1", "done"), lastActiveAt: 20, lastSeenAt: 10 }]));
+    }
+    clock.fireAll();
+    peer.observe("laptop", body([{ ...pane("p1", "done"), lastActiveAt: 20, lastSeenAt: 30 }]));
+    expect(push.sent.filter((m) => m.type === "clear")).toEqual([{ type: "clear", tag: "collie:herd@laptop" }]);
+    peer.observe("laptop", body([pane("p1", "working")]));
+    peer.observe("laptop", body([{ ...pane("p1", "done"), lastActiveAt: 40, lastSeenAt: 30 }]));
+    clock.fireAll();
+    expect(push.sent.at(-1)).toMatchObject({ tag: "collie:herd@laptop", renotify: true });
+  });
+
   test("a first sighting never fires a transition — state-engine's rule, verbatim", () => {
     const d = diffPeerAgents(new Map(), [pane("p1", "blocked"), pane("p2", "working")]);
     expect(d.transitions).toEqual([]);
@@ -127,7 +155,7 @@ describe("PeerNotifier — a peer's alerts on the lead's phone", () => {
     expect(push.sent).toHaveLength(1);
     expect(push.sent[0]).toEqual({
       title: "claude needs you",
-      body: "laptop · collie · /home/you/collie",
+      body: "laptop · collie / p1 · /home/you/collie",
       tag: "collie:herd@laptop",
       paneId: "p1",
       renotify: true,
@@ -171,7 +199,7 @@ describe("PeerNotifier — a peer's alerts on the lead's phone", () => {
     expect(new Set(push.tags)).toEqual(new Set(["collie:herd@laptop"]));
     expect(push.sent.at(-1)).toMatchObject({
       title: "3 agents need you",
-      body: "laptop · claude, codex, pi",
+      body: "laptop · collie / p1, collie / p2, collie / p3",
     });
   });
 

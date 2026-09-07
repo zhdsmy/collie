@@ -61,6 +61,8 @@ export type PushDecision =
       /** Non-pane tap destination (e.g. "settings"); undefined = the default agent deep-link. */
       target?: string;
       renotify: boolean;
+      /** Explicit retraction update; omitted renotify on manual/legacy pushes is not silent. */
+      silent: boolean;
     };
 
 /**
@@ -119,6 +121,7 @@ export function decidePush(payload: PushPayload, hasVisibleClient: boolean): Pus
     host,
     target,
     renotify: payload.renotify ?? false,
+    silent: payload.renotify === false,
   };
 }
 

@@ -35,6 +35,7 @@ describe("decidePush", () => {
       tag: "collie:herd",
       paneId: "p1",
       renotify: true,
+      silent: false,
     });
   });
 
@@ -46,6 +47,7 @@ describe("decidePush", () => {
       tag: "collie:test",
       paneId: "test",
       renotify: false,
+      silent: false,
     });
   });
 

@@ -36,8 +36,10 @@ describe("push notification assets", () => {
 
   it("points sw.ts at those two files and not at the maskable tile", () => {
     const sw = readFileSync(resolve(import.meta.dirname, "../sw.ts"), "utf8");
-    expect(sw).toContain('const ICON = "/notification-icon-192x192.png"');
-    expect(sw).toContain('const BADGE = "/badge-96x96.png"');
-    expect(sw).toContain("badge: BADGE");
+    expect(sw).toContain("await displayPush(decision, self.registration)");
+    const display = readFileSync(resolve(import.meta.dirname, "push-display.ts"), "utf8");
+    expect(display).toContain('const ICON = "/notification-icon-192x192.png"');
+    expect(display).toContain('const BADGE = "/badge-96x96.png"');
+    expect(display).toContain("badge: BADGE");
   });
 });

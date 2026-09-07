@@ -1736,6 +1736,7 @@ describe("the host gate — `?host=` selects among enrolled members and nothing 
     // And it is still keyed by (session, paneId) alone: the ledger's host dimension exists for the
     // LEAD's own bookkeeping, not for a peer marking its own panes (bridge/activity.ts).
     expect(src).toContain("activity.noteSeen(session, paneId)");
+    expect(src).toMatch(/if \(routed && marksPaneSeen\(req, action\)\) \{\s*activity\.noteSeen\(session, paneId\);\s*rt\.notifications\.onSeen\(paneId\);\s*\}/);
   });
 });
 

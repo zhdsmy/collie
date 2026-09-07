@@ -28,7 +28,7 @@ export interface NotifyClock<H> {
 export interface HerdSummary {
   /** Headline: "claude needs you" for one, or "3 agents need you" for several. */
   title: string;
-  /** Sub-line: "demo · /path" for one outstanding alert, or the agent names for a digest. */
+  /** Sub-line: conversation name and cwd for one alert, or conversation names for a digest. */
   body: string;
   /** Deep-link target when exactly one alert is outstanding; undefined for a multi-agent digest. */
   paneId?: string;
@@ -103,7 +103,7 @@ export function makeNotifySink(
 
 interface Alert {
   agent: string;
-  workspaceLabel: string;
+  name: string;
   cwd: string;
   status: NotifiableStatus;
 }
@@ -136,7 +136,7 @@ export class NotificationCoordinator<H = unknown> {
     this.cancelPending(id);
     const alert: Alert = {
       agent: agent.agent,
-      workspaceLabel: agent.workspaceLabel,
+      name: `${agent.workspaceLabel || agent.workspaceId} / ${agent.paneLabel || agent.sessionName || agent.tabLabel || id}`,
       cwd: agent.cwd,
       // SAFETY: `onTransition` is only reached for a status the prefs call notifiable, and the
       // notifiable set IS `NotifiableStatus` (blocked/done) — `isNotifiable` returns false for
@@ -153,6 +153,11 @@ export class NotificationCoordinator<H = unknown> {
 
   /** Wire to `StateEngine.onRemove` — a vanished pane is implicitly resolved. */
   onRemove(paneId: string): void {
+    this.resolve(paneId);
+  }
+
+  /** Opening or operating a pane in Collie acknowledges its pending and delivered alerts. */
+  onSeen(paneId: string): void {
     this.resolve(paneId);
   }
 
@@ -212,7 +217,7 @@ export class NotificationCoordinator<H = unknown> {
       // One outstanding agent → deep-link straight to its pane on tap.
       return {
         title: `${a.agent} ${verb}`,
-        body: `${a.workspaceLabel} · ${a.cwd}`,
+        body: `${a.name} · ${a.cwd}`,
         paneId,
         renotify,
       };
@@ -226,7 +231,10 @@ export class NotificationCoordinator<H = unknown> {
       : allDone
         ? `${n} agents done`
         : `${n} agents need attention`;
-    return { title, body: alerts.map((a) => a.agent).join(", "), renotify };
+    const names = entries.map(([paneId, a]) =>
+      alerts.some((other) => other !== a && other.name === a.name) ? `${a.name} (${paneId})` : a.name,
+    );
+    return { title, body: names.join(", "), renotify };
   }
 
   private cancelPending(id: string): void {

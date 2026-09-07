@@ -75,6 +75,92 @@ function agentNamed(paneId: string, name: string, status: AgentStatus): AgentVie
 }
 const agent = (paneId: string, status: AgentStatus) => agentNamed(paneId, "claude", status);
 
+describe("NotificationCoordinator - seen and conversation identity", () => {
+  test("seeing a pane before delivery cancels its pending alert", () => {
+    const { clock, sink, coord } = setup();
+    coord.onTransition(agent("p1", "done"), "working", "done");
+    coord.onSeen("p1");
+    clock.fireAll();
+    expect(clock.armed).toBe(0);
+    expect(sink.events).toEqual([]);
+  });
+
+  test("a handled conversation never returns when another one finishes", () => {
+    const { clock, sink, coord } = setup();
+    coord.onTransition(agent("p1", "done"), "working", "done");
+    clock.fireAll();
+    coord.onSeen("p1");
+    coord.onSeen("p1");
+    expect(sink.clears).toBe(1);
+    coord.onTransition(agent("p2", "done"), "working", "done");
+    clock.fireAll();
+    expect(sink.last).toMatchObject({ title: "claude is done", paneId: "p2", renotify: true });
+  });
+
+  test("seeing one pane silently shrinks the digest and leaves the other outstanding", () => {
+    const { clock, sink, coord } = setup();
+    coord.onTransition(agent("p1", "done"), "working", "done");
+    coord.onTransition(agent("p2", "done"), "working", "done");
+    clock.fireAll();
+    coord.onSeen("p1");
+    expect(sink.last).toMatchObject({ paneId: "p2", renotify: false });
+    coord.onSeen("missing");
+    expect(sink.clears).toBe(0);
+  });
+
+  test("seen does not silence a future transition or another session's identical pane id", () => {
+    const first = setup();
+    const second = setup();
+    for (const { clock, coord } of [first, second]) {
+      coord.onTransition(agent("p1", "done"), "working", "done");
+      clock.fireAll();
+    }
+    first.coord.onSeen("p1");
+    expect(second.sink.last?.paneId).toBe("p1");
+    first.coord.onTransition(agent("p1", "working"), "done", "working");
+    first.coord.onTransition(agent("p1", "done"), "working", "done");
+    first.clock.fireAll();
+    expect(first.sink.last).toMatchObject({ paneId: "p1", renotify: true });
+  });
+
+  test("two Codex conversations are named by their workspace and tab", () => {
+    const { clock, sink, coord } = setup();
+    for (const [paneId, tabLabel] of [["p1", "headroom"], ["p2", "General"]] as const) {
+      coord.onTransition({
+        ...agentNamed(paneId, "codex", "done"), workspaceLabel: "Hermes", tabLabel,
+      }, "working", "done");
+    }
+    clock.fireAll();
+    expect(sink.last).toMatchObject({
+      title: "2 agents done", body: "Hermes / headroom, Hermes / General",
+    });
+  });
+
+  test("explicit pane names win and duplicate names retain pane identity", () => {
+    const { clock, sink, coord } = setup();
+    for (const paneId of ["p1", "p2"]) {
+      coord.onTransition({
+        ...agent(paneId, "done"), paneLabel: "review", sessionName: "older", tabLabel: "tab",
+      }, "working", "done");
+    }
+    clock.fireAll();
+    expect(sink.last?.body).toBe("demo / review (p1), demo / review (p2)");
+  });
+
+  test("a session name precedes a tab label, with ids as the unnamed fallback", () => {
+    const { clock, sink, coord } = setup();
+    coord.onTransition({
+      ...agent("p1", "done"), sessionName: "review", tabLabel: "tab",
+    }, "working", "done");
+    coord.onTransition({
+      ...agent("p2", "done"), workspaceLabel: "", terminalTitle: "old", terminalTitleStale: true,
+    }, "working", "done");
+    clock.fireAll();
+    expect(sink.last?.body).toBe("demo / review, w1 / p2");
+  });
+});
+
+
 // `prefs` is a live, mutable object the injected `isNotifiable` reads on every call — so a test can
 // flip a preference and call `coord.applyPrefs()` to exercise the runtime-change path. Defaults to
 // both kinds enabled, matching the coordinator's old static {blocked,done} set (keeps the existing
@@ -97,7 +183,7 @@ describe("NotificationCoordinator — debounce", () => {
     clock.fireAll();
     expect(sink.last).toEqual({
       title: "claude needs you",
-      body: "demo · /home/you/demo",
+      body: "demo / p1 · /home/you/demo",
       paneId: "p1",
       renotify: true,
     });
@@ -129,7 +215,7 @@ describe("NotificationCoordinator — coalescing", () => {
     // p1 renders as a single, then p2 promotes it to a digest.
     expect(sink.renders.at(-1)).toEqual({
       title: "2 agents need you",
-      body: "claude, codex",
+      body: "demo / p1, demo / p2",
       paneId: undefined,
       renotify: true,
     });
@@ -151,7 +237,7 @@ describe("NotificationCoordinator — coalescing", () => {
     coord.onTransition(agentNamed("p2", "codex", "idle"), "blocked", "idle"); // codex handled
     expect(sink.last).toEqual({
       title: "claude needs you",
-      body: "demo · /home/you/demo",
+      body: "demo / p1 · /home/you/demo",
       paneId: "p1",
       renotify: false, // a retraction update must not re-buzz
     });
@@ -254,7 +340,7 @@ describe("NotificationCoordinator — type preferences", () => {
 describe("makeNotifySink", () => {
   const summary: HerdSummary = {
     title: "claude needs you",
-    body: "demo · /home/you/demo",
+    body: "demo / p1 · /home/you/demo",
     paneId: "p1",
     renotify: true,
   };
@@ -269,7 +355,7 @@ describe("makeNotifySink", () => {
     const push = new RecordingPush();
     makeNotifySink(push, { isMuted: () => false }, "collie:herd").render(summary);
     expect(push.sent).toEqual([
-      { title: "claude needs you", body: "demo · /home/you/demo", tag: "collie:herd", paneId: "p1", renotify: true },
+      { title: "claude needs you", body: "demo / p1 · /home/you/demo", tag: "collie:herd", paneId: "p1", renotify: true },
     ]);
   });
 
