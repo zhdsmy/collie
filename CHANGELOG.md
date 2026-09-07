@@ -7,7 +7,9 @@ there is one.
 
 ## [Unreleased]
 
-- Normalize submitted Codex input to one continuous neutral rectangle across current and legacy ANSI palettes, preserving the diff-aligned equal gutters, explicit newlines, and text emphasis.
+## [1.5.5+collie.3] - 2026-09-07
+
+- Normalize submitted Codex input to one continuous neutral rectangle across current and legacy ANSI palettes, preserving the diff-aligned equal gutters, explicit newlines, and text emphasis. ([13d4e21](https://github.com/zhdsmy/collie/commit/13d4e21))
 
 ## [1.5.5+collie.2] - 2026-09-07
 
