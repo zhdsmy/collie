@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Prevent iOS focus zoom when renaming a tab or pane by keeping the shared label input at 16px, without disabling pinch zoom or changing autofocus and save behavior.
+## [1.5.4+collie.2] - 2026-09-07
+
+- Prevent iOS focus zoom when renaming a tab or pane by keeping the shared label input at 16px, without disabling pinch zoom or changing autofocus and save behavior. ([3c9a1fa](https://github.com/zhdsmy/collie/commit/3c9a1fa))
 
 ## [1.5.4+collie.1] - 2026-09-07
 
