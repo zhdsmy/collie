@@ -129,9 +129,10 @@ type ComposerDrawer = "quick" | "cmd" | "display" | null;
 const CONTROL_ON = "bg-control-on text-control-on-foreground hover:bg-control-on";
 const CONTROL_OFF = "text-muted-foreground";
 
-// Four equal-width controls, with the icon beside a wrapping label and a 44px tap floor.
+// Four equal-width controls, icon beside a wrapping label with a 48px tap floor. The slightly larger
+// mark and label keep the controls legible on a phone without relying on a language-specific width.
 const CONTROL_BUTTON =
-  "min-h-11 h-auto min-w-0 w-full shrink gap-1 px-0.5 has-[>svg]:px-0.5 py-1 text-[10px] font-medium leading-tight [&>svg]:shrink-0";
+  "min-h-12 h-auto min-w-0 w-full shrink gap-1.5 px-1 has-[>svg]:px-1 py-1.5 text-xs font-medium leading-snug [&>svg]:size-5 [&>svg]:shrink-0";
 const CONTROL_LABEL = "min-w-0 whitespace-normal [overflow-wrap:anywhere]";
 
 // Pause after clearing a stranded terminal draft so the TUI settles before pane.send_text. Exported
@@ -1040,7 +1041,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           data-slot="composer-controls"
           role="group"
           aria-labelledby="composer-controls-label"
-          className="mb-1.5 mt-2 grid grid-cols-4 items-stretch gap-1"
+          className="mb-1.5 mt-3 grid grid-cols-4 items-stretch gap-1"
         >
           <SectionLabel id="composer-controls-label" className="sr-only">
             {translate("composer.controls.label")}
@@ -1064,7 +1065,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               direct.activate();
             }}
           >
-            <Terminal className="size-4" />
+            <Terminal className="size-5" />
             <span className={CONTROL_LABEL}>{translate("composer.controls.type")}</span>
           </Button>
           <Button
@@ -1076,7 +1077,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             aria-label={translate("composer.controls.quick")}
             onClick={() => requestDrawer(drawer === "quick" ? null : "quick")}
           >
-            <Zap className="size-4" />
+            <Zap className="size-5" />
             <span className={CONTROL_LABEL}>{translate("composer.controls.quick")}</span>
           </Button>
           <Button
@@ -1087,7 +1088,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             aria-label={translate("composer.controls.agent")}
             onClick={() => requestDrawer("cmd")}
             >
-            <Slash className="size-4" />
+            <Slash className="size-5" />
             <span className={CONTROL_LABEL}>{translate("composer.controls.agent")}</span>
           </Button>
           {/* Display prefs. Not gated on `locked`: wrap/font/raw-terminal are local view state, so a
@@ -1100,7 +1101,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             aria-expanded={drawer === "display"}
             onClick={() => requestDrawer(drawer === "display" ? null : "display")}
           >
-            <Settings2 className="size-4" />
+            <Settings2 className="size-5" />
             <span className={CONTROL_LABEL}>{translate("settings.title")}</span>
           </Button>
         </div>

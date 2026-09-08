@@ -156,7 +156,9 @@ describe("Composer - unified controls", () => {
     expect(buttons.map((button) => button.textContent)).toEqual(["Type", "Quick", "Agent", "Settings"]);
     expect(group).toHaveClass("grid-cols-4");
     for (const button of buttons) {
-      expect(button).toHaveClass("w-full", "min-w-0", "min-h-11");
+      expect(button).toHaveClass("w-full", "min-w-0", "min-h-12", "text-xs");
+      expect(button.querySelector("svg")).toHaveClass("size-5");
+      expect(button.querySelector("span")).toHaveClass("whitespace-normal");
       expect(button).not.toHaveClass("flex-col");
       expect(button.querySelector("svg")).toBeInTheDocument();
       expect(button.querySelector("span")).toBeInTheDocument();
@@ -1684,7 +1686,7 @@ describe("Composer - no reserved status band", () => {
       expect(row().parentElement).toBe(dock);
       expect(dock.className).not.toMatch(/(?:^|\s)border/);
       expect(dock.className).not.toMatch(/(?:^|\s)pt-/);
-      expect(row()).toHaveClass("mt-2", "mb-1.5", "grid", "grid-cols-4");
+      expect(row()).toHaveClass("mt-3", "mb-1.5", "grid", "grid-cols-4");
       cleanup();
     }
   });
