@@ -185,7 +185,7 @@ export const zh: Dictionary = {
   "composer.controls.label": "控制",
   "composer.controls.keys": "按键",
   "composer.controls.typeAria": "输入至终端",
-  "composer.controls.type": "直接输入",
+  "composer.controls.type": "输入",
   "composer.controls.quick": "快捷",
   "composer.controls.agent": "智能体",
   "composer.controls.displayAria": "显示设置",
