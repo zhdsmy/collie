@@ -31,6 +31,7 @@ import { statusLabel, type AgentView, type ServerSummary, type TabView } from "@
 import { withHeaderHost } from "@/test/header-host";
 import { COLLAPSE_MS } from "./ui/collapse";
 import { AgentChat } from "./agent-chat";
+import { ZenControl } from "./zen-control";
 
 // The detail view's core job: type a reply and submit it to the bridge. This drives the whole wired
 // path (composer → api.sendReply → MSW → optimistic clear / error surfacing) end-to-end, which no
@@ -43,7 +44,7 @@ beforeAll(() => {
 beforeEach(() => {
   clearStatus();
   // Zen's availability is a module-scoped, localStorage-backed store — one case turning it on would
-  // otherwise leave every later case rendering a menu row it never asked for.
+  // otherwise leave every later case rendering a header button it never asked for.
   __resetZen();
   // Same shape, same reason: a case that folds the strips would otherwise leave every later case
   // rendering a bead bar it never asked for.
@@ -1532,15 +1533,39 @@ describe("AgentChat — zen mode", () => {
     container.querySelector('header [data-slot="header-row"]');
 
   async function enterZen(user: User) {
-    await openPaneMenu(user);
     await user.click(screen.getByRole("button", { name: "Zen mode" }));
   }
+
+  it("places the optional zen button before pane switching in the header", () => {
+    setZenEnabled(true);
+    const { container } = renderChat();
+    const entry = screen.getByRole("button", { name: "Zen mode" });
+    expect(headerRowOf(container)?.contains(entry)).toBe(true);
+    expect(entry.nextElementSibling).toBe(screen.getByRole("button", { name: "Switch pane" }));
+    expect(entry).toHaveAttribute("title", "Zen mode");
+    expect(entry).toHaveClass("size-11", "shrink-0");
+    expect(entry.querySelector("svg")).toHaveClass("size-5");
+    expect(entry.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("shows and hides the header entry through the Settings switch without remounting", async () => {
+    const user = userEvent.setup();
+    renderChat();
+    render(<ZenControl />);
+    const setting = screen.getByRole("switch", { name: "Zen mode" });
+    expect(screen.queryByRole("button", { name: "Zen mode" })).not.toBeInTheDocument();
+    await user.click(setting);
+    expect(screen.getByRole("button", { name: "Zen mode" }).closest("header")).not.toBeNull();
+    await user.click(setting);
+    expect(screen.queryByRole("button", { name: "Zen mode" })).not.toBeInTheDocument();
+  });
 
   it("offers no way in while the setting is off, which is the default", async () => {
     // Zen takes away every way back except one floating button, so it may never arrive uninvited.
     const user = userEvent.setup();
     renderChat();
 
+    expect(screen.queryByRole("button", { name: "Zen mode" })).not.toBeInTheDocument();
     await openPaneMenu(user);
     expect(screen.queryByRole("button", { name: "Zen mode" })).not.toBeInTheDocument();
     // …and the rows it stands beside are untouched, so this is a hidden row and not a broken sheet.
@@ -1672,14 +1697,15 @@ describe("AgentChat — zen mode", () => {
     const user = userEvent.setup();
     renderChat();
 
+    const entry = screen.getByRole("button", { name: "Zen mode" });
+    expect(entry.closest("header")).not.toBeNull();
     await openPaneMenu(user);
-    // Exactly ONE way in, and it is this row — a second entry point creeping back in fails here.
-    expect(screen.getAllByRole("button", { name: "Zen mode" })).toHaveLength(1);
+    expect(within(screen.getByRole("dialog")).queryByRole("button", { name: "Zen mode" })).not.toBeInTheDocument();
     await user.keyboard("{Escape}");
 
     await user.click(screen.getByRole("button", { name: "Display settings" }));
     expect(screen.getByRole("switch", { name: "Wrap lines" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Zen mode" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Zen mode" })).toEqual([entry]);
   });
 
   // "Transient by design" is what justifies never persisting zen, and the mechanism lives entirely

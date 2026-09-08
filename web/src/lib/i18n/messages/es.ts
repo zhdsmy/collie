@@ -23,13 +23,13 @@ export const es: Dictionary = {
 
 
   // --- settings.zen ---
-  // Availability only: the toggle decides whether the pane menu offers zen at all.
+  // Availability only: the toggle controls the optional header button.
   "settings.install.title": "Instalar aplicación",
   "settings.install.description": "Añade Collie a la pantalla de inicio con ventana dedicada e icono propio.",
   "settings.install.button": "Instalar",
   "settings.install.iosHint": "En iOS o iPadOS, selecciona Compartir y luego «Añadir a pantalla de inicio».",
   "settings.zen.title": "Modo zen",
-  "settings.zen.description": "Añade una opción al menú de paneles para ocultar todo excepto el terminal.",
+  "settings.zen.description": "Muestra un botón de modo zen en la cabecera.",
   "settings.zen.auto.label": "Activar en horizontal",
   "settings.zen.auto.hint": "Gira el teléfono de lado para abrir el modo zen automáticamente; gíralo de vuelta para cerrarlo.",
 

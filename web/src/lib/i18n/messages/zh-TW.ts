@@ -31,13 +31,13 @@ export const zhTW: Dictionary = {
   "settings.haptics.description": "按鍵或快速回覆時觸發輕微震動。",
 
   // --- settings.zen ---
-  // Availability only: the toggle decides whether the pane menu offers zen at all.
+  // Availability only: the toggle controls the optional header button.
   "settings.install.title": "安裝應用程式",
   "settings.install.description": "將 Collie 加入主畫面，支援全螢幕執行並顯示獨立圖示。",
   "settings.install.button": "安裝",
   "settings.install.iosHint": "在 iPhone 或 iPad 上，點選瀏覽器分享按鈕，選擇「加入主畫面」。",
   "settings.zen.title": "專注模式",
-  "settings.zen.description": "在窗格選單中加入選項，隱藏終端機以外的所有介面元素。",
+  "settings.zen.description": "在頂欄顯示專注模式按鈕。",
   "settings.zen.auto.label": "橫向時自動啟用",
   "settings.zen.auto.hint": "將手機橫向旋轉會自動開啟專注模式；轉回直向則自動關閉。",
 

@@ -24,13 +24,13 @@ export const de: Dictionary = {
 
 
   // --- settings.zen ---
-  // Availability only: the toggle decides whether the pane menu offers zen at all.
+  // Availability only: the toggle controls the optional header button.
   "settings.install.title": "App installieren",
   "settings.install.description": "Collie zum Startbildschirm hinzufügen: Vollbild und eigenes App-Icon.",
   "settings.install.button": "Installieren",
   "settings.install.iosHint": "Unter iOS und iPadOS über das Teilen-Menü des Browsers installieren: Teilen antippen, dann „Zum Home-Bildschirm“.",
   "settings.zen.title": "Zen-Modus",
-  "settings.zen.description": "Fügt dem Menü einen Eintrag hinzu, der alle Elemente außer dem Terminal ausblendet.",
+  "settings.zen.description": "Zeigt eine Schaltfläche für den Zen-Modus in der Kopfleiste.",
   "settings.zen.auto.label": "Bei Querformat aktivieren",
   "settings.zen.auto.hint": "Beim seitlichen Drehen öffnet sich der Zen-Modus automatisch; beim Zurückdrehen schließt er sich wieder.",
 

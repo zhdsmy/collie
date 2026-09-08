@@ -153,8 +153,8 @@ export function SettingsRoute() {
             configured or the browser cannot record. */}
         <HandsFreeControl />
 
-        {/* AVAILABILITY ONLY. This row does not turn zen on — it decides whether the pane's actions
-            sheet offers the "Zen mode" row at all. It sits with haptics and voice because it is the
+        {/* AVAILABILITY ONLY. This row does not turn zen on — it decides whether the pane header
+            offers the "Zen mode" button at all. It sits with haptics and voice because it is the
             same kind of thing: a persisted, per-device decision about how this phone treats you,
             not a rendering pref (those live in the pane's own Display dock). Off by default, because
             zen takes away every way back except one floating button. */}

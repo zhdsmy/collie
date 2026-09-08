@@ -23,13 +23,13 @@ export const ja: Dictionary = {
 
 
   // --- settings.zen ---
-  // Availability only: the toggle decides whether the pane menu offers zen at all.
+  // Availability only: the toggle controls the optional header button.
   "settings.install.title": "アプリのインストール",
   "settings.install.description": "ホーム画面に Collie を追加して、全画面と専用アイコンで起動します。",
   "settings.install.button": "インストール",
   "settings.install.iosHint": "iOS または iPadOS では、ブラウザの共有メニューから「ホーム画面に追加」を選択します。",
   "settings.zen.title": "Zen モード",
-  "settings.zen.description": "ペインメニューに、ターミナル以外のUI要素を非表示にする項目を追加します。",
+  "settings.zen.description": "ヘッダーに Zen モードのボタンを表示します。",
   "settings.zen.auto.label": "横向きで自動的に有効化",
   "settings.zen.auto.hint": "本体を横向きにすると Zen モードが自動的に開き、縦に戻すと閉じます。",
 

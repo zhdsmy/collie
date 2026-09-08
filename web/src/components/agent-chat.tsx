@@ -6,6 +6,7 @@ import {
   ChevronUp,
   EllipsisVertical,
   Loader2,
+  Maximize2,
   Minimize2,
   PanelsTopLeft,
   ScrollText,
@@ -308,8 +309,8 @@ export function AgentChat({
   // about how the mirror renders or polls.
   //
   // TWO HALVES, AND ONLY ONE OF THEM PERSISTS. `zenAvailable` is the per-device Settings toggle
-  // (lib/zen.ts) and it gates the ENTRY POINT, nothing else — it decides whether the pane's actions
-  // sheet offers the row at all. `zen` itself is transient local state: DetailRoute keys this
+  // (lib/zen.ts) and it gates the ENTRY POINT, nothing else: the header button is optional.
+  // `zen` itself is transient local state: DetailRoute keys this
   // component by paneId, so switching pane remounts it and a pane always opens with its chrome, and
   // a reload does the same. Deliberately NOT a DisplayPrefs field — if stickiness is ever wanted
   // that is where it goes, but nobody has asked and a chrome-free view leaking into the next pane is
@@ -320,8 +321,7 @@ export function AgentChat({
   // Escape leaves, because every other full-screen surface in this app already binds it (BottomSheet
   // and the sheets it backs) and zen would otherwise be the one that ignores the convention. It
   // costs nothing on a phone, which has no Escape key, and it is the whole keyboard story: there is
-  // no focus to hand back on exit, since the row that entered zen belongs to a sheet that closed
-  // itself in the same commit.
+  // no input to focus on exit, since entering zen blurs the chrome before it leaves.
   useEffect(() => {
     if (!zen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -340,8 +340,7 @@ export function AgentChat({
   function enterZen() {
     // Blur BEFORE the composer unmounts. On iOS the soft keyboard belongs to the focused node, so
     // unmounting a focused <textarea> can leave the keyboard standing over a screen that no longer
-    // has an input. The sheet this is called from has usually taken focus already, so this is
-    // insurance rather than the common path — and it is blunt on purpose: everything that could be
+    // has an input. This also covers automatic landscape entry: everything that could be
     // holding focus here is about to leave, so working out which costs more than it saves.
     // SAFETY: `activeElement` is typed `Element | null`; the optional call is the narrowing — a
     // non-HTMLElement (an <svg>, or null) simply has no `blur` and the call is a no-op.
@@ -354,8 +353,8 @@ export function AgentChat({
   // (a narrow tall mirror becomes a short wide one, and every chrome row costs terminal lines),
   // turning it back leaves. The query asks for a SHORT landscape viewport, not landscape alone:
   // under 520px of height is a phone on its side, where the chrome rows hurt. A desktop window and
-  // a tablet are landscape all day and have the height to spare, so neither one ever matches. But only a zen this effect entered — a hand-entered zen (the actions
-  // sheet's row, tapped in either orientation) is the operator's explicit choice and rotation must
+  // a tablet are landscape all day and have the height to spare, so neither one ever matches. But only a zen this effect entered — a hand-entered zen (the header
+  // button, tapped in either orientation) is the operator's explicit choice and rotation must
   // not steal it, so `autoZen` marks the effect's own entry and the portrait exit fires only on a
   // marked one. Gated on `autoZenActive` — BOTH the Settings availability toggle and its own
   // landscape sub-toggle (lib/zen.ts) must be on — so either one going off kills both paths; losing
@@ -1118,9 +1117,20 @@ export function AgentChat({
               />
             ) : undefined
           }
-          // Two actions beside the flexible identity: switch panes, then this pane's menu.
+          // Optional zen entry, pane switching, then this pane's menu.
           rightLead={
             <>
+              {agent && zenAvailable && display && (
+                <button
+                  type="button"
+                  onClick={enterZen}
+                  aria-label={t("chat.zen.label")}
+                  title={t("chat.zen.label")}
+                  className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors active:bg-muted/60"
+                >
+                  <Maximize2 aria-hidden="true" className="size-5" />
+                </button>
+              )}
               {(agents.length + shellPanes.length > 0 || launchers.length > 0) && (
                 <button
                   type="button"
@@ -1888,18 +1898,6 @@ export function AgentChat({
           onClosed={(id) => (id === paneId ? onBack() : revalidator.revalidate())}
           onFind={display ? openFind : undefined}
           onHistory={historyAvailable ? () => navigate(historyPath(paneId, scope)) : undefined}
-          // ZEN'S ONE ENTRY POINT, and the absence of this callback IS the gate — the sheet hides a
-          // row it was given nothing for, exactly as it does for find and history. Gated twice: the
-          // Settings toggle decides whether this phone offers zen at all, and `display` keeps it off
-          // a pane with nothing to look at, the way find is gated.
-          //
-          // It lives in the sheet rather than as a second header button because this header states
-          // its own budget: one Leave (the Collie mark) + one flexible Identity + at most two
-          // Actions, and the row already spent its Action slot on the ⋮ when find and history moved
-          // in here. A third icon would take that width back off the pane name, which is the one
-          // flexible element the budget protects. Zen is also the same FAMILY as the two rows it
-          // joins — "look at the output differently" — so the menu it belongs in already existed.
-          onZen={zenAvailable && display ? enterZen : undefined}
         />
       </div>
     </CompactStripLabels>

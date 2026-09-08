@@ -24,13 +24,13 @@ export const zh: Dictionary = {
 
 
   // --- settings.zen ---
-  // Availability only: the toggle decides whether the pane menu offers zen at all.
+  // Availability only: the toggle controls the optional header button.
   "settings.install.title": "安装应用",
   "settings.install.description": "将 Collie 添加至主屏幕，支持全屏运行并显示独立图标。",
   "settings.install.button": "安装",
   "settings.install.iosHint": "在 iPhone 或 iPad 上，点击浏览器分享按钮，选择“添加到主屏幕”。",
   "settings.zen.title": "专注模式",
-  "settings.zen.description": "在面板菜单中添加选项，隐藏终端以外的所有界面元素。",
+  "settings.zen.description": "在顶栏显示专注模式按钮。",
   "settings.zen.auto.label": "横屏时自动启用",
   "settings.zen.auto.hint": "将手机横向旋转会自动打开专注模式；转回竖屏则自动关闭。",
 

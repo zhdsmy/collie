@@ -33,13 +33,13 @@ export const en = {
 
 
   // --- settings.zen ---
-  // Availability only: the toggle decides whether the pane menu offers zen at all.
+  // Availability only: the toggle controls the optional header button.
   "settings.install.title": "Install the app",
   "settings.install.description": "Add Collie to your home screen — full screen, its own icon.",
   "settings.install.button": "Install",
   "settings.install.iosHint": "On an iPhone or iPad, install from the browser's share sheet: tap Share, then \"Add to Home Screen\".",
   "settings.zen.title": "Zen mode",
-  "settings.zen.description": "Adds a row to the pane menu that hides everything but the terminal.",
+  "settings.zen.description": "Show a zen mode button in the header.",
   "settings.zen.auto.label": "Enter on landscape",
   "settings.zen.auto.hint": "Rotate the phone sideways to open zen automatically; rotate back to close it.",
 

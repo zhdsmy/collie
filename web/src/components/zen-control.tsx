@@ -8,9 +8,9 @@ import { setAutoZenEnabled, setZenEnabled, useAutoZenEnabled, useZenEnabled } fr
 import { cn } from "@/lib/utils";
 
 // Zen mode's availability gate, next to Haptics and Hands-free: all three are "how this phone treats
-// you". The pane's own actions sheet hosts zen's ENTRY, but not this — a persisted per-device
+// you". The pane header hosts zen's ENTRY, but not this — a persisted per-device
 // capability toggle is not a rendering pref, and it is not something you reach for mid-session.
-// Default off, so the extra menu row only appears for people who asked for it.
+// Default off, so the extra header button only appears for people who asked for it.
 //
 // The auto-landscape sub-row is NotifyPrefsControl's shape (a header switch plus a dependent row
 // below it), not a second card: the two bits are the same feature at different granularity, and a
