@@ -26,8 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Improve Composer control sizing and vertical spacing while preserving resilient wrapping for translated labels.
-- Keep Composer controls compact with 44px tap targets, reduced outer spacing, language-aware wrapping, and the shorter Display label for mirror settings.
+## [1.6.0+collie.3] - 2026-09-08
+
+- Compact the Composer control row with larger 20px icons and 12px labels, 44px tap targets, reduced outer spacing, and a shorter Display label with language-aware wrapping. ([86c8de2](https://github.com/zhdsmy/collie/commit/86c8de2), [7a66691](https://github.com/zhdsmy/collie/commit/7a66691))
 
 ## [1.6.0+collie.2] - 2026-09-08
 
