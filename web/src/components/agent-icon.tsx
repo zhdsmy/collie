@@ -11,6 +11,7 @@ function brandKey(agent: string): string | undefined {
   if (AGENT_BRANDS.has(k)) return k;
   if (k.startsWith("claude")) return "claude";
   if (k.startsWith("codex")) return "codex";
+  if (k.startsWith("cursor")) return "cursor";
   if (k.startsWith("opencode")) return "opencode";
   if (k === "pi" || k.startsWith("pi-") || k.startsWith("pi.")) return "pi";
   // Bare prefix, exactly as canonicalAgent folds it (lib/operator-scope.ts): `omp` is its own

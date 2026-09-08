@@ -26,6 +26,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+- Restore the Cursor CLI brand icon from v0.36.1+collie.2, including Cursor label variants, using the current shared agent-icon styling.
+
 ## [1.6.0+collie.1] - 2026-09-08
 
 - Merge upstream v1.6.0 (including v1.5.6): adopt its journal-backed full latest reply, notification setup recovery, auto-landscape zen and update handling; retain downstream input safeguards, notification cleanup, compact statusline and iOS viewport fixes. [Complete upstream changes and integration decisions](./docs/upstream-v1.6.0.md). ([3a4bca7](https://github.com/zhdsmy/collie/commit/3a4bca7))

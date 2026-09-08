@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
 
 import { AgentIcon } from "./agent-icon";
+import { AGENT_BRANDS } from "./agent-icon-data";
 
 describe("AgentIcon", () => {
-  it.each(["claude", "codex", "pi", "opencode", "agy", "antigravity", "omp"])(
+  it.each(["claude", "codex", "cursor", "pi", "opencode", "agy", "antigravity", "omp"])(
     "renders the %s brand logo as an inline-SVG app-icon tile",
     (agent) => {
       const { container } = render(<AgentIcon agent={agent} />);
@@ -37,6 +38,17 @@ describe("AgentIcon", () => {
     const { container } = render(<AgentIcon agent={variant} />);
     expect(container.querySelector("svg path")).not.toBeNull();
   });
+
+  it.each(["cursor", "cursor-cli", "cursor-agent", "Cursor CLI", " CURSOR "])(
+    "renders '%s' with the Cursor mark and contrasting brand colors",
+    (agent) => {
+      const { container } = render(<AgentIcon agent={agent} />);
+      expect(container.querySelector("svg path")?.getAttribute("d")).toBe(AGENT_BRANDS.get("cursor")?.d);
+      expect(container.querySelector("svg rect")?.getAttribute("fill")).toBe("#000000");
+      expect(container.querySelector("svg g")?.getAttribute("fill")).toBe("#FFFFFF");
+      expect(container.querySelector("linearGradient")).toBeNull();
+    },
+  );
 
   // omp's official mark is a three-stop gradient (omp.sh/favicon.svg), and its tile is the only one
   // AgentIcon paints with `url(#…)`: the gradient must be in the document, and the reference must
