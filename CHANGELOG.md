@@ -26,19 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Merge upstream v1.6.0 (including v1.5.6): adopt its journal-backed full latest reply, notification setup recovery, auto-landscape zen and update handling; retain downstream input safeguards, notification cleanup, compact statusline and iOS viewport fixes. [Complete upstream changes and integration decisions](./docs/upstream-v1.6.0.md).
+## [1.6.0+collie.1] - 2026-09-08
 
-## [1.5.5+collie.3] - 2026-09-07
-
-- Normalize submitted Codex input to one continuous neutral rectangle across current and legacy ANSI palettes, preserving the diff-aligned equal gutters, explicit newlines, and text emphasis. ([13d4e21](https://github.com/zhdsmy/collie/commit/13d4e21))
-
-## [1.5.5+collie.2] - 2026-09-07
-
-- Restore the v0.36.1+collie.2 seen-notification cleanup so handled conversations do not reappear in later alerts; extend it to peers, name summaries by conversation, and keep retraction updates silent without reviving dismissed notifications. ([6b62cfc](https://github.com/zhdsmy/collie/commit/6b62cfc))
-
-## [1.5.5+collie.1] - 2026-09-07
-
-- Merge upstream v1.5.5: use its photo/file picker, anchored attach menu, guarded-submit prompt binding and inline Codex queue recognition; retain downstream multi-image safeguards, direct-input controls, statusline and iOS viewport fixes. [Complete upstream changes and integration decisions](./docs/upstream-v1.5.5.md). ([dbda134](https://github.com/zhdsmy/collie/commit/dbda134))
+- Merge upstream v1.6.0 (including v1.5.6): adopt its journal-backed full latest reply, notification setup recovery, auto-landscape zen and update handling; retain downstream input safeguards, notification cleanup, compact statusline and iOS viewport fixes. [Complete upstream changes and integration decisions](./docs/upstream-v1.6.0.md). ([3a4bca7](https://github.com/zhdsmy/collie/commit/3a4bca7))
 
 ## [1.6.0] - 2026-09-08
 
@@ -67,6 +57,18 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 - The update band remembers a dismissal on the host instead of in one browser, the quiet pack notice can be put down on its own, and a host whose updates come from its package manager reads "Collie 1.6.0 available via pacman." instead of an offer to tap. ([23b5934](https://github.com/AltanS/collie/commit/23b5934), [2be3547](https://github.com/AltanS/collie/commit/2be3547), [f630c1c](https://github.com/AltanS/collie/commit/f630c1c))
 - A Mac or an arm64 Linux host on 1.5.4 or 1.5.5 gets a binary that starts again. A host whose binary will not start reinstalls with `curl -fsSL https://colliepwa.dev/install.sh | COLLIE_TAG=v1.5.6 sh`; a host still on 1.5.3 updates as usual, and linux-x64 was never affected. Those two releases were compiled on the build environment's patched Bun, so the Mac binary loaded ICU out of `/nix/store` and the arm64 Linux binary named a `/nix/store` program interpreter. The release now compiles on the upstream Bun archive the flake pins and refuses any binary whose loader inputs point outside the system's own library roots, thanks @rapporbit (#184). ([33df273](https://github.com/AltanS/collie/commit/33df273), [9d07868](https://github.com/AltanS/collie/commit/9d07868))
 - The pack journal names each peer's leg change, each incompatible verdict with the reason and the backoff it earns, and the moment a run settles. A run that sits waiting on a peer is now read out of `journalctl --user -u collie` instead of inferred from the arithmetic. ([3ea0108](https://github.com/AltanS/collie/commit/3ea0108))
+
+## [1.5.5+collie.3] - 2026-09-07
+
+- Normalize submitted Codex input to one continuous neutral rectangle across current and legacy ANSI palettes, preserving the diff-aligned equal gutters, explicit newlines, and text emphasis. ([13d4e21](https://github.com/zhdsmy/collie/commit/13d4e21))
+
+## [1.5.5+collie.2] - 2026-09-07
+
+- Restore the v0.36.1+collie.2 seen-notification cleanup so handled conversations do not reappear in later alerts; extend it to peers, name summaries by conversation, and keep retraction updates silent without reviving dismissed notifications. ([6b62cfc](https://github.com/zhdsmy/collie/commit/6b62cfc))
+
+## [1.5.5+collie.1] - 2026-09-07
+
+- Merge upstream v1.5.5: use its photo/file picker, anchored attach menu, guarded-submit prompt binding and inline Codex queue recognition; retain downstream multi-image safeguards, direct-input controls, statusline and iOS viewport fixes. [Complete upstream changes and integration decisions](./docs/upstream-v1.5.5.md). ([dbda134](https://github.com/zhdsmy/collie/commit/dbda134))
 
 ## [1.5.5] - 2026-09-07
 
