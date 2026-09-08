@@ -26,7 +26,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-- Move the optional Zen mode button to the header before pane switching, keeping Settings in control of its visibility and removing the duplicate menu entry.
+## [1.6.0+collie.5] - 2026-09-08
+
+- Move the optional Zen mode button to the header before pane switching, keeping Settings in control of its visibility and removing the duplicate menu entry. ([7e38b24](https://github.com/zhdsmy/collie/commit/7e38b24))
 
 ## [1.6.0+collie.4] - 2026-09-08
 
