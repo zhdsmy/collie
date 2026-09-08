@@ -27,6 +27,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 ## [Unreleased]
 
 - Improve Composer control sizing and vertical spacing while preserving resilient wrapping for translated labels.
+- Keep Composer controls compact with 44px tap targets, reduced outer spacing, language-aware wrapping, and the shorter Display label for mirror settings.
+
 ## [1.6.0+collie.2] - 2026-09-08
 
 - Restore the Cursor CLI brand icon from v0.36.1+collie.2, including Cursor label variants, using the current shared agent-icon styling. ([1706861](https://github.com/zhdsmy/collie/commit/1706861))

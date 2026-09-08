@@ -6,7 +6,7 @@ import { http, HttpResponse } from "msw";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { clearStatus, useStatus } from "@/lib/status";
-import { t as translate } from "@/lib/i18n";
+import { LOCALES, setLocale, t as translate, whenLocaleReady } from "@/lib/i18n";
 import { isReloadHeld, __resetReloadGuard } from "@/lib/reload-guard";
 import { loadDraft } from "@/lib/drafts";
 import { __resetOperatorCommands } from "@/lib/operator-config";
@@ -146,6 +146,36 @@ function renderComposerWithStatus(
 }
 
 describe("Composer - unified controls", () => {
+  it.each(LOCALES)("keeps all four labels and direct-input behavior in $code", async ({ code }) => {
+    try {
+      setLocale(code);
+      await whenLocaleReady(code);
+      renderComposer();
+      const group = screen.getByRole("group", { name: translate("composer.controls.label") });
+      const buttons = within(group).getAllByRole("button");
+      expect(buttons.map((button) => button.textContent)).toEqual([
+        translate("composer.controls.type"),
+        translate("composer.controls.quick"),
+        translate("composer.controls.agent"),
+        translate("composer.controls.display"),
+      ]);
+      expect(document.documentElement.lang).toBe(code);
+      for (const button of buttons) {
+        expect(button).toHaveClass("min-h-11", "text-xs");
+        expect(button.querySelector("svg")).toHaveClass("size-5");
+        expect(button.querySelector("span")).toHaveClass("whitespace-normal", "hyphens-auto");
+      }
+      await userEvent.setup().click(within(group).getByRole("button", {
+        name: translate("composer.controls.typeAria"),
+      }));
+      expect(screen.getByPlaceholderText(translate("composer.placeholder.direct"))).not.toHaveFocus();
+      expect(screen.getByTestId("direct-keyboard-accessory")).toBeInTheDocument();
+    } finally {
+      cleanup();
+      setLocale("en");
+    }
+  });
+
   it.each([
     { agent: "claude", isShell: false },
     { agent: null, isShell: true },
@@ -153,12 +183,12 @@ describe("Composer - unified controls", () => {
     renderComposer(pane);
     const group = screen.getByRole("group", { name: "Controls" });
     const buttons = within(group).getAllByRole("button");
-    expect(buttons.map((button) => button.textContent)).toEqual(["Type", "Quick", "Agent", "Settings"]);
+    expect(buttons.map((button) => button.textContent)).toEqual(["Type", "Quick", "Agent", "Display"]);
     expect(group).toHaveClass("grid-cols-4");
     for (const button of buttons) {
-      expect(button).toHaveClass("w-full", "min-w-0", "min-h-12", "text-xs");
+      expect(button).toHaveClass("w-full", "min-w-0", "min-h-11", "text-xs");
       expect(button.querySelector("svg")).toHaveClass("size-5");
-      expect(button.querySelector("span")).toHaveClass("whitespace-normal");
+      expect(button.querySelector("span")).toHaveClass("whitespace-normal", "hyphens-auto");
       expect(button).not.toHaveClass("flex-col");
       expect(button.querySelector("svg")).toBeInTheDocument();
       expect(button.querySelector("span")).toBeInTheDocument();
@@ -1686,7 +1716,7 @@ describe("Composer - no reserved status band", () => {
       expect(row().parentElement).toBe(dock);
       expect(dock.className).not.toMatch(/(?:^|\s)border/);
       expect(dock.className).not.toMatch(/(?:^|\s)pt-/);
-      expect(row()).toHaveClass("mt-3", "mb-1.5", "grid", "grid-cols-4");
+      expect(row()).toHaveClass("my-1", "grid", "grid-cols-4");
       cleanup();
     }
   });

@@ -129,11 +129,10 @@ type ComposerDrawer = "quick" | "cmd" | "display" | null;
 const CONTROL_ON = "bg-control-on text-control-on-foreground hover:bg-control-on";
 const CONTROL_OFF = "text-muted-foreground";
 
-// Four equal-width controls, icon beside a wrapping label with a 48px tap floor. The slightly larger
-// mark and label keep the controls legible on a phone without relying on a language-specific width.
+// Keep the 44px tap floor while giving translated labels room to wrap beside the icon.
 const CONTROL_BUTTON =
-  "min-h-12 h-auto min-w-0 w-full shrink gap-1.5 px-1 has-[>svg]:px-1 py-1.5 text-xs font-medium leading-snug [&>svg]:size-5 [&>svg]:shrink-0";
-const CONTROL_LABEL = "min-w-0 whitespace-normal [overflow-wrap:anywhere]";
+  "min-h-11 h-auto min-w-0 w-full shrink gap-1 px-0 has-[>svg]:px-0 py-1 text-xs font-medium leading-tight [&>svg]:shrink-0";
+const CONTROL_LABEL = "min-w-0 whitespace-normal hyphens-auto [overflow-wrap:anywhere]";
 
 // Pause after clearing a stranded terminal draft so the TUI settles before pane.send_text. Exported
 // so the test can pin the WAIT ITSELF (the reply never overtakes the sweep) against the constant
@@ -1041,7 +1040,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           data-slot="composer-controls"
           role="group"
           aria-labelledby="composer-controls-label"
-          className="mb-1.5 mt-3 grid grid-cols-4 items-stretch gap-1"
+          className="my-1 grid grid-cols-4 items-stretch gap-1"
         >
           <SectionLabel id="composer-controls-label" className="sr-only">
             {translate("composer.controls.label")}
@@ -1102,7 +1101,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             onClick={() => requestDrawer(drawer === "display" ? null : "display")}
           >
             <Settings2 className="size-5" />
-            <span className={CONTROL_LABEL}>{translate("settings.title")}</span>
+            <span className={CONTROL_LABEL}>{translate("composer.controls.display")}</span>
           </Button>
         </div>
         {/* ── THE FOOTER'S NOTICE STRIPS, SORTED BY KIND (DESIGN.md §1, §2) ─────────────────────
