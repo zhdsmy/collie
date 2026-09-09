@@ -58,11 +58,15 @@ version because you fixed something; the version moves once, when the release is
 **Before committing any functional change** (anything under `bridge/`, `cli/`, `web/src/`,
 `web/public/`, `scripts/`, `systemd/`, or the manifest / package files, minus the tests and hooks
 carved out below), you MUST, **in the same
-commit**, add **one line** to `CHANGELOG.md` at the end of the `## [Unreleased]` list so the list
-stays in landing order. **Style: short**: write one line per change with no prose paragraphs. End
-the line with the issue or PR it answers where one exists (`… (#147)`), and with **no commit
-hash**: the hash does not exist yet, and the release commit adds it. Do not touch the three
-version files.
+commit**, add **one bullet** to `CHANGELOG.md` at the end of the `## [Unreleased]` list so the
+list stays in landing order. **Style: a group, a bold lead, then the detail.** The bullet sits
+under one of five level-3 headings, in this order and only where there is content: `### Added`,
+`### Changed`, `### Fixed`, `### Packaging`, `### Docs`. It opens with a short bold lead sentence, present tense,
+about ten words, the period inside the `**`, and the detail follows in the same bullet:
+`- **The lead sentence.** The detail follows here.` End with the thanks and the issue or PR it
+answers where one exists (`Thanks @handle (#147).`), and with **no commit hash**: the hash does not
+exist yet, and the release commit adds it. The lead is what the GitHub Release page prints, so
+write it as the sentence an operator reads there. Do not touch the three version files.
 
 **Cutting a release is one `chore(release): x.y.z` commit** that does all of this and nothing else:
 
@@ -74,15 +78,16 @@ version files.
      flag with a safe default. The phone folds a patch-only delta into its weekly update digest
      (`DIGEST_PATCH_WINDOW_MS` in `bridge/update.ts`); the in-app band shows it at once.
    - **MINOR** (`0.2.0 → 0.3.0`): something to learn, or worth hearing about today. A new verb,
-     a new page, a new pack capability, a changed default, anything that earns its own section
+     a new page, a new crew capability, a changed default, anything that earns its own section
      in `docs/`. The phone nudges within a day.
    - **MAJOR** (`0.2.0 → 1.0.0`): the operator must change something. A config key renamed or
      removed, a contract broken, a workflow that used to work and now does not.
 
    The person cutting the release decides. When in doubt, pick patch.
 2. **Bump** all three version files to that number.
-3. **Rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD`**, using the release date. The lines
-   remain in landing order, oldest first, because each was appended to the end. **Append each
+3. **Rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD`**, using the release date. The four
+   `###` group headings and their bullets come along as they are; within a group the bullets stay
+   in landing order, oldest first, because each was appended to the end. **Append each
    line's short commit hash** in the link format
    `([abc1234](https://github.com/AltanS/collie/commit/abc1234))`. Clean up the section: merge
    or reorder lines as needed, and delete entries for changes reverted before release.
@@ -126,8 +131,9 @@ up either. To publish sooner, run the website's sync by hand against a ref:
   disagree).
 - A **git pre-commit hook** (`scripts/git-hooks/pre-commit`, activate once with
   `scripts/install-hooks.sh`) blocks a functional commit that neither adds a line under
-  `## [Unreleased]` nor bumps the version, and blocks a release commit (version bumped) whose
-  `## [Unreleased]` section still has lines in it. The same hook holds guard (D), which refuses a
+  `## [Unreleased]` nor bumps the version, blocks a commit whose staged `## [Unreleased]` bullets
+  are not grouped under one of the five `###` headings or do not open with a bold lead, and blocks
+  a release commit (version bumped) whose `## [Unreleased]` section still has lines in it. The same hook holds guard (D), which refuses a
   staged `flake.lock` that is not part of a release commit. Escape hatch for a single commit:
   `SKIP_VERSION_CHECK=1 git commit …` (every `SKIP_*` hatch is listed under *Linting* below).
 
@@ -167,10 +173,23 @@ mid-flight. The gate then sees `cancelled`, not `success`, and refuses. Re-runni
 and then re-running the Release workflow clears it, but the cheaper move is the old rule: hold the
 push until the release is out.
 
-**The GitHub Release page is built, not written.** `release.yml` populates it with the update
-commands, a link to that version's section in `CHANGELOG.md`, and GitHub's generated notes:
-merged pull requests with their authors, new contributors, and the "Full Changelog" compare link
-listing every commit. Nobody writes release notes by hand.
+**The GitHub Release page is built, not written.** `release.yml` runs
+`scripts/release-notes.ts` over `CHANGELOG.md` and hands the result to `gh release create`. The
+order on the page is the reader's, not the file's: **`## Update` first and unfolded**, because a
+phone arrives here from the in-app banner to copy one command and must not have to open anything
+to see it; then `## What changed`, the bold lead of every bullet in that version's section, one
+line each, under its group's name; then a link to the section itself for the commits and a compare
+link; then the by-hand verify recipe, the one block that sits in a `<details>`.
+
+The compare link's other end is a **real tag, asked of git** (`git describe --tags` on the tagged
+commit's parent), never derived from a CHANGELOG heading: betas 33 to 41 have headings and no tags,
+so a derived link would 404. No previous tag means no compare line. GitHub's generated notes are no
+longer appended either: that list only knew merged pull requests, and most of Collie's history
+lands as direct commits or cherry-picks that keep the author, so it read as if almost nothing had
+shipped. Nobody writes release notes by hand, and a bullet the script cannot read stops the release
+rather than publishing an empty page. `scripts/release-notes.test.ts` pins the body's shape and
+also reads this repo's own `CHANGELOG.md`, so a badly shaped bullet is red in CI on the commit that
+wrote it; the pre-commit hook refuses one at commit time, and the tag-time failure is the backstop.
 
 `scripts/check-tag.sh` checks this: with no arguments it asks whether the version the repo currently
 claims has a tag; given a rev-list selector it asks the same of every `chore(release):` commit the
@@ -357,7 +376,7 @@ lint guard, the pack-wire guard or the `flake.lock` guard.
   a call site first is one that never gets promoted — the alert family cost six components that way.
 - **Check UI states in the playground** (`web/src/playground/`, `cd web && bun run playground`,
   README → "The states playground") before changing a banner, the mark, the boot splash, the idle
-  lock, or the pack page — it renders every state at once. Never import playground code from app
+  lock, or the crew page — it renders every state at once. Never import playground code from app
   code.
 - Data flows through **React Router** (`createBrowserRouter`, data mode): route **loaders**
   (`web/src/lib/loaders.ts`) fetch the snapshot + pane; **polling is `useRevalidator()` on an
@@ -412,7 +431,7 @@ lint guard, the pack-wire guard or the `flake.lock` guard.
   calls them subscribes via `useLocale()` so it re-renders on a locale (or lazy-dictionary) change.
   `messages/en.ts` is the source of truth; all six dictionary files change together, enforced by
   `tsc`. Not translated: terminal/agent output, quick replies, menu/dialog labels the screen printed,
-  key caps, pack role names, push notifications, service-worker strings, pack-link errors, and the
+  key caps, crew role names, push notifications, service-worker strings, pack-link errors, and the
   slash-command descriptions in `web/src/lib/agent-commands.ts` (another tool's vocabulary — deferred)
   ([ADR 0030](./.adr/0030-the-ui-is-translated-by-a-typed-dictionary-not-a-library.md)).
 - **PWA** via `vite-plugin-pwa` (`web/vite.config.ts`): manifest + `sw.js`, registered manually
@@ -523,7 +542,7 @@ collie as remote shell access.
 Host validation is on by default (`COLLIE_ALLOW_ANY_HOST=1` opts out), `COLLIE_TRUSTED_USER` rejects
 an ABSENT `Tailscale-User-Login` as well as a wrong one (`COLLIE_TRUSTED_USER_OPTIONAL=1`), a
 non-loopback bind refuses to start (`COLLIE_ALLOW_NON_LOOPBACK_BIND=1`), and a non-loopback TCP peer
-is refused. **A collie in a pack is exempt from the bind refusal and `/pack/v1/*` from the peer
+is refused. **A collie in a crew is exempt from the bind refusal and `/pack/v1/*` from the peer
 check** — a member is dialled across a machine boundary and that surface carries pinned mutual TLS
 plus the pack secret ([ADR 0013](./.adr/0013-a-peer-listens-without-becoming-a-front-door.md)). The
 exemption is granted by POSITION — the peer check sits after the federated dispatch in
@@ -566,8 +585,8 @@ bump `PACK_PROTOCOL_VERSION` (not expressible that way). `scripts/check-pack-wir
 the pre-commit hook; a pure refactor takes the `SKIP_PACK_WIRE_CHECK=1` hatch
 ([ADR 0025](./.adr/0025-the-wire-guard-forces-a-decision-never-a-bump.md)).
 
-**Code reaches a peer over the operator's own SSH, never over the pack link** — `pack add` installs
-it and `pack update` levels it, both pushing the lead's own commit as a `git bundle`; the link
+**Code reaches a peer over the operator's own SSH, never over the pack link** — `crew add` installs
+it and `crew update` levels it, both pushing the lead's own commit as a `git bundle`; the link
 carries runtime data and never becomes a distribution channel
 ([ADR 0016](./.adr/0016-updates-ride-the-operators-ssh.md), addendum 2026-09-04: a peer may also
 level ITSELF to the release its lead is running, fetching that public tag from GitHub over anonymous
