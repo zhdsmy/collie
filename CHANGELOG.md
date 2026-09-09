@@ -28,31 +28,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-### Changed
-
-- **Collie follows upstream v1.7.0.** Adopt crew naming, per-host multiplexer capabilities, reliable update progress and Pi/OMP journal images; retain downstream input safeguards, compact controls and iOS safe-area coverage. [Complete upstream changes and integration decisions](./docs/upstream-v1.7.0.md).
-
-## [1.6.0+collie.5] - 2026-09-08
+## [1.7.0+collie.1] - 2026-09-09
 
 ### Changed
 
-- **The pane header offers optional Zen mode.** Move the optional Zen mode button to the header before pane switching, keeping Settings in control of its visibility and removing the duplicate menu entry. ([7e38b24](https://github.com/zhdsmy/collie/commit/7e38b24))
-
-## [1.6.0+collie.4] - 2026-09-08
-
-- Align the Simplified Chinese Composer Type button label with upstream v1.6.0. ([7815574](https://github.com/zhdsmy/collie/commit/7815574))
-
-## [1.6.0+collie.3] - 2026-09-08
-
-- Compact the Composer control row with larger 20px icons and 12px labels, 44px tap targets, reduced outer spacing, and a shorter Display label with language-aware wrapping. ([86c8de2](https://github.com/zhdsmy/collie/commit/86c8de2), [7a66691](https://github.com/zhdsmy/collie/commit/7a66691))
-
-## [1.6.0+collie.2] - 2026-09-08
-
-- Restore the Cursor CLI brand icon from v0.36.1+collie.2, including Cursor label variants, using the current shared agent-icon styling. ([1706861](https://github.com/zhdsmy/collie/commit/1706861))
-
-## [1.6.0+collie.1] - 2026-09-08
-
-- Merge upstream v1.6.0 (including v1.5.6): adopt its journal-backed full latest reply, notification setup recovery, auto-landscape zen and update handling; retain downstream input safeguards, notification cleanup, compact statusline and iOS viewport fixes. [Complete upstream changes and integration decisions](./docs/upstream-v1.6.0.md). ([3a4bca7](https://github.com/zhdsmy/collie/commit/3a4bca7))
+- **Collie follows upstream v1.7.0.** Adopt crew naming, per-host multiplexer capabilities, reliable update progress and Pi/OMP journal images; retain downstream input safeguards, compact controls and iOS safe-area coverage. [Complete upstream changes and integration decisions](./docs/upstream-v1.7.0.md). ([8f198f46](https://github.com/zhdsmy/collie/commit/8f198f46))
 
 ## [1.7.0] - 2026-09-09
 
@@ -100,6 +80,28 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 ### Docs
 
 - **A Herdr machine list is not a crew.** Herdr 0.9.0 keeps saved ssh machines in its own client, for its own window, on the machine you are sitting at. A crew runs Collie on every machine, reached from your phone through the lead, and handles uploads, the journal, the audit log, updates, and failover on each machine; it also runs under tmux and zellij, which keep no machine list. The two lists stay separate on purpose, and [ADR 0036](.adr/0036-the-map-of-machines-is-collies-a-mux-reports-one-machine.md) records why. [`docs/crew.md`](./docs/crew.md) compares them row by row, and `collie crew add` offers Herdr's machines as candidates so you never type a host twice. ([bd3adc5f](https://github.com/AltanS/collie/commit/bd3adc5f))
+
+## [1.6.0+collie.5] - 2026-09-08
+
+### Changed
+
+- **The pane header offers optional Zen mode.** Move the optional Zen mode button to the header before pane switching, keeping Settings in control of its visibility and removing the duplicate menu entry. ([7e38b24](https://github.com/zhdsmy/collie/commit/7e38b24))
+
+## [1.6.0+collie.4] - 2026-09-08
+
+- Align the Simplified Chinese Composer Type button label with upstream v1.6.0. ([7815574](https://github.com/zhdsmy/collie/commit/7815574))
+
+## [1.6.0+collie.3] - 2026-09-08
+
+- Compact the Composer control row with larger 20px icons and 12px labels, 44px tap targets, reduced outer spacing, and a shorter Display label with language-aware wrapping. ([86c8de2](https://github.com/zhdsmy/collie/commit/86c8de2), [7a66691](https://github.com/zhdsmy/collie/commit/7a66691))
+
+## [1.6.0+collie.2] - 2026-09-08
+
+- Restore the Cursor CLI brand icon from v0.36.1+collie.2, including Cursor label variants, using the current shared agent-icon styling. ([1706861](https://github.com/zhdsmy/collie/commit/1706861))
+
+## [1.6.0+collie.1] - 2026-09-08
+
+- Merge upstream v1.6.0 (including v1.5.6): adopt its journal-backed full latest reply, notification setup recovery, auto-landscape zen and update handling; retain downstream input safeguards, notification cleanup, compact statusline and iOS viewport fixes. [Complete upstream changes and integration decisions](./docs/upstream-v1.6.0.md). ([3a4bca7](https://github.com/zhdsmy/collie/commit/3a4bca7))
 
 ## [1.6.0] - 2026-09-08
 
