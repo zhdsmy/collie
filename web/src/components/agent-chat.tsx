@@ -54,7 +54,7 @@ import { PaneActionsSheet } from "@/components/pane-actions-sheet";
 import { CompactStripLabels, STRIP_TAP_TARGET_SQUARE } from "@/components/ui/labelled-strip";
 import { ReadOnlyBanner } from "@/components/read-only-banner";
 import { HostStaleBanner } from "@/components/host-stale-banner";
-import { useAmbientHost, useHostHealth, usePack } from "@/components/pack-provider";
+import { useAmbientHost, useHostHealth, useCrew } from "@/components/crew-provider";
 import { HostChip } from "@/components/host-chip";
 import { writeRefusal } from "@/lib/host-health";
 import { StatusArea } from "@/components/status-area";
@@ -402,7 +402,7 @@ export function AgentChat({
 
   // Statusline reference data can stand down while typing; the write target must stay visible.
   const composing = useKeyboardOpen();
-  const { multi: multiHost } = usePack();
+  const { multi: multiHost } = useCrew();
   const writeHost = useAmbientHost(scope?.host);
   const showWriteHost = multiHost && writeHost !== undefined;
 

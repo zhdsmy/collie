@@ -12,7 +12,7 @@ import { loadDraft } from "@/lib/drafts";
 import { __resetOperatorCommands } from "@/lib/operator-config";
 import { server } from "@/test/setup";
 import { fixtureServers, recordReply } from "@/test/handlers";
-import { PackProvider } from "./pack-provider";
+import { CrewProvider } from "./crew-provider";
 import { Composer, TUI_SETTLE_MS } from "./composer";
 import type { ServerSummary } from "@/lib/types";
 
@@ -106,7 +106,7 @@ function StatusSentinel() {
 }
 
 /** renderComposer + the status sentinel, for cases that assert on the status line. `servers` opts
- *  the render into a pack (default: solo, i.e. no host chrome and no host in any copy). */
+ *  the render into a crew (default: solo, i.e. no host chrome and no host in any copy). */
 function renderComposerWithStatus(
   overrides: Partial<ComponentProps<typeof Composer>> = {},
   servers?: ServerSummary[],
@@ -134,10 +134,10 @@ function renderComposerWithStatus(
     {
       path: "/",
       element: (
-        <PackProvider servers={servers}>
+        <CrewProvider servers={servers}>
           <StatusSentinel />
           <Composer {...props} />
-        </PackProvider>
+        </CrewProvider>
       ),
     },
   ]);
@@ -1666,7 +1666,7 @@ describe("Composer — destructive-input confirm", () => {
     expect(props.onSent).toHaveBeenCalled();
   });
 
-  it("names the machine in the confirm — and only on a pack", async () => {
+  it("names the machine in the confirm — and only on a crew", async () => {
     const user = userEvent.setup();
     // Solo: the copy is exactly what it has always been, host clause and all absent.
     renderComposerWithStatus({ scope: { host: "workshop" } });
@@ -1677,7 +1677,7 @@ describe("Composer — destructive-input confirm", () => {
     );
     cleanup();
 
-    // On a pack, "rm -r" is a different sentence depending on whose disk it runs on.
+    // On a crew, "rm -r" is a different sentence depending on whose disk it runs on.
     clearStatus();
     renderComposerWithStatus({ scope: { host: "workshop" } }, fixtureServers);
     await user.type(screen.getByPlaceholderText(/type a reply/i), "sudo reboot");
