@@ -1,0 +1,12 @@
+  ┊ review diff
+[33ma/sample.txt → b/sample.txt[0m
+[90m@@ -1,4 +1,4 @@[0m
+[37m before context[0m
+[38;5;231;48;5;52m- Old sample line with enough words to wrap across a narrow phone screen, keeping a complete rectangular background.[0m
+[38;5;231;48;5;52m- A second deleted sample line.[0m
+[38;5;231;48;5;22m+ New sample line with enough words to wrap across a narrow phone screen, using the same colors as Codex.[0m
+[38;5;231;48;5;22m+ A second added sample line: https://example.com/docs[0m
+[37m after context[0m
+
+The sample diff is complete.
+

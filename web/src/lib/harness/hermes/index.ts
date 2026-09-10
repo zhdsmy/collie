@@ -1,9 +1,11 @@
 import type { AnsiSegment } from "../../ansi";
 import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { HarnessAdapter } from "../types";
+import { decorateHermesDiff } from "./display";
+import { detectClarify } from "./clarify";
 
-// Display-only Hermes CLI chrome, verified against the 2026-09-10 ANSI capture and the official
-// cli_stream_mixin / cli_status_bar_mixin renderers. No dialog or send recipe is inferred here.
+// Hermes chrome and verified clarify cards. Ordinary text replies retain their existing
+// transport; clarify option digits use the shared fresh-dialog guard.
 const RULE = /^─{8,}$/u;
 const RESPONSE_TOP = /^╭─\s*(⚕\s*Hermes(?:\s+\d{2}:\d{2}(?::\d{2})?)?)\s*─{8,}╮$/u;
 const RESPONSE_BOTTOM = /^╰─{8,}╯$/u;
@@ -25,6 +27,7 @@ interface Footer {
   statusStart: number;
   top: number;
   empty: boolean;
+  clarify: boolean;
   hint?: StyledLine;
 }
 
@@ -37,7 +40,7 @@ function locateFooter(lines: StyledLine[]): Footer | null {
     const text = texts[prompt]!;
     if (RULE.test(text.trim())) return null;
     // The default working prompt adds ⚕; minimal chrome omits the ❯ suffix.
-    const promptMatch = /^(?:❯(?: |$)|⚕ (?:❯(?: |$))?)/u.exec(text);
+    const promptMatch = /^(?:❯(?: |$)|[⚕?✎] (?:❯(?: |$))?)/u.exec(text);
     if (!promptMatch) continue;
     const top = prompt - 1;
     if (!RULE.test(texts[top]!.trim()) || texts[top]!.trim() !== texts[bottom]!.trim()) return null;
@@ -60,7 +63,7 @@ function locateFooter(lines: StyledLine[]): Footer | null {
       const empty = !!hint || (text.startsWith("⚕ ")
         ? input.every((s) => !s.text.trim())
         : draft.every((s) => !s.text.trim() || s.italic) && continuation.every((s) => !s.text.trim()));
-      return { statusStart, top, empty, hint };
+      return { statusStart, top, empty, hint, clarify: text.startsWith("? ") };
     }
     return null;
   }
@@ -127,11 +130,19 @@ function inputChrome(lines: StyledLine[]): StyledLine[] {
 
 export function hermesBuildBlocks(lines: StyledLine[]): Block[] {
   const footer = locateFooter(lines);
+  const clarify = footer?.clarify && footer.empty ? detectClarify(lines, footer.statusStart) : null;
+  if (clarify) {
+    const before = trimTrailingBlank(lines.slice(0, clarify.start));
+    return [
+      { kind: "raw", lines: [...decorateHermesDiff(inputChrome(responseChrome(before, 0))), ...clarify.questionLines] },
+      { kind: "prompt-select", prompt: clarify.model, lines: lines.slice(clarify.start) },
+    ];
+  }
   const content = footer
     ? [...lines.slice(0, footer.statusStart), ...(footer.empty ? [] : lines.slice(footer.top))]
     : lines;
   const closingWidth = footer?.empty ? lineText(lines[footer.top]!).trim().length : 0;
-  return [{ kind: "raw", lines: inputChrome(responseChrome(trimTrailingBlank(content), closingWidth)) }];
+  return [{ kind: "raw", lines: decorateHermesDiff(inputChrome(responseChrome(trimTrailingBlank(content), closingWidth))) }];
 }
 
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {

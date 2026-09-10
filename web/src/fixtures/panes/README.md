@@ -18,6 +18,15 @@ pane over capturing real work sessions.
 
 ## Hermes CLI display chrome (captured 2026-09-10)
 
+`hermes--clarify-{single,q0,q1,other}.txt` capture an isolated Herdr pane running the
+installed HermesCLI's real clarify renderer and digit/Enter handlers over harmless sample
+questions. The prompt_toolkit host supplies a sample status/composer footer; no model call or
+real conversation action was made. The sample's Other footer still uses `? ❯`; Hermes itself
+uses `✎ ❯`. Tests cover both modes. Single-question digit submission, batch advancement and
+custom-answer submission were observed directly. `hermes--diff.txt` combines the real pane's
+captured xterm-256 diff colors with replacement sample text. See the adapter's `NOTES.md` for
+the exact provenance, key recipes and conservative fallback boundaries.
+
 `hermes--done.txt` is a sanitized structural capture from Hermes CLI v0.21.1 (2026.9.7)
 on Herdr 0.9.0. Response borders, status ANSI, the italic prompt suggestion and composer rules
 retain their captured form. Body paragraphs, model and session title use generic replacements;

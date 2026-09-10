@@ -78,6 +78,8 @@ export interface PromptFeedback {
 
 /** A recognised single-choice dialog: the question, its selectable options, and the family. */
 export interface PromptModel {
+  /** Literal current frame for a bound write when timers/status paint are excluded from identity. */
+  regionSignature?: string;
   question: string;
   options: PromptOption[];
   family: PromptFamily;

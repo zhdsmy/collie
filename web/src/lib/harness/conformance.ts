@@ -153,7 +153,21 @@ function modelsIn<K extends DialogKind>(blocks: Block[], kind: K): DialogModels[
  *  more than the text). */
 function perturbLine(lines: StyledLine[], i: number): StyledLine[] {
   const copy = [...lines];
-  copy[i] = { segments: [...lines[i]!.segments, { text: " zqx", style: {}, muted: false }] };
+  const line = lines[i]!;
+  const text = lineText(line);
+  // Keep a framed row's right edge intact: text outside it tests shape rejection, not freshness.
+  const right = /^│.*│\s*$/u.test(text) ? text.lastIndexOf("│") : -1;
+  if (right < 0) copy[i] = { segments: [...line.segments, { text: " zqx", style: {}, muted: false }] };
+  else {
+    let offset = 0;
+    copy[i] = { ...line, segments: line.segments.map((segment) => {
+      const at = right - offset;
+      offset += segment.text.length;
+      return at >= 0 && at < segment.text.length
+        ? Object.assign({}, segment, { text: segment.text.slice(0, at) + "zqx " + segment.text.slice(at) })
+        : segment;
+    }) };
+  }
   return copy;
 }
 

@@ -1,5 +1,37 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## Diff and clarify adaptation — 2026-09-10
+
+Hermes inline unified diffs print a hunk header and white text on a skin-derived change fill
+(`agent/display.py`). Read-only inspection of the user's pane confirms Herdr's xterm-256
+colors `rgb(135,0,0)` and `rgb(0,95,0)`. The display adapter recognizes painted +/- rows only
+inside a hunk, normalizes their base colors to Codex's `rgb(74,34,29)` / `rgb(33,58,43)`, and
+uses the existing full-row `surface` renderer. Raw mode bypasses this transformation.
+`hermes--diff.txt` uses those captured SGR colors with harmless replacement text.
+
+Clarify was tested in an isolated Herdr pane with the installed HermesCLI's actual renderer
+and `_tui_make_clarify_number_handler`, `_clarify_batch_lock` and Enter handlers. A minimal
+prompt_toolkit host supplied sample questions and a sample status/composer footer; no model,
+real conversation input, approval or file operation was invoked. The checked-in q0, q1,
+single and Other fixtures retain the last rendered sample card and footer, omitting earlier
+shell output. The Other fixture's host keeps `? ❯`; the real renderer switches to `✎ ❯`, also
+covered as a refusal case. These are actual renderer/handler captures, not a full Hermes run.
+
+Verified choreography: digit `2` answers a single question immediately; in a batch it locks
+only the current answer and advances to the next unanswered question. The final answer
+resolves the batch. The Other digit only opens text entry; typed text plus Enter supplies the
+custom answer. Cards therefore send exactly one digit, never an extra Enter. Other returns
+to Hermes' terminal panel with the existing phone composer for text. Checkbox and truncated,
+unknown or incomplete cards are not lifted because their keys have different semantics.
+
+The shared prompt model has an optional literal `regionSignature`, like the preview model:
+card identity includes the full panel/question/choices and mode, excluding changing timers
+and status fields; the bridge still binds each write to the freshly read literal panel plus
+footer. A stale question or option fails the shared guard. This does not add an ordinary
+reply/draft verification claim; `displayOnly` continues to preserve Hermes' one-shot replies.
+
+Earlier display-only notes below describe the capability before this addition.
+
 The source was Hermes CLI v0.21.1 (2026.9.7), upstream `145c713f`, running in Herdr 0.9.0.
 An existing completed pane was read with `recent-unwrapped`, ANSI format, without sending input.
 

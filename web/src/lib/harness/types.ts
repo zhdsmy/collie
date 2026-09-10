@@ -12,7 +12,7 @@
 import type { Block, StyledLine } from "../blocks";
 
 export interface HarnessAdapter {
-  /** Chrome-only adapter: keep existing one-shot transport until draft/submit verification has
+  /** Keep existing one-shot reply transport until draft/submit verification has
    * its own fixtures and live validation. Styling alone never declares send support. */
   displayOnly?: true;
   /** Lossless transport pastes. Intermediate parts must be verified before continuing;

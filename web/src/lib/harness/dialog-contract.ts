@@ -120,7 +120,7 @@ export const DIALOG_CONTRACT: DialogContract = {
     commits: promptsEqual,
     identity: promptsSameIdentity,
     signature: (m) => m.signature,
-    region: (m) => m.signature,
+    region: (m) => m.regionSignature ?? m.signature,
   },
   wizard: {
     // Every wizard key commits too — a digit selects AND advances; Left/Right change the step.
