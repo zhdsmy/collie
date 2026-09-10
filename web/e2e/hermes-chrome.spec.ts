@@ -5,6 +5,7 @@ import { fixtureSnapshot } from "@/test/handlers";
 
 const working = readFileSync(new URL("../src/fixtures/panes/hermes--working.txt", import.meta.url), "utf8");
 const done = readFileSync(new URL("../src/fixtures/panes/hermes--done.txt", import.meta.url), "utf8");
+const submitted = readFileSync(new URL("../src/fixtures/panes/hermes--submitted-input.txt", import.meta.url), "utf8");
 const hint = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
 const model = "example-model-with-a-very-long-name";
 const history = Array.from({ length: 80 }, (_, i) => `Earlier response ${i}.`).join("\n") + "\n";
@@ -47,7 +48,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
       } });
     });
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
-      paneId: "w1:p1", text: history + text.replace("example-model", model.slice(0, 23) + "..."),
+      paneId: "w1:p1", text: history + submitted + text.replace("example-model", model.slice(0, 23) + "..."),
       truncated: false, revision: 1, sessionModel: { model, reasoningEffort: "high" },
     } }));
     await page.goto("/pane/w1:p1");
@@ -65,6 +66,23 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     const composerBox = await page.getByRole("textbox").first().boundingBox();
     expect(hintBox!.y).toBeGreaterThanOrEqual(statusBox!.y + statusBox!.height);
     expect(hintBox!.y + hintBox!.height).toBeLessThan(composerBox!.y);
+    const hintFits = await operations.evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const glyphs = range.getBoundingClientRect();
+      const clip = el.parentElement!.parentElement!.getBoundingClientRect();
+      return glyphs.top >= clip.top && glyphs.bottom <= clip.bottom;
+    });
+    expect(hintFits).toBe(true);
+    const separators = page.getByText("─".repeat(40), { exact: true });
+    await expect(separators).toHaveCount(2);
+    const bordersFit = await separators.evaluateAll((glyphs) => glyphs.every((el) => {
+      const row = el.parentElement!.parentElement!.getBoundingClientRect();
+      const mirror = el.closest("pre")!.getBoundingClientRect();
+      return row.left === mirror.left && row.right === mirror.right &&
+        Math.round(row.left) === Math.round(document.documentElement.clientWidth - row.right);
+    }));
+    expect(bordersFit).toBe(true);
     await page.screenshot({ path: testInfo.outputPath("working.png") });
 
     // Scroll the transcript itself. The two lifted rows must retain their position and the last

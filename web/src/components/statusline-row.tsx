@@ -196,7 +196,7 @@ function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]
     }
   }
   return (
-    <span className="inline-flex min-h-3.5 shrink-0 items-center" title={text}>
+    <span className="inline-flex min-h-3.5 shrink-0 items-center leading-normal" title={text}>
       <StyledText segments={model ? sliceSegments(segments, model[0].length, text.length) : segments} />
     </span>
   );

@@ -30,6 +30,11 @@ from Hermes v0.21.1's official `cli_tui_mixin.py` and the operator's 2026-09-10 
 display-only footer lifting; derived tests cover minimal chrome, wrapped hints, drafts and torn
 footers. No interactive contract is inferred from it.
 
+`hermes--submitted-input.txt` is a sanitized excerpt from a read-only ANSI capture on 2026-09-10.
+The two 40-character accent rules and the bold bullet/input styles are retained; the message is
+replaced with generic sample text and line endings are normalized. Only this verified pair is
+drawn across the phone mirror, with ordinary body rules and raw terminal mode unchanged.
+
 ## Codex corpus (captured 2026-08-22, Codex v0.149.0, sandbox panes)
 
 Byte-faithful `format:ansi` captures with one sanitization pass, every substitution

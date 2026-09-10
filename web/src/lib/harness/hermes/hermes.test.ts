@@ -9,11 +9,38 @@ import { hermesAdapter } from ".";
 const PANES = join(import.meta.dirname, "../../../fixtures/panes");
 const capture = readFileSync(join(PANES, "hermes--done.txt"), "utf8");
 const working = readFileSync(join(PANES, "hermes--working.txt"), "utf8");
+const submitted = readFileSync(join(PANES, "hermes--submitted-input.txt"), "utf8");
 const hint = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
 const lines = (text: string) => splitLines(parseAnsi(text));
 const mirror = (text: string) => hermesAdapter.buildBlocks(lines(text)).flatMap((b) => b.lines.map(lineText)).join("\n");
 
 describe("Hermes display chrome", () => {
+  it("extends only a captured submitted-input border pair and preserves source text", () => {
+    const output = hermesAdapter.buildBlocks(lines(submitted))[0]!.lines;
+    expect(output.map((line) => !!line.fullWidthRule)).toEqual([true, false, true]);
+    expect(output.map(lineText)).toEqual(lines(submitted).slice(0, 3).map(lineText));
+    expect(hermesAdapter.extractInputDraft(lines(submitted))).toBeNull();
+  });
+
+  it("keeps multiline input, blank lines and dim preview notices inside the same pair", () => {
+    const rows = submitted.replace("keeping real paragraph breaks.", "keeping real paragraph breaks.\n\n[image #1] /tmp/sample.png").trimEnd().split("\n");
+    rows.splice(-1, 0, "\x1b[2m... (+8 more lines)\x1b[0m");
+    const text = rows.join("\n");
+    const output = hermesAdapter.buildBlocks(lines(text))[0]!.lines;
+    expect(output.filter((line) => line.fullWidthRule)).toHaveLength(2);
+    expect(output.map(lineText).join("\n")).toBe(lines(text).map(lineText).join("\n").trimEnd());
+  });
+
+  it("does not extend ordinary rules, plain bullets or incomplete input frames", () => {
+    const plain = submitted.replaceAll("\x1b[1m", "");
+    const plainBody = submitted.replace("\x1b[1mReview", "\x1b[0mReview");
+    const torn = submitted.trimEnd().split("\n").slice(0, -1).join("\n");
+    const body = submitted.split("\n").map((row, i) => i === 2 ? `Ordinary response text\n${row}` : row).join("\n");
+    for (const text of [plain, plainBody, torn, body, "─".repeat(40)]) {
+      expect(hermesAdapter.buildBlocks(lines(text))[0]!.lines.some((line) => line.fullWidthRule)).toBe(false);
+    }
+  });
+
   it("lifts the working metrics and operation hint into consecutive fixed rows", () => {
     const status = hermesAdapter.extractStatusLines(lines(working));
     expect(status).toHaveLength(2);
@@ -132,5 +159,5 @@ describe("Hermes display chrome", () => {
 describeAdapterConformance(hermesAdapter, {
   ownFixtures: [],
   foreignFixtures: readdirSync(PANES).filter((name) => !name.startsWith("hermes--") && name.endsWith(".txt")),
-  neutralFixtures: ["hermes--done.txt", "hermes--working.txt"],
+  neutralFixtures: ["hermes--done.txt", "hermes--working.txt", "hermes--submitted-input.txt"],
 });

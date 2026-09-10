@@ -68,3 +68,29 @@ drafts and malformed footers. The browser case also verifies selected-tab visibi
 resizing and unfolding, preservation of manual tab scrolling across snapshot polls, and stable
 status/hint positions while scrolling transcript history. It uses simulated API responses, not
 an iPhone PWA or a live send.
+
+## Submitted input rules and hint descenders — 2026-09-10
+
+A read-only ANSI capture of the same Hermes session confirms two 40-character accent rules
+around a bold `●` user preview. `_print_user_message_preview` prints the opening rule;
+`cli_chat_turn_mixin.py` prints the closing rule after staging the input. The sanitized fixture
+`hermes--submitted-input.txt` retains these styles, replaces the message with sample text and
+normalizes line endings. The preview may include bold continuation lines, blank lines and dim
+timestamps or omitted-line notices. Only a complete matching pair around that styling receives
+the `fullWidthRule` display marker; ordinary body rules and unstyled bullets keep their widths.
+
+While wrapping, the mirror draws those separators as full-width strokes using the existing
+muted rule color, with equal content gutters. Their original text and source offsets remain in
+the rendered tree; wrap-off and raw terminal modes retain terminal geometry. This does not reflow
+message text or alter the rounded response frames.
+
+Hermes' unknown text fields, including the italic operation hint, now use normal line height.
+The previous single-height line boxes could let glyph descenders reach below the horizontal
+scroller's vertical clip. Browser regression checks measure the hint's text range against that
+clip and verify both input rules reach the mirror edges with equal gutters.
+
+The operation hints are Hermes-owned CLI vocabulary: `/queue <prompt>` waits for the next turn,
+`/bg <prompt>` creates an independent background session, `/steer <prompt>` injects guidance after
+the next tool call without interrupting (or queues when idle), and `Ctrl+C` cancels. In this Hermes
+version `msg=interrupt` is a fixed placeholder string; actual Enter routing still follows `/busy`
+and may redirect the current run, queue the next turn, or steer. Collie preserves that source text.

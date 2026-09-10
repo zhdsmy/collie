@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hermes input separators span the full conversation width.** Extend only verified submitted-message borders to the mirror gutters, retain original terminal text and raw-mode widths, and give italic operation hints enough line height to keep descenders visible while scrolling horizontally.
+
 ## [1.8.0+collie.5] - 2026-09-10
 
 ### Fixed

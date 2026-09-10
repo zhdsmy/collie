@@ -7,9 +7,30 @@ import { parseAnsi } from "@/lib/ansi";
 import { lineText, splitLines } from "@/lib/blocks";
 import diffCapture from "@/lib/harness/codex/diff-reflow.fixture.txt?raw";
 import hermesCapture from "@/fixtures/panes/hermes--done.txt?raw";
+import hermesInput from "@/fixtures/panes/hermes--submitted-input.txt?raw";
 
 const ESC = "\x1b";
 const MUTED_RULE_COLOUR = "rgb(161, 161, 161)"; // #a1a1a1, --muted-foreground's dark half
+
+it("fills Hermes input borders without changing source text, search offsets or raw widths", () => {
+  const text = hermesInput.trimEnd();
+  const expected = splitLines(parseAnsi(text)).map(lineText).join("\n");
+  const { container, rerender } = render(<AnsiOutput text={text} agent="hermes" query="paragraph breaks" />);
+  expect(container.querySelector("pre")!.textContent).toBe(expected);
+  expect(container.querySelector("[data-find-match]")!.textContent).toBe("paragraph breaks");
+  const strokes = [...container.querySelectorAll('span[aria-hidden="true"]')];
+  expect(strokes).toHaveLength(2);
+  for (const stroke of strokes) {
+    expect(stroke.parentElement).toHaveClass("w-full");
+    expect(stroke).toHaveStyle({ borderColor: MUTED_RULE_COLOUR });
+    expect(stroke.textContent).toBe("");
+  }
+  rerender(<AnsiOutput text={text} agent="hermes" wrap={false} />);
+  expect(container.querySelector("pre")!.textContent).toBe(expected);
+  expect(container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(0);
+  rerender(<AnsiOutput text={text} agent="codex" />);
+  expect(container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(0);
+});
 
 describe("Hermes rounded response rules", () => {
   it("retains both curved ends, original text and search offsets when fitting the rule", () => {

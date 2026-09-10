@@ -60,6 +60,8 @@ export interface StyledLine {
   /** Adapter-verified border: shrink this segment range while keeping its label and both ends.
    * Indices are [start, end) in segments; original text and source-row offsets stay intact. */
   fitRule?: { start: number; end: number };
+  /** Adapter-verified horizontal separator: fill the mirror width while preserving source text. */
+  fullWidthRule?: true;
   /** Adapter-owned, full-row surface; ANSI token highlights remain above its base fill. */
   surface?: { kind: "diff" | "user"; background: string };
 }

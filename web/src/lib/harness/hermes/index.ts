@@ -101,13 +101,37 @@ function responseChrome(lines: StyledLine[], closingWidth: number): StyledLine[]
   });
 }
 
+function inputChrome(lines: StyledLine[]): StyledLine[] {
+  const result = [...lines];
+  for (let top = 0; top < lines.length - 2; top++) {
+    const rule = lineText(lines[top]!).trim();
+    const prompt = lines[top + 1]!;
+    if (!RULE.test(rule) || !lineText(prompt).startsWith("● ")) continue;
+    if (!prompt.segments.find((s) => s.text.includes("●"))?.bold) continue;
+    if (prompt.segments.some((s) => s.text.trim() && !s.bold && !s.dim)) continue;
+    // Submitted input is bold, with optional dim timestamps/omitted-line notices. A matching
+    // pair around that preview is chrome; ordinary rules and response-body bullets remain raw.
+    for (let bottom = top + 2; bottom < lines.length; bottom++) {
+      const line = lines[bottom]!;
+      if (lineText(line).trim() === rule) {
+        result[top] = { ...lines[top]!, fullWidthRule: true };
+        result[bottom] = { ...line, fullWidthRule: true };
+        top = bottom;
+        break;
+      }
+      if (line.segments.some((s) => s.text.trim() && !s.bold && !s.dim)) break;
+    }
+  }
+  return result;
+}
+
 export function hermesBuildBlocks(lines: StyledLine[]): Block[] {
   const footer = locateFooter(lines);
   const content = footer
     ? [...lines.slice(0, footer.statusStart), ...(footer.empty ? [] : lines.slice(footer.top))]
     : lines;
   const closingWidth = footer?.empty ? lineText(lines[footer.top]!).trim().length : 0;
-  return [{ kind: "raw", lines: responseChrome(trimTrailingBlank(content), closingWidth) }];
+  return [{ kind: "raw", lines: inputChrome(responseChrome(trimTrailingBlank(content), closingWidth)) }];
 }
 
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
