@@ -30,13 +30,15 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.8] - 2026-09-10
+
 ### Added
 
-- **Hermes clarify choices become native phone option cards.** Single-choice and batch questions use verified digit-only answers with fresh-dialog checks; batch answers advance automatically, Other opens Hermes' own text entry, and unfamiliar or checkbox dialogs retain the terminal controls. Keep the model/status strip visible during clarify prompts and exclude countdown/metric repaint from the card identity.
+- **Hermes clarify choices become native phone option cards.** Single-choice and batch questions use verified digit-only answers with fresh-dialog checks; batch answers advance automatically, Other opens Hermes' own text entry, and unfamiliar or checkbox dialogs retain the terminal controls. Keep the model/status strip visible during clarify prompts and exclude countdown/metric repaint from the card identity. ([1b8f8290](https://github.com/zhdsmy/collie/commit/1b8f8290))
 
 ### Fixed
 
-- **Hermes diffs use continuous Codex-colored rectangular backgrounds.** Extend painted added and deleted lines across the mirror with equal side gutters and no gaps between rows, using Codex's soft green and red fills while preserving text, wrapping and raw terminal output.
+- **Hermes diffs use continuous Codex-colored rectangular backgrounds.** Extend painted added and deleted lines across the mirror with equal side gutters and no gaps between rows, using Codex's soft green and red fills while preserving text, wrapping and raw terminal output. ([1b8f8290](https://github.com/zhdsmy/collie/commit/1b8f8290))
 
 ## [1.8.0+collie.7] - 2026-09-10
 
