@@ -144,7 +144,7 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
     );
   }
   return (
-    <span className="inline-flex min-h-3.5 shrink-0 items-center" title={text}>
+    <span className="inline-flex min-h-3.5 shrink-0 items-center leading-normal" title={text}>
       <span><StyledText segments={segments} /></span>
     </span>
   );
