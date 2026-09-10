@@ -45,6 +45,16 @@ function harness(screen: () => string) {
 const instant = { sleep: async () => {} }; // no real waiting; the bounded loop still runs its attempts
 
 describe("draftCarriesSend", () => {
+  it("keeps Hermes display-only adaptation out of the send path", async () => {
+    const calls = harness(() => "No identifiable composer");
+    const prepare = vi.fn();
+    const out = await sendGuardedReply({
+      paneId: "w1:p1", text: "continue", agent: "hermes", onComposerSeen: prepare, ...instant,
+    });
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([{ text: "continue", submit: true }]);
+    expect(prepare).not.toHaveBeenCalled();
+  });
   it("accepts the exact text, and the space-joined form of a wrapped draft", () => {
     expect(draftCarriesSend("ship it please", "ship it please")).toBe(true);
     expect(draftCarriesSend("ship it\nplease", "ship it please")).toBe(true);

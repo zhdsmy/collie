@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Hermes terminal chrome fits the phone conversation view.** Collapse verified reply borders to their label, move status fields into the compact scrolling strip with a context-used ring, and hide the empty terminal composer. Preserve real drafts, unrecognized screens and the existing Hermes send path.
+
 ## [1.8.0+collie.2] - 2026-09-10
 
 ### Added

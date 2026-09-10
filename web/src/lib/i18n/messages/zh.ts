@@ -265,6 +265,12 @@ export const zh: Dictionary = {
   "chat.scrollback.showHistory": "查看全部历史",
   "chat.scrollback.loadOlder": "加载更早记录",
   "chat.scrollback.loading": "正在加载…",
+  "statusline.hermes.cache": "缓存命中率 {value}",
+  "statusline.hermes.latency": "响应延迟 {value}",
+  "statusline.hermes.speed": "生成速度 {value}",
+  "statusline.hermes.elapsed": "本轮耗时 {value}",
+  "statusline.hermes.idle": "空闲 {value}",
+  "statusline.hermes.duration": "会话时长 {value}",
   "chat.scrollback.hermesSessionPending":
     "Hermes 尚未上报此会话。新会话请先发送首条消息；若已发送，请检查或更新 Herdr 集成并重启 Hermes。",
   "chat.scrollback.noSessionReported":

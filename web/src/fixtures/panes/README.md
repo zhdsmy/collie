@@ -16,6 +16,14 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Hermes CLI display chrome (captured 2026-09-10)
+
+`hermes--done.txt` is a sanitized structural capture from Hermes CLI v0.21.1 (2026.9.7)
+on Herdr 0.9.0. Response borders, status ANSI, the italic prompt suggestion and composer rules
+retain their captured form. Body paragraphs, model and session title use generic replacements;
+this is not an unmodified conversation capture. It covers display only, with no verified send
+or dialog recipe. Provenance and fallback boundaries: [`NOTES.md`](../../lib/harness/hermes/NOTES.md).
+
 ## Codex corpus (captured 2026-08-22, Codex v0.149.0, sandbox panes)
 
 Byte-faithful `format:ansi` captures with one sanitization pass, every substitution
@@ -453,4 +461,3 @@ AGY renders a framed input box bounded by horizontal rules (`─`), with status 
   states — and `❯` sitting on it means the field has focus, where every digit is swallowed as
   text rather than answering ([`PLAN_FEEDBACK_NOTES.md`](../../lib/grammar/PLAN_FEEDBACK_NOTES.md)).
   The row's DIGIT is install-dependent too (3 or 4), so it is read off the screen, never assumed.
-

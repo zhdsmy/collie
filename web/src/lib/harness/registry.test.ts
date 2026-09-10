@@ -17,6 +17,7 @@ describe("hasBlockGrammar", () => {
     expect(hasBlockGrammar("omp")).toBe(true);
     expect(hasBlockGrammar("agy")).toBe(true);
     expect(hasBlockGrammar("antigravity")).toBe(true);
+    expect(hasBlockGrammar("hermes")).toBe(true);
   });
 
   it("is false for every unregistered agent (no adapter ⇒ raw mirror)", () => {

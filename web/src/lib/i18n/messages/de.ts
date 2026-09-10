@@ -283,6 +283,12 @@ export const de: Dictionary = {
   "chat.scrollback.showHistory": "Gesamten Verlauf anzeigen",
   "chat.scrollback.loadOlder": "Ältere Einträge laden",
   "chat.scrollback.loading": "Wird geladen…",
+  "statusline.hermes.cache": "Cache-Trefferquote {value}",
+  "statusline.hermes.latency": "Antwortlatenz {value}",
+  "statusline.hermes.speed": "Generierungstempo {value}",
+  "statusline.hermes.elapsed": "Anfragedauer {value}",
+  "statusline.hermes.idle": "Inaktiv seit {value}",
+  "statusline.hermes.duration": "Sitzungsdauer {value}",
   "chat.scrollback.hermesSessionPending":
     "Hermes hat diese Sitzung noch nicht gemeldet. Sende bei einer neuen Unterhaltung die erste Nachricht. Falls bereits gesendet, prüfe oder aktualisiere die Herdr-Integration und starte Hermes neu.",
   "chat.scrollback.noSessionReported":

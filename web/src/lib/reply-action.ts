@@ -144,8 +144,9 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
   // against and the guard cannot run. Keep the legacy one-shot send rather than guess: a heuristic
   // over the raw mirror has a false-negative that is worse than the bug — a no-echo input (a shell's
   // sudo prompt) would never show the text, so the submit key would be withheld forever. Non-Claude
-  // harnesses gain this safety exactly when they gain an adapter.
-  if (!adapter) return oneShot(args);
+  // harnesses gain this safety when they gain an adapter with a verified send contract.
+  // Display-only adapters must not change their existing send transport.
+  if (!adapter || adapter.displayOnly) return oneShot(args);
 
   // PRE-FLIGHT. The verify-after guard below is enough to keep Enter from answering a dialog, but it
   // is not enough to keep the MESSAGE out of one: it types first and checks second, so a modal that

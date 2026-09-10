@@ -281,6 +281,12 @@ export const es: Dictionary = {
   "chat.scrollback.showHistory": "Mostrar historial completo",
   "chat.scrollback.loadOlder": "Cargar anteriores",
   "chat.scrollback.loading": "Cargando…",
+  "statusline.hermes.cache": "Aciertos de caché {value}",
+  "statusline.hermes.latency": "Latencia de respuesta {value}",
+  "statusline.hermes.speed": "Velocidad de generación {value}",
+  "statusline.hermes.elapsed": "Tiempo de solicitud {value}",
+  "statusline.hermes.idle": "Inactivo durante {value}",
+  "statusline.hermes.duration": "Duración de sesión {value}",
   "chat.scrollback.hermesSessionPending":
     "Hermes aún no ha informado de esta sesión. En una conversación nueva, envía el primer mensaje. Si ya lo hiciste, comprueba o actualiza la integración de Herdr y reinicia Hermes.",
   "chat.scrollback.noSessionReported":

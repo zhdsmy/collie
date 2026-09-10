@@ -271,6 +271,12 @@ export const zhTW: Dictionary = {
   "chat.scrollback.showHistory": "查看完整記錄",
   "chat.scrollback.loadOlder": "載入較早記錄",
   "chat.scrollback.loading": "正在載入…",
+  "statusline.hermes.cache": "快取命中率 {value}",
+  "statusline.hermes.latency": "回應延遲 {value}",
+  "statusline.hermes.speed": "生成速度 {value}",
+  "statusline.hermes.elapsed": "本輪耗時 {value}",
+  "statusline.hermes.idle": "閒置 {value}",
+  "statusline.hermes.duration": "工作階段時長 {value}",
   "chat.scrollback.hermesSessionPending":
     "Hermes 尚未回報此工作階段。新對話請先傳送第一則訊息；若已傳送，請檢查或更新 Herdr 整合並重新啟動 Hermes。",
   "chat.scrollback.noSessionReported":

@@ -1,5 +1,7 @@
 import {
   CalendarDays,
+  Clock,
+  Database,
   CircleAlert,
   CircleCheck,
   CircleOff,
@@ -66,7 +68,7 @@ function ContextField({ value, remaining }: {
   remaining: boolean;
 }) {
   useLocale();
-  const percent = Number.parseInt(value, 10);
+  const percent = Number.parseFloat(value.replace(/^~/, ""));
   const used = remaining ? 100 - percent : percent;
   const left = 100 - used;
   const label = t(remaining ? "statusline.context.remainingAria" : "statusline.context.usedAria", { percent: value });
@@ -91,7 +93,7 @@ function ContextField({ value, remaining }: {
           mask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0)",
         }}
       />
-      <span aria-hidden="true" className="inline-block w-[4ch] text-right tabular-nums">
+      <span aria-hidden="true" className="inline-block min-w-[4ch] text-right tabular-nums">
         {value}
       </span>
     </span>
@@ -150,6 +152,45 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
 const ROW_CLASS =
   "flex min-w-0 min-h-3.5 items-center gap-1.5 overflow-x-auto overscroll-x-contain whitespace-nowrap leading-none tabular-nums [scrollbar-width:none]";
 
+function HermesField({ segments, text }: { segments: AnsiSegment[]; text: string }) {
+  useLocale();
+  const context = /^\[[█░]+\]\s*(~?\d+(?:\.\d+)?%)$/.exec(text);
+  if (context?.[1] && Number.parseFloat(context[1].replace(/^~/, "")) <= 100) {
+    return <ContextField value={context[1]} remaining={false} />;
+  }
+  const fields = [
+    { pattern: /^◎ (.+)$/, icon: Database, label: "statusline.hermes.cache" },
+    { pattern: /^◷ (.+)$/, icon: Timer, label: "statusline.hermes.latency" },
+    { pattern: /^↑ (.+)$/, icon: Gauge, label: "statusline.hermes.speed" },
+    { pattern: /^[⏱⏲] (.+)$/, icon: Hourglass, label: "statusline.hermes.elapsed" },
+    { pattern: /^✓ (.+)$/, icon: CircleCheck, label: "statusline.hermes.idle" },
+    { pattern: /^((?:\d+[hms]\s*)+)$/, icon: Clock, label: "statusline.hermes.duration" },
+  ] as const;
+  for (const { pattern, icon: Icon, label } of fields) {
+    const value = pattern.exec(text)?.[1];
+    if (!value) continue;
+    const name = t(label, { value });
+    const start = text.indexOf(value);
+    return (
+      <span role="img" aria-label={name} title={name} className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none">
+        <Icon
+          aria-hidden="true"
+          className={cn("size-[12px] shrink-0", text.startsWith("⏱") && "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]")}
+          strokeWidth={2.25}
+          style={segments[0] && styleFor(segments[0])}
+        />
+        <span aria-hidden="true"><StyledText segments={sliceSegments(segments, start, start + value.length)} /></span>
+      </span>
+    );
+  }
+  const model = /^⚕\s+/.exec(text);
+  return (
+    <span className="inline-flex min-h-3.5 shrink-0 items-center" title={text}>
+      <StyledText segments={model ? sliceSegments(segments, model[0].length, text.length) : segments} />
+    </span>
+  );
+}
+
 export function StatuslineRow({
   agent,
   row,
@@ -159,7 +200,7 @@ export function StatuslineRow({
   row: StyledLine;
   leading?: ReactNode;
 }) {
-  if (agent !== "codex") {
+  if (agent !== "codex" && agent !== "hermes") {
     return (
       <div data-slot="statusline-row" className={ROW_CLASS}>
         {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
@@ -173,19 +214,23 @@ export function StatuslineRow({
   // Split the joined text, not each ANSI span: a field's label and value can have different paint.
   // Keep unknown fields verbatim and scroll long rows rather than dropping their final fields.
   let offset = 0;
+  const Field = agent === "hermes" ? HermesField : CodexField;
+  const parts = agent === "hermes"
+    ? lineText(row).split(/(\s*│\s*|\s{2,}─\s*)/)
+    : lineText(row).split(/( \u00b7 )/);
   return (
     <div
-      data-slot="codex-statusline"
+      data-slot={agent === "hermes" ? "hermes-statusline" : "codex-statusline"}
       className={ROW_CLASS}
     >
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
-      {lineText(row).split(" \u00b7 ").map((part, i) => {
+      {parts.map((part, i) => {
         const text = part.trim();
         const start = offset + part.indexOf(text);
-        offset += part.length + 3;
-        if (!text) return null;
+        offset += part.length;
+        if (!text || i % 2 === 1) return null;
         return (
-          <CodexField
+          <Field
             key={i}
             text={text}
             segments={sliceSegments(row.segments, start, start + text.length)}

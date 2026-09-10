@@ -12,6 +12,9 @@
 import type { Block, StyledLine } from "../blocks";
 
 export interface HarnessAdapter {
+  /** Chrome-only adapter: keep existing one-shot transport until draft/submit verification has
+   * its own fixtures and live validation. Styling alone never declares send support. */
+  displayOnly?: true;
   /** Lossless transport pastes. Intermediate parts must be verified before continuing;
    * only the complete reply can authorise Enter. Other harnesses stay single-paste. */
   replyChunks?(text: string): string[];

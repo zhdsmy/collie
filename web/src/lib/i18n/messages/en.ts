@@ -300,6 +300,12 @@ export const en = {
   "chat.scrollback.showHistory": "Show entire history",
   "chat.scrollback.loadOlder": "Load older",
   "chat.scrollback.loading": "Loading…",
+  "statusline.hermes.cache": "Cache hit {value}",
+  "statusline.hermes.latency": "Response latency {value}",
+  "statusline.hermes.speed": "Generation speed {value}",
+  "statusline.hermes.elapsed": "Prompt elapsed {value}",
+  "statusline.hermes.idle": "Idle for {value}",
+  "statusline.hermes.duration": "Session duration {value}",
   "chat.scrollback.hermesSessionPending":
     "Hermes has not reported this session yet. For a new conversation, send the first message. If you already have, check or update the Herdr integration and restart Hermes.",
   "chat.scrollback.noSessionReported":

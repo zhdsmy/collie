@@ -8,6 +8,26 @@ import { StatuslineRow } from "./statusline-row";
 
 beforeEach(() => __resetLocale());
 
+it("compacts Hermes metrics without confusing cache hit with context used", () => {
+  const text = " ⚕ example-model │ ~19.5K/1M │ [░░░░░░░░░░] ~2% │ ◎ 65.3% │ ◷ 1.4s │ ↑ 198 t/s │ 1h 32m │ ⏱ 5s │ ✓ 1m       ─ Example conversation ";
+  const { container } = renderRow(text, "hermes");
+  const ring = container.querySelector('[data-status-icon="context"]');
+  expect(ring).toHaveAttribute("data-used", "2");
+  expect(within(container).getByRole("img", { name: "Cache hit 65.3%" })).toHaveTextContent("65.3%");
+  expect(within(container).getByRole("img", { name: "Generation speed 198 t/s" })).toHaveTextContent("198 t/s");
+  expect(within(container).getByRole("img", { name: "Prompt elapsed 5s" }).querySelector("svg")).toHaveClass("motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]");
+  expect(container.textContent).not.toMatch(/[░█│]/);
+  expect(container.textContent).toContain("Example conversation");
+  expect(container.querySelector('[data-slot="hermes-statusline"]')).toHaveClass("overflow-x-auto", "whitespace-nowrap");
+});
+
+it("keeps unrecognized Hermes fields and does not turn missing context into zero", () => {
+  const { container } = renderRow(" ⚕ model │ ctx -- │ [░░░░░░░░░░] -- │ 🗜️ 2 │ ⊙ goal 1/4", "hermes");
+  expect(container.querySelector('[data-status-icon="context"]')).toBeNull();
+  expect(container.textContent).toContain("ctx --");
+  expect(container.textContent).toContain("⊙ goal 1/4");
+});
+
 function renderRow(text: string, agent: string | undefined = "codex") {
   const row = splitLines(parseAnsi(text))[0]!;
   const view = render(<StatuslineRow agent={agent} row={row} />);
@@ -199,7 +219,7 @@ it("gives icons, values and plain fields the same centered line box", () => {
   const strip = container.querySelector<HTMLElement>('[data-slot="codex-statusline"]')!;
   expect(strip).toHaveClass("items-center", "leading-none", "tabular-nums");
   for (const field of strip.children) expect(field).toHaveClass("min-h-3.5", "items-center");
-  expect(within(strip).getByText("77%")).toHaveClass("w-[4ch]", "tabular-nums");
+  expect(within(strip).getByText("77%")).toHaveClass("min-w-[4ch]", "tabular-nums");
 });
 
 it("preserves unknown fields, terminal colors and literal text, without matching partial labels", () => {

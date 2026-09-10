@@ -276,6 +276,12 @@ export const ko: Dictionary = {
   "chat.scrollback.showHistory": "전체 기록 보기",
   "chat.scrollback.loadOlder": "이전 로그 불러오기",
   "chat.scrollback.loading": "불러오는 중…",
+  "statusline.hermes.cache": "캐시 적중률 {value}",
+  "statusline.hermes.latency": "응답 지연 {value}",
+  "statusline.hermes.speed": "생성 속도 {value}",
+  "statusline.hermes.elapsed": "이번 요청 경과 {value}",
+  "statusline.hermes.idle": "유휴 시간 {value}",
+  "statusline.hermes.duration": "세션 시간 {value}",
   "chat.scrollback.hermesSessionPending":
     "Hermes가 아직 이 세션을 보고하지 않았습니다. 새 대화라면 첫 메시지를 보내세요. 이미 보냈다면 Herdr 연동을 확인하거나 업데이트한 후 Hermes를 다시 시작하세요.",
   "chat.scrollback.noSessionReported":

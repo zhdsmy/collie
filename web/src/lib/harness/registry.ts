@@ -19,6 +19,7 @@ import { codexAdapter } from "./codex";
 import { grokAdapter } from "./grok";
 import { ompAdapter } from "./omp";
 import { agyAdapter, antigravityAdapter } from "./agy";
+import { hermesAdapter } from "./hermes";
 
 // Built FROM the adapter list (not a hand-written literal) so a key can't silently drift from its
 const ADAPTERS: Record<string, HarnessAdapter> = Object.fromEntries(
@@ -29,6 +30,7 @@ const ADAPTERS: Record<string, HarnessAdapter> = Object.fromEntries(
     ompAdapter,
     agyAdapter,
     antigravityAdapter,
+    hermesAdapter,
   ].map((a) => [a.agent, a]),
 );
 
