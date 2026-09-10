@@ -30,15 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-### Changed
-
-- **Collie follows upstream v1.8.0.** Adopt crew protocol v2 and state migration, Hermes transcripts, verified OMP multipart input and PWA update recovery; retain downstream Codex send safeguards, compact controls and iOS safe-area coverage. [Complete upstream changes and integration decisions](./docs/upstream-v1.8.0.md).
-
-## [1.7.0+collie.1] - 2026-09-09
+## [1.8.0+collie.1] - 2026-09-10
 
 ### Changed
 
-- **Collie follows upstream v1.7.0.** Adopt crew naming, per-host multiplexer capabilities, reliable update progress and Pi/OMP journal images; retain downstream input safeguards, compact controls and iOS safe-area coverage. [Complete upstream changes and integration decisions](./docs/upstream-v1.7.0.md). ([8f198f46](https://github.com/zhdsmy/collie/commit/8f198f46))
+- **Collie follows upstream v1.8.0.** Adopt crew protocol v2 and state migration, Hermes transcripts, verified OMP multipart input and PWA update recovery; retain downstream Codex send safeguards, compact controls and iOS safe-area coverage. [Complete upstream changes and integration decisions](./docs/upstream-v1.8.0.md). ([57c171a2](https://github.com/zhdsmy/collie/commit/57c171a2))
 
 ## [1.8.0] - 2026-09-09
 
@@ -66,6 +62,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 ### Docs
 
 - **The new browser suite has a place in the docs.** `CLAUDE.md` says how to run each tier and how to add a case, `CONTRIBUTING.md` tells a contributor CI runs it and they need not, and the workspace README documents `make e2e`. ([2221ae8c](https://github.com/AltanS/collie/commit/2221ae8c))
+
+## [1.7.0+collie.1] - 2026-09-09
+
+### Changed
+
+- **Collie follows upstream v1.7.0.** Adopt crew naming, per-host multiplexer capabilities, reliable update progress and Pi/OMP journal images; retain downstream input safeguards, compact controls and iOS safe-area coverage. [Complete upstream changes and integration decisions](./docs/upstream-v1.7.0.md). ([8f198f46](https://github.com/zhdsmy/collie/commit/8f198f46))
 
 ## [1.7.0] - 2026-09-09
 
