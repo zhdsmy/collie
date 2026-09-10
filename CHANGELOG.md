@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.3] - 2026-09-10
+
 ### Changed
 
-- **Hermes terminal chrome fits the phone conversation view.** Collapse verified reply borders to their label, move status fields into the compact scrolling strip with a context-used ring, and hide the empty terminal composer. Preserve real drafts, unrecognized screens and the existing Hermes send path.
+- **Hermes terminal chrome fits the phone conversation view.** Collapse verified reply borders to their label, move status fields into the compact scrolling strip with a context-used ring, and hide the empty terminal composer. Preserve real drafts, unrecognized screens and the existing Hermes send path. ([4af86acd](https://github.com/zhdsmy/collie/commit/4af86acd))
 
 ## [1.8.0+collie.2] - 2026-09-10
 
