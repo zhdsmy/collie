@@ -30,10 +30,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.5] - 2026-09-10
+
 ### Fixed
 
-- **Keep Hermes working status and hints above the composer.** Recognize the default and minimal working prompts, lift the verified operation hint into a second fixed status row, and retain real drafts and unfamiliar prompts in the terminal mirror.
-- **Reveal the selected tab when opening a pane.** Scroll the tab strip horizontally on selection and layout changes so the active tab remains reachable, while preserving manual browsing across ordinary status polls and leaving page scroll and terminal focus untouched.
+- **Keep Hermes working status and hints above the composer.** Recognize the default and minimal working prompts, lift the verified operation hint into a second fixed status row, and retain real drafts and unfamiliar prompts in the terminal mirror. ([ee5dba8a](https://github.com/zhdsmy/collie/commit/ee5dba8a))
+- **Reveal the selected tab when opening a pane.** Scroll the tab strip horizontally on selection and layout changes so the active tab remains reachable, while preserving manual browsing across ordinary status polls and leaving page scroll and terminal focus untouched. ([ee5dba8a](https://github.com/zhdsmy/collie/commit/ee5dba8a))
 
 ## [1.8.0+collie.4] - 2026-09-10
 
