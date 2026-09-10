@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.6] - 2026-09-10
+
 ### Fixed
 
-- **Hermes input separators span the full conversation width.** Extend only verified submitted-message borders to the mirror gutters, retain original terminal text and raw-mode widths, and give italic operation hints enough line height to keep descenders visible while scrolling horizontally.
+- **Hermes input separators span the full conversation width.** Extend only verified submitted-message borders to the mirror gutters, retain original terminal text and raw-mode widths, and give italic operation hints enough line height to keep descenders visible while scrolling horizontally. ([f524aa19](https://github.com/zhdsmy/collie/commit/f524aa19))
 
 ## [1.8.0+collie.5] - 2026-09-10
 
