@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.2] - 2026-09-10
+
 ### Added
 
-- **Hermes uses its official website icon throughout the app.** Bundle the original Nous portrait with its source and license, and explain that a new Hermes session reports its identity after the first message before suggesting integration repair.
+- **Hermes uses its official website icon throughout the app.** Bundle the original Nous portrait with its source and license, and explain that a new Hermes session reports its identity after the first message before suggesting integration repair. ([c5cf25ef](https://github.com/zhdsmy/collie/commit/c5cf25ef))
 
 ## [1.8.0+collie.1] - 2026-09-10
 
