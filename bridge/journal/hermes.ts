@@ -14,6 +14,7 @@ import { clamp, MAX_TEXT_CHARS, stripAnsi, summarizeToolInput } from "./text.ts"
 import type {
   AgentSessionRef,
   JournalAdapter,
+  SessionModel,
   TranscriptEntry,
   TranscriptPart,
   TranscriptSource,
@@ -185,6 +186,21 @@ export function parseHermesTranscript(text: string): TranscriptEntry[] {
 
 type SessionMeta = { size: number; mtimeMs: number };
 
+/** Only two public display fields leave the session's potentially sensitive model_config. */
+export function parseHermesSessionModel(model: string | null, config: string | null): SessionModel | null {
+  if (!model?.trim() || model.length > 512 || /[\p{Cc}\p{Cf}]/u.test(model)) return null;
+  const result: SessionModel = { model: model.trim() };
+  const raw = parseJson(config);
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return result;
+  const reasoning = raw.reasoning_config;
+  if (reasoning === null || typeof reasoning !== "object" || Array.isArray(reasoning)) return result;
+  if (reasoning.enabled === false) result.reasoningEffort = "none";
+  else if (typeof reasoning.effort === "string" && /^(none|minimal|low|medium|high|xhigh|max|ultra)$/.test(reasoning.effort)) {
+    result.reasoningEffort = reasoning.effort;
+  }
+  return result;
+}
+
 function sessionMeta(db: Database, sessionId: string): SessionMeta {
   const row = db.query<{ count: number; newest: number }, [string]>(
     "select count(*) as count, coalesce(max(timestamp), 0) as newest from messages where session_id = ?",
@@ -193,6 +209,17 @@ function sessionMeta(db: Database, sessionId: string): SessionMeta {
 }
 
 export class HermesTranscriptSource implements TranscriptSource {
+  async sessionModel(ref: AgentSessionRef): Promise<SessionModel | null> {
+    const key = await this.resolve(ref);
+    const parts = key === null ? null : splitHermesKey(key);
+    if (parts === null) return null;
+    return withDb(parts.dbPath, (db) => {
+      const row = db.query<{ model: string | null; model_config: string | null }, [string]>(
+        "select model, model_config from sessions where id = ?",
+      ).get(parts.sessionId);
+      return row ? parseHermesSessionModel(row.model, row.model_config) : null;
+    });
+  }
   private readonly roots: string[];
 
   constructor(roots: string | readonly string[]) {
@@ -231,5 +258,6 @@ export class HermesTranscriptSource implements TranscriptSource {
 }
 
 export function hermesJournal(roots: string | readonly string[]): JournalAdapter {
-  return { agent: "hermes", source: new HermesTranscriptSource(roots), parse: parseHermesTranscript };
+  const source = new HermesTranscriptSource(roots);
+  return { agent: "hermes", source, parse: parseHermesTranscript, sessionModel: (ref) => source.sessionModel(ref) };
 }

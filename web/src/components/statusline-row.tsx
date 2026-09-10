@@ -18,6 +18,7 @@ import {
 import type { ReactNode } from "react";
 
 import type { AnsiSegment } from "@/lib/ansi";
+import type { SessionModel } from "@/lib/types";
 import { lineText, type StyledLine } from "@/lib/blocks";
 import { styleFor } from "@/components/mirror-space";
 import { useLocale } from "@/hooks/use-locale";
@@ -152,7 +153,7 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
 const ROW_CLASS =
   "flex min-w-0 min-h-3.5 items-center gap-1.5 overflow-x-auto overscroll-x-contain whitespace-nowrap leading-none tabular-nums [scrollbar-width:none]";
 
-function HermesField({ segments, text }: { segments: AnsiSegment[]; text: string }) {
+function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]; text: string; sessionModel?: SessionModel }) {
   useLocale();
   const context = /^\[[█░]+\]\s*(~?\d+(?:\.\d+)?%)$/.exec(text);
   if (context?.[1] && Number.parseFloat(context[1].replace(/^~/, "")) <= 100) {
@@ -184,6 +185,16 @@ function HermesField({ segments, text }: { segments: AnsiSegment[]; text: string
     );
   }
   const model = /^⚕\s+/.exec(text);
+  if (model && sessionModel) {
+    const visible = text.slice(model[0].length);
+    const names = [sessionModel.model, (sessionModel.model.split("/").at(-1) ?? sessionModel.model).replace(/\.gguf$/, "")];
+    const matches = names.some((name) => visible.endsWith("...") ? name.startsWith(visible.slice(0, -3)) : name === visible);
+    if (matches) {
+      const label = sessionModel.model + (sessionModel.reasoningEffort ? ` ${sessionModel.reasoningEffort}` : "");
+      const ink = sliceSegments(segments, model[0].length, text.length)[0];
+      return <span className="inline-flex min-h-3.5 shrink-0 items-center" title={label} style={ink && styleFor(ink)}>{label}</span>;
+    }
+  }
   return (
     <span className="inline-flex min-h-3.5 shrink-0 items-center" title={text}>
       <StyledText segments={model ? sliceSegments(segments, model[0].length, text.length) : segments} />
@@ -195,10 +206,12 @@ export function StatuslineRow({
   agent,
   row,
   leading,
+  sessionModel,
 }: {
   agent?: string;
   row: StyledLine;
   leading?: ReactNode;
+  sessionModel?: SessionModel;
 }) {
   if (agent !== "codex" && agent !== "hermes") {
     return (
@@ -234,6 +247,7 @@ export function StatuslineRow({
             key={i}
             text={text}
             segments={sliceSegments(row.segments, start, start + text.length)}
+            sessionModel={sessionModel}
           />
         );
       })}

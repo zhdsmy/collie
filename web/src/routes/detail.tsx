@@ -91,6 +91,7 @@ export function DetailRoute() {
       tabs={root.tabs}
       tabLabel={tabLabel}
       text={pane.text}
+      sessionModel={pane.sessionModel}
       requestedLines={pane.requestedLines}
       revision={pane.revision}
       device={root.device}

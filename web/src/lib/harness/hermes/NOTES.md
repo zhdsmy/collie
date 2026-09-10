@@ -27,9 +27,17 @@ one-shot transport. No composer-ready claim, draft takeover or interactive dialo
 those require a separately verified input contract. Unit tests pin the unchanged transport and
 run the conformance suite against the other harness captures. Browser checks use mocked APIs.
 
-Verification: 5,904 frontend tests pass, alongside both typechecks, the root build and full-tree
-lint. The real local Collie pane API yields one status row and no empty composer. Chromium checks
-at 320/390 CSS pixels, light/dark and English/Chinese keep the strip at 14px, scroll through its
-last field and leave document width unchanged. Browser checks also retain a multiline real draft
-and restore the original frame in Raw terminal mode. No live send, agent restart or iPhone PWA
-interaction is claimed for this display-only change.
+The model field is enriched from the exact Herdr-reported session in Hermes' read-only SessionDB.
+Only `model` and the explicit `model_config.reasoning_config` effort are exposed. Disabled reasoning
+reads `none`; absent or unknown effort is omitted. The model must match the terminal's full name or
+truncated prefix before replacement. This is the last saved session configuration, not a live probe
+of provider settings: an in-memory `/reasoning` change appears only after Hermes persists it.
+Global config, credentials and other sessions are never used to fill gaps.
+
+Verification: 5,906 frontend tests and 208 targeted backend tests pass, alongside both typechecks,
+the root build and full-tree lint. Chromium checks at 320/390 CSS pixels, light/dark and English/Chinese
+keep both curved ends visible on one row, retain full model plus effort, and scroll through the
+last status field without widening the document. Browser checks also retain a multiline real draft
+and restore terminal-width frames in Raw terminal mode. Direct read-only checks resolve the active
+Hermes session and its saved full model/high effort. No live send, agent restart or iPhone PWA
+interaction is claimed.

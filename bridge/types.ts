@@ -2,7 +2,7 @@
 // (which live only in mux/herdr/client.ts). The rest of the app talks in these terms.
 
 import type { ApiErrorDetail, ErrorCode } from "./error-codes.ts";
-import type { AgentSessionRef, TranscriptEntry } from "./journal/types.ts";
+import type { AgentSessionRef, SessionModel, TranscriptEntry } from "./journal/types.ts";
 import type { MuxCapability, MuxSpaceCapacity, MuxTopologyLatency } from "./mux/capabilities.ts";
 import type { UpdateRun } from "./update-run.ts";
 
@@ -558,6 +558,8 @@ export interface UpdateStatus {
 
 /** GET /api/pane/:id — recent terminal output for one agent (ANSI/SGR, rendered colored). */
 export interface PaneReadResponse {
+  /** Optional, persisted model/effort of this pane's exact active journal session. */
+  sessionModel?: SessionModel;
   paneId: string;
   text: string;
   truncated: boolean;

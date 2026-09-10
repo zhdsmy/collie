@@ -8,9 +8,46 @@ import {
   HermesTranscriptSource,
   isHermesSessionId,
   parseHermesTranscript,
+  parseHermesSessionModel,
 } from "./hermes.ts";
 
 const SID = "20260909_154520_9e0b91";
+
+describe("Hermes saved model display", () => {
+  test("extracts only the full model and an explicitly recorded effort", () => {
+    const model = "provider/example-model-with-a-long-name";
+    expect(parseHermesSessionModel(model, JSON.stringify({ reasoning_config: { enabled: true, effort: "high" }, api_key: "private" })))
+      .toEqual({ model, reasoningEffort: "high" });
+    expect(parseHermesSessionModel(model, '{"reasoning_config":{"enabled":false,"effort":"high"}}'))
+      .toEqual({ model, reasoningEffort: "none" });
+    for (const config of [null, "{", "{}", '{"reasoning_config":null}', '{"reasoning_config":{"effort":"future"}}']) {
+      expect(parseHermesSessionModel(model, config)).toEqual({ model });
+    }
+    expect(parseHermesSessionModel(null, "{}")).toBeNull();
+    expect(parseHermesSessionModel("model\nother", "{}")).toBeNull();
+  });
+
+  test("reads only the exact session, refreshes changes and declines missing/unsafe refs", async () => {
+    const root = await mkdtemp(join(tmpdir(), "collie-hermes-model-"));
+    const db = new Database(join(root, "state.db"));
+    try {
+      db.run("create table sessions (id text primary key, model text, model_config text)");
+      db.run("insert into sessions values (?, ?, ?)", [SID, "example-model", '{"reasoning_config":{"effort":"high"}}']);
+      db.run("insert into sessions values (?, ?, ?)", ["20260910_110000_newer", "unrelated-model", "{}"]);
+      const source = new HermesTranscriptSource(root);
+      const ref = { kind: "id" as const, value: SID };
+      expect(await source.sessionModel(ref)).toEqual({ model: "example-model", reasoningEffort: "high" });
+      db.run("update sessions set model_config = ? where id = ?", ['{"reasoning_config":{"effort":"low"}}', SID]);
+      expect(await source.sessionModel(ref)).toEqual({ model: "example-model", reasoningEffort: "low" });
+      expect(await source.sessionModel({ kind: "id", value: "20260910_110000_missing" })).toBeNull();
+      expect(await source.sessionModel({ kind: "path", value: join(root, "state.db") })).toBeNull();
+      expect(await source.sessionModel({ kind: "id", value: "../state.db" })).toBeNull();
+    } finally {
+      db.close();
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("Hermes session ids", () => {
   test("accepts Hermes ids and rejects path-shaped input", () => {

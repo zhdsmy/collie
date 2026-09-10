@@ -108,7 +108,15 @@ export interface TranscriptSource {
  * `parse` is PURE — no fs, no clock — so every harness's grammar is table-testable under `bun test`.
  */
 export interface JournalAdapter {
+  /** Optional display metadata from this exact session's persisted record, never global config. */
+  sessionModel?(ref: AgentSessionRef): Promise<SessionModel | null>;
   readonly agent: string;
   readonly source: TranscriptSource;
   parse(text: string): TranscriptEntry[];
+}
+
+export interface SessionModel {
+  model: string;
+  /** Saved requested effort, absent when the session did not record one. */
+  reasoningEffort?: string;
 }

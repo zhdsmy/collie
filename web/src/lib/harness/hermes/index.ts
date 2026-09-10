@@ -54,20 +54,35 @@ function locateFooter(lines: StyledLine[]): Footer | null {
   return null;
 }
 
-function responseChrome(lines: StyledLine[]): StyledLine[] {
+function fitResponseRule(line: StyledLine): StyledLine {
+  const text = lineText(line);
+  const end = text.length - 1;
+  const start = /─+[╮╯]$/u.exec(text)?.index;
+  if (start === undefined) return line;
+  const leading = sliceSegments(line.segments, 0, start);
+  const rule = sliceSegments(line.segments, start, end);
+  const trailing = sliceSegments(line.segments, end, text.length);
+  return {
+    ...line,
+    segments: [...leading, ...rule, ...trailing],
+    fitRule: { start: leading.length, end: leading.length + rule.length },
+  };
+}
+
+function responseChrome(lines: StyledLine[], closingWidth: number): StyledLine[] {
   let responseWidth = 0;
-  return lines.map((line) => {
+  return lines.map((line, index) => {
     const text = lineText(line);
     const header = RESPONSE_TOP.exec(text);
     if (header?.[1]) {
       responseWidth = text.length;
-      const start = text.indexOf(header[1]);
-      return { segments: sliceSegments(line.segments, start, start + header[1].length) };
+      return fitResponseRule(line);
     }
-    if (responseWidth > 0 && RESPONSE_BOTTOM.test(text) && text.length === responseWidth) {
+    const matchesClosing = (responseWidth > 0 && text.length === responseWidth) ||
+      (index === lines.length - 1 && text.length === closingWidth);
+    if (matchesClosing && RESPONSE_BOTTOM.test(text)) {
       responseWidth = 0;
-      // Keep row count for the latest-reply renderer's hideLeadingLines mapping.
-      return { segments: [] };
+      return fitResponseRule(line);
     }
     return line;
   });
@@ -78,7 +93,8 @@ export function hermesBuildBlocks(lines: StyledLine[]): Block[] {
   const content = footer
     ? [...lines.slice(0, footer.statusStart), ...(footer.empty ? [] : lines.slice(footer.top))]
     : lines;
-  return [{ kind: "raw", lines: trimTrailingBlank(responseChrome(content)) }];
+  const closingWidth = footer?.empty ? lineText(lines[footer.top]!).trim().length : 0;
+  return [{ kind: "raw", lines: responseChrome(trimTrailingBlank(content), closingWidth) }];
 }
 
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {

@@ -149,6 +149,7 @@ export interface HomeData {
 }
 
 export interface PaneData {
+  sessionModel?: PaneReadResponse["sessionModel"];
   paneId: string;
   /** The scope this pane was fetched in (host + session) — threaded into every read and write, so
    * a reply can never land on the right pane name on the wrong machine. */
@@ -483,6 +484,7 @@ export async function paneLoader({
       truncated: read.truncated,
       requestedLines: lines,
       revision: read.revision,
+      sessionModel: read.sessionModel,
       error: false,
       authError: false,
     };

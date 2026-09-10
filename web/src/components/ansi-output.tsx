@@ -552,7 +552,16 @@ export const AnsiOutput = memo(function AnsiOutput({
     });
     // A run's own rows are never clipped; see `inRun` above. Outside a run this is unchanged: a
     // repeated rule, or a framed menu row, keeps the single-row clip it has always had.
-    const content = line.noWrap && wrap && !inRun ? (
+    const content = line.fitRule && wrap && !inRun ? (
+      <span
+        className="inline-flex max-w-full align-bottom whitespace-pre break-normal"
+        style={{ width: `${lineText(line).length}ch` }}
+      >
+        <span className="shrink-0">{segNodes.slice(0, line.fitRule.start)}</span>
+        <span className="min-w-0 flex-1 overflow-hidden">{segNodes.slice(line.fitRule.start, line.fitRule.end)}</span>
+        <span className="shrink-0">{segNodes.slice(line.fitRule.end)}</span>
+      </span>
+    ) : line.noWrap && wrap && !inRun ? (
       <span className="inline-block max-w-full overflow-hidden align-bottom whitespace-pre break-normal [&_a]:break-normal">{segNodes}</span>
     ) : (
       segNodes

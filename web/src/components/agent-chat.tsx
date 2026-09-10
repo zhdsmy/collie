@@ -76,7 +76,7 @@ import { hasJournalAdapter } from "@/lib/journal-agents";
 import { historyPath, spacePath } from "@/lib/nav";
 import { isReadOnly, statusLabel } from "@/lib/types";
 import { usePairing } from "@/lib/pairing";
-import type { AgentView, BridgeStatus, DeviceAuth, TabView } from "@/lib/types";
+import type { AgentView, BridgeStatus, DeviceAuth, SessionModel, TabView } from "@/lib/types";
 import type {
   MenuModel,
   MultiSelectModel,
@@ -98,6 +98,7 @@ interface AgentChatProps {
   tabLabel?: string;
   /** Pane output from the route loader (refreshed by polling/revalidation). */
   text: string;
+  sessionModel?: SessionModel;
   /** The scrollback window `text` was fetched with — tells a grown fetch from a stale in-flight poll. */
   requestedLines?: number;
   /** The pane's `revision` for `text` — the race guard checks a tapped menu against this. */
@@ -182,6 +183,7 @@ export function AgentChat({
   tabLabel,
   text,
   requestedLines = 0,
+  sessionModel,
   revision = 0,
   device,
   bridge = "connected",
@@ -1799,6 +1801,7 @@ export function AgentChat({
                       key={i}
                       agent={agent?.agent}
                       row={row}
+                      sessionModel={sessionModel}
                       leading={i === 0 && showWriteHost ? (
                         <HostChip host={writeHost} variant="caption" className="shrink-0" />
                       ) : undefined}

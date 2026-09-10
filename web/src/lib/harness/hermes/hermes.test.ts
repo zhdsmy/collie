@@ -12,8 +12,11 @@ const lines = (text: string) => splitLines(parseAnsi(text));
 const mirror = (text: string) => hermesAdapter.buildBlocks(lines(text)).flatMap((b) => b.lines.map(lineText)).join("\n");
 
 describe("Hermes display chrome", () => {
-  it("compacts the captured frame, moves the status and hides only the empty prompt", () => {
-    expect(mirror(capture)).toBe("⚕ Hermes\nA verified response with a real paragraph break.\n\nKeep this second paragraph and its punctuation.");
+  it("preserves the captured frame, moves the status and hides only the empty prompt", () => {
+    expect(mirror(capture)).toBe(lines(capture).slice(0, 5).map(lineText).join("\n"));
+    const output = hermesAdapter.buildBlocks(lines(capture))[0]!.lines;
+    expect(output[0]!.fitRule).toBeDefined();
+    expect(output[4]!.fitRule).toBeDefined();
     const status = hermesAdapter.extractStatusLines(lines(capture));
     expect(status).toHaveLength(1);
     expect(lineText(status[0]!)).toContain("~19.5K/1M");
@@ -45,9 +48,10 @@ describe("Hermes display chrome", () => {
     }
   });
 
-  it("keeps a clipped response's unmatched closing border", () => {
+  it("fits a clipped response's closing border when the Hermes footer confirms its width", () => {
     const clipped = capture.split("\n").slice(1).join("\n");
     expect(mirror(clipped)).toContain("╰────");
+    expect(hermesAdapter.buildBlocks(lines(clipped))[0]!.lines.at(-1)!.fitRule).toBeDefined();
   });
 
   it.each([40, 80, 159, 240])("recognizes timestamped frames at %i columns without moving body rows", (width) => {
@@ -56,7 +60,7 @@ describe("Hermes display chrome", () => {
     const bottom = `╰${"─".repeat(width - 2)}╯`;
     const screen = `${top}\nFirst paragraph.\n\nSecond paragraph.\n${bottom}\nLater output.`;
     const output = hermesAdapter.buildBlocks(lines(screen))[0]!.lines;
-    expect(output.map(lineText)).toEqual(["⚕ Hermes 08:31:06", "First paragraph.", "", "Second paragraph.", "", "Later output."]);
+    expect(output.map(lineText)).toEqual([top, "First paragraph.", "", "Second paragraph.", bottom, "Later output."]);
     expect(output).toHaveLength(lines(screen).length);
   });
 

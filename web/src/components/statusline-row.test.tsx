@@ -240,3 +240,19 @@ it.each(["claude", "pi", "opencode", "unknown"])("leaves %s status rows verbatim
   expect(within(container).queryAllByRole("img")).toHaveLength(0);
   expect(within(container).getByText("Context 73% left").style.color).toBe("var(--ansi-6)");
 });
+
+it("shows a matched Hermes session's full model and saved effort without truncation", () => {
+  const model = "provider/example-model-with-a-very-long-name";
+  const terminalName = "example-model-with-a-very-long-name".slice(0, 23) + "...";
+  const row = splitLines(parseAnsi(`⚕ \x1b[33m${terminalName}\x1b[0m │ [░░░░░░░░░░] ~2% │ ◷ 1.4s`))[0]!;
+  const { container, rerender } = render(<StatuslineRow agent="hermes" row={row} sessionModel={{ model, reasoningEffort: "high" }} />);
+  expect(within(container).getByText(`${model} high`).style.color).toBe("var(--ansi-3)");
+  expect(container.textContent).not.toContain("...");
+  expect(container.textContent).toContain("~2%");
+  expect(container.textContent).toContain("1.4s");
+  rerender(<StatuslineRow agent="hermes" row={row} sessionModel={{ model }} />);
+  expect(within(container).getByText(model, { exact: true })).toBeInTheDocument();
+  rerender(<StatuslineRow agent="hermes" row={row} sessionModel={{ model: "different-model", reasoningEffort: "high" }} />);
+  expect(container.textContent).toContain(terminalName);
+  expect(container.textContent).not.toContain("high");
+});

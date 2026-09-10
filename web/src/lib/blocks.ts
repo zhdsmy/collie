@@ -57,6 +57,9 @@ export interface StyledLine {
   segments: AnsiSegment[];
   /** Shared structural-clipping marker: keep this terminal-width row on one visual row only while wrapping. */
   noWrap?: true;
+  /** Adapter-verified border: shrink this segment range while keeping its label and both ends.
+   * Indices are [start, end) in segments; original text and source-row offsets stay intact. */
+  fitRule?: { start: number; end: number };
   /** Adapter-owned, full-row surface; ANSI token highlights remain above its base fill. */
   surface?: { kind: "diff" | "user"; background: string };
 }

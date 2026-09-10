@@ -6,9 +6,28 @@ import { AnsiOutput } from "./ansi-output";
 import { parseAnsi } from "@/lib/ansi";
 import { lineText, splitLines } from "@/lib/blocks";
 import diffCapture from "@/lib/harness/codex/diff-reflow.fixture.txt?raw";
+import hermesCapture from "@/fixtures/panes/hermes--done.txt?raw";
 
 const ESC = "\x1b";
 const MUTED_RULE_COLOUR = "rgb(161, 161, 161)"; // #a1a1a1, --muted-foreground's dark half
+
+describe("Hermes rounded response rules", () => {
+  it("retains both curved ends, original text and search offsets when fitting the rule", () => {
+    const { container, rerender } = render(<AnsiOutput text={hermesCapture} agent="hermes" query="second paragraph" />);
+    const expected = splitLines(parseAnsi(hermesCapture)).slice(0, 5).map(lineText).join("\n");
+    expect(container.querySelector("pre")!.textContent).toBe(expected);
+    const rules = [...container.querySelectorAll("span.inline-flex")];
+    expect(rules).toHaveLength(2);
+    expect(rules[0]!.firstElementChild?.textContent).toBe("╭─ ⚕ Hermes ");
+    expect(rules[0]!.lastElementChild?.textContent).toBe("╮");
+    expect(rules[1]!.firstElementChild?.textContent).toBe("╰");
+    expect(rules[1]!.lastElementChild?.textContent).toBe("╯");
+    expect(container.querySelector("[data-find-match]")!.textContent).toBe("second paragraph");
+    rerender(<AnsiOutput text={hermesCapture} agent="hermes" wrap={false} />);
+    expect(container.querySelector("pre")!.textContent).toBe(expected);
+    expect(container.querySelectorAll("span.inline-flex")).toHaveLength(0);
+  });
+});
 
 describe("Codex diff continuation rendering", () => {
   it.each([true, false])("preserves captured diff rows, gutters and find offsets (wrap=%s)", (wrap) => {

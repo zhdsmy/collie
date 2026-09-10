@@ -1022,7 +1022,7 @@ export function startServer(opts: {
       const device = isRead ? null : caller.device();
       const audit_ = caller.audit;
 
-      if (!action && req.method === "GET") return readPane(herdr, cfg, paneId, url, req);
+      if (!action && req.method === "GET") return readPane(herdr, cfg, paneId, url, req, journals, rt.engine);
       if (action === "history" && req.method === "GET")
         return paneHistory(cfg, journals, transcripts, rt.engine, paneId, url, req);
       if (action === "reply" && req.method === "POST") return replyPane(herdr, cfg, paneId, req, audit_, device, session);
@@ -1959,6 +1959,8 @@ async function readPane(
   paneId: string,
   url: URL,
   req: Request,
+  journals: Record<string, JournalAdapter> | null,
+  engine: StateEngine,
 ): Promise<Response> {
   const linesParam = Number.parseInt(url.searchParams.get("lines") ?? "", 10);
   // Clamp to a sane ceiling — don't trust the client (or Herdr) to bound an enormous read.
@@ -1975,6 +1977,14 @@ async function readPane(
     const read = await herdr.readGrid(paneId, { scope: "recent", lines, styling: "preserve" });
     if (!read.ok) return text(`${herdr.mux} read failed: ${read.detail}`, 502);
     const data = paneReadResponse(paneId, read.value);
+    // Only the matching live agent's journal can name its model. Missing metadata never breaks
+    // the terminal read, and disabled transcripts perform no filesystem lookup.
+    const pane = engine.current().agents.find((a) => a.paneId === paneId);
+    if (journals !== null && pane?.agentSession) {
+      const adapter = adapterFor(journals, pane.agent);
+      const model = await adapter?.sessionModel?.(pane.agentSession).catch(() => null);
+      if (model) data.sessionModel = model;
+    }
     // ETag is derived from the serialised body — if content hasn't changed the client gets a 304
     // and skips the whole transfer (the big win on a cellular link).
     const bodyStr = JSON.stringify(data);

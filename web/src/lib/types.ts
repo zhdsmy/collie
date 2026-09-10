@@ -682,6 +682,8 @@ export interface SnapshotResponse {
 }
 
 export interface PaneReadResponse {
+  /** The matching session's saved display metadata; not an assertion of live provider settings. */
+  sessionModel?: SessionModel;
   paneId: string;
   text: string;
   truncated: boolean;
@@ -689,6 +691,11 @@ export interface PaneReadResponse {
   revision: number;
   /** Set to true by the client when the server returns 304 Not Modified. Never sent over the wire. */
   notModified?: boolean;
+}
+
+export interface SessionModel {
+  model: string;
+  reasoningEffort?: string;
 }
 
 /**
@@ -1086,4 +1093,3 @@ export type WorktreeListResponse =
 export type WorktreeOpenResponse =
   | { ok: true; pane: CreatedPane; alreadyOpen: boolean }
   | { ok: false; error: string; code?: ApiErrorCode; detail?: ApiErrorDetail };
-

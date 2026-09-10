@@ -521,6 +521,11 @@ and peer are separately updated machines, so skew is the steady state, not an ed
 
 ### 7.1 Version skew inside a protocol version
 
+`GET /crew/v1/pane/:id` may include `sessionModel: { model, reasoningEffort? }` from that
+pane's exact journal session (2026-09-10). It contains only saved display metadata, never routing
+credentials or a live-provider guarantee. Absent means retain the terminal's own model text;
+older peers and disabled transcripts omit it. This is additive-optional; protocol v2 is unchanged.
+
 Two version numbers ride a crew link and they are **not the same kind of thing**. `X-Crew-Protocol`
 is a *contract*: it says which grammar the bytes are in. A Collie build version (`1.0.0-alpha.11`) is
 a *fact about a running process*: it says how new the code answering is. Lead and peer are separately
