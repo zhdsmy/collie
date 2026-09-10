@@ -8,10 +8,56 @@ import { hermesAdapter } from ".";
 
 const PANES = join(import.meta.dirname, "../../../fixtures/panes");
 const capture = readFileSync(join(PANES, "hermes--done.txt"), "utf8");
+const working = readFileSync(join(PANES, "hermes--working.txt"), "utf8");
+const hint = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
 const lines = (text: string) => splitLines(parseAnsi(text));
 const mirror = (text: string) => hermesAdapter.buildBlocks(lines(text)).flatMap((b) => b.lines.map(lineText)).join("\n");
 
 describe("Hermes display chrome", () => {
+  it("lifts the working metrics and operation hint into consecutive fixed rows", () => {
+    const status = hermesAdapter.extractStatusLines(lines(working));
+    expect(status).toHaveLength(2);
+    expect(lineText(status[0]!)).toContain("example-model");
+    expect(lineText(status[1]!)).toBe(hint);
+    expect(mirror(working)).toBe(lines(working).slice(0, 4).map(lineText).join("\n"));
+    expect(hermesAdapter.extractInputDraft(lines(working))).toBeNull();
+    expect(hermesAdapter.extractStatusLines(lines(capture))).toHaveLength(1);
+  });
+
+  it.each(["⚕ ❯ ", "⚕ "])("handles the working prompt %s and physically wrapped hints", (prompt) => {
+    for (const at of [0, 7, 28, 43]) {
+      const wrapped = hint.slice(0, at) + "\n    " + hint.slice(at);
+      const text = working.replace("⚕ ❯ ", prompt).replace(hint, wrapped);
+      const status = hermesAdapter.extractStatusLines(lines(text));
+      expect(status).toHaveLength(2);
+      expect(lineText(status[1]!)).toBe(hint);
+      expect(mirror(text)).not.toContain("msg=interrupt");
+    }
+  });
+
+  it("retains working drafts, typed hint copies and unknown placeholders", () => {
+    for (const draft of [hint, "Keep this draft\n  and its next line\n\n  [image #1] /tmp/example.png"]) {
+      const text = working.split("\n").map((row) => row.includes("❯") ? `⚕ ❯ ${draft}` : row).join("\n");
+      expect(hermesAdapter.extractStatusLines(lines(text))).toHaveLength(1);
+      expect(mirror(text)).toContain(draft);
+    }
+    const unknown = working.replace(hint, "An unknown italic working hint");
+    expect(mirror(unknown)).toContain("An unknown italic working hint");
+    expect(hermesAdapter.extractStatusLines(lines(unknown))).toHaveLength(1);
+  });
+
+  it("leaves incomplete working footers and special-state prompts in the mirror", () => {
+    for (const text of [
+      working.trimEnd().split("\n").slice(0, -1).join("\n"),
+      `${working}\nEnter to approve`,
+      working.replace("⚕ ❯ ", "⚠ ❯ "),
+      working.replace("⚕ ❯ ", "🔒 ❯ "),
+    ]) {
+      expect(hermesAdapter.extractStatusLines(lines(text))).toEqual([]);
+      expect(mirror(text)).toContain(hint);
+    }
+  });
+
   it("preserves the captured frame, moves the status and hides only the empty prompt", () => {
     expect(mirror(capture)).toBe(lines(capture).slice(0, 5).map(lineText).join("\n"));
     const output = hermesAdapter.buildBlocks(lines(capture))[0]!.lines;
@@ -86,5 +132,5 @@ describe("Hermes display chrome", () => {
 describeAdapterConformance(hermesAdapter, {
   ownFixtures: [],
   foreignFixtures: readdirSync(PANES).filter((name) => !name.startsWith("hermes--") && name.endsWith(".txt")),
-  neutralFixtures: ["hermes--done.txt"],
+  neutralFixtures: ["hermes--done.txt", "hermes--working.txt"],
 });

@@ -24,6 +24,12 @@ retain their captured form. Body paragraphs, model and session title use generic
 this is not an unmodified conversation capture. It covers display only, with no verified send
 or dialog recipe. Provenance and fallback boundaries: [`NOTES.md`](../../lib/harness/hermes/NOTES.md).
 
+`hermes--working.txt` is a **reconstruction**, not a live working capture. It combines the sanitized
+idle capture's status/composer geometry with the default working prompt and italic operation hint
+from Hermes v0.21.1's official `cli_tui_mixin.py` and the operator's 2026-09-10 screenshot. It covers
+display-only footer lifting; derived tests cover minimal chrome, wrapped hints, drafts and torn
+footers. No interactive contract is inferred from it.
+
 ## Codex corpus (captured 2026-08-22, Codex v0.149.0, sandbox panes)
 
 Byte-faithful `format:ansi` captures with one sanitization pass, every substitution

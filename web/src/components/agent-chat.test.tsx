@@ -488,6 +488,21 @@ const STATUS_TEXT = [
   "  ← for agents",
 ].join("\n");
 
+it("keeps Hermes working metrics and operation hints together outside the transcript", () => {
+  const text = readFileSync(join(import.meta.dirname, "../fixtures/panes/hermes--working.txt"), "utf8");
+  const { container } = renderChat({
+    agent: { ...fixtureAgents[0]!, agent: "hermes", status: "working" },
+    text,
+  });
+  const rows = container.querySelectorAll('[data-slot="hermes-statusline"]');
+  expect(rows).toHaveLength(2);
+  expect(rows[0]).toHaveTextContent("example-model");
+  expect(rows[1]).toHaveTextContent("msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel");
+  expect(rows[0]!.parentElement).toBe(rows[1]!.parentElement);
+  expect(rows[1]!.closest("pre")).toBeNull();
+  expect(container.querySelector("pre")).not.toHaveTextContent("msg=interrupt");
+});
+
 // A minimal multi-question wizard tail (stepper header + current question) — enough for the REAL
 // wizard detector to lift it into the native WizardBlock inside AgentChat's mirror.
 const WIZARD_TEXT = [

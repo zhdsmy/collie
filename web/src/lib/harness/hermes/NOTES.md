@@ -8,9 +8,10 @@ and composer rules. Its two body paragraphs, model name and session title were r
 generic text; it is a sanitized structural fixture, not an unmodified conversation capture.
 
 The official `hermes_cli/cli_stream_mixin.py` prints `╭─ ⚕ Hermes … ╮` (optional timestamp)
-and a same-width `╰─…╯`. Only this identified pair is simplified; unmatched borders, tables,
-Markdown rules, nested boxes and differently branded skins remain raw. Row counts before the
-footer are preserved for the latest-reply view's source-row mapping. No prose reflow is attempted.
+and same-width `╰─…╯`. The identified borders fit the phone width on one row while retaining
+both rounded ends; unmatched borders, tables, Markdown rules, nested boxes and differently branded
+skins remain raw. Row counts before the footer are preserved for latest-reply source-row mapping.
+No prose reflow is attempted.
 
 `hermes_cli/cli_status_bar_mixin.py` paints a medical-symbol/model status row, pipe-separated
 context and other metrics, optional right-aligned title, then the ruled prompt-toolkit composer.
@@ -19,7 +20,8 @@ are retained without the full-width background. Inverse title ink is restored to
 Unknown status fields are preserved. No hard-coded terminal width or exact RGB theme is required.
 
 The footer must be complete and tail-anchored, with equal-width rules, the Hermes status signature
-and `❯` prompt. Only an empty/italic-suggestion input is hidden; real drafts remain visible.
+and an idle `❯` or working `⚕ ❯` prompt (minimal working chrome uses `⚕` alone). Only an empty
+input or a verified italic placeholder is hidden; real drafts remain visible.
 Menus, torn screens and customized status bars that lack identifying fields retain raw input.
 
 This adapter is **display-only**. `sendGuardedReply` explicitly preserves Hermes' existing
@@ -41,3 +43,28 @@ last status field without widening the document. Browser checks also retain a mu
 and restore terminal-width frames in Raw terminal mode. Direct read-only checks resolve the active
 Hermes session and its saved full model/high effort. No live send, agent restart or iPhone PWA
 interaction is claimed.
+
+## Working footer — 2026-09-10
+
+Hermes v0.21.1's `cli_tui_mixin.py` changes the empty input prompt from `❯` to `⚕ ❯` while
+the agent runs; minimal chrome uses `⚕ ` alone. `_tui_placeholder_text` supplies
+`msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel`, and `_PlaceholderProcessor` paints it
+in the skin's italic placeholder style only when the input is empty. The previous idle-only
+prompt match rejected that entire footer and left its metrics and hints in the scrolling mirror.
+
+`hermes--working.txt` is explicitly reconstructed from the sanitized idle capture, that official
+renderer and the operator's screenshot. It is not an unmodified live working capture. No prompt
+was sent to an active session to manufacture this state.
+
+The adapter accepts those working prompts inside the same complete, tail-anchored ruled footer.
+Only the exact italic operation placeholder becomes a second status row; its physical wrapping
+is recognized without reflowing arbitrary text. Typed copies, real drafts, unfamiliar hints and
+special-state prompts stay visible. The existing fixed status container renders both rows and
+allows each to pan horizontally. Idle snapshots remove the hint. The adapter remains display-only
+and Hermes sends still use the existing one-shot transport.
+
+Regression coverage includes busy/idle transitions, minimal prompts, wrapped placeholders, real
+drafts and malformed footers. The browser case also verifies selected-tab visibility on opening,
+resizing and unfolding, preservation of manual tab scrolling across snapshot polls, and stable
+status/hint positions while scrolling transcript history. It uses simulated API responses, not
+an iPhone PWA or a live send.
