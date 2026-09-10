@@ -642,6 +642,8 @@ export function AgentChat({
   // the operator to reinstall a hook that could never help would contradict it.
   const noSessionReported =
     sessionLog.capable && hasJournalAdapter(agent?.agent) && !agent?.hasSession;
+  // Hermes' CLI reports its session while preparing the first turn. An untouched pane can have a
+  // current integration and no session ref, so its note must explain that before suggesting repair.
   // Scrollback has its own capability, and it is a genuinely different one: a multiplexer can keep
   // screen history while knowing nothing about agents. Hidden rather than explained when absent —
   // "there is nothing older to load" is not a fact anyone comes looking for.
@@ -1674,7 +1676,9 @@ export function AgentChat({
                       agent runs on, so the sentence names it and stops. */}
                   {noSessionReported && (
                     <p className="mb-2 px-2 py-1 text-center text-xs leading-snug text-muted-foreground">
-                      {t("chat.scrollback.noSessionReported", { agent: agent?.agent ?? "" })}
+                      {agent?.agent === "hermes"
+                        ? t("chat.scrollback.hermesSessionPending")
+                        : t("chat.scrollback.noSessionReported", { agent: agent?.agent ?? "" })}
                     </p>
                   )}
                   {/* The newest reply in full, standing IN PLACE OF the rows it covers (the mirror

@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Hermes uses its official website icon throughout the app.** Bundle the original Nous portrait with its source and license, and explain that a new Hermes session reports its identity after the first message before suggesting integration repair.
+
 ## [1.8.0+collie.1] - 2026-09-10
 
 ### Changed

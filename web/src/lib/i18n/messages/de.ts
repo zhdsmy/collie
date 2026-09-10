@@ -283,6 +283,8 @@ export const de: Dictionary = {
   "chat.scrollback.showHistory": "Gesamten Verlauf anzeigen",
   "chat.scrollback.loadOlder": "Ältere Einträge laden",
   "chat.scrollback.loading": "Wird geladen…",
+  "chat.scrollback.hermesSessionPending":
+    "Hermes hat diese Sitzung noch nicht gemeldet. Sende bei einer neuen Unterhaltung die erste Nachricht. Falls bereits gesendet, prüfe oder aktualisiere die Herdr-Integration und starte Hermes neu.",
   "chat.scrollback.noSessionReported":
     "{agent} hat keine Sitzung an Herdr gemeldet. Herdr-Integration installieren oder aktualisieren und den Agenten in diesem Pane neu starten.",
   "chat.fullReply.title": "Vollständige Antwort",

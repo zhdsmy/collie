@@ -1057,6 +1057,21 @@ describe("AgentChat — no session reported", () => {
     expect(screen.getByRole("button", { name: /show entire history/i })).toBeInTheDocument();
   });
 
+  it.each([false, true])("guides Hermes before its first message until a session is reported (%s)", (hasSession) => {
+    const agent = { ...fixtureAgents[0]!, agent: "hermes", hasSession };
+    renderChat({ agent, agents: [agent] });
+    const pending = screen.queryByText(/For a new conversation, send the first message/i);
+    const history = screen.queryByRole("button", { name: /show entire history/i });
+    expect(noSessionNote()).not.toBeInTheDocument();
+    if (hasSession) {
+      expect(pending).not.toBeInTheDocument();
+      expect(history).toBeInTheDocument();
+    } else {
+      expect(pending).toBeInTheDocument();
+      expect(history).not.toBeInTheDocument();
+    }
+  });
+
   it("says nothing for an agent with no journal adapter — there is no transcript to promise", () => {
     const agent = { ...fixtureAgents[0]!, agent: "unknown-agent" }; // block grammars, no journal
     renderChat({ agent, agents: [agent] });

@@ -281,6 +281,8 @@ export const es: Dictionary = {
   "chat.scrollback.showHistory": "Mostrar historial completo",
   "chat.scrollback.loadOlder": "Cargar anteriores",
   "chat.scrollback.loading": "Cargando…",
+  "chat.scrollback.hermesSessionPending":
+    "Hermes aún no ha informado de esta sesión. En una conversación nueva, envía el primer mensaje. Si ya lo hiciste, comprueba o actualiza la integración de Herdr y reinicia Hermes.",
   "chat.scrollback.noSessionReported":
     "{agent} no ha registrado ninguna sesión en Herdr. Instala o actualiza la integración de Herdr correspondiente y reinicia el agente en este panel.",
   "chat.fullReply.title": "Respuesta completa",

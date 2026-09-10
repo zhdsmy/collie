@@ -12,6 +12,7 @@ function brandKey(agent: string): string | undefined {
   if (k.startsWith("claude")) return "claude";
   if (k.startsWith("codex")) return "codex";
   if (k.startsWith("cursor")) return "cursor";
+  if (k.startsWith("hermes-") || k.startsWith("hermes ")) return "hermes";
   if (k.startsWith("opencode")) return "opencode";
   if (k === "pi" || k.startsWith("pi-") || k.startsWith("pi.")) return "pi";
   // Bare prefix, exactly as canonicalAgent folds it (lib/operator-scope.ts): `omp` is its own
@@ -22,7 +23,7 @@ function brandKey(agent: string): string | undefined {
 }
 
 /**
- * A square "app icon" tile for an agent, rendered as inline SVG (CSP-safe, theme-independent — the
+ * A square "app icon" tile for an agent, using an official bundled image or inline SVG (CSP-safe — the
  * tile carries its own brand background so the mark reads on any UI theme). Falls back to a neutral
  * initials tile for agents we don't have a logo for, so unknown agents stay legible. Size comes from
  * `className` (e.g. `size-9`).
@@ -53,6 +54,18 @@ export function AgentIcon({
       >
         {initials(agent ?? "")}
       </span>
+    );
+  }
+
+  if (brand.mode === "image") {
+    return (
+      <img
+        src={brand.src}
+        alt={`${agent} logo`}
+        width={24}
+        height={24}
+        className={cn("shrink-0 rounded-md", className)}
+      />
     );
   }
 

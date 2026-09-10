@@ -278,6 +278,8 @@ export const ja: Dictionary = {
   "chat.scrollback.showHistory": "全履歴を表示",
   "chat.scrollback.loadOlder": "過去のログを読み込む",
   "chat.scrollback.loading": "読み込み中…",
+  "chat.scrollback.hermesSessionPending":
+    "Hermes はまだこのセッションを報告していません。新しい会話では最初のメッセージを送信してください。送信済みの場合は Herdr 連携を確認または更新し、Hermes を再起動してください。",
   "chat.scrollback.noSessionReported":
     "{agent} のセッションが Herdr に報告されていません。Herdr 連携をインストールまたは更新し、このペインでエージェントを再起動してください。",
   "chat.fullReply.title": "返答の全文",

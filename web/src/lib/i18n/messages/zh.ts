@@ -265,6 +265,8 @@ export const zh: Dictionary = {
   "chat.scrollback.showHistory": "查看全部历史",
   "chat.scrollback.loadOlder": "加载更早记录",
   "chat.scrollback.loading": "正在加载…",
+  "chat.scrollback.hermesSessionPending":
+    "Hermes 尚未上报此会话。新会话请先发送首条消息；若已发送，请检查或更新 Herdr 集成并重启 Hermes。",
   "chat.scrollback.noSessionReported":
     "{agent} 尚未向 Herdr 上报会话。请安装或更新对应的 Herdr 集成，并在当前窗格重启该 Agent。",
   "chat.fullReply.title": "完整回复",

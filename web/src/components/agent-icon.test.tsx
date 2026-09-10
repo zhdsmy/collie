@@ -43,10 +43,25 @@ describe("AgentIcon", () => {
     "renders '%s' with the Cursor mark and contrasting brand colors",
     (agent) => {
       const { container } = render(<AgentIcon agent={agent} />);
-      expect(container.querySelector("svg path")?.getAttribute("d")).toBe(AGENT_BRANDS.get("cursor")?.d);
+      expect(AGENT_BRANDS.get("cursor")).toMatchObject({
+        d: container.querySelector("svg path")?.getAttribute("d"),
+      });
       expect(container.querySelector("svg rect")?.getAttribute("fill")).toBe("#000000");
       expect(container.querySelector("svg g")?.getAttribute("fill")).toBe("#FFFFFF");
       expect(container.querySelector("linearGradient")).toBeNull();
+    },
+  );
+
+  it.each(["hermes", "hermes-agent", "Hermes Agent", " HERMES "])(
+    "renders '%s' with the bundled official artwork and caller sizing",
+    (agent) => {
+      render(<AgentIcon agent={agent} className="size-9" />);
+      const icon = screen.getByRole("img", { name: `${agent.trim()} logo` });
+      expect(icon.tagName).toBe("IMG");
+      expect(icon).toHaveAttribute("src", expect.stringContaining("hermes-icon.png"));
+      expect(icon).toHaveAttribute("width", "24");
+      expect(icon).toHaveAttribute("height", "24");
+      expect(icon).toHaveClass("size-9", "rounded-md");
     },
   );
 
