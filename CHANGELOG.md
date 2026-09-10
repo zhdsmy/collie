@@ -30,13 +30,15 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.4] - 2026-09-10
+
 ### Changed
 
-- **Hermes status shows the full model and saved effort.** Read only those display fields from the matching session journal, keep the model untruncated in the scrolling strip, and append an explicitly recorded reasoning level after a space. Missing or mismatched metadata keeps the terminal's own text.
+- **Hermes status shows the full model and saved effort.** Read only those display fields from the matching session journal, keep the model untruncated in the scrolling strip, and append an explicitly recorded reasoning level after a space. Missing or mismatched metadata keeps the terminal's own text. ([a235c2c8](https://github.com/zhdsmy/collie/commit/a235c2c8))
 
 ### Fixed
 
-- **Hermes reply borders keep their rounded corners on phones.** Fit the opening and closing rules to one row without dropping their label, curved ends or original source text.
+- **Hermes reply borders keep their rounded corners on phones.** Fit the opening and closing rules to one row without dropping their label, curved ends or original source text. ([a235c2c8](https://github.com/zhdsmy/collie/commit/a235c2c8))
 
 ## [1.8.0+collie.3] - 2026-09-10
 
