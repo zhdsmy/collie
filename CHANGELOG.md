@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.7] - 2026-09-10
+
 ### Changed
 
-- **Codex operation hints stay below the statusline while working.** Lift only the interrupt and queue hints actually printed beside the live composer into one optional, horizontally scrollable row that stays current while browsing history. Keep Working and elapsed time in the transcript, preserve ANSI colors, and leave dialog controls and guarded sending unchanged.
+- **Codex operation hints stay below the statusline while working.** Lift only the interrupt and queue hints actually printed beside the live composer into one optional, horizontally scrollable row that stays current while browsing history. Keep Working and elapsed time in the transcript, preserve ANSI colors, and leave dialog controls and guarded sending unchanged. ([303c18dc](https://github.com/zhdsmy/collie/commit/303c18dc))
 
 ## [1.8.0+collie.6] - 2026-09-10
 
