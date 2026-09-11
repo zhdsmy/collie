@@ -538,15 +538,12 @@ export function AgentChat({
   // the answer to "where will this send?" in the same stable line. Routed through the SAME adapter
   // (adapterFor) whose buildBlocks strips the chrome, so the two can't drift; an adapterless agent
   // may still have only the target row. A second parse
-  // of the pane text, but memoised on it, so it only recomputes when the buffer content changes — off the
+  // of `display`, but memoised on it, so it only recomputes when the buffer content changes — off the
   // render hot path.
-  // The transcript freezes while browsing history. Codex's operation hints must still track
-  // the current frame, so a completed turn cannot leave an obsolete interrupt/queue hint.
-  const statusDisplay = agent?.agent === "codex" ? text : display;
   const statusLines = useMemo(
     () =>
-      grammarsOn ? adapterFor(agent?.agent)?.extractStatusLines(splitLines(parseAnsi(statusDisplay))) ?? [] : [],
-    [statusDisplay, agent?.agent, grammarsOn],
+      grammarsOn ? adapterFor(agent?.agent)?.extractStatusLines(splitLines(parseAnsi(display))) ?? [] : [],
+    [display, agent?.agent, grammarsOn],
   );
   const statuslineVisible = statusLines.length > 0 || showWriteHost;
 
@@ -554,8 +551,8 @@ export function AgentChat({
   // then recalled, which persists across turns. stripChrome peels the box off the mirror so it goes
   // invisible, and (worse) pane.send_text appends to it, corrupting the next send. We surface it to
   // the composer as a read-only preview the user can deliberately Take over — the input is otherwise
-  // exclusively phone-owned. Uses the displayed transcript and its adapter; null when raw-terminal
-  // is on, there's no adapter, no box is at the tail, or the line is empty.
+  // exclusively phone-owned. Same parse source + same adapter as the statusline, so the two can't
+  // drift; null when raw-terminal is on, there's no adapter, no box is at the tail, or the line is empty.
   const rawTerminalDraft = useMemo(
     () =>
       grammarsOn
@@ -566,7 +563,7 @@ export function AgentChat({
   // Is a dialog (prompt/wizard/preview/multi-select/menu) on screen right now? A block whose screen
   // owns the TUI's keyboard means the composer must refuse a free-text send: the text would be
   // swallowed and the submit key would answer the dialog (#34). Same parse source and adapter as the
-  // draft probe above. This is the zero-latency fail-fast; the load-bearing
+  // two probes above, so the three can't drift. This is the zero-latency fail-fast; the load-bearing
   // protection is reply-action's verify-before-submit, which also covers a dialog that appears after
   // this render.
   //

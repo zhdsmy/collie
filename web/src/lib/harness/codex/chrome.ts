@@ -96,79 +96,21 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   return null;
 }
 
-/** Slice by joined-text offsets, keeping ANSI paint even when a key is split across segments. */
-function sliceLine(line: StyledLine, start: number, end: number): StyledLine {
-  let offset = 0;
-  return {
-    segments: line.segments.flatMap((segment) => {
-      const from = Math.max(0, start - offset);
-      const to = Math.min(segment.text.length, end - offset);
-      offset += segment.text.length;
-      return from < to ? [{ ...segment, text: segment.text.slice(from, to) }] : [];
-    }),
-  };
-}
-
-/** Display only: the captured working indicator immediately above the live composer. Never
- * search back through output, drafts, or modal hints. The send recognizer remains independent. */
-function workingHint(lines: StyledLine[], box: ComposerBox) {
-  const texts = lines.map(lineText);
-  const row = skipBlanksUp(texts, box.promptRow - 1);
-  if (row < 0) return null;
-  const text = rstrip(texts[row]!);
-  if (!/^• Working \(\d+[hms](?: \d+[hms])* [•·] esc to interrupt\)$/.test(text)) return null;
-  const start = text.lastIndexOf("esc to interrupt");
-  return { row, start, end: text.length - 1 };
-}
-
 /**
- * Return `lines` with the composer removed from the tail, and only the relocated operation
- * text removed from its working indicator. Keep Working, elapsed time and the closing paren.
+ * Return `lines` with the composer (prompt row through status row) removed from the tail.
  * Unchanged input is the SAME REFERENCE, so callers can treat `result === lines` as "no chrome".
  */
 export function stripChrome(lines: StyledLine[]): StyledLine[] {
   const box = locateComposer(lines);
   if (box === null) return lines;
-  const content = lines.slice(0, box.promptRow);
-  const hint = workingHint(lines, box);
-  if (hint) {
-    const line = lines[hint.row]!;
-    content[hint.row] = { ...line, segments: [
-      ...sliceLine(line, 0, hint.start - 3).segments,
-      ...sliceLine(line, hint.end, lineText(line).length).segments,
-    ] };
-  }
-  return content;
+  return lines.slice(0, box.promptRow);
 }
 
-/** Native status followed by one optional row of current, actually printed operation hints. */
+/** The status row, styled, for the strip above the phone composer. Empty when no composer. */
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   const box = locateComposer(lines);
   if (box === null) return [];
-  let status = lines[box.statusRow]!;
-  const hint = workingHint(lines, box);
-  const operations = hint ? [sliceLine(lines[hint.row]!, hint.start, hint.end)] : [];
-  const text = rstrip(lineText(status));
-  // The captured inline footer has a configurable key followed by queue wording and context.
-  // Split for display only; do not teach composer/draft recognition any new accepted shape.
-  const inline = /^ {2}(\S.*?\bto queue(?: message)?)\s+(\d+% context (?:left|used))$/.exec(text);
-  if (inline) {
-    const contextStart = text.length - inline[2]!.length;
-    operations.push(sliceLine(status, 2, 2 + inline[1]!.length));
-    status = sliceLine(status, contextStart, text.length);
-  } else if (isWorkingContextRow(text)) {
-    // locateComposer already verified this queue/context pair, so this cannot be a draft row.
-    const queueRow = skipBlanksUp(lines.map(lineText), box.statusRow - 1);
-    const queue = lines[queueRow]!;
-    const queueText = rstrip(lineText(queue));
-    operations.push(sliceLine(queue, queueText.length - queueText.trimStart().length, queueText.length));
-  }
-  if (operations.length === 0) return [status];
-  return [status, {
-    segments: operations.flatMap((operation, index) => index === 0 ? operation.segments : [
-      { ...operation.segments[0]!, text: " · " },
-    ].concat(operation.segments)),
-  }];
+  return [lines[box.statusRow]!];
 }
 
 /**
