@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.9] - 2026-09-11
+
 ### Changed
 
-- **Codex returns to a single native statusline row.** Remove the separate interrupt/queue operation-hint strip and restore the original Working indicator in the terminal transcript. Revert the display-only changes from collie.7; Hermes hints and guarded input remain unchanged.
+- **Codex returns to a single native statusline row.** Remove the separate interrupt/queue operation-hint strip and restore the original Working indicator in the terminal transcript. Revert the display-only changes from collie.7; Hermes hints and guarded input remain unchanged. ([995a2d07](https://github.com/zhdsmy/collie/commit/995a2d07))
 
 ## [1.8.0+collie.8] - 2026-09-10
 
