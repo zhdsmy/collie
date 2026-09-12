@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex command shortcuts submit without an extra Enter tap.** Recognize the exact slash-command input above Codex's completion list, which replaces its normal statusline, and verify that it matches the selected completion. Commands marked with the return icon now finish the existing verified input-and-submit flow; retain prompt binding and modal checks, argument-taking shortcuts, and other agents' behavior.
+
 ## [1.8.0+collie.12] - 2026-09-12
 
 ### Fixed

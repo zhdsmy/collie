@@ -4,7 +4,8 @@
 // tail — so locating the composer is also the composer-vs-modal discriminator. A submitted
 // message echoes into the transcript with the same `› ` prefix, which is why the walk anchors
 // on the STATUS row at the tail and only then looks up for the prompt row: an echo higher in
-// the transcript never has the status row directly beneath it. Pure; no pane access.
+// the transcript never has the status row directly beneath it. Command completion replaces
+// that status row too; commandInput recognizes its exact-command case. Pure; no pane access.
 
 import type { StyledLine } from "../../blocks";
 import { normalizeComposerParticles } from "./particles";
@@ -63,7 +64,36 @@ function isEmptyPlaceholder(line: StyledLine): boolean {
   return sawBody;
 }
 
-/** The composer at the buffer tail, or null (a dialog owns the screen, or the frame is torn). */
+/** A complete slash command opens a completion list IN PLACE OF the status row. It is still
+ * the composer, not a modal. Recognize only the exact command selected in the tail's suggestions;
+ * an incomplete search, arguments, transcript echo or a different dialog cannot authorize Enter.
+ * Keep the whole region for the bridge binding, including the suggestions below the input. */
+function commandInput(lines: StyledLine[]): { draft: string; prompt: string } | null {
+  const texts = lines.map((line) => rstrip(lineText(line)));
+  const end = lastNonBlankIndex(texts);
+  let selected: string | null = null;
+  let i = end;
+  for (; i >= 0 && end - i < MAX_DRAFT_ROWS; i--) {
+    const command = /^ {2}(\/[a-z][a-z0-9_-]*) {2,}\S/.exec(texts[i]!);
+    if (!command) break;
+    // Codex paints the selected row bold throughout; an unselected row only bolds search
+    // matches within its name and dims its description. Enter acts on that selected row.
+    if (lines[i]!.segments.filter((s) => s.text.trim()).every((s) => s.bold && !s.dim)) {
+      if (selected !== null) return null;
+      selected = command[1]!;
+    }
+  }
+  if (selected === null) return null;
+  const promptRow = skipBlanksUp(texts, i);
+  if (promptRow < 0) return null;
+  const draft = promptText(texts[promptRow]!)?.trim();
+  if (!draft || draft !== selected) return null;
+  const marker = lines[promptRow]!.segments.find((segment) => segment.text.startsWith("›"));
+  if (!marker?.bold || marker.dim) return null;
+  return { draft, prompt: texts.slice(promptRow, end + 1).join("\n") };
+}
+
+/** The composer with a status footer. Command completion is recognized separately below. */
 export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   lines = normalizeComposerParticles(lines);
   const texts = lines.map((l) => rstrip(lineText(l)));
@@ -128,7 +158,7 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
 export function extractInputDraft(lines: StyledLine[]): string | null {
   lines = normalizeComposerParticles(lines);
   const box = locateComposer(lines);
-  if (box === null) return null;
+  if (box === null) return commandInput(lines)?.draft ?? null;
   const texts = lines.map((l) => rstrip(lineText(l)));
   const first = promptText(texts[box.promptRow]!) ?? "";
   const parts = [first.trim()];
@@ -146,7 +176,7 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
 
 /** Typing reaches the composer only when the composer is on screen — every dialog replaces it. */
 export function composerReady(lines: StyledLine[]): boolean {
-  return locateComposer(lines) !== null;
+  return locateComposer(lines) !== null || commandInput(normalizeComposerParticles(lines)) !== null;
 }
 
 /** The literal on-screen prompt/draft run a destructive write is bound to. Ending at the last draft
@@ -155,7 +185,7 @@ export function composerReady(lines: StyledLine[]): boolean {
 export function composerPrompt(lines: StyledLine[]): string | null {
   lines = normalizeComposerParticles(lines);
   const box = locateComposer(lines);
-  if (box === null) return null;
+  if (box === null) return commandInput(lines)?.prompt ?? null;
   let end = box.statusRow;
   while (end > box.promptRow + 1 && isBlank(lineText(lines[end - 1]!))) end--;
   return lines

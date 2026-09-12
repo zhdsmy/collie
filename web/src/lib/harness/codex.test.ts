@@ -46,6 +46,7 @@ const PINNED = [
   "codex--v0150-nogit-idle.txt",
   "codex--v0150-paste-placeholder.txt",
   "codex--v0151-draft-indented-line.txt",
+  "codex--v0154-command-status.txt",
   "codex--v0154-particles-draft.txt",
   "codex--v0154-particles-working.txt",
   "codex--working.txt",
@@ -87,6 +88,7 @@ describe("composerReady — the gate the reply path pre-flights on", () => {
     "codex--draft.txt",
     "codex--draft-wrapped.txt",
     "codex--v0151-draft-indented-line.txt",
+    "codex--v0154-command-status.txt",
     "codex--working.txt",
     "codex--queue-context-inline.txt",
   ])(
@@ -98,6 +100,54 @@ describe("composerReady — the gate the reply path pre-flights on", () => {
 
   it.each([...DIALOG, "codex--ask-notes-focused.txt"])("%s: a modal owns the screen ⇒ false", (name) => {
     expect(codexAdapter.composerReady!(fixtureLines(name))).toBe(false);
+  });
+});
+
+describe("Codex slash-command input", () => {
+  const capture = () => readFileSync(join(PANES_DIR, "codex--v0154-command-status.txt"), "utf8");
+  const parse = (text: string) => splitLines(parseAnsi(text));
+
+  it("reads only the command while binding the full completion region", () => {
+    const lines = parse(capture());
+    expect(codexAdapter.composerReady!(lines)).toBe(true);
+    expect(codexAdapter.extractInputDraft(lines)).toBe("/status");
+    const prompt = codexAdapter.composerPrompt!(lines);
+    expect(prompt).toMatch(/^› \/status\n/);
+    expect(prompt).toContain("/status      show current session configuration and token usage");
+    expect(prompt).toContain("/statusline  configure which items appear in the status line");
+    expect(codexAdapter.extractStatusLines(lines)).toEqual([]);
+    expect(stripChrome(lines)).toBe(lines);
+  });
+
+  it.each([
+    ["incomplete command", (text: string) => text.replace(" /status ", " /stat ")],
+    ["another command", (text: string) => text.replace(" /status ", " /permissions ")],
+    ["command arguments", (text: string) => text.replace(" /status ", " /status extra ")],
+    ["submitted echo", (text: string) => text.replace("\x1b[1m", "\x1b[1;2m")],
+    ["ordinary transcript marker", (text: string) => text.replace("\x1b[1m", "")],
+    ["output after the list", (text: string) => text + "\n• Finished a different task"],
+    ["modal after the list", (text: string) => text + "\n› 1. Yes, proceed\n  2. No\nPress enter to continue"],
+  ])("does not treat %s as a verified command", (_name, change) => {
+    const lines = parse(change(capture()));
+    expect(codexAdapter.composerReady!(lines)).toBe(false);
+    expect(codexAdapter.extractInputDraft(lines)).toBeNull();
+    expect(codexAdapter.composerPrompt!(lines)).toBeNull();
+  });
+
+  it.each(["another selection", "no selection", "ambiguous selection"])("withholds submission with %s", (state) => {
+    const lines = parse(capture());
+    for (const line of lines) {
+      const text = lineText(line);
+      if (!text.startsWith("  /status")) continue;
+      const selected = state === "ambiguous selection" || (state === "another selection" && text.startsWith("  /statusline"));
+      for (const segment of line.segments) {
+        segment.bold = selected;
+        segment.dim = !selected;
+      }
+    }
+    expect(codexAdapter.composerReady!(lines)).toBe(false);
+    expect(codexAdapter.extractInputDraft(lines)).toBeNull();
+    expect(codexAdapter.composerPrompt!(lines)).toBeNull();
   });
 });
 

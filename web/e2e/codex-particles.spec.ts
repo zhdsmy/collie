@@ -9,6 +9,46 @@ const draft = fixture("draft");
 const braille = /[⠁⠂⠄⠈⠐⠠⡀⢀]/u;
 
 for (const theme of ["light", "dark"]) {
+  test(`Codex Agent command tap submits through its completion list: ${theme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript((selected) => {
+      localStorage.setItem("collie:theme:v1", selected);
+      localStorage.setItem("collie:locale:v1", "en");
+    }, theme);
+    await installApiStub(page);
+    const completion = readFileSync(new URL("../src/fixtures/panes/codex--v0154-command-status.txt", import.meta.url), "utf8");
+    const calls: { text: string; submit: boolean; expected_prompt?: string }[] = [];
+    let typed = false;
+    let submitted = false;
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, i) => i === 0
+        ? Object.assign({}, agent, { agent: "codex", status: "working", hasSession: true }) : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+      paneId: "w1:p1", text: typed && !submitted ? completion : empty, revision: 1, truncated: false,
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/reply", (route) => {
+      // SAFETY: the app under test produces this reply body.
+      const body = route.request().postDataJSON() as typeof calls[number];
+      calls.push(body);
+      if (!body.submit) typed = true;
+      else submitted = true;
+      return route.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/pane/w1:p1");
+    await page.getByRole("button", { name: "Agent", exact: true }).click();
+    const command = page.getByRole("button", { name: /^\/status / });
+    await expect(command.locator("svg.lucide-corner-down-left")).toBeVisible();
+    await command.click();
+    await expect.poll(() => submitted).toBe(true);
+    expect(calls).toEqual([
+      { text: "/status", submit: false },
+      { text: "", submit: true, expected_prompt: expect.stringMatching(/^› \/status\n/) },
+    ]);
+    expect(calls[1]!.expected_prompt).toContain("/statusline");
+  });
+
   test(`Codex waits through partial paste frames: ${theme}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript((selected) => {

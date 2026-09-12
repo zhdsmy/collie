@@ -44,6 +44,40 @@ function harness(screen: () => string) {
 
 const instant = { sleep: async () => {} }; // no real waiting; the bounded loop still runs its attempts
 
+describe("Codex slash-command submission", () => {
+  const idle = () => fixtureText("codex--fresh-idle.txt");
+  const completion = () => fixtureText("codex--v0154-command-status.txt");
+
+  it("types a command once and automatically submits while its completion list is visible", async () => {
+    const calls = harness(() => calls.length === 0 ? idle() : completion());
+    const out = await sendGuardedReply({ paneId: "w1:p1", text: "/status", agent: "codex", ...instant });
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: "/status", submit: false },
+      { text: "", submit: true, expected_prompt: expect.stringMatching(/^› \/status\n/) },
+    ]);
+    expect(calls[1]!.expected_prompt).toContain("/statusline");
+  });
+
+  it("waits for the full command without retyping a partial completion search", async () => {
+    let reads = 0;
+    const calls = harness(() => calls.length === 0 ? idle() : ++reads === 1
+      ? completion().replace(" /status ", " /stat ") : completion());
+    const out = await sendGuardedReply({ paneId: "w1:p1", text: "/status", agent: "codex", ...instant });
+    expect(out).toEqual({ status: "sent" });
+    expect(reads).toBe(2);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("withholds Enter when the command changes after typing", async () => {
+    const calls = harness(() => calls.length === 0 ? idle()
+      : completion().replace(" /status ", " /statusline "));
+    const out = await sendGuardedReply({ paneId: "w1:p1", text: "/status", agent: "codex", ...instant });
+    expect(out.status).toBe("stalled");
+    expect(calls).toEqual([{ text: "/status", submit: false }]);
+  });
+});
+
 describe("draftCarriesSend", () => {
   it("keeps Hermes display-only adaptation out of the send path", async () => {
     const calls = harness(() => "No identifiable composer");

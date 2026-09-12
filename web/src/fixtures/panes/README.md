@@ -16,6 +16,15 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Codex 0.154 command completion (captured 2026-09-13)
+
+`codex--v0154-command-status.txt` is the ANSI input/completion region captured from a temporary
+Herdr pane running Codex 0.154.0. Typing `/status` replaces the statusline with `/status` and
+`/statusline` suggestions; one Enter executes the local status command and restores the composer.
+The preceding startup transcript is omitted. No model request was made. The adapter reads only
+the exact command as the draft, checks the selected row's paint, and binds submission to the whole
+input/completion region.
+
 ## Codex 0.154 input particles (captured 2026-09-12)
 
 Codex 0.154's `codex--v0154-particles-{working,draft}.txt` preserve the actual ANSI input
