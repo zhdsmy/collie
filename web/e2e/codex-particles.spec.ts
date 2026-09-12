@@ -8,6 +8,58 @@ const empty = fixture("working");
 const draft = fixture("draft");
 const braille = /[⠁⠂⠄⠈⠐⠠⡀⢀]/u;
 
+for (const theme of ["light", "dark"]) {
+  test(`Codex waits through partial paste frames: ${theme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript((selected) => {
+      localStorage.setItem("collie:theme:v1", selected);
+      localStorage.setItem("collie:locale:v1", "en");
+    }, theme);
+    await installApiStub(page);
+    const message = "请检查这个输入问题，再完整核对 fork 中的所有内容";
+    const prefix = "请检查这个输入问题";
+    let readyAt = 0;
+    let submitted = false;
+    const calls: { text: string; submit: boolean; expected_prompt?: string }[] = [];
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, i) => i === 0
+        ? Object.assign({}, agent, { agent: "codex", status: "working", hasSession: true }) : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => {
+      const paint = "\u001b[0m\u001b[48;2;57;57;71m";
+      const particle = "\u001b[0m\u001b[38;2;110;114;134m\u001b[48;2;57;57;71m⠄" + paint;
+      const visibleDraft = Date.now() < readyAt ? prefix : message;
+      const text = !readyAt || submitted ? empty : empty.replace(
+        "\u001b[2m\u001b[48;2;57;57;71mAsk Codex to do anything", paint + visibleDraft.replaceAll(" ", particle),
+      );
+      return route.fulfill({ json: { paneId: "w1:p1", text, revision: 1, truncated: false } });
+    });
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/reply", (route) => {
+      // SAFETY: this request is produced by the app under test, whose reply body has this shape.
+      const body = route.request().postDataJSON() as typeof calls[number];
+      calls.push(body);
+      if (!body.submit) readyAt = Date.now() + 600;
+      else {
+        if (body.expected_prompt !== `› ${message}`) return route.fulfill({
+          status: 409, json: { ok: false, code: "prompt_changed", error: "prompt changed" },
+        });
+        submitted = true;
+      }
+      return route.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/pane/w1:p1");
+    await page.getByRole("textbox").first().fill(message);
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(page.getByRole("textbox").first()).toHaveValue("");
+    expect(submitted).toBe(true);
+    expect(calls).toEqual([
+      { text: message, submit: false },
+      { text: "", submit: true, expected_prompt: `› ${message}` },
+    ]);
+  });
+}
+
 for (const width of [320, 390]) for (const theme of ["light", "dark"]) {
   test(`Codex 0.154 particles: ${width} ${theme}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });

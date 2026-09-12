@@ -147,6 +147,7 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
   // harnesses gain this safety when they gain an adapter with a verified send contract.
   // Display-only adapters must not change their existing send transport.
   if (!adapter || adapter.displayOnly) return oneShot(args);
+  const literalDraftCarriesSend = adapter.literalDraftCarriesSend?.bind(adapter) ?? draftCarriesSend;
 
   // PRE-FLIGHT. The verify-after guard below is enough to keep Enter from answering a dialog, but it
   // is not enough to keep the MESSAGE out of one: it types first and checks second, so a modal that
@@ -198,7 +199,7 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
         const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope);
         const lines = splitLines(parseAnsi(fresh.text));
         const draft = adapter.extractInputDraft(lines);
-        if (draft !== previousDraft && adapter.composerReady?.(lines) && draftCarriesSend(delivered, draft) && carriesReplyTail(delivered, draft)) {
+        if (draft !== previousDraft && adapter.composerReady?.(lines) && literalDraftCarriesSend(delivered, draft) && carriesReplyTail(delivered, draft)) {
           verified = true;
           previousDraft = draft;
           break;
@@ -250,7 +251,7 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
     } catch {
       continue; // transient read failure — the bounded loop is the timeout
     }
-    if (draftCarriesSend(args.text, draft) && (chunks.length === 1 || (draft !== previousDraft && carriesReplyTail(args.text, draft)))) return submitOnly(args, verifiedPrompt);
+    if (literalDraftCarriesSend(args.text, draft) && (chunks.length === 1 || (draft !== previousDraft && carriesReplyTail(args.text, draft)))) return submitOnly(args, verifiedPrompt);
     // The adapter gets a second look, and only a second look: a harness can SWALLOW what we typed and
     // paint a token of its own instead (Claude collapses anything past its paste threshold into
     // `[Pasted text #N +M lines]`), so the box never holds our words and the match above structurally

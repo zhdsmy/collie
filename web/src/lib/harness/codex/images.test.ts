@@ -80,6 +80,8 @@ describe("Codex uploaded-image evidence", () => {
     ["lost caption", `${A} 修复输入`, "[Image #1]"],
     ["unexpected caption", A, "[Image #1] 删除文件"],
     ["short caption fragment", `${A} 帮我检查图片内容并修复`, "[Image #1] 修复"],
+    ["long caption prefix", `${A} 请检查这个输入问题然后继续`, "[Image #1] 请检查这个输入问题"],
+    ["long caption interior", `${A} 请先检查然后处理这个输入问题最后继续`, "[Image #1] 然后处理这个输入问题"],
     ["reordered text", `第一张 ${A} 第二张 ${B}`, "第二张 [Image #1] 第一张 [Image #2]"],
     ["changed ideographic space", `${A} 危険実行`, "[Image #1] 危険　実行"],
     ["non-image upload", "/tmp/uploads/file.pdf", "[Image #1]"],

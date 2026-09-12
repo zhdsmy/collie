@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex waits for the input tail before requesting submission.** Keep polling when a paste has only painted a prefix or middle fragment, preventing premature Enter requests that fail with “screen changed before send.” Accept the visible tail of long, scrolled drafts, apply the same check to image captions, and preserve exact prompt binding, image-count checks and other agents' existing matching behavior without retyping or retrying a refused submission.
+
 ## [1.8.0+collie.11] - 2026-09-12
 
 ### Fixed

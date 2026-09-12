@@ -63,6 +63,10 @@ export interface HarnessAdapter {
    * whose final row sits too high would refuse legitimate sweeps, which is worse than leaving it out.
    */
   composerPrompt?(lines: StyledLine[]): string | null;
+  /** Override the generic visible-window match for literal text. A composer that paints a paste
+   * incrementally can require its tail, rather than authorizing Enter on an early prefix.
+   * Opaque image/paste tokens still use the separate supplemental evidence below. */
+  literalDraftCarriesSend?(sent: string, draft: string | null): boolean;
   /**
    * SUPPLEMENTAL evidence that `sent` reached the input box, for the case the reply guard's own
    * literal-substring match structurally cannot see: a harness that swallows what was typed and paints

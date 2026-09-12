@@ -90,7 +90,11 @@ function characterBoundaries(s: string): Set<number> {
  * match; for a send shorter than the floor, the whole thing must be there. It counts non-space
  * characters, since spaces are the part we just agreed not to trust.
  */
-export function draftCarriesSend(sent: string, draft: string | null): boolean {
+export function draftCarriesSend(
+  sent: string,
+  draft: string | null,
+  options?: { requireTail?: boolean },
+): boolean {
   if (draft === null) return false;
   // Odd indices are the gaps, even indices the runs — the gaps decide how strict each seam is.
   const parts = draft.trim().split(/(\s+)/);
@@ -108,6 +112,10 @@ export function draftCarriesSend(sent: string, draft: string | null): boolean {
     const gap = gaps[i - 1]!;
     pattern += (gap === FOLD_SEAM ? "\\s*" : escape(gap)) + escape(runs[i]!);
   }
+  // Codex can paint a paste incrementally, but also scrolls long drafts to their tail.
+  // Require the matching occurrence to reach the end; whole-message equality would reject
+  // legitimate scrolled inputs. Keep the same gap and grapheme checks on that occurrence.
+  if (options?.requireTail) pattern += "\\s*$";
 
   // Every occurrence gets its own boundary check, not just the first: an earlier hit that happens to
   // stop mid-character must not mask a later, properly aligned one. Rewinding to one past the hit's

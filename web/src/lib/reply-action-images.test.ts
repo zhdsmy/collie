@@ -54,7 +54,40 @@ function composer(before: string, after: () => string) {
 
 describe("guarded Codex image sends", () => {
   it.each([
+    ["observed early prefix", "怎么让你能自动推送，这是我自己 fork 的仓库，没有什么安全问题", "怎么让你能自动推送", "怎么让你能自动推送，这是我自己 fork 的仓库，没有什么安全问题"],
+    ["plain CJK text", "请检查这个输入问题，然后继续处理后面的内容", "请检查这个输入问题", "请检查这个输入问题，然后继续处理后面的内容"],
+    ["text with a literal image marker", "请检查这个输入问题 [Image #1] 然后继续", "请检查这个输入问题", "请检查这个输入问题 [Image #1] 然后继续"],
+    ["absolute path", "/private/tmp/sample-long-file.png 请检查", "/private/tmp/sample", "/private/tmp/sample-long-file.png 请检查"],
+    ["literal upload paths", `${A} ${B}`, A, `${A} ${B}`],
+    ["single image caption", `${A} 请检查这个输入问题然后继续`, "[Image #1] 请检查这个输入问题", "[Image #1] 请检查这个输入问题然后继续"],
+    ["interleaved images and text", `第一段文字 ${A}\n\n第二段文字 ${B}\n\n请继续处理`, "第一段文字 [Image #1] 第二段文字 [Image #2]", "第一段文字 [Image #1]\n\n第二段文字 [Image #2]\n\n请继续处理"],
+    ["partial text with blank lines", "请检查这个输入问题\n\n再继续处理", "请检查这个输入问题", "请检查这个输入问题\n\n再继续处理"],
+  ])("waits for the tail of %s instead of submitting an early fragment", async (_name, text, partial, complete) => {
+    let reads = 0;
+    const { calls } = composer("", () => ++reads < 3 ? partial : complete);
+    const result = await sendGuardedReply({ paneId: "w1:p1", text, agent: "codex", ...instant });
+    expect(result).toEqual({ status: "sent" });
+    expect(reads).toBe(3);
+    expect(calls).toEqual([
+      { text, submit: false },
+      { text: "", submit: true, expected_prompt: expectedPrompt(complete) },
+    ]);
+  });
+
+  it.each([
+    ["plain text", "请检查这个输入问题然后继续", "请检查这个输入问题"],
+    ["image caption", `${A} 请检查这个输入问题然后继续`, "[Image #1] 请检查这个输入问题"],
+  ])("withholds Enter when %s stays only partially painted", async (_name, text, partial) => {
+    const { calls } = composer("", () => partial);
+    const result = await sendGuardedReply({ paneId: "w1:p1", text, agent: "codex", ...instant });
+    expect(result.status).toBe("stalled");
+    expect(calls).toEqual([{ text, submit: false }]);
+  });
+
+  it.each([
     ["single image", A, "[Image #1]"],
+    ["long scrolled text", "BEGIN " + "测试输入".repeat(230) + " END", "测试输入测试输入\n测试输入 END"],
+    ["scrolled image caption", `${A} 请先检查然后处理这个输入问题`, "[Image #1] 然后处理这个输入问题"],
     ["multiple images", `${A}\n${B}\n${C}`, "[Image #1] [Image #2] [Image #3]"],
     ["screenshot caption", `${A}\n帮我修复 codex 换行问题`, "[Image #1] 帮我修复 codex 换行问题"],
     ["image then empty paragraph", `${A}\n\n修复输入问题`, "[Image #1]\n\n修复输入问题"],
@@ -127,6 +160,7 @@ describe("guarded Codex image sends", () => {
   });
 
   it.each([
+    ["plain text", "继续检查这个问题", "继续检查这个问题"],
     ["single image", A, "[Image #1]"],
     ["multiple images", `${A}\n${B}`, "[Image #1] [Image #2]"],
     ["interleaved caption", `Compare ${A}\n\nwith ${B}`, "Compare [Image #1]\n\nwith [Image #2]"],

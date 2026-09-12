@@ -26,6 +26,7 @@ import { detectAskRegion } from "./ask";
 import { detectTrustRegion } from "./trust";
 import { decorateCodexDisplay } from "./display";
 import { codexDraftCarriesSend } from "./paste";
+import { draftCarriesSend } from "../../draft-match";
 
 function raw(lines: StyledLine[]): Block {
   return { kind: "raw", lines: decorateCodexDisplay(lines) };
@@ -78,4 +79,5 @@ export const codexAdapter: HarnessAdapter = {
   composerReady,
   composerPrompt,
   draftCarriesSend: codexDraftCarriesSend,
+  literalDraftCarriesSend: (sent, draft) => draftCarriesSend(sent, draft, { requireTail: true }),
 };

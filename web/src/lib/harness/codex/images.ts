@@ -52,5 +52,5 @@ export function imageDraftCarriesSend(sent: string, draft: string, beforeDraft?:
   if (!sentCaption) {
     return beforeDraft !== undefined && !beforeDraft?.trim() && !draftCaption;
   }
-  return draftCarriesSend(sentCaption, draftCaption);
+  return draftCarriesSend(sentCaption, draftCaption, { requireTail: true });
 }
