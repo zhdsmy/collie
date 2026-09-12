@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.13] - 2026-09-13
+
 ### Fixed
 
-- **Codex command shortcuts submit without an extra Enter tap.** Recognize the exact slash-command input above Codex's completion list, which replaces its normal statusline, and verify that it matches the selected completion. Commands marked with the return icon now finish the existing verified input-and-submit flow; retain prompt binding and modal checks, argument-taking shortcuts, and other agents' behavior.
+- **Codex command shortcuts submit without an extra Enter tap.** Recognize the exact slash-command input above Codex's completion list, which replaces its normal statusline, and verify that it matches the selected completion. Commands marked with the return icon now finish the existing verified input-and-submit flow; retain prompt binding and modal checks, argument-taking shortcuts, and other agents' behavior. ([953892bb](https://github.com/zhdsmy/collie/commit/953892bb))
 
 ## [1.8.0+collie.12] - 2026-09-12
 
