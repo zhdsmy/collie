@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex 0.154 animated input stays readable and reliably sends.** Recognize the live composer's painted Braille particles as decorated spaces, remove its padding from the transcript, and stop mistaking its empty placeholder for a terminal draft. Reuse the same conservative normalization when verifying bound input so animation frames cannot cause false prompt-changed errors; preserve real punctuation, Braille, image markers, paths and raw terminal output.
+
 ## [1.8.0+collie.9] - 2026-09-11
 
 ### Changed

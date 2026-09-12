@@ -1,3 +1,7 @@
+import { parseAnsi } from "../web/src/lib/ansi";
+import { splitLines, lineText } from "../web/src/lib/blocks";
+import { normalizeComposerParticles } from "../web/src/lib/harness/codex/particles";
+
 /**
  * Normalize a rendered prompt region for comparison across terminal redraws.
  *
@@ -12,6 +16,13 @@ const CSI = `(?:${String.fromCodePoint(0x1b)}\\[|${String.fromCodePoint(0x9b)})`
 const SGR_SEQUENCE = new RegExp(`${CSI}[0-?]*[ -/]*m`, "g");
 
 export function normalizePromptRegion(text: string): string[] {
+  // Share the exact input renderer recognizer with the phone. Only a complete ANSI-painted
+  // Codex composer can remove decorative particles; plain text and dialogs remain literal.
+  if (/[⠁⠂⠄⠈⠐⠠⡀⢀]/u.test(text)) {
+    const lines = splitLines(parseAnsi(text));
+    const normalized = normalizeComposerParticles(lines);
+    if (normalized !== lines) text = normalized.map(lineText).join("\n");
+  }
   return text
     .replace(SGR_SEQUENCE, "")
     .replace(/\r\n?/g, "\n")

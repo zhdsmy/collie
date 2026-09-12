@@ -16,6 +16,15 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Codex 0.154 input particles (captured 2026-09-12)
+
+Codex 0.154's `codex--v0154-particles-{working,draft}.txt` preserve the actual ANSI input
+padding, particle paint, prompt and status from 2026-09-12 Herdr captures. The working
+capture replaces preceding private output with a generic indicator; the draft capture
+comes from a scratch Codex pane with an unsubmitted sample containing punctuation,
+Braille, CJK, an image marker and a path. See `harness/codex/PARTICLES_NOTES.md` for the
+recognition and send-binding boundaries.
+
 ## Hermes CLI display chrome (captured 2026-09-10)
 
 `hermes--clarify-{single,q0,q1,other}.txt` capture an isolated Herdr pane running the

@@ -6,6 +6,31 @@ import {
   verifyExpectedPrompt,
 } from "./prompt-binding.ts";
 
+describe("Codex 0.154 animated input binding", () => {
+  const capture = readFileSync(join(import.meta.dir, "../web/src/fixtures/panes/codex--v0154-particles-draft.txt"), "utf8");
+  const expected = "› Probe 你好 . · ⠁⠂ [Image #1] /private/tmp/sample.png";
+  const esc = String.fromCharCode(27);
+
+  test("accepts a changing animation frame without ignoring real Braille or spaces", () => {
+    expect(verifyExpectedPrompt(capture, expected)).toEqual({ ok: true });
+    // Repaint only the animated RGB runs, leaving the uncolored, deliberately typed Braille.
+    const particle = new RegExp(`(${esc}\\[38;2;\\d+;\\d+;\\d+m${esc}\\[48;2;\\d+;\\d+;\\d+m)[⠁⠂⠄⠈⠐⠠⡀⢀]`, "gu");
+    const next = capture.replace(particle, "$1⠠");
+    expect(next).not.toBe(capture);
+    expect(verifyExpectedPrompt(next, expected)).toEqual({ ok: true });
+  });
+
+  test.each([
+    capture.replace("Probe", "Different"),
+    capture.replace("⠁⠂ [Image #1]", "⠁⠄ [Image #1]"),
+    capture.replace("Probe 你好", "Probe  你好"),
+    capture + "\nDo you want to approve this?\n1. Yes\n2. No",
+    capture.replace(new RegExp(`${esc}\\[[0-9;]*m`, "g"), ""),
+  ])("refuses changed content, a replacement dialog and missing paint", (fresh) => {
+    expect(verifyExpectedPrompt(fresh, expected).ok).toBe(false);
+  });
+});
+
 describe("normalizePromptRegion", () => {
   test("strips SGR sequences and normalizes CRLF and CR line endings", () => {
     expect(normalizePromptRegion("\x1b[31mApprove?\x1b[0m\r\n\x1b[1m1. Yes\x1b[0m\r2. No")).toEqual([

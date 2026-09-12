@@ -38,6 +38,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { parseAnsi } from "../ansi";
+import { normalizeComposerParticles } from "./codex/particles";
 import { lineText, splitLines, type Block, type StyledLine } from "../blocks";
 import type { HarnessAdapter } from "./types";
 import {
@@ -445,7 +446,7 @@ export function describeAdapterConformance(
             if (region === null) return;
             // Both sides normalized the way the bridge normalizes: trailing whitespace off, blank
             // rows dropped entirely (bridge/prompt-binding.ts `normalizePromptRegion`).
-            const fresh = normalizeRegion(lines.map(lineText).join("\n"));
+            const fresh = normalizeRegion(normalizeComposerParticles(lines).map(lineText).join("\n"));
             const expected = normalizeRegion(region);
             const matchEnd = lastMatchEnd(fresh, expected);
             expect(matchEnd, `${name}: the named region is not on its own screen`).toBeGreaterThan(-1);

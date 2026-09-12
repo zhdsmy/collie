@@ -7,6 +7,7 @@
 // the transcript never has the status row directly beneath it. Pure; no pane access.
 
 import type { StyledLine } from "../../blocks";
+import { normalizeComposerParticles } from "./particles";
 import {
   isBlank,
   isWorkingContextRow,
@@ -64,6 +65,7 @@ function isEmptyPlaceholder(line: StyledLine): boolean {
 
 /** The composer at the buffer tail, or null (a dialog owns the screen, or the frame is torn). */
 export function locateComposer(lines: StyledLine[]): ComposerBox | null {
+  lines = normalizeComposerParticles(lines);
   const texts = lines.map((l) => rstrip(lineText(l)));
   const statusRow = lastNonBlankIndex(texts);
   if (statusRow < 0) return null;
@@ -101,8 +103,10 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
  * Unchanged input is the SAME REFERENCE, so callers can treat `result === lines` as "no chrome".
  */
 export function stripChrome(lines: StyledLine[]): StyledLine[] {
+  const original = lines;
+  lines = normalizeComposerParticles(lines);
   const box = locateComposer(lines);
-  if (box === null) return lines;
+  if (box === null) return original;
   return lines.slice(0, box.promptRow);
 }
 
@@ -122,6 +126,7 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
  * type-then-verify, and THIS is the verify half.
  */
 export function extractInputDraft(lines: StyledLine[]): string | null {
+  lines = normalizeComposerParticles(lines);
   const box = locateComposer(lines);
   if (box === null) return null;
   const texts = lines.map((l) => rstrip(lineText(l)));
@@ -148,6 +153,7 @@ export function composerReady(lines: StyledLine[]): boolean {
  * continuation keeps a wrapped message inside the bridge's bounded tail window; naming only the
  * first `›` row would permanently 409 once six or more non-blank wrap rows sat beneath it. */
 export function composerPrompt(lines: StyledLine[]): string | null {
+  lines = normalizeComposerParticles(lines);
   const box = locateComposer(lines);
   if (box === null) return null;
   let end = box.statusRow;

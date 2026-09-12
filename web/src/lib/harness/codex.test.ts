@@ -46,6 +46,8 @@ const PINNED = [
   "codex--v0150-nogit-idle.txt",
   "codex--v0150-paste-placeholder.txt",
   "codex--v0151-draft-indented-line.txt",
+  "codex--v0154-particles-draft.txt",
+  "codex--v0154-particles-working.txt",
   "codex--working.txt",
 ];
 
