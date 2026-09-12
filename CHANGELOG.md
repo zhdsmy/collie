@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.11] - 2026-09-12
+
 ### Fixed
 
-- **Claude diffs form continuous rectangles with equal side gutters.** Extend painted numbered change rows across the mirror using the shared diff surface, closing gaps between adjacent rows while preserving Claude's colors, inline highlights, original text and wrapping. Dialog controls and raw terminal mode retain their existing behavior.
+- **Claude diffs form continuous rectangles with equal side gutters.** Extend painted numbered change rows across the mirror using the shared diff surface, closing gaps between adjacent rows while preserving Claude's colors, inline highlights, original text and wrapping. Dialog controls and raw terminal mode retain their existing behavior. ([9b73d895](https://github.com/zhdsmy/collie/commit/9b73d895))
 
 ## [1.8.0+collie.10] - 2026-09-12
 
