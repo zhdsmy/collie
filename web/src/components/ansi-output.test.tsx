@@ -8,9 +8,25 @@ import { lineText, splitLines } from "@/lib/blocks";
 import diffCapture from "@/lib/harness/codex/diff-reflow.fixture.txt?raw";
 import hermesCapture from "@/fixtures/panes/hermes--done.txt?raw";
 import hermesInput from "@/fixtures/panes/hermes--submitted-input.txt?raw";
+import { claudeDiffSample } from "@/test/claude-diff";
 
 const ESC = "\x1b";
 const MUTED_RULE_COLOUR = "rgb(161, 161, 161)"; // #a1a1a1, --muted-foreground's dark half
+
+it.each([true, false])("renders Claude diff rectangles with intact highlights, links and search (wrap=%s)", (wrap) => {
+  const { container, rerender } = render(<AnsiOutput text={claudeDiffSample} agent="claude" wrap={wrap} query="oldValue" />);
+  const rows = container.querySelectorAll<HTMLElement>('[data-terminal-surface="diff"]');
+  expect(rows).toHaveLength(5);
+  expect(container.querySelector("pre")!.textContent).toBe(splitLines(parseAnsi(claudeDiffSample)).map(lineText).join("\n"));
+  expect(container.querySelector("[data-find-match]")!.textContent).toBe("oldValue");
+  expect(rows[0]!.querySelector('[style*="background-color"]')!.textContent).toBe("false");
+  expect(rows[0]!.querySelector('[style*="background-color"]')!.getAttribute("style")).toContain("rgb(90, 0, 0)");
+  expect(rows[1]!.querySelector("a")!.getAttribute("href")).toBe("https://example.com/old");
+  for (const row of rows) expect(row).toHaveClass("min-w-full", "min-h-[1lh]", "align-bottom");
+  rerender(<AnsiOutput text={claudeDiffSample} wrap={wrap} />);
+  expect(container.querySelector("[data-terminal-surface]")).toBeNull();
+  expect(container.querySelector("pre")!.textContent).toBe(splitLines(parseAnsi(claudeDiffSample)).map(lineText).join("\n"));
+});
 
 it("fills Hermes input borders without changing source text, search offsets or raw widths", () => {
   const text = hermesInput.trimEnd();

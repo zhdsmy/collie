@@ -18,6 +18,11 @@ import { detectMenuRegion } from "./menu";
 import { detectAutocompleteRegion } from "./autocomplete";
 import { stripChrome, extractStatusLines, extractInputDraft, hasInputBox } from "./chrome";
 import { isPastePlaceholderOnly, pasteCarriesSend } from "./paste";
+import { decorateClaudeDiff } from "./display";
+
+function raw(lines: StyledLine[]): Block {
+  return { kind: "raw", lines: decorateClaudeDiff(lines) };
+}
 
 /**
  * Claude's block pipeline: detect a tail dialog (preview / wizard / prompt-select), replacing it with
@@ -33,7 +38,7 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
   if (previewRegion) {
     const before = trimTrailingBlank(lines.slice(0, previewRegion.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push({ kind: "raw", lines: before });
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({
       kind: "preview-select",
       preview: previewRegion.model,
@@ -49,7 +54,7 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
   if (wizardRegion) {
     const before = trimTrailingBlank(lines.slice(0, wizardRegion.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push({ kind: "raw", lines: before });
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "wizard", wizard: wizardRegion.model, lines: lines.slice(wizardRegion.startLine) });
     return blocks;
   }
@@ -61,7 +66,7 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
   if (multiRegion) {
     const before = trimTrailingBlank(lines.slice(0, multiRegion.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push({ kind: "raw", lines: before });
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "multi-select", multi: multiRegion.model, lines: lines.slice(multiRegion.startLine) });
     return blocks;
   }
@@ -70,7 +75,7 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
   if (region) {
     const before = trimTrailingBlank(lines.slice(0, region.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push({ kind: "raw", lines: before });
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "prompt-select", prompt: region.model, lines: lines.slice(region.startLine) });
     return blocks;
   }
@@ -84,7 +89,7 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
   if (menuRegion) {
     const before = trimTrailingBlank(lines.slice(0, menuRegion.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push({ kind: "raw", lines: before });
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "menu", menu: menuRegion.model, lines: lines.slice(menuRegion.startLine) });
     return blocks;
   }
@@ -102,7 +107,7 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
     if (autoRegion) {
       const before = trimTrailingBlank(stripChrome(lines));
       const blocks: Block[] = [];
-      if (before.length > 0) blocks.push({ kind: "raw", lines: before });
+      if (before.length > 0) blocks.push(raw(before));
       blocks.push({
         kind: "autocomplete",
         autocomplete: autoRegion.model,
@@ -112,7 +117,7 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
     }
   }
 
-  return [{ kind: "raw", lines: stripChrome(lines) }];
+  return [raw(stripChrome(lines))];
 }
 
 export { extractStatusLines, extractInputDraft };
