@@ -30,11 +30,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.10] - 2026-09-14
+
 ### Added
 
-- **Keep Codex approval details beside the decision buttons.** Show the execution environment, reason and full command in one card, with expandable long commands and read-only persistent permission choices.
-- **Edit Codex question notes without leaving the question card.** Preserve local drafts across question navigation and submit native notes or custom answers with verified paste and a single confirmation; Chinese text and blank lines remain intact.
-- **Choose Codex review scopes from native picker cards.** Present review presets, base branches and commits using the existing model picker layout and guarded native navigation. Custom review instruction editors keep their terminal presentation.
+- **Keep Codex approval details beside the decision buttons.** Show the execution environment, reason and full command in one card, with expandable long commands and read-only persistent permission choices. ([87421032](https://github.com/zhdsmy/collie/commit/87421032))
+- **Edit Codex question notes without leaving the question card.** Preserve local drafts across question navigation and submit native notes or custom answers with verified paste and a single confirmation; Chinese text and blank lines remain intact. ([87421032](https://github.com/zhdsmy/collie/commit/87421032))
+- **Choose Codex review scopes from native picker cards.** Present review presets, base branches and commits using the existing model picker layout and guarded native navigation. Custom review instruction editors keep their terminal presentation. ([87421032](https://github.com/zhdsmy/collie/commit/87421032))
 
 ## [1.8.2+collie.9] - 2026-09-13
 
