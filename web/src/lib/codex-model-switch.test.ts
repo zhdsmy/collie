@@ -25,7 +25,7 @@ import { parseAnsi } from "./ansi";
 import { splitLines } from "./blocks";
 import { acquirePaneAction, submitPickerIntent } from "./picker-action";
 import { runCodexModelSwitch } from "./codex-model-switch";
-import type { CodexModelPreset } from "./codex-model-presets";
+import type { CodexModelTarget } from "./harness/codex/model-field";
 import type { PaneReadResponse, SnapshotResponse } from "./types";
 
 const mockFetchPane = vi.mocked(fetchPane);
@@ -78,7 +78,7 @@ function idleWithConfirmation(model: string, effort: string): string {
   return `${fixture("codex--v0154-statusline-single-idle.txt")}\n• Model changed to ${model} ${effort}.`;
 }
 
-function args(preset?: CodexModelPreset) {
+function args(preset?: CodexModelTarget) {
   return {
     paneId: "w1:p1",
     requestedLines: 200,
@@ -129,7 +129,7 @@ describe("runCodexModelSwitch", () => {
     const final = idleWithConfirmation(model, effort === "xhigh" ? "Extra high" : "Max");
     script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), ...stages, final);
 
-    const outcome = await runCodexModelSwitch(args({ id: "preset", model, effort }));
+    const outcome = await runCodexModelSwitch(args({ model, effort }));
     expect(outcome).toEqual({ status: "switched" });
     expect(lastStage).toContain("picker");
     expect(intentKinds()).toEqual(stages.length === 2
@@ -145,7 +145,7 @@ describe("runCodexModelSwitch", () => {
     );
     script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), unrelated);
 
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "high" }))).resolves.toMatchObject({
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "high" }))).resolves.toMatchObject({
       status: "unconfirmed",
     });
     expect(intentKinds()).toEqual(["choose"]);
@@ -167,7 +167,7 @@ describe("runCodexModelSwitch", () => {
       final,
     );
 
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
       status: "switched",
     });
     expect(intentKinds()).toEqual(["navigate", "choose", "choose", "choose"]);
@@ -190,7 +190,7 @@ describe("runCodexModelSwitch", () => {
       final,
     );
 
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
       status: "switched",
     });
     expect(intentKinds()).toEqual(["navigate", "navigate", "choose", "choose", "choose"]);
@@ -201,21 +201,24 @@ describe("runCodexModelSwitch", () => {
     const hidden = fixture("codex--v0154-picker-model.txt").replace("gpt-6-astra", "gpt-6-hidden");
     script(idle, idle, idle, commandPicker(), hidden, hidden, hidden);
 
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-9-missing", effort: "high" }))).resolves.toEqual({
+    await expect(runCodexModelSwitch(args({ model: "gpt-9-missing", effort: "high" }))).resolves.toEqual({
       status: "unsupported-model",
     });
     expect(intentKinds()).toEqual(["navigate", "navigate"]);
 
     mockSubmitPickerIntent.mockReset().mockResolvedValue({ status: "sent" });
+    // A picker with no "Extra high" row: the level a switch can NAME is not always a level the pane
+    // offers, so asking for xhigh here must refuse rather than settle for a nearby row.
+    const withoutExtraHigh = fixture("codex--v0154-picker-effort.txt").replace(/Extra high/g, "Ultra plus");
     script(
       idle,
       idle,
       idle,
       commandPicker(),
       fixture("codex--v0154-picker-model.txt"),
-      fixture("codex--v0154-picker-effort.txt"),
+      withoutExtraHigh,
     );
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "none" }))).resolves.toEqual({
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
       status: "unsupported-effort",
     });
     expect(intentKinds()).toEqual(["choose"]);
@@ -226,14 +229,14 @@ describe("runCodexModelSwitch", () => {
       ...snapshot,
       agents: [{ ...snapshot.agents[0]!, status: "working" }],
     });
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
       status: "blocked",
     });
     expect(mockFetchPane).not.toHaveBeenCalled();
 
     mockFetchSnapshot.mockResolvedValue(snapshot);
     script(fixture("codex--draft.txt"));
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
       status: "blocked",
     });
     expect(mockSendReply).not.toHaveBeenCalled();
@@ -254,7 +257,7 @@ describe("runCodexModelSwitch", () => {
     const final = idleWithConfirmation("gpt-6-astra", "Extra high");
     script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), fixture("codex--v0154-picker-effort.txt"), fixture("codex--v0154-picker-scope.txt"), final);
 
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({ status: "switched" });
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({ status: "switched" });
   });
 
   it("strips both native current and default suffixes from an effort row", async () => {
@@ -263,7 +266,7 @@ describe("runCodexModelSwitch", () => {
     const final = idleWithConfirmation("gpt-6-astra", "medium");
     script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), effort, fixture("codex--v0154-picker-scope.txt"), final);
 
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "medium" }))).resolves.toEqual({ status: "switched" });
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "medium" }))).resolves.toEqual({ status: "switched" });
     expect(intentKinds()).toEqual(["choose", "choose", "choose"]);
   });
 
@@ -272,7 +275,7 @@ describe("runCodexModelSwitch", () => {
     const draft = fixture("codex--draft.txt");
     script(idle, idle, draft);
 
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "xhigh" }))).resolves.toMatchObject({
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toMatchObject({
       status: "error",
     });
     expect(mockSendReply).not.toHaveBeenCalled();
@@ -287,7 +290,7 @@ describe("runCodexModelSwitch", () => {
       throw new Error("pane read failed");
     });
 
-    await expect(runCodexModelSwitch(args({ id: "preset", model: "gpt-6-astra", effort: "xhigh" }))).resolves.toMatchObject({
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toMatchObject({
       status: "blocked",
     });
     expect(mockSendReply).not.toHaveBeenCalled();

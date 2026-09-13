@@ -8,7 +8,7 @@ import { StatuslineRow } from "./statusline-row";
 
 beforeEach(() => __resetLocale());
 
-it("opens model presets only from a recognized Codex model field", () => {
+it("opens the model menu only from a recognized Codex model field", () => {
   const open = vi.fn();
   const row = splitLines(parseAnsi("gpt-6-astra xhigh · Context 85% left · main"))[0]!;
   const view = render(<StatuslineRow agent="codex" row={row} onModelClick={open} />);
@@ -21,7 +21,7 @@ it("opens model presets only from a recognized Codex model field", () => {
   expect(view.queryByRole("button")).toBeNull();
 });
 
-it("keeps a custom preset model clickable without changing other status fields", () => {
+it("keeps a custom known model clickable without changing other status fields", () => {
   const row = splitLines(parseAnsi("private-model max · main · Working"))[0]!;
   const view = render(<StatuslineRow agent="codex" row={row} knownModels={["private-model"]} onModelClick={vi.fn()} />);
   expect(view.getByRole("button")).toHaveTextContent("private-model max");
@@ -286,4 +286,21 @@ it("shows a matched Hermes session's full model and saved effort without truncat
   rerender(<StatuslineRow agent="hermes" row={row} sessionModel={{ model: "different-model", reasoningEffort: "high" }} />);
   expect(container.textContent).toContain(terminalName);
   expect(container.textContent).not.toContain("high");
+});
+
+it("marks a switchable model field with a reserved arrow slot", () => {
+  const row = splitLines(parseAnsi("gpt-6-astra xhigh · Context 85% left · main"))[0]!;
+  const view = render(<StatuslineRow agent="codex" row={row} modelSwitchable onModelClick={vi.fn()} />);
+  const button = view.getByRole("button");
+
+  // One target, not two: the arrow lives INSIDE the model's own button, so it adds no second
+  // control to the tab order and the field stays a single tap.
+  expect(view.getAllByRole("button")).toHaveLength(1);
+  const arrow = button.querySelector("svg[aria-hidden='true']")!;
+  expect(arrow).toHaveClass("opacity-100");
+
+  view.rerender(<StatuslineRow agent="codex" row={row} onModelClick={vi.fn()} />);
+  // The slot is still OCCUPIED with nothing to switch to — the fields after it may not shift.
+  expect(view.getByRole("button").querySelector("svg[aria-hidden='true']")).toHaveClass("opacity-0");
+  expect(view.getByRole("button")).toHaveTextContent("gpt-6-astra xhigh");
 });

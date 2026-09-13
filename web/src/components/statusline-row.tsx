@@ -1,4 +1,5 @@
 import {
+  ArrowUp,
   CalendarDays,
   Clock,
   Database,
@@ -211,6 +212,7 @@ export function StatuslineRow({
   sessionModel,
   onModelClick,
   knownModels,
+  modelSwitchable = false,
 }: {
   agent?: string;
   row: StyledLine;
@@ -218,6 +220,8 @@ export function StatuslineRow({
   sessionModel?: SessionModel;
   onModelClick?: () => void;
   knownModels?: readonly string[];
+  /** Is there anything to switch TO — a used pair other than the one on screen? */
+  modelSwitchable?: boolean;
 }) {
   useLocale();
   if (agent !== "codex" && agent !== "hermes") {
@@ -255,11 +259,27 @@ export function StatuslineRow({
               key={i}
               variant="ghost"
               onClick={onModelClick}
-              aria-label={`${t("modelPresets.openAria")}: ${text}`}
+              aria-label={`${t("codexModel.openAria")}: ${text}`}
               aria-haspopup="dialog"
               className="h-auto min-h-3.5 shrink-0 gap-0 border-0 p-0 text-[length:inherit] leading-none font-normal"
             >
               <StyledText segments={sliceSegments(row.segments, start, start + text.length)} />
+              {/* The switchability mark, and it is INSIDE this button on purpose: the whole field is
+                  one target, so the arrow needs no handler of its own and adds no second focusable
+                  control to a strip that already has exactly one.
+
+                  Its SLOT IS ALWAYS OCCUPIED and only the opacity moves. A conditional mount here
+                  would re-lay-out the fields after it — `· Working · Context 85% left` would jump
+                  sideways the first time a second model is used — which DESIGN.md §2 forbids for any
+                  state, and §11 rule 1's `Collapse` escape cannot help: `ui/collapse.tsx` animates
+                  `grid-template-rows`, and this would be a width. */}
+              <ArrowUp
+                aria-hidden="true"
+                className={cn(
+                  "size-3 shrink-0 transition-opacity",
+                  modelSwitchable ? "opacity-100" : "opacity-0",
+                )}
+              />
             </Button>
           );
         }

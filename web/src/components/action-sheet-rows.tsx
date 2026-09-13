@@ -13,25 +13,39 @@ import { useLocale } from "@/hooks/use-locale";
 // blank clears, the blast-radius wording). A label rendered here is user text going only into an
 // <input> value / text node — never markup — so it stays within the pane-output XSS boundary.
 
-/** A plain (non-destructive) action row: leading icon + label. Used for "Rename". */
+/**
+ * A plain (non-destructive) action row: leading icon + label. Used for "Rename".
+ *
+ * `className` is an escape hatch for surfaces that are not a sheet — the Codex model menu sits in the
+ * statusline's own type scale and passes `text-[11px]`. Merged through `cn`, so a caller's size beats
+ * `text-sm` while `min-h-11` (a different group) survives untouched.
+ */
 export function ActionRow({
   icon,
   label,
   onClick,
+  disabled,
+  className,
 }: {
   icon: ReactNode;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       // `min-h-11` — a REAL 44px hit box, stated (DESIGN.md §6). `px-3 py-2.5` around a 20px
       // `text-sm` line drew 40px, five under the floor, on rows a thumb reaches for in a sheet that
       // has just slid up under it. A floor rather than a fixed height, so a row whose label wraps on
       // a narrow phone still grows instead of clipping.
-      className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors hover:bg-accent active:bg-muted"
+      className={cn(
+        "flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors hover:bg-accent active:bg-muted disabled:opacity-60",
+        className,
+      )}
     >
       {icon}
       {label}
@@ -53,6 +67,8 @@ export function DestructiveActionRow({
   armed,
   closing,
   onClick,
+  disabled,
+  className,
 }: {
   icon: ReactNode;
   label: string;
@@ -61,12 +77,16 @@ export function DestructiveActionRow({
   armed: boolean;
   closing: boolean;
   onClick: () => void;
+  /** Refuses the row while something else is in flight (the model menu's own switch). */
+  disabled?: boolean;
+  /** See {@link ActionRow}: the escape hatch for a surface outside a sheet's type scale. */
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={closing}
+      disabled={closing || disabled}
       className={cn(
         // Same 44px floor as ActionRow above — and it matters more here, because this is the row a
         // mis-tap arms.
@@ -74,6 +94,7 @@ export function DestructiveActionRow({
         armed
           ? "bg-destructive text-destructive-foreground"
           : "text-destructive hover:bg-destructive/10 active:bg-destructive/15",
+        className,
       )}
     >
       {closing ? <Loader2 className="size-4 shrink-0 animate-spin" /> : icon}

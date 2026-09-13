@@ -69,9 +69,10 @@ import { submitMultiSelectIntent, type MultiSelectIntent } from "@/lib/multi-sel
 import { submitMenuKeys } from "@/lib/menu-action";
 import { submitPickerIntent } from "@/lib/picker-action";
 import { runCodexModelSwitch } from "@/lib/codex-model-switch";
-import { useCodexModelPresets, type CodexModelPreset } from "@/lib/codex-model-presets";
-import { parseCodexModelField } from "@/lib/harness/codex/model-field";
-import { CodexModelPresetsSheet } from "@/components/codex-model-presets";
+import { useCodexModelRecents } from "@/lib/codex-model-recents";
+import type { CodexModelTarget } from "@/lib/harness/codex/model-field";
+import { parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
+import { CodexModelRecentsMenu } from "@/components/codex-model-recents";
 import { useHoldReload } from "@/lib/reload-guard";
 import type { PickerIntent, PickerModel } from "@/lib/harness/picker-model";
 import type { PromptBlockAction } from "@/components/prompt-select-block";
@@ -292,10 +293,13 @@ export function AgentChat({
   const hostHealth = useHostHealth(agent?.host ?? scope?.host);
   const hostBlock = writeRefusal(hostHealth);
   const [modelSwitching, setModelSwitching] = useState(false);
-  const [modelSwitchError, setModelSwitchError] = useState<string>();
   const modelSwitchAbort = useRef<AbortController | null>(null);
-  const { presets: modelPresets } = useCodexModelPresets();
-  const knownModels = useMemo(() => modelPresets.map((preset) => preset.model), [modelPresets]);
+  const { recents, record, remove: removeRecent, clear: clearRecents } = useCodexModelRecents();
+  // What the pane's statusline is allowed to name as a model. The history is the only list of model
+  // ids this device knows, and a pair only reaches it by being parsed off a statusline first — so in
+  // practice this is the `gpt-*` shape being confirmed, which is what the parser's fallback already
+  // accepts. It stays because it is the seam that makes a statusline field a model field at all.
+  const knownModels = useMemo(() => recents.map((entry) => entry.model), [recents]);
   useHoldReload(`model-switch:${paneScopeKey(scope, paneId)}`, modelSwitching);
   /**
    * The ONE reason this pane currently refuses a write, or undefined when it accepts them. Every
@@ -309,7 +313,7 @@ export function AgentChat({
    */
   const refuseWrite = useCallback(
     (): string | undefined => (readOnly ? t("chat.status.readOnly") : hostBlock ??
-      (modelSwitchAbort.current ? t("modelPresets.busy") : undefined)),
+      (modelSwitchAbort.current ? t("codexModel.busy") : undefined)),
     [readOnly, hostBlock],
   );
 
@@ -620,12 +624,17 @@ export function AgentChat({
   const terminalDraft = useStableTerminalDraft(rawTerminalDraft);
 
   // Read the live poll, never a mirror frozen while the operator scrolls its history.
+  //
+  // Each row is walked as FIELDS, not as one string: Codex 0.154 prints the level beside the model
+  // (`gpt-5.6-sol · high`) rather than inside the same field, so a field that carries a model and no
+  // level asks its neighbour whether it is one (harness/codex/model-field.ts).
   const currentModel = useMemo(() => {
     if (agent?.agent !== "codex") return undefined;
     const rows = adapterFor("codex")?.extractStatusLines(splitLines(parseAnsi(text))) ?? [];
     for (const row of rows) {
-      for (const field of lineText(row).split(" · ")) {
-        const model = parseCodexModelField(field.trim(), knownModels);
+      const fields = lineText(row).split(" · ");
+      for (const [index, field] of fields.entries()) {
+        const model = parseCodexStatuslineField(field.trim(), fields[index + 1]?.trim(), knownModels);
         if (model) return model;
       }
     }
@@ -635,47 +644,58 @@ export function AgentChat({
   const modelKeys = useMuxCapability("sendKeys", scope);
   const modelDisabledReason = readOnly ? t("chat.status.readOnly") : hostBlock ?? (
     agent?.agent !== "codex" || connecting || !grammarsOn || !modelType.capable || !modelKeys.capable ||
-    dialogPresent || Boolean(rawTerminalDraft?.trim()) ? t("modelPresets.blocked") :
-    agent.status !== "idle" && agent.status !== "done" ? t("modelPresets.idleRequired") : undefined
+    dialogPresent || Boolean(rawTerminalDraft?.trim()) ? t("codexModel.blocked") :
+    agent.status !== "idle" && agent.status !== "done" ? t("codexModel.idleRequired") : undefined
+  );
+  // Is there anything to switch TO? One used pair that is not the one on screen — so a device with a
+  // single pair in its history has a model field that is plain text, with no arrow and nothing to
+  // open. That is the point of the arrow: it means "there is somewhere to go", not "this is a button".
+  const modelSwitchable = useMemo(
+    () => currentModel !== undefined && recents.some(
+      (entry) => entry.model !== currentModel.model || entry.effort !== currentModel.effort,
+    ),
+    [currentModel, recents],
   );
 
-  async function switchModel(preset?: CodexModelPreset) {
+  async function switchModel(target?: CodexModelTarget) {
     if (modelSwitchAbort.current) return;
     const refusal = modelDisabledReason ??
-      (composerRef.current?.isWriting() ? t("modelPresets.busy") : undefined);
+      (composerRef.current?.isWriting() ? t("codexModel.busy") : undefined);
     if (refusal) {
-      setModelSwitchError(refusal);
+      setStatus(refusal, "error");
       return;
     }
     const controller = new AbortController();
     modelSwitchAbort.current = controller;
     setModelSwitching(true);
-    setModelSwitchError(undefined);
     try {
       const result = await runCodexModelSwitch({
-        paneId, scope, requestedLines, preset, signal: controller.signal,
+        paneId, scope, requestedLines, preset: target, signal: controller.signal,
       });
       if (controller.signal.aborted) return;
       if (result.status === "switched" || result.status === "opened") {
-        if (preset) setStatus(t("modelPresets.success", { model: preset.model, effort: preset.effort }), "success");
+        if (target) setStatus(t("codexModel.success", { model: target.model, effort: target.effort }), "success");
       } else {
         const messages = {
-          cancelled: "modelPresets.cancelled",
-          blocked: "modelPresets.blocked",
-          "unsupported-model": "modelPresets.unsupportedModel",
-          "unsupported-effort": "modelPresets.unsupportedEffort",
-          changed: "modelPresets.changed",
-          unconfirmed: "modelPresets.unconfirmed",
+          cancelled: "codexModel.cancelled",
+          blocked: "codexModel.blocked",
+          "unsupported-model": "codexModel.unsupportedModel",
+          "unsupported-effort": "codexModel.unsupportedEffort",
+          changed: "codexModel.changed",
+          unconfirmed: "codexModel.unconfirmed",
           error: "chat.status.sendFailed",
         } as const satisfies Record<typeof result.status, MessageKey>;
-        setModelSwitchError(result.error || t(messages[result.status]));
+        // Failures go to the FLOATING status, never to the menu: this used to be a private error slot
+        // the bottom sheet rendered, and the menu that replaced the sheet has no room to explain
+        // itself — a refused switch that reports nothing is the §11 fault exactly.
+        setStatus(result.error || t(messages[result.status]), "error");
       }
       const fresh = await fetchPane(paneId, requestedLines, scope);
       if (!controller.signal.aborted) setShown({ text: fresh.text, revision: fresh.revision });
       revalidator.revalidate();
       if (result.status === "switched" || result.status === "opened") setDrawer(null);
     } catch (switchError) {
-      if (!controller.signal.aborted) setModelSwitchError(describeThrownError(switchError));
+      if (!controller.signal.aborted) setStatus(describeThrownError(switchError), "error");
     } finally {
       modelSwitchAbort.current = null;
       setModelSwitching(false);
@@ -850,6 +870,12 @@ export function AgentChat({
     setFollowing(true);
     revalidator.revalidate();
     listRef.current?.scrollToBottom();
+    // THE moment a model/level pair earns its place in the history. The composer only calls this on a
+    // VERIFIED send (`composer.tsx`'s `res.status === "sent"`), which is what "used" means here: a
+    // pair reached by opening the picker and walking away is not one you reach for, and recording on
+    // sight would fill the list with models that were merely passed through. `currentModel` is the
+    // live statusline read, so this records what the turn actually ran on.
+    if (currentModel?.effort) record(currentModel.model, currentModel.effort);
   };
 
   // Tap a prompt-select option. This can type into a real terminal, so it runs the revision-based
@@ -1935,10 +1961,10 @@ export function AgentChat({
                       row={row}
                       sessionModel={sessionModel}
                       knownModels={knownModels}
-                      onModelClick={agent?.agent === "codex" ? () => {
-                        setModelSwitchError(undefined);
-                        setDrawer("models");
-                      } : undefined}
+                      modelSwitchable={modelSwitchable}
+                      onModelClick={agent?.agent === "codex" && modelSwitchable
+                        ? () => setDrawer("models")
+                        : undefined}
                       leading={i === 0 && showWriteHost ? (
                         <HostChip host={writeHost} variant="caption" className="shrink-0" />
                       ) : undefined}
@@ -1953,6 +1979,33 @@ export function AgentChat({
                 </div>
                 )}
               </Collapse>
+
+              {/* The model switcher, and it is a SIBLING of the strip rather than a child of it, for
+                  two reasons that are both silent failures if ignored. Inside the strip it would be
+                  clipped by that box's `overflow-y-auto`; inside it it would also be under
+                  `MIRROR_INVERT`, so the panel would render inverted and its own text unreadable. As
+                  a sibling in this `relative` box it anchors above the model field and wears normal
+                  app chrome.
+
+                  Gated on the anchor existing: this strip unmounts in zen mode and whenever the
+                  statusline is stood down, and a menu left open over a field that is gone is a panel
+                  with nothing to point at. `drawer` is reused rather than a second flag so the
+                  existing rules come along — leaving `"models"` aborts an in-flight switch, and zen
+                  already clears the drawer. */}
+              {statuslineVisible && currentModel ? (
+                <CodexModelRecentsMenu
+                  open={drawer === "models"}
+                  onClose={closeDrawer}
+                  current={currentModel}
+                  recents={recents}
+                  onSelect={(target) => void switchModel(target)}
+                  onNative={() => void switchModel()}
+                  onRemove={(target) => removeRecent(target.model, target.effort)}
+                  onClear={clearRecents}
+                  disabledReason={modelDisabledReason}
+                  busy={modelSwitching}
+                />
+              ) : null}
 
               {/* One boundary separates the terminal status strip from the input controls. */}
               <div data-slot="chrome-block" className="border-t border-rule bg-chrome">
@@ -1987,16 +2040,6 @@ export function AgentChat({
           </Collapse>
         </div>
 
-        <CodexModelPresetsSheet
-          open={drawer === "models"}
-          onClose={closeDrawer}
-          current={currentModel}
-          onSelect={(preset) => void switchModel(preset)}
-          onNative={() => void switchModel()}
-          disabledReason={modelDisabledReason}
-          busy={modelSwitching}
-          error={modelSwitchError}
-        />
         {/* Pane switching and configured launchers share the header's switcher sheet. */}
         <BottomSheet
           open={drawer === "switcher"}

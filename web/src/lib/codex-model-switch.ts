@@ -13,7 +13,7 @@ import {
   type PaneActionOwner,
 } from "./picker-action";
 import { sendGuardedReply, type ReplyOutcome } from "./reply-action";
-import type { CodexModelPreset, CodexReasoningEffort } from "./codex-model-presets";
+import type { CodexModelTarget, CodexReasoningEffort } from "./harness/codex/model-field";
 import type { PickerModel } from "./harness/picker-model";
 import type { Scope } from "./scope";
 
@@ -32,7 +32,7 @@ export interface CodexModelSwitchArgs {
   paneId: string;
   scope?: Scope;
   requestedLines: number;
-  preset?: CodexModelPreset;
+  preset?: CodexModelTarget;
   signal: AbortSignal;
   /** Test seam for bounded native TUI polling. */
   sleep?: Sleep;
@@ -107,7 +107,7 @@ function modelField(lines: ReturnType<typeof splitLines>, model: string): { mode
   return null;
 }
 
-function freshConfirmation(beforeText: string, afterText: string, preset: CodexModelPreset): boolean {
+function freshConfirmation(beforeText: string, afterText: string, preset: CodexModelTarget): boolean {
   if (beforeText === afterText) return false;
   const model = preset.model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const effort = preset.effort === "xhigh"
@@ -118,7 +118,7 @@ function freshConfirmation(beforeText: string, afterText: string, preset: CodexM
   return count(afterText) > count(beforeText);
 }
 
-function statusMatches(text: string, preset: CodexModelPreset): boolean {
+function statusMatches(text: string, preset: CodexModelTarget): boolean {
   const lines = splitLines(parseAnsi(text));
   return modelField(lines, preset.model)?.effort === preset.effort;
 }
@@ -245,7 +245,7 @@ async function locateModel(
   args: CodexModelSwitchArgs,
   owner: PaneActionOwner,
   initial: PickerRead,
-  preset: CodexModelPreset,
+  preset: CodexModelTarget,
 ): Promise<PickerRead | CodexModelSwitchResult> {
   let current = initial;
   let direction: "up" | "down" = "down";
@@ -300,7 +300,7 @@ function globalPlanOption(model: PickerModel): string | null {
 async function finishAndVerify(
   args: CodexModelSwitchArgs,
   baselineText: string,
-  preset: CodexModelPreset,
+  preset: CodexModelTarget,
 ): Promise<CodexModelSwitchResult> {
   const sleep = args.sleep ?? defaultSleep;
   for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {

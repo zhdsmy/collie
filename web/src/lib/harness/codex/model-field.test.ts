@@ -1,6 +1,38 @@
 import { describe, expect, it } from "vitest";
 
-import { parseCodexModelField } from "./model-field";
+import { parseCodexModelField, parseCodexStatuslineField } from "./model-field";
+
+describe("parseCodexStatuslineField", () => {
+  it("pairs a model with the level printed in the field beside it", () => {
+    expect(parseCodexStatuslineField("gpt-5.6-sol", "high")).toEqual({
+      model: "gpt-5.6-sol",
+      effort: "high",
+    });
+    expect(parseCodexStatuslineField("gpt-5.6-sol", "Extra high")).toEqual({
+      model: "gpt-5.6-sol",
+      effort: "xhigh",
+    });
+  });
+
+  it("leaves a neighbour that is not a level alone", () => {
+    expect(parseCodexStatuslineField("gpt-5.6-sol", "Working")).toEqual({
+      model: "gpt-5.6-sol",
+      effort: null,
+    });
+    expect(parseCodexStatuslineField("gpt-6-astra xhigh", "Working")).toEqual({
+      model: "gpt-6-astra",
+      effort: "xhigh",
+    });
+    expect(parseCodexStatuslineField("gpt-6-astra xhigh", undefined)).toEqual({
+      model: "gpt-6-astra",
+      effort: "xhigh",
+    });
+  });
+
+  it("says nothing for a field that is not a model at all", () => {
+    expect(parseCodexStatuslineField("main", "high")).toBeNull();
+  });
+});
 
 describe("parseCodexModelField", () => {
   it.each([
@@ -15,6 +47,14 @@ describe("parseCodexModelField", () => {
     ["gpt-6-astra (default)", { model: "gpt-6-astra", effort: null }],
   ] as const)("parses %s", (text, expected) => {
     expect(parseCodexModelField(text)).toEqual(expected);
+  });
+
+  it("reads a level no preset can name as the model with no effort", () => {
+    expect(parseCodexModelField("gpt-5.6 minimal")).toEqual({ model: "gpt-5.6", effort: null });
+    expect(parseCodexModelField("gpt-5.6 minimal Plan mode")).toEqual({
+      model: "gpt-5.6",
+      effort: null,
+    });
   });
 
   it("accepts custom models only when the caller knows them", () => {
