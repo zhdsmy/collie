@@ -714,6 +714,14 @@ export const en = {
   "dialog.picker.moveDownAria": "Move {label} down",
   "dialog.picker.noResults": "No matching options",
   "dialog.picker.confirm": "Confirm and close",
+  "dialog.picker.questionProgress": "Question {index}/{total}",
+  "dialog.picker.unanswered.one": "{count} unanswered",
+  "dialog.picker.unanswered.other": "{count} unanswered",
+  "dialog.picker.previousQuestion": "Previous question",
+  "dialog.picker.nextQuestion": "Next question",
+  "dialog.picker.submitAnswer": "Submit answer",
+  "dialog.picker.submitAll": "Submit all answers",
+  "dialog.picker.answerRemaining": "Answer the remaining questions before submitting.",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

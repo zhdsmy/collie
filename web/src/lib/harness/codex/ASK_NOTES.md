@@ -1,5 +1,51 @@
 # Codex `request_user_input` — keystroke recipe
 
+## Current card flow — Codex 0.154.0, verified 2026-09-13
+
+The `codex--v0154-question-*.txt` fixtures were captured from the installed Codex TUI
+in a disposable Herdr pane, with a separate temporary configuration and a deterministic
+local Responses provider. The provider supplied two tool questions; Codex itself rendered
+every frame and handled every key. No external model or daily credentials were used.
+
+The whole painted region, including the leading spacer, `Question X/Y (N unanswered)`
+header and wrapped question, becomes a `picker`. The old generic caption and duplicated
+raw question disappear. An unanswered question is cyan; a committed question uses the
+default foreground. This paint distinction matters when editing a previous answer.
+
+| Card action | Verified native behavior |
+| --- | --- |
+| Select an option | Up/Down walks one step at a time with guarded read-back; it does not submit. Moving an answered question's pointer invalidates its confirmation and increases the unanswered count. |
+| Previous/next question | Left/Right changes the question while retaining each question's selected option. No answer is submitted. |
+| Confirm answer | Send the currently pointed digit once, after a fresh full guard. Codex confirms it and advances to the next question. |
+| Submit all answers | Send the pointed digit only after every other question is confirmed. Codex sends the entire answer map and closes the card. |
+| Native notes | Tab focuses the notes field and the footer changes. That state stays raw; card buttons cannot type into it. |
+
+The digit on the explicit confirmation button is intentional: Enter on the native
+`None of the above` row opens notes, while its digit confirms that label directly,
+matching the previous Collie behavior. Escape interrupts the entire turn, so question
+cards never expose the picker's ordinary Cancel action.
+
+The last-question footer says `submit all` even when earlier questions are unanswered.
+Codex would then open `Submit unanswered questions?`; the phone disables its final
+button until the earlier questions are confirmed. Header navigation remains available.
+
+Non-blocking requests can acquire an `auto-resolves in …` countdown. This changing header stays
+raw so the native deadline remains visible; a timed dialog is never mistaken for a persistent card.
+In the live sandbox an untouched second request expired to an empty answer map, and the client
+refused every attempted card action on its countdown frame without emitting keys.
+
+The checkout's actual `submitPickerIntent` guard/API modules were exercised against
+the disposable pane: confirm question 1, return from question 2, revise question 1,
+confirm it again, select question 2, navigate both directions, and explicitly submit.
+The completion capture contains the corrected first answer and retained second answer.
+A second completed live flow selected `None of the above` in both questions through the same
+client actions; the returned map contained that label for both answers, without entering notes.
+
+Source cross-check: `openai/codex` tag `rust-v0.154.0`,
+`codex-rs/tui/src/bottom_pane/request_user_input/{mod.rs,render.rs}`.
+
+## Historical digit-only flow — Codex 0.149.0
+
 Captured 2026-08-22 on Codex v0.149.0 in a sandbox pane (feature flag
 `default_mode_request_user_input` was enabled in the host config; the tool announces itself as
 under development). The card REPLACES the composer. Herdr status: `blocked`.

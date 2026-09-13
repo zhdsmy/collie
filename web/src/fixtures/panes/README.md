@@ -16,6 +16,16 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Codex 0.154 question cards (captured 2026-09-13)
+
+`codex--v0154-question-*.txt` are byte-faithful captures of the installed Codex TUI
+using a disposable configuration and deterministic local Responses provider. The
+corpus covers a wrapped Chinese question, changing an option without confirming,
+both directions of question navigation, returning to an answered question, revising
+it, the final question before submission, native notes focus, and the final corrected
+answer map. No external model or daily credentials were used.
+See [`ASK_NOTES.md`](../../lib/harness/codex/ASK_NOTES.md) for the verified key recipes.
+
 ## Codex 0.154 model and statusline pickers (captured 2026-09-13)
 
 `codex--v0154-picker-*.txt` capture a disposable Codex pane with isolated configuration

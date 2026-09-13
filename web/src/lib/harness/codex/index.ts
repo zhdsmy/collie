@@ -3,8 +3,8 @@
 // kinds with dated captures and notes (all under this directory): the folder-trust prompt
 // (`prompt-select`, family trust), exec approvals (`prompt-select`, family permission —
 // classified by row: the one-shot Yes and the reject become buttons, persistent rows never do),
-// and `request_user_input` question cards (`prompt-select`, family select — a digit answers the
-// current question and submits on the last). Digits confirm directly on all three (probed;
+// and `request_user_input` question cards (`picker` — pointer selection, question navigation and
+// an explicit confirmation). Digits confirm directly on all three (probed;
 // notes files). The notes flow of a question card stays in the terminal: the focused-notes
 // state refuses to raw, because a digit would type into the box.
 //
@@ -69,7 +69,7 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
     const before = trimTrailingBlank(lines.slice(0, ask.startLine));
     const blocks: Block[] = [];
     if (before.length > 0) blocks.push(raw(before));
-    blocks.push({ kind: "prompt-select", prompt: ask.model, lines: lines.slice(ask.startLine) });
+    blocks.push({ kind: "picker", picker: ask.model, lines: lines.slice(ask.startLine) });
     return blocks;
   }
 

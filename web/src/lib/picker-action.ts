@@ -178,6 +178,16 @@ function samePickerExceptPointer(a: PickerModel, b: PickerModel): boolean {
     return false;
   }
   if (a.query !== b.query || a.footer !== b.footer || !samePreview(a, b)) return false;
+  const before = a.questionnaire;
+  const after = b.questionnaire;
+  if (before && after) {
+    // Moving an answered question's pointer makes that question unanswered again. This is the
+    // only counter change caused by Up/Down; a terminal user confirming another answer is drift.
+    const unchanged = before.answered === after.answered && before.unanswered === after.unanswered;
+    const edited = before.answered && !after.answered && after.unanswered === before.unanswered + 1 &&
+      pointedOption(a)?.id !== pointedOption(b)?.id;
+    if (before.submit !== after.submit || (!unchanged && !edited)) return false;
+  }
   const af = optionFacts(a);
   const bf = optionFacts(b);
   return af.length === bf.length && af.every((value, index) => sameOptionFacts(value, bf[index]!));
@@ -440,12 +450,51 @@ async function commitAt(
 }
 
 async function runChoose(args: PickerActionArgs, id: string): Promise<ActionResult> {
-  if (args.picker.kind !== "single") return { status: "changed" };
+  if (args.picker.kind !== "single" || args.picker.questionnaire) return { status: "changed" };
   const initial = await readCurrent(args);
   if (!initial.ok) return initial.result;
   const walked = await walkTo(args, initial.value, id);
   if (!walked.ok) return walked.result;
   return commitAt(args, walked.value, id, "Enter");
+}
+
+/** A question option tap only moves its pointer. Confirming the answer is a separate user action. */
+async function runFocus(args: PickerActionArgs, id: string): Promise<ActionResult> {
+  if (args.picker.kind !== "single" || !args.picker.questionnaire) return { status: "changed" };
+  const initial = await readCurrent(args);
+  if (!initial.ok) return initial.result;
+  const walked = await walkTo(args, initial.value, id);
+  return walked.ok ? { status: "sent" } : walked.result;
+}
+
+async function runQuestion(args: PickerActionArgs, direction: "previous" | "next"): Promise<ActionResult> {
+  const question = args.picker.questionnaire;
+  if (args.picker.kind !== "single" || !question) return { status: "changed" };
+  const nextIndex = question.index + (direction === "next" ? 1 : -1);
+  if (nextIndex < 1 || nextIndex > question.total) return { status: "changed" };
+  const sent = await guardedKey(args, [direction === "next" ? "Right" : "Left"]);
+  if (sent.status !== "sent") return sent;
+  return readCommitOutcome(args, args.picker, (model) => model.questionnaire?.index === nextIndex &&
+    model.questionnaire.total === question.total && model.questionnaire.unanswered === question.unanswered,
+  false, false);
+}
+
+async function confirmQuestion(args: PickerActionArgs): Promise<ActionResult> {
+  const question = args.picker.questionnaire;
+  const pointer = pointedOption(args.picker);
+  if (!question || !pointer || !/^[1-9]$/.test(pointer.id)) return { status: "changed" };
+  // Do not open Codex's secondary "submit unanswered questions" modal. Earlier questions remain
+  // reachable through the header arrows, so the final button can require their explicit answers.
+  const otherUnanswered = question.unanswered - (question.answered ? 0 : 1);
+  if (question.submit === "all" && otherUnanswered > 0) return { status: "changed" };
+  // Digits confirm the pointed answer even on "None of the above". Enter on that row instead
+  // focuses notes, so using Enter would contradict the explicit submit button's label.
+  const sent = await guardedKey(args, [pointer.id]);
+  if (sent.status !== "sent") return sent;
+  const unanswered = question.unanswered - (question.answered ? 0 : 1);
+  return readCommitOutcome(args, args.picker, (model) => question.submit === "answer" &&
+    model.questionnaire?.index === question.index + 1 && model.questionnaire.total === question.total &&
+    model.questionnaire.unanswered === unanswered, question.submit === "all", false);
 }
 
 async function runToggle(args: PickerActionArgs, id: string): Promise<ActionResult> {
@@ -463,6 +512,10 @@ async function runClose(
   args: PickerActionArgs,
   intent: "confirm" | "cancel",
 ): Promise<ActionResult> {
+  if (args.picker.questionnaire) {
+    // Escape interrupts the whole Codex turn, rather than dismissing just the question card.
+    return intent === "confirm" ? confirmQuestion(args) : { status: "changed" };
+  }
   if (intent === "confirm" && args.picker.kind !== "multiple") {
     return { status: "changed" };
   }
@@ -639,6 +692,10 @@ async function dispatch(args: PickerActionArgs): Promise<ActionResult> {
   switch (args.intent.kind) {
     case "choose":
       return runChoose(args, args.intent.id);
+    case "focus":
+      return runFocus(args, args.intent.id);
+    case "question":
+      return runQuestion(args, args.intent.direction);
     case "toggle":
       return runToggle(args, args.intent.id);
     case "move":

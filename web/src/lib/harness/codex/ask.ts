@@ -1,91 +1,86 @@
-// Codex's `request_user_input` question card — a `Question X/Y (N unanswered)` header, the
-// question line, pointer-numbered options with two-space-split descriptions (including the
-// tool's own auto-added "None of the above" row), and a `tab to add notes | enter to submit …`
-// footer. Digits confirm directly: a digit answers the CURRENT question, advancing a
-// multi-question set and submitting on the last one (live-probed 2026-08-22 on 1-question and
-// 2-question calls; ASK_NOTES.md). The notes flow stays in the terminal: when the notes box is
-// focused the footer flips to `tab or esc to clear notes …` and this detector refuses — a digit
-// would type into the box. Esc interrupts the WHOLE conversation and is never emitted. Pure;
-// no pane access.
-
+// Codex request_user_input: the whole question becomes a picker card. Option taps move the native
+// pointer; a separate confirmation uses its digit. ASK_NOTES.md records why Enter differs on the
+// notes row. Notes-focused screens stay raw, so no option key can type into the user's notes.
 import type { StyledLine } from "../../blocks";
-import type { PromptModel, PromptOption } from "../prompt-model";
-import { lastNonBlankIndex, lineText, regionSignature, rstrip, skipBlanksUp } from "./markers";
+import type { PickerModel, PickerOption } from "../picker-model";
+import { lastNonBlankIndex, lineText, regionSignature, rstrip } from "./markers";
 
 export interface AskRegion {
-  model: PromptModel;
+  model: PickerModel;
   startLine: number;
 }
 
-// Both captured footer variants start with the notes hint and carry an enter-submit verb
-// (`enter to submit answer` mid-set, `enter to submit all` on the final question).
-const FOOTER = /^\s*tab to add notes \| enter to submit\b/;
-// The notes-focused footer — the state in which a digit types instead of answering.
-const NOTES_FOOTER = /^\s*tab or esc to clear notes\b/;
-const NOTES_BOX = /^\s*› Add notes\b/;
-const HEADER = /^\s*Question (\d+)\/(\d+) \(\d+ unanswered\)$/;
-// Selected rows lead with `  › `, unselected with four spaces.
-const OPTION = /^(?:\s{2}› |\s{4})([1-9])\. (.+)$/;
+const FOOTER = /^tab to add notes \| enter to submit (answer|all)( \| ←\/→ to navigate questions)? \| esc to interrupt$/;
+const HEADER = /^ {2}Question (\d+)\/(\d+) \((\d+) unanswered\)$/;
+const OPTION = /^( {2}› | {4})([1-9])\. (.+)$/;
+const MAX_ROWS = 100;
 
-/** request_user_input card at the tail, or null. */
+/** A complete painted question at the buffer tail, never notes or an unrelated numbered list. */
 export function detectAskRegion(lines: StyledLine[]): AskRegion | null {
-  const texts = lines.map((l) => rstrip(lineText(l)));
-  const fi = lastNonBlankIndex(texts);
-  if (fi < 0) return null;
-  // The notes-focused state is explicitly refused rather than merely unrecognized, so the
-  // refusal survives layout drift in the rows above.
-  if (NOTES_FOOTER.test(texts[fi]!)) return null;
-  if (!FOOTER.test(texts[fi]!)) return null;
+  const texts = lines.map((line) => rstrip(lineText(line)));
+  const tail = lastNonBlankIndex(texts);
+  if (tail < 0) return null;
+  const footer = FOOTER.exec(texts[tail]!.trim());
+  if (!footer) return null;
 
-  // One blank row separates the footer from the option run; the options are contiguous.
-  const bottom = skipBlanksUp(texts, fi - 1);
-  if (bottom < 0) return null;
-  if (NOTES_BOX.test(texts[bottom]!)) return null;
-
-  const options: PromptOption[] = [];
-  let i = bottom;
-  for (; i >= 0; i--) {
-    const t = texts[i]!;
-    if (NOTES_BOX.test(t)) return null;
-    const opt = OPTION.exec(t);
-    if (opt === null) break;
-    const raw = opt[2]!.trim();
-    const split = raw.split(/\s{2,}/);
-    const label = (split[0] ?? raw).trim();
-    const description = split.slice(1).join(" ").trim();
-    const option: PromptOption = { label, keys: [opt[1]!] };
-    if (description !== "") option.description = description;
-    options.unshift(option);
+  let header = tail - 1;
+  for (; header >= Math.max(0, tail - MAX_ROWS); header--) {
+    if (HEADER.test(texts[header]!)) break;
   }
-  if (options.length < 2) return null;
-  for (let k = 0; k < options.length; k++) {
-    if (options[k]!.keys[0] !== String(k + 1)) return null;
+  if (header < Math.max(0, tail - MAX_ROWS)) return null;
+  const progress = HEADER.exec(texts[header]!)!;
+  const index = Number(progress[1]);
+  const total = Number(progress[2]);
+  const unanswered = Number(progress[3]);
+  if (index < 1 || index > total || total > 100 || unanswered > total) return null;
+  if ((total > 1) !== Boolean(footer[2])) return null;
+  if (total > 1 && (index === total) !== (footer[1] === "all")) return null;
+
+  const headerInk = lines[header]!.segments.filter((segment) => segment.text.trim());
+  const background = headerInk[0]?.bg;
+  if (!background || !headerInk.every((segment) => segment.dim && segment.bg === background)) return null;
+
+  const firstOption = texts.findIndex((text, row) => row > header && row < tail && OPTION.test(text));
+  if (firstOption < 0) return null;
+  const questionLines = lines.slice(header + 1, firstOption).filter((line) => lineText(line).trim());
+  const questionInk = questionLines.flatMap((line) => line.segments.filter((segment) => segment.text.trim()));
+  if (!questionInk.length || questionInk.some((segment) => segment.bold || segment.dim || segment.bg !== background)) return null;
+  const answered = questionInk.every((segment) => segment.fg === undefined);
+  if (!answered && !questionInk.every((segment) => segment.fg === "var(--ansi-6)")) return null;
+  if ((answered && unanswered === total) || (!answered && unanswered === 0)) return null;
+  const question = questionLines.map((line) => lineText(line).trim()).join(" ");
+
+  const options: PickerOption[] = [];
+  for (let row = firstOption; row < tail; row++) {
+    const text = texts[row]!;
+    if (!text.trim()) continue;
+    const match = OPTION.exec(text);
+    if (!match) {
+      const previous = options.at(-1);
+      if (!previous || !/^ {6,}\S/.test(text)) return null;
+      previous.description = [previous.description, text.trim()].filter(Boolean).join(" ");
+      continue;
+    }
+    if (Number(match[2]) !== options.length + 1) return null;
+    const pointed = match[1] === "  › ";
+    const ink = lines[row]!.segments.filter((segment) => segment.text.trim());
+    if (pointed && !ink.every((segment) => segment.bold && !segment.dim && segment.fg === "var(--ansi-6)")) return null;
+    const [label, ...description] = match[3]!.trim().split(/ {2,}/);
+    options.push({ id: match[2]!, label: label!, description: description.join(" "), pointed, current: false, checked: false, orderable: false });
   }
+  if (options.length < 2 || options.filter((option) => option.pointed).length !== 1) return null;
 
-  // Above the options (across one blank row): the question line, with the Question X/Y header
-  // directly above it. Both are required — they are what separates this card from any other
-  // pointer-numbered list.
-  const questionRow = skipBlanksUp(texts, i);
-  if (questionRow < 1) return null;
-  const question = texts[questionRow]!.trim();
-  if (question === "" || !HEADER.test(texts[questionRow - 1]!)) return null;
-
-  const start = bottom - options.length + 1;
-  const signature = regionSignature(lines, questionRow - 1, fi + 1);
-  if (signature === "") return null;
-
+  let start = header;
+  while (start > 0 && !texts[start - 1]!.trim() && lines[start - 1]!.segments.length > 0 &&
+    lines[start - 1]!.segments.every((segment) => segment.bg === background)) start--;
+  const signature = regionSignature(lines, start, tail + 1);
   return {
-    // The block replaces the OPTIONS down; the header and question stay in the raw mirror.
     startLine: start,
     model: {
-      question,
-      options,
-      // `select` pins the renderer's caption; the KEYS carry this harness's probed recipe. The
-      // family doc describes Claude's digit-then-Enter — Codex's card submits on the digit alone
-      // (probed, ASK_NOTES.md), and the explicit per-option `keys` are what the send path uses.
-      family: "select",
-      coreSignature: question,
-      signature,
+      kind: "single", identity: "question:" + index + "/" + total + ":" + question, title: question,
+      description: [], options, query: null, preview: [], footer: texts[tail]!.trim(),
+      signature, regionSignature: signature,
+      questionnaire: { index, total, unanswered, answered, submit: index === total ? "all" : "answer" },
     },
   };
 }

@@ -685,6 +685,14 @@ export const ja: Dictionary = {
   "dialog.picker.moveDownAria": "{label} を下へ移動",
   "dialog.picker.noResults": "一致する項目がありません",
   "dialog.picker.confirm": "確定して閉じる",
+  "dialog.picker.questionProgress": "質問 {index}/{total}",
+  "dialog.picker.unanswered.one": "未回答 {count} 件",
+  "dialog.picker.unanswered.other": "未回答 {count} 件",
+  "dialog.picker.previousQuestion": "前の質問",
+  "dialog.picker.nextQuestion": "次の質問",
+  "dialog.picker.submitAnswer": "回答を送信",
+  "dialog.picker.submitAll": "すべての回答を送信",
+  "dialog.picker.answerRemaining": "送信する前に残りの質問に回答してください。",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

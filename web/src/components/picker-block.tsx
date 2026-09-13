@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
+  ChevronLeft,
   ChevronRight,
   Loader2,
   Search,
@@ -16,7 +17,7 @@ import {
   type PickerModel,
   type PickerOption,
 } from "@/lib/harness/picker-model";
-import { t } from "@/lib/i18n";
+import { t, tn } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 import { MIRROR_INVERT, MIRROR_SPACE, styleFor } from "@/components/mirror-space";
 import { Button } from "@/components/ui/button";
@@ -155,6 +156,66 @@ function BrowseControls({ locked, onPress }: { locked: boolean; onPress: (direct
       >
         <ArrowDown className="size-4" />
       </Button>
+    </div>
+  );
+}
+
+type Questionnaire = NonNullable<PickerModel["questionnaire"]>;
+
+function QuestionnaireHeader({
+  questionnaire,
+  locked,
+  onPress,
+}: {
+  questionnaire: Questionnaire;
+  locked: boolean;
+  onPress: (direction: "previous" | "next") => void;
+}) {
+  const hasNavigation = questionnaire.total > 1;
+  const atFirstQuestion = questionnaire.index <= 1;
+  const atLastQuestion = questionnaire.index >= questionnaire.total;
+
+  return (
+    <div data-slot="picker-questionnaire-header" className="flex min-w-0 items-center gap-1">
+      {hasNavigation ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          disabled={locked || atFirstQuestion}
+          aria-label={t("dialog.picker.previousQuestion")}
+          title={t("dialog.picker.previousQuestion")}
+          onClick={() => onPress("previous")}
+          className="size-8 shrink-0"
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+      ) : null}
+      <div className="min-w-0 flex-1 text-center">
+        <div className="font-content text-xs font-semibold leading-tight text-foreground">
+          {t("dialog.picker.questionProgress", {
+            index: questionnaire.index,
+            total: questionnaire.total,
+          })}
+        </div>
+        <div className="font-content text-[10px] leading-tight text-muted-foreground">
+          {tn("dialog.picker.unanswered", questionnaire.unanswered)}
+        </div>
+      </div>
+      {hasNavigation ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          disabled={locked || atLastQuestion}
+          aria-label={t("dialog.picker.nextQuestion")}
+          title={t("dialog.picker.nextQuestion")}
+          onClick={() => onPress("next")}
+          className="size-8 shrink-0"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -335,8 +396,28 @@ function MultipleOption({
   );
 }
 
-function SingleOption({ option, locked, busy, onChoose }: { option: PickerOption; locked: boolean; busy: boolean; onChoose: () => void }) {
-  const tone = busy ? "busy" : option.current ? "selected" : "default";
+function SingleOption({
+  option,
+  locked,
+  busy,
+  questionnaire,
+  onChoose,
+}: {
+  option: PickerOption;
+  locked: boolean;
+  busy: boolean;
+  questionnaire: boolean;
+  onChoose: () => void;
+}) {
+  const tone = busy
+    ? "busy"
+    : questionnaire
+      ? option.pointed
+        ? "selected"
+        : "default"
+      : option.current
+        ? "selected"
+        : "default";
   return (
     <div className="grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] items-stretch gap-1">
       <PointerMark pointed={option.pointed} />
@@ -346,7 +427,7 @@ function SingleOption({ option, locked, busy, onChoose }: { option: PickerOption
         description={option.description}
         disabled={locked}
         onClick={onChoose}
-        trailing={busy ? <Spinner size="md" /> : option.current ? <CurrentMark /> : null}
+        trailing={busy ? <Spinner size="md" /> : !questionnaire && option.current ? <CurrentMark /> : null}
       />
     </div>
   );
@@ -365,6 +446,14 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
 
   const locked = Boolean(disabled) || sending !== null;
   const filtered = picker.query !== null && picker.query.length > 0;
+  const questionnaire = picker.questionnaire;
+  const isQuestionnaire = questionnaire !== undefined;
+  const remainingOtherQuestions =
+    questionnaire?.submit === "all"
+      ? Math.max(0, questionnaire.unanswered - (questionnaire.answered ? 0 : 1))
+      : 0;
+  const questionnaireSubmitLocked =
+    locked || (questionnaire?.submit === "all" && remainingOtherQuestions > 0);
 
   async function press(id: string, intent: PickerIntent): Promise<void> {
     if (locked) return;
@@ -405,6 +494,13 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
 
   return (
     <PromptPanel ariaLabel={picker.title}>
+      {questionnaire ? (
+        <QuestionnaireHeader
+          questionnaire={questionnaire}
+          locked={locked}
+          onPress={(direction) => void press(`question:${direction}`, { kind: "question", direction })}
+        />
+      ) : null}
       <QuestionHeading>{picker.title}</QuestionHeading>
       {picker.description.map((line, index) => (
         <p key={index} className="font-content break-words text-xs leading-snug text-muted-foreground">
@@ -425,7 +521,13 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
                   option={option}
                   locked={locked}
                   busy={busy}
-                  onChoose={() => void press(`option:${option.id}`, { kind: "choose", id: option.id })}
+                  questionnaire={isQuestionnaire}
+                  onChoose={() =>
+                    void press(
+                      `option:${option.id}`,
+                      questionnaire ? { kind: "focus", id: option.id } : { kind: "choose", id: option.id },
+                    )
+                  }
                 />
               );
             }
@@ -449,24 +551,50 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
         </p>
       )}
 
-      <BrowseControls
-        locked={locked || picker.options.length === 0}
-        onPress={(direction) => void press(`navigate:${direction}`, { kind: "navigate", direction })}
-      />
+      {isQuestionnaire ? null : (
+        <BrowseControls
+          locked={locked || picker.options.length === 0}
+          onPress={(direction) => void press(`navigate:${direction}`, { kind: "navigate", direction })}
+        />
+      )}
 
       <Preview lines={picker.preview} />
 
       <div className="flex items-center justify-end gap-1.5 border-t border-border/70 pt-1.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={locked}
-          onClick={() => void press("cancel", { kind: "cancel" })}
-        >
-          {t("dialog.cancel")}
-        </Button>
-        {picker.kind === "multiple" ? (
+        {!isQuestionnaire ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={locked}
+            onClick={() => void press("cancel", { kind: "cancel" })}
+          >
+            {t("dialog.cancel")}
+          </Button>
+        ) : null}
+        {isQuestionnaire ? (
+          <>
+            {remainingOtherQuestions > 0 ? (
+              <p className="mr-auto min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
+                {t("dialog.picker.answerRemaining")}
+              </p>
+            ) : null}
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              disabled={questionnaireSubmitLocked}
+              onClick={() => void press("confirm", { kind: "confirm" })}
+            >
+              {sending === "confirm" ? <Spinner /> : null}
+              {t(
+                questionnaire.submit === "answer"
+                  ? "dialog.picker.submitAnswer"
+                  : "dialog.picker.submitAll",
+              )}
+            </Button>
+          </>
+        ) : picker.kind === "multiple" ? (
           <Button
             type="button"
             variant="default"
@@ -480,7 +608,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
         ) : null}
       </div>
 
-      <Footer footer={picker.footer} />
+      {isQuestionnaire ? null : <Footer footer={picker.footer} />}
     </PromptPanel>
   );
 }

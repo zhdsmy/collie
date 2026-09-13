@@ -692,6 +692,14 @@ export const es: Dictionary = {
   "dialog.picker.moveDownAria": "Mover {label} abajo",
   "dialog.picker.noResults": "No hay opciones coincidentes",
   "dialog.picker.confirm": "Confirmar y cerrar",
+  "dialog.picker.questionProgress": "Pregunta {index}/{total}",
+  "dialog.picker.unanswered.one": "{count} sin responder",
+  "dialog.picker.unanswered.other": "{count} sin responder",
+  "dialog.picker.previousQuestion": "Pregunta anterior",
+  "dialog.picker.nextQuestion": "Siguiente pregunta",
+  "dialog.picker.submitAnswer": "Enviar respuesta",
+  "dialog.picker.submitAll": "Enviar todas las respuestas",
+  "dialog.picker.answerRemaining": "Responde las preguntas restantes antes de enviar.",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

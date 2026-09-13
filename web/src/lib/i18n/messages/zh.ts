@@ -672,6 +672,14 @@ export const zh: Dictionary = {
   "dialog.picker.moveDownAria": "将 {label} 下移",
   "dialog.picker.noResults": "没有匹配的选项",
   "dialog.picker.confirm": "确认并关闭",
+  "dialog.picker.questionProgress": "问题 {index}/{total}",
+  "dialog.picker.unanswered.one": "{count} 个未回答",
+  "dialog.picker.unanswered.other": "{count} 个未回答",
+  "dialog.picker.previousQuestion": "上一题",
+  "dialog.picker.nextQuestion": "下一题",
+  "dialog.picker.submitAnswer": "确认答案",
+  "dialog.picker.submitAll": "提交全部答案",
+  "dialog.picker.answerRemaining": "提交前请回答剩余问题。",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox": "未检测到 Agent 输入框，可能正处于弹窗或菜单中。未输入任何内容。",

@@ -43,6 +43,17 @@ const PICKERS = [
   "codex--v0154-picker-statusline.txt",
 ];
 
+const QUESTIONS = [
+  "codex--v0154-question-q1-answered.txt",
+  "codex--v0154-question-q1-return.txt",
+  "codex--v0154-question-q1-revised.txt",
+  "codex--v0154-question-q1-selected.txt",
+  "codex--v0154-question-q1.txt",
+  "codex--v0154-question-q2-selected.txt",
+  "codex--v0154-question-q2-unanswered.txt",
+  "codex--v0154-question-q2.txt",
+];
+
 const PINNED = [
   "codex--approval-exec.txt",
   "codex--ask-fruit.txt",
@@ -65,6 +76,9 @@ const PINNED = [
   "codex--v0154-particles-draft.txt",
   "codex--v0154-particles-working.txt",
   ...PICKERS,
+  "codex--v0154-question-completed.txt",
+  "codex--v0154-question-notes.txt",
+  ...QUESTIONS,
   "codex--v0154-statusline-disabled-default.txt",
   "codex--v0154-statusline-disabled-draft.txt",
   "codex--v0154-statusline-disabled-idle.txt",
@@ -81,6 +95,7 @@ const PINNED = [
 // box), so it belongs to the neutral (raw-only) cohort with composerReady false.
 const DIALOG = [
   ...PICKERS,
+  ...QUESTIONS,
   "codex--approval-exec.txt",
   "codex--ask-fruit.txt",
   "codex--ask-wizard-q1.txt",
@@ -655,21 +670,22 @@ describe("codexBuildBlocks", () => {
 
   it("lifts a question card with per-row digits; the question stays in the mirror", () => {
     const blocks = codexAdapter.buildBlocks(fixtureLines("codex--ask-fruit.txt"));
-    const prompt = blocks.find((b) => b.kind === "prompt-select");
-    expect(prompt?.kind).toBe("prompt-select");
-    if (prompt?.kind !== "prompt-select") return;
-    expect(prompt.prompt.family).toBe("select");
-    expect(prompt.prompt.question).toBe("Pick a fruit?");
-    expect(prompt.prompt.options.map((o) => o.label)).toEqual([
+    const prompt = blocks.find((b) => b.kind === "picker");
+    expect(prompt?.kind).toBe("picker");
+    if (prompt?.kind !== "picker") return;
+    expect(prompt.picker.questionnaire).toMatchObject({ index: 1, total: 1, submit: "all" });
+    expect(prompt.picker.title).toBe("Pick a fruit?");
+    expect(prompt.picker.options.map((o) => o.label)).toEqual([
       "Apple (Recommended)",
       "Pear",
       "None of the above",
     ]);
-    expect(prompt.prompt.options.map((o) => o.keys)).toEqual([["1"], ["2"], ["3"]]);
-    expect(prompt.prompt.options[1]!.description).toBe("Choose a soft, juicy pear.");
+    expect(prompt.picker.options.map((o) => o.id)).toEqual(["1", "2", "3"]);
+    expect(prompt.picker.options[1]!.description).toBe("Choose a soft, juicy pear.");
     const raw = blocks[0];
     if (raw?.kind !== "raw") return;
-    expect(raw.lines.map(lineText).join("\n")).toContain("Pick a fruit?");
+    expect(raw.lines.some((line) => lineText(line).trim() === "Pick a fruit?")).toBe(false);
+    expect(raw.lines.some((line) => /^\s*Question 1\/1 \(/.test(lineText(line)))).toBe(false);
   });
 
   it("steps a multi-question set as consecutive lifted cards", () => {
@@ -677,10 +693,10 @@ describe("codexBuildBlocks", () => {
       ["codex--ask-wizard-q1.txt", "Tabs or spaces?"],
       ["codex--ask-wizard-q2.txt", "Semicolons?"],
     ] as const) {
-      const prompt = codexAdapter.buildBlocks(fixtureLines(name)).find((b) => b.kind === "prompt-select");
-      expect(prompt?.kind, name).toBe("prompt-select");
-      if (prompt?.kind !== "prompt-select") return;
-      expect(prompt.prompt.question, name).toBe(question);
+      const prompt = codexAdapter.buildBlocks(fixtureLines(name)).find((b) => b.kind === "picker");
+      expect(prompt?.kind, name).toBe("picker");
+      if (prompt?.kind !== "picker") return;
+      expect(prompt.picker.title, name).toBe(question);
     }
   });
 

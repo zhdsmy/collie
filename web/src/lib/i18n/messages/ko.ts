@@ -683,6 +683,14 @@ export const ko: Dictionary = {
   "dialog.picker.moveDownAria": "{label} 아래로 이동",
   "dialog.picker.noResults": "일치하는 옵션이 없습니다",
   "dialog.picker.confirm": "확인하고 닫기",
+  "dialog.picker.questionProgress": "질문 {index}/{total}",
+  "dialog.picker.unanswered.one": "미답변 {count}개",
+  "dialog.picker.unanswered.other": "미답변 {count}개",
+  "dialog.picker.previousQuestion": "이전 질문",
+  "dialog.picker.nextQuestion": "다음 질문",
+  "dialog.picker.submitAnswer": "답변 제출",
+  "dialog.picker.submitAll": "모든 답변 제출",
+  "dialog.picker.answerRemaining": "제출하기 전에 남은 질문에 답변하세요.",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

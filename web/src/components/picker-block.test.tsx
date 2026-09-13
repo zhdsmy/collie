@@ -79,6 +79,24 @@ const multiplePicker: PickerModel = {
   regionSignature: "multiple-region",
 };
 
+const questionnaireSinglePicker: PickerModel = {
+  ...singlePicker,
+  identity: "questionnaire:single",
+  title: "Which approach should we use?",
+  options: [
+    { ...singlePicker.options[0]!, current: false, pointed: true },
+    { ...singlePicker.options[1]!, current: false, pointed: false },
+  ],
+  query: null,
+  questionnaire: {
+    index: 1,
+    total: 2,
+    unanswered: 2,
+    answered: false,
+    submit: "answer",
+  },
+};
+
 describe("PickerBlock", () => {
   it("renders a single picker as tappable cards with pointer, current mark, preview, and footer", async () => {
     const onAction = vi.fn();
@@ -206,6 +224,94 @@ describe("PickerBlock", () => {
     render(<PickerBlock picker={multiplePicker} onAction={onAction} />);
     await user.click(screen.getByRole("button", { name: "Confirm and close" }));
     expect(onAction).toHaveBeenCalledWith({ kind: "confirm" });
+  });
+
+  it("renders questionnaire progress and replaces browse controls with question navigation", async () => {
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+    render(<PickerBlock picker={questionnaireSinglePicker} onAction={onAction} />);
+
+    expect(screen.getByText("Question 1/2")).toBeInTheDocument();
+    expect(screen.getByText("2 unanswered")).toBeInTheDocument();
+    expect(screen.getByText("Which approach should we use?")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous question" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next question" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Browse options above" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+    expect(screen.queryByRole("note", { name: "Keyboard help" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Next question" }));
+    expect(onAction).toHaveBeenCalledWith({ kind: "question", direction: "next" });
+  });
+
+  it("clamps questionnaire navigation and hides it for a single question", () => {
+    const onAction = vi.fn();
+    const lastQuestion = {
+      ...questionnaireSinglePicker,
+      questionnaire: { ...questionnaireSinglePicker.questionnaire!, index: 2 },
+    };
+    const view = render(<PickerBlock picker={lastQuestion} onAction={onAction} />);
+
+    expect(screen.getByRole("button", { name: "Previous question" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Next question" })).toBeDisabled();
+
+    view.rerender(
+      <PickerBlock
+        picker={{ ...lastQuestion, questionnaire: { ...lastQuestion.questionnaire!, index: 1, total: 1 } }}
+        onAction={onAction}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Previous question" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Next question" })).toBeNull();
+  });
+
+  it("uses the terminal pointer for questionnaire activity and focuses single options", async () => {
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+    render(<PickerBlock picker={questionnaireSinglePicker} onAction={onAction} />);
+
+    const pointed = screen.getAllByRole("button", { name: /gpt-5/ })[0]!;
+    expect(pointed).toHaveClass("border-primary");
+    expect(within(pointed).queryByLabelText("Current selection")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: /gpt-5-mini/ }));
+    expect(onAction).toHaveBeenCalledWith({ kind: "focus", id: "gpt-5-mini" });
+    expect(onAction).not.toHaveBeenCalledWith({ kind: "choose", id: "gpt-5-mini" });
+  });
+
+  it("labels questionnaire submission and blocks final submit while other questions remain", async () => {
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+    const incomplete = {
+      ...questionnaireSinglePicker,
+      questionnaire: {
+        ...questionnaireSinglePicker.questionnaire!,
+        index: 2,
+        total: 2,
+        submit: "all" as const,
+        unanswered: 2,
+        answered: false,
+      },
+    };
+    const view = render(<PickerBlock picker={incomplete} onAction={onAction} />);
+
+    expect(screen.getByText("Answer the remaining questions before submitting.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit all answers" })).toBeDisabled();
+
+    view.rerender(
+      <PickerBlock
+        picker={{ ...questionnaireSinglePicker, questionnaire: { ...questionnaireSinglePicker.questionnaire!, submit: "answer" } }}
+        onAction={onAction}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Submit answer" }));
+    expect(onAction).toHaveBeenCalledWith({ kind: "confirm" });
+  });
+
+  it("disables questionnaire controls in read-only mode", () => {
+    render(<PickerBlock picker={questionnaireSinglePicker} onAction={vi.fn()} disabled />);
+
+    for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
   });
 });
 

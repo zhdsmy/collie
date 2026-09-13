@@ -693,6 +693,14 @@ export const de: Dictionary = {
   "dialog.picker.moveDownAria": "{label} nach unten verschieben",
   "dialog.picker.noResults": "Keine passenden Optionen",
   "dialog.picker.confirm": "Bestätigen und schließen",
+  "dialog.picker.questionProgress": "Frage {index}/{total}",
+  "dialog.picker.unanswered.one": "{count} unbeantwortet",
+  "dialog.picker.unanswered.other": "{count} unbeantwortet",
+  "dialog.picker.previousQuestion": "Vorherige Frage",
+  "dialog.picker.nextQuestion": "Nächste Frage",
+  "dialog.picker.submitAnswer": "Antwort absenden",
+  "dialog.picker.submitAll": "Alle Antworten absenden",
+  "dialog.picker.answerRemaining": "Beantworte die übrigen Fragen, bevor du sie absendest.",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

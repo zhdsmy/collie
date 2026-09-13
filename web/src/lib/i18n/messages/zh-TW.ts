@@ -668,6 +668,14 @@ export const zhTW: Dictionary = {
   "dialog.picker.moveDownAria": "將 {label} 下移",
   "dialog.picker.noResults": "沒有符合的選項",
   "dialog.picker.confirm": "確認並關閉",
+  "dialog.picker.questionProgress": "問題 {index}/{total}",
+  "dialog.picker.unanswered.one": "{count} 個未回答",
+  "dialog.picker.unanswered.other": "{count} 個未回答",
+  "dialog.picker.previousQuestion": "上一題",
+  "dialog.picker.nextQuestion": "下一題",
+  "dialog.picker.submitAnswer": "確認答案",
+  "dialog.picker.submitAll": "提交全部答案",
+  "dialog.picker.answerRemaining": "提交前請回答剩餘問題。",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox": "未偵測到 Agent 輸入框，可能正處於彈出視窗或選單中。未輸入任何內容。",

@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Codex question cards keep progress and answers together.** Show the question number, unanswered count and full question inside the option card. Previous/next controls restore each question's native selection; selecting an option no longer submits it immediately. Confirm each answer explicitly, then submit the complete set only after the other questions are answered. Edited answers become pending again.
+
 ## [1.8.0+collie.14] - 2026-09-13
 
 ### Added
