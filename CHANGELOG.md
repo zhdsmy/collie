@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.2] - 2026-09-13
+
 ### Changed
 
-- **Localize built-in Composer quick replies.** Quick buttons and their sent text now follow the selected language while shell and operator-defined replies remain unchanged.
+- **Localize built-in Composer quick replies.** Quick buttons and their sent text now follow the selected language while shell and operator-defined replies remain unchanged. ([eb6bedc4](https://github.com/zhdsmy/collie/commit/eb6bedc4))
 
 ## [1.8.2+collie.1] - 2026-09-13
 
