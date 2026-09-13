@@ -98,6 +98,21 @@ const questionnaireSinglePicker: PickerModel = {
 };
 
 describe("PickerBlock", () => {
+  it("formats terminal plan Markdown without a matching journal entry", () => {
+    const picker: PickerModel = {
+      ...singlePicker,
+      plan: { text: "# Composer Quick 面板本地化\n\n## Summary\n\n- 显示 **中文**\n- 发送 `继续`\n\n```ts\nconst locale = 'zh';\n```", complete: true },
+    };
+    render(<PickerBlock picker={picker} onAction={vi.fn()} />);
+    const body = screen.getByRole("region", { name: "Plan content" });
+    expect(within(body).getByText("Composer Quick 面板本地化", { exact: true })).toBeVisible();
+    expect(within(body).getByText("Summary", { exact: true })).toBeVisible();
+    expect(within(body).getAllByRole("listitem")).toHaveLength(2);
+    expect(body.querySelector("strong")).toHaveTextContent("中文");
+    expect(body.querySelector("code")).toHaveTextContent("继续");
+    expect(body.querySelector("pre")).toHaveTextContent("const locale = 'zh';");
+  });
+
   it("renders a single picker as tappable cards with pointer, current mark, preview, and footer", async () => {
     const onAction = vi.fn();
     const user = userEvent.setup();

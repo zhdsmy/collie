@@ -55,6 +55,8 @@ display, such as a code fence's language name; the original source is displayed 
 Truncated, stale, incomplete or repeated plan wrappers are refused.
 
 The card reuses the existing Markdown renderer, Collapse and button primitives. The body has
+a Markdown reading view for both the visible terminal text and a verified journal original;
+source matching controls full-plan recovery, not whether Markdown is rendered. It has
 a bounded scroll region and can be folded; native decisions remain outside that scroller.
 Changing the selected option does not remount the reading area. Notes and unrelated agent
 output keep their existing rendering and input flows.

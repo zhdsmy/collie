@@ -501,7 +501,6 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
         <PlanContent
           key={picker.identity}
           text={planText ?? picker.plan.text}
-          format={planText ? "markdown" : "terminal"}
           complete={Boolean(planText) || picker.plan.complete}
         />
       ) : null}

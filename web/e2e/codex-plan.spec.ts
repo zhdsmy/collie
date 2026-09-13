@@ -34,7 +34,8 @@ for (const width of [320, 390]) {
           await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
             (route) => route.fulfill({ json: { paneId: "w1:p1", text: fixture(state), truncated: false, revision: 1 } }));
           await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/history",
-            (route) => route.fulfill({ json: { available: true, entries: [entries[size === "long" ? 1 : 0]], hasMore: false } }));
+            // The short plan must render Markdown even without a matching journal entry.
+            (route) => route.fulfill({ json: { available: size === "long", entries: size === "long" ? [entries[1]] : [], hasMore: false } }));
           await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
             // SAFETY: the app's own sendKeys payload is checked against captured native states.
             const body = route.request().postDataJSON() as { keys: string[]; expected_prompt?: string };
@@ -63,6 +64,7 @@ for (const width of [320, 390]) {
             await ending.scrollIntoViewIfNeeded();
             await expect(content.getByText("Step 24: Preserve plan content", { exact: true })).toBeVisible();
           } else {
+            await expect(content.getByText("Codex plan card", { exact: true })).toBeVisible();
             await expect(content.getByRole("list")).toBeVisible();
             await expect(content.getByText('const action = "review before implementation";', { exact: false })).toBeVisible();
           }

@@ -10,12 +10,11 @@ import { cn } from "@/lib/utils";
 
 export interface PlanContentSource {
   text: string;
-  format: "markdown" | "terminal";
   complete: boolean;
 }
 
 /** Long plans scroll inside the reading area; decision buttons belong outside this component. */
-export function PlanContent({ text, format, complete }: PlanContentSource) {
+export function PlanContent({ text, complete }: PlanContentSource) {
   useLocale();
   const [open, setOpen] = useState(true);
   const bodyId = useId();
@@ -44,9 +43,7 @@ export function PlanContent({ text, format, complete }: PlanContentSource) {
           aria-label={t("dialog.plan.body")}
           className="max-h-[min(40dvh,24rem)] min-w-0 overflow-auto overscroll-contain border-t border-border px-2 py-2 focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
         >
-          {format === "markdown" ? <MarkdownText text={text} /> : (
-            <pre className="m-0 whitespace-pre-wrap break-words font-mono text-xs leading-relaxed">{text}</pre>
-          )}
+          <MarkdownText text={text} />
         </div>
       </Collapse>
     </div>

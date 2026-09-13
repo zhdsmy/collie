@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Render Markdown in every Codex plan card body.** Format headings, lists, emphasis and fenced code in the visible terminal plan even when no matching journal entry is available; preserve verified full-plan recovery, partial-plan notices and the bounded reading area.
+
 ## [1.8.2+collie.2] - 2026-09-13
 
 ### Changed
