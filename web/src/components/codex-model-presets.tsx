@@ -358,7 +358,10 @@ export function CodexModelPresetsSheet({
         {busy || disabledReason ? (
           <div className="rounded-md border border-border bg-muted/20 px-3 py-2 text-sm" role="status">
             <span className="font-medium">{busy ? t("modelPresets.busy") : t("modelPresets.blocked")}</span>
-            {disabledReason ? <span className="text-muted-foreground">: {disabledReason}</span> : null}
+            {/* Never beside the reason: while a switch is in flight `disabledReason` is the caller's
+                idle-state answer — during the codex picker it reads "blocked" — and printing it under
+                "Switching…" claims the switch is both running and refused. */}
+            {!busy && disabledReason ? <span className="text-muted-foreground">: {disabledReason}</span> : null}
           </div>
         ) : null}
         {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}

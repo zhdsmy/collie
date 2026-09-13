@@ -53,6 +53,22 @@ describe("CodexModelPresetsSheet", () => {
     expect(JSON.parse(localStorage.getItem(CODEX_MODEL_PRESETS_STORAGE_KEY)!)).toHaveLength(2);
   });
 
+  it("says a switch is running without also claiming it is refused", () => {
+    const props = { open: true, onClose: vi.fn(), onSelect: vi.fn() };
+    const { rerender } = render(
+      <CodexModelPresetsSheet {...props} busy disabledReason="a dialog is open" />,
+    );
+
+    const panel = screen.getByRole("dialog");
+    expect(within(panel).getByRole("status")).toHaveTextContent("Switching…");
+    expect(within(panel).getByRole("status")).not.toHaveTextContent("a dialog is open");
+
+    rerender(<CodexModelPresetsSheet {...props} disabledReason="a dialog is open" />);
+    expect(within(panel).getByRole("status")).toHaveTextContent(
+      "Switching is unavailable: a dialog is open",
+    );
+  });
+
   it("selects a saved preset without changing the stored list", () => {
     const onSelect = vi.fn();
     render(
