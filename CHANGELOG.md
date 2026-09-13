@@ -30,8 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.7] - 2026-09-13
+
 ### Fixed
-- **Stop the preset sheet calling a running switch blocked.** While a switch is in flight the status box prints "Switching…" alone instead of appending the reason it refuses a *new* switch — during Codex's own picker that reason reads "Switching is unavailable", so a switch that was plainly under way appeared both running and refused.
+- **Stop the preset sheet calling a running switch blocked.** While a switch is in flight the status box prints "Switching…" alone instead of appending the reason it refuses a *new* switch — during Codex's own picker that reason reads "Switching is unavailable", so a switch that was plainly under way appeared both running and refused. ([55910e37](https://github.com/zhdsmy/collie/commit/55910e37))
 
 ## [1.8.2+collie.6] - 2026-09-13
 
