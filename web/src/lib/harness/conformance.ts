@@ -348,6 +348,10 @@ function emittableKeys(block: Block): string[] | null {
         ...(block.menu.nav.upDown ? [...MENU_UP_KEYS, ...MENU_DOWN_KEYS] : []),
         ...(block.menu.nav.leftRight !== undefined ? [...MENU_LEFT_KEYS, ...MENU_RIGHT_KEYS] : []),
       ];
+    case "picker":
+      return block.picker.kind === "multiple"
+        ? ["Up", "Down", "Left", "Right", "Space", "Backspace", "Enter", "Escape"]
+        : ["Up", "Down", "Enter", "Escape"];
     default: {
       // SAFETY: `block` is `never` here today — every kind is cased above — so widening it back to
       // `Block` cannot be wrong for any value that exists. The assertion is what names the offending

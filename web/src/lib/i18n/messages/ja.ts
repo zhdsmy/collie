@@ -672,6 +672,19 @@ export const ja: Dictionary = {
   "dialog.preview.removeNoteAria": "メモを削除",
   "dialog.preview.noteAria": "メモ",
   "dialog.preview.addNote": "この回答にメモを追加",
+  "dialog.picker.currentAria": "現在の選択",
+  "dialog.picker.previewAria": "選択項目のプレビュー",
+  "dialog.picker.footerAria": "キーボードヘルプ",
+  "dialog.picker.searchPlaceholder": "項目を検索",
+  "dialog.picker.searchAria": "選択項目を検索",
+  "dialog.picker.apply": "適用",
+  "dialog.picker.clearSearch": "検索をクリア",
+  "dialog.picker.browseUp": "上の項目を表示",
+  "dialog.picker.browseDown": "下の項目を表示",
+  "dialog.picker.moveUpAria": "{label} を上へ移動",
+  "dialog.picker.moveDownAria": "{label} を下へ移動",
+  "dialog.picker.noResults": "一致する項目がありません",
+  "dialog.picker.confirm": "確定して閉じる",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

@@ -1,0 +1,18 @@
+[0m[1m[38;5;2m➜  [0m[1m[38;5;6mcollie-picker-yofPzj[0m codex -C /tmp/collie-picker-yofPzj -c 'projects."/private/tmp/collie-picker-yofPzj".trust_level="trusted"'
+[0m[2m╭───────────────────────────────────────╮[0m
+[0m[2m│ >_ [0m[1mOpenAI Codex[0m[2m (v0.154.0)            │[0m
+[0m[2m│                                       │[0m
+[0m[2m│ model:     [0mgpt-5.6[0m[2m   [0m[38;5;6m/model[0m[2m to change │[0m
+[0m[2m│ directory: [0m/tmp/collie-picker-yofPzj[0m[2m  │[0m
+[0m[2m╰───────────────────────────────────────╯[0m
+
+  [0m[1mTip:[0m See the Codex keymap documentation for supported actions and examples.
+ 
+[0m[48;2;57;57;71m                                                                                                                                                                                                                   [0m
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71mAdvanced Reasoning[0m[48;2;57;57;71m                                                                                                                                                                                               [0m
+[0m[48;2;57;57;71m  [0m[38;5;6m[48;2;57;57;71m⚠ Consumes usage limits faster[0m[48;2;57;57;71m                                                                                                                                                                                   [0m
+[0m[48;2;57;57;71m                                                                                                                                                                                                                   [0m
+[0m[1m[38;5;6m[48;2;57;57;71m› 1. Max    For difficult problems when quality matters more than speed · higher usage[0m[48;2;57;57;71m                                                                                                                             [0m
+[0m[48;2;57;57;71m  2. Ultra  [0m[2m[48;2;57;57;71mFor demanding work using multiple agents · highest usage[0m[48;2;57;57;71m                                                                                                                                               [0m
+[0m[48;2;57;57;71m                                                                                                                                                                                                                   [0m
+  [0m[2mPress enter to confirm or esc to go back                                                                                                                                                                         [0m

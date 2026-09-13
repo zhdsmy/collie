@@ -27,6 +27,7 @@ import type { WizardModel } from "./harness/wizard-model";
 import type { PreviewSelectModel } from "./harness/preview-model";
 import type { MultiSelectModel } from "./harness/multi-select-model";
 import type { MenuModel } from "./harness/menu-model";
+import type { PickerModel } from "./harness/picker-model";
 import type { AutocompleteModel } from "./harness/autocomplete-model";
 
 // Re-export every dialog model so consumers (the block components, the race guards) have one import
@@ -50,6 +51,7 @@ export type {
   MultiPointer,
 } from "./harness/multi-select-model";
 export type { MenuModel, MenuAction, MenuNav, MenuLeftRight } from "./harness/menu-model";
+export type { PickerModel, PickerOption, PickerIntent } from "./harness/picker-model";
 export type { AutocompleteModel, AutocompleteEntry } from "./harness/autocomplete-model";
 
 /** One visual line: the styled segments that make it up, with the line-terminating "\n" removed. */
@@ -130,6 +132,13 @@ export interface MenuBlock {
   lines: StyledLine[];
 }
 
+/** A verified single-choice or ordered checkbox picker, replacing its terminal region. */
+export interface PickerBlock {
+  kind: "picker";
+  picker: PickerModel;
+  lines: StyledLine[];
+}
+
 /**
  * The agent's own COMPLETION POPUP while the operator types into its input box (Claude's slash-command
  * menu). Unlike every other non-`raw` kind this one is PRESENTATIONAL: it emits no keystrokes and has
@@ -155,6 +164,7 @@ export type Block =
   | PreviewSelectBlock
   | MultiSelectBlock
   | MenuBlock
+  | PickerBlock
   | AutocompleteBlock;
 
 /**

@@ -194,6 +194,39 @@ export function isStatusRow(text: string, line?: StyledLine): boolean {
   return line !== undefined && isStyledStatusRow(text, line);
 }
 
+/**
+ * Custom statuslines can contain one coloured item, several merged dim items, or the disabled
+ * shortcut/context footer. Text and separators are configurable; only the native footer paint is
+ * stable. This predicate is NEVER sufficient on its own: locateComposer also requires the dedicated
+ * live arrow, continuous composer background and painted padding above and below the draft.
+ */
+export function isComposerStatusRow(text: string, line?: StyledLine): boolean {
+  if (isStatusRow(text, line)) return true;
+  if (!line || rstrip(text) !== rstrip(lineText(line))) return false;
+  const row = rstrip(text);
+  if (hasControlChar(row) || codePointCount(row) > MAX_STATUS_ROW_CHARS) return false;
+  const segments = foldTrailingPadding(line.segments);
+  if (!segments || segments.length < 2 || !isIndentSegment(segments[0]!)) return false;
+
+  let hasField = false;
+  for (const segment of segments.slice(1)) {
+    if (
+      segment.bg !== undefined || segment.bold === true || segment.italic === true ||
+      segment.underline === true || segment.strike === true
+    ) return false;
+    if (!segment.text.trim()) {
+      if (segment.fg !== undefined || segment.dim === true) return false;
+      continue;
+    }
+    // Codex merges adjacent muted items into one segment, including their separators.
+    const muted = segment.dim === true && segment.fg === undefined;
+    const colored = segment.dim !== true && segment.fg !== undefined;
+    if (!muted && !colored) return false;
+    hasField = true;
+  }
+  return hasField;
+}
+
 export function isWorkingQueueRow(text: string): boolean {
   return WORKING_QUEUE_ROW.test(rstrip(text));
 }

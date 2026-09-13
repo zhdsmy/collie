@@ -670,6 +670,19 @@ export const ko: Dictionary = {
   "dialog.preview.removeNoteAria": "메모 삭제",
   "dialog.preview.noteAria": "메모",
   "dialog.preview.addNote": "이 답변에 메모 추가",
+  "dialog.picker.currentAria": "현재 선택",
+  "dialog.picker.previewAria": "선택기 미리보기",
+  "dialog.picker.footerAria": "키보드 도움말",
+  "dialog.picker.searchPlaceholder": "옵션 검색",
+  "dialog.picker.searchAria": "선택기 옵션 검색",
+  "dialog.picker.apply": "적용",
+  "dialog.picker.clearSearch": "검색 지우기",
+  "dialog.picker.browseUp": "위 옵션 보기",
+  "dialog.picker.browseDown": "아래 옵션 보기",
+  "dialog.picker.moveUpAria": "{label} 위로 이동",
+  "dialog.picker.moveDownAria": "{label} 아래로 이동",
+  "dialog.picker.noResults": "일치하는 옵션이 없습니다",
+  "dialog.picker.confirm": "확인하고 닫기",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

@@ -29,6 +29,7 @@ import { multiSelectEquals, multiSelectIdentity, type MultiSelectModel } from ".
 import { previewCoreEqual, previewsEqual, type PreviewSelectModel } from "./preview-model";
 import { promptsEqual, promptsSameIdentity, type PromptModel } from "./prompt-model";
 import { wizardsEqual, type WizardModel } from "./wizard-model";
+import { pickersEqual, pickersSameIdentity, type PickerModel } from "./picker-model";
 
 /** The model each interactive block kind carries. Keys are exactly the non-`raw` `Block["kind"]`s —
  *  a new interactive kind that lands without an entry here fails to typecheck in `dialogModelOf`. */
@@ -38,6 +39,7 @@ export interface DialogModels {
   "preview-select": PreviewSelectModel;
   "multi-select": MultiSelectModel;
   menu: MenuModel;
+  picker: PickerModel;
 }
 
 /** An interactive block kind — every `Block["kind"]` that OWNS THE KEYBOARD. `raw` is not one, and
@@ -84,6 +86,8 @@ function dialogPayload(block: Block): DialogModels[DialogKind] | null {
       return block.multi;
     case "menu":
       return block.menu;
+    case "picker":
+      return block.picker;
     default:
       return null;
   }
@@ -113,6 +117,12 @@ export type DialogContract = { [K in DialogKind]: DialogComparators<DialogModels
 
 /** kind → comparators. The whole table is the contract; adding a block kind means adding a row. */
 export const DIALOG_CONTRACT: DialogContract = {
+  picker: {
+    commits: pickersEqual,
+    identity: pickersSameIdentity,
+    signature: (m) => m.signature,
+    region: (m) => m.regionSignature,
+  },
   "prompt-select": {
     // Every ANSWER key commits (the digit IS the answer). The feedback flow is the one multi-step
     // recipe here (digit → verify focus → type → Enter), and it moves the pointer and fills the input

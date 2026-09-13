@@ -28,6 +28,21 @@ const allGrokFixtures = readdirSync(PANES_DIR)
   .filter((f) => f.startsWith("grok--") && f.endsWith(".txt"))
   .toSorted();
 
+const PICKERS = [
+  "codex--v0154-picker-advanced.txt",
+  "codex--v0154-picker-effort.txt",
+  "codex--v0154-picker-model.txt",
+  "codex--v0154-picker-scope.txt",
+  "codex--v0154-picker-statusline-empty.txt",
+  "codex--v0154-picker-statusline-focused.txt",
+  "codex--v0154-picker-statusline-moved.txt",
+  "codex--v0154-picker-statusline-no-preview.txt",
+  "codex--v0154-picker-statusline-scrolled.txt",
+  "codex--v0154-picker-statusline-search.txt",
+  "codex--v0154-picker-statusline-toggled.txt",
+  "codex--v0154-picker-statusline.txt",
+];
+
 const PINNED = [
   "codex--approval-exec.txt",
   "codex--ask-fruit.txt",
@@ -49,6 +64,15 @@ const PINNED = [
   "codex--v0154-command-status.txt",
   "codex--v0154-particles-draft.txt",
   "codex--v0154-particles-working.txt",
+  ...PICKERS,
+  "codex--v0154-statusline-disabled-default.txt",
+  "codex--v0154-statusline-disabled-draft.txt",
+  "codex--v0154-statusline-disabled-idle.txt",
+  "codex--v0154-statusline-multiple-muted-default.txt",
+  "codex--v0154-statusline-single-color-default.txt",
+  "codex--v0154-statusline-single-color-plan.txt",
+  "codex--v0154-statusline-single-idle.txt",
+  "codex--v0154-statusline-single-muted-default.txt",
   "codex--working.txt",
 ];
 
@@ -56,6 +80,7 @@ const PINNED = [
 // here: it is a live modal the adapter deliberately REFUSES (a digit would type into the notes
 // box), so it belongs to the neutral (raw-only) cohort with composerReady false.
 const DIALOG = [
+  ...PICKERS,
   "codex--approval-exec.txt",
   "codex--ask-fruit.txt",
   "codex--ask-wizard-q1.txt",

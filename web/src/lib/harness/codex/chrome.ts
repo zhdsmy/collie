@@ -11,6 +11,7 @@ import type { StyledLine } from "../../blocks";
 import { normalizeComposerParticles } from "./particles";
 import {
   isBlank,
+  isComposerStatusRow,
   isWorkingContextRow,
   isWorkingQueueRow,
   isStatusRow,
@@ -40,6 +41,38 @@ const MAX_DRAFT_ROWS = 100;
 // (including tool/answer bullets) still cannot be crossed on the way to the live prompt.
 const CONTINUATION = /^ {2}\s*\S/;
 const PROMPT_PREFIX = "› ";
+
+/**
+ * The live Codex composer paints its prompt arrow as a dedicated bold segment and fills the whole
+ * composer row with one background. Picker selections also use a bold arrow, but keep the option
+ * text in the same segment; submitted echoes are dim and unpainted. This distinction is the proof
+ * needed by the broad 0.150.1 footer grammars, whose text is intentionally configurable.
+ */
+function hasComposerChrome(lines: StyledLine[], promptRow: number, statusRow: number): boolean {
+  const prompt = lines[promptRow];
+  const marker = prompt?.segments[0];
+  if (
+    marker?.text !== "›" ||
+    marker.bold !== true ||
+    marker.dim === true ||
+    marker.fg !== undefined ||
+    marker.bg === undefined
+  ) {
+    return false;
+  }
+
+  const background = marker.bg;
+  if (!prompt.segments.every((segment) => segment.bg === background)) return false;
+
+  // A blank painted row above the prompt and another immediately before the footer are part of
+  // Codex's boxless composer. Requiring both prevents a modal's dim footer from borrowing a live
+  // prompt-looking option row as its input anchor.
+  const isPadding = (line: StyledLine | undefined): boolean =>
+    line !== undefined &&
+    line.segments.length > 0 &&
+    line.segments.every((segment) => segment.bg === background && segment.text.trim() === "");
+  return isPadding(lines[promptRow - 1]) && isPadding(lines[statusRow - 1]);
+}
 
 /** The exact placeholder text is still a valid thing an operator might deliberately type. Codex
  * distinguishes its empty hint by painting the whole body dim, so extraction should use that
@@ -99,12 +132,15 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   const texts = lines.map((l) => rstrip(lineText(l)));
   const statusRow = lastNonBlankIndex(texts);
   if (statusRow < 0) return null;
-  const regularStatus = isStatusRow(texts[statusRow]!, lines[statusRow]);
+  const regularStatus = isComposerStatusRow(texts[statusRow]!, lines[statusRow]);
   const workingStatus = isWorkingContextRow(texts[statusRow]!);
+  const customStatus =
+    !workingStatus && !isStatusRow(texts[statusRow]!, lines[statusRow]);
   if (!regularStatus && !workingStatus) return null;
 
-  // Separate layout padding from the draft. Internal empty paragraphs are valid, but crossing
-  // one requires the live marker's paint so a dim submitted echo cannot claim later output.
+  // Separate layout padding from the draft. Internal empty paragraphs are valid, but crossing one
+  // requires the live marker's paint so a dim submitted echo cannot claim later output. The newer
+  // custom footer shapes below have their own stricter marker/background proof even without a gap.
   const top = skipBlanksUp(texts, statusRow - 1);
   if (top < 0) return null;
   // A working footer is valid only as the exact queue-hint + context pair. This prevents a
@@ -114,8 +150,11 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   for (let i = top; i >= 0 && top - i < MAX_DRAFT_ROWS; i--) {
     const t = texts[i]!;
     if (promptText(t) !== null) {
-      const marker = lines[i]!.segments.find((segment) => segment.text.startsWith("›"));
-      if (crossedBlank && !workingStatus && (!marker?.bold || marker.dim)) return null;
+      if (crossedBlank && !workingStatus && !customStatus) {
+        const marker = lines[i]!.segments.find((segment) => segment.text.startsWith("›"));
+        if (!marker?.bold || marker.dim) return null;
+      }
+      if (customStatus && !hasComposerChrome(lines, i, statusRow)) return null;
       return { promptRow: i, statusRow };
     }
     if (isBlank(t)) {

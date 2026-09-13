@@ -14,6 +14,20 @@ describe("commandsFor", () => {
     expect(cmds.some((c) => c.command === "/branch")).toBe(false); // in Claude's and omp's, not here
   });
 
+  it("opens Codex model and status line pickers immediately", () => {
+    const cmds = commandsFor("codex");
+    expect(cmds.find((c) => c.command === "/model")).toMatchObject({
+      takesArg: false,
+      argHint: "",
+      common: true,
+    });
+    expect(cmds.find((c) => c.command === "/statusline")).toMatchObject({
+      takesArg: false,
+      argHint: "",
+      common: true,
+    });
+  });
+
   it("returns the Pi catalog for 'pi'", () => {
     const cmds = commandsFor("pi");
     expect(cmds.length).toBeGreaterThan(0);

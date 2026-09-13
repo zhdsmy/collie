@@ -24,6 +24,8 @@ import { useLocale } from "@/hooks/use-locale";
 import { isConnecting } from "@/lib/connection";
 import { t, type MessageKey } from "@/lib/i18n";
 import { setStatus } from "@/lib/status";
+import { fetchPane } from "@/lib/api";
+import { describeThrownError } from "@/lib/api-error-message";
 import { setFollowing as publishFollowing, stampSend } from "@/lib/poll-intent";
 import { useAutoZenEnabled, useZenEnabled } from "@/lib/zen";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -65,6 +67,8 @@ import { submitWizardKeys } from "@/lib/wizard-action";
 import { submitPreviewKeys, submitPreviewNote, submitPreviewOption } from "@/lib/preview-action";
 import { submitMultiSelectIntent, type MultiSelectIntent } from "@/lib/multi-select-action";
 import { submitMenuKeys } from "@/lib/menu-action";
+import { submitPickerIntent } from "@/lib/picker-action";
+import type { PickerIntent, PickerModel } from "@/lib/harness/picker-model";
 import type { PromptBlockAction } from "@/components/prompt-select-block";
 import type { PreviewBlockAction } from "@/components/preview-select-block";
 import type { MenuBlockAction } from "@/components/menu-block";
@@ -972,6 +976,41 @@ export function AgentChat({
     [refuseWrite, paneId, scope, requestedLines, shown.revision, agent?.agent, revalidator],
   );
 
+  const handlePickerAction = useCallback(
+    async (intent: PickerIntent, picker: PickerModel) => {
+      const refusal = refuseWrite();
+      if (refusal) {
+        setStatus(refusal, "error");
+        return;
+      }
+      const result = await submitPickerIntent({
+        paneId,
+        scope,
+        requestedLines,
+        detectedRevision: shown.revision,
+        agent: agent?.agent,
+        picker,
+        intent,
+      });
+      if (result.status === "error") {
+        setStatus(result.error || t("chat.status.sendFailed"), "error");
+        return;
+      }
+      if (result.status === "changed") setStatus(t("chat.status.selectionChanged"), "warn");
+      // Reaching a tall picker's search box scrolls away from the tail and freezes the mirror.
+      // Adopt this action's fresh text/revision pair once, even while frozen, without jumping away
+      // from the control the operator just used. Ordinary transcript polling keeps its freeze.
+      try {
+        const fresh = await fetchPane(paneId, requestedLines, scope);
+        setShown({ text: fresh.text, revision: fresh.revision });
+      } catch (refreshError) {
+        setStatus(describeThrownError(refreshError), "error");
+      }
+      revalidator.revalidate();
+    },
+    [refuseWrite, paneId, scope, requestedLines, shown.revision, agent?.agent, revalidator],
+  );
+
   // NOTE: the composer is deliberately NOT auto-focused on open/switch — that would pop the Android
   // keyboard and cover the output. You read the pane first, then tap the input to type. (Explicit
   // actions inside the composer still focus it; the mirror tap focuses it via composerRef.)
@@ -1709,6 +1748,7 @@ export function AgentChat({
                     onPreviewAction={handlePreviewAction}
                     onMultiSelectAction={handleMultiSelectAction}
                     onMenuAction={handleMenuAction}
+                    onPickerAction={handlePickerAction}
                     promptDisabled={readOnly || gone}
                     hideLeadingLines={hiddenMirrorLines}
                     images={mirrorImages}

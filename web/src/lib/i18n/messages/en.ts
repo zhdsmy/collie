@@ -701,6 +701,19 @@ export const en = {
   "dialog.preview.removeNoteAria": "Remove note",
   "dialog.preview.noteAria": "Note",
   "dialog.preview.addNote": "Add a note to this answer",
+  "dialog.picker.currentAria": "Current selection",
+  "dialog.picker.previewAria": "Picker preview",
+  "dialog.picker.footerAria": "Keyboard help",
+  "dialog.picker.searchPlaceholder": "Search options",
+  "dialog.picker.searchAria": "Search picker options",
+  "dialog.picker.apply": "Apply",
+  "dialog.picker.clearSearch": "Clear search",
+  "dialog.picker.browseUp": "Browse options above",
+  "dialog.picker.browseDown": "Browse options below",
+  "dialog.picker.moveUpAria": "Move {label} up",
+  "dialog.picker.moveDownAria": "Move {label} down",
+  "dialog.picker.noResults": "No matching options",
+  "dialog.picker.confirm": "Confirm and close",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

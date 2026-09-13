@@ -16,6 +16,20 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Codex 0.154 model and statusline pickers (captured 2026-09-13)
+
+`codex--v0154-picker-*.txt` capture a disposable Codex pane with isolated configuration
+and a nonfunctional local test provider. No model request was made. Model, reasoning,
+advanced reasoning and Plan scope stages retain their native labels and warnings;
+statusline captures cover checkbox state, one-position ordering, filtered and empty
+search results, offscreen browsing and the absent preview when all items are disabled.
+See [`PICKER_NOTES.md`](../../lib/harness/codex/PICKER_NOTES.md) for verified key recipes.
+
+The companion `codex--v0154-statusline-*.txt` captures retain the input region
+after saving disabled, single-item and muted multi-item statuslines, with both
+default and Plan-mode footer variants. They pin continued composer recognition
+after a statusline edit.
+
 ## Codex 0.154 command completion (captured 2026-09-13)
 
 `codex--v0154-command-status.txt` is the ANSI input/completion region captured from a temporary

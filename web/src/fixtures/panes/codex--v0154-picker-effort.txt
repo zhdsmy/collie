@@ -1,0 +1,20 @@
+[0m[1m[38;5;2m➜  [0m[1m[38;5;6mcollie-picker-yofPzj[0m codex -C /tmp/collie-picker-yofPzj -c 'projects."/private/tmp/collie-picker-yofPzj".trust_level="trusted"'
+[0m[2m╭───────────────────────────────────────╮[0m
+[0m[2m│ >_ [0m[1mOpenAI Codex[0m[2m (v0.154.0)            │[0m
+[0m[2m│                                       │[0m
+[0m[2m│ model:     [0mgpt-5.6[0m[2m   [0m[38;5;6m/model[0m[2m to change │[0m
+[0m[2m│ directory: [0m/tmp/collie-picker-yofPzj[0m[2m  │[0m
+[0m[2m╰───────────────────────────────────────╯[0m
+
+  [0m[1mTip:[0m See the Codex keymap documentation for supported actions and examples.
+ 
+[0m[48;2;57;57;71m                                                                                                                                                                                                                   [0m
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71mSelect Reasoning Level for gpt-6-astra[0m[48;2;57;57;71m                                                                                                                                                                           [0m
+[0m[48;2;57;57;71m                                                                                                                                                                                                                   [0m
+[0m[1m[38;5;6m[48;2;57;57;71m› 1. Low (default)    Fast responses with lighter reasoning[0m[48;2;57;57;71m                                                                                                                                                        [0m
+[0m[48;2;57;57;71m  2. Medium           [0m[2m[48;2;57;57;71mBalances speed and reasoning depth for everyday tasks[0m[48;2;57;57;71m                                                                                                                                        [0m
+[0m[48;2;57;57;71m  3. High             [0m[2m[48;2;57;57;71mGreater reasoning depth for complex problems[0m[48;2;57;57;71m                                                                                                                                                 [0m
+[0m[48;2;57;57;71m  4. Extra high       [0m[2m[48;2;57;57;71mExtra high reasoning depth for complex problems[0m[48;2;57;57;71m                                                                                                                                              [0m
+[0m[48;2;57;57;71m  5. More reasoning…  [0m[2m[48;2;57;57;71mMax and Ultra consume usage limits faster[0m[48;2;57;57;71m                                                                                                                                                    [0m
+[0m[48;2;57;57;71m                                                                                                                                                                                                                   [0m
+  [0m[2mPress enter to confirm or esc to go back                                                                                                                                                                         [0m

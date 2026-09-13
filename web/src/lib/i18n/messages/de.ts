@@ -680,6 +680,19 @@ export const de: Dictionary = {
   "dialog.preview.removeNoteAria": "Notiz entfernen",
   "dialog.preview.noteAria": "Notiz",
   "dialog.preview.addNote": "Notiz zur Antwort hinzufügen",
+  "dialog.picker.currentAria": "Aktuelle Auswahl",
+  "dialog.picker.previewAria": "Vorschau der Auswahl",
+  "dialog.picker.footerAria": "Tastaturhilfe",
+  "dialog.picker.searchPlaceholder": "Optionen durchsuchen",
+  "dialog.picker.searchAria": "Optionen im Auswahlmenü durchsuchen",
+  "dialog.picker.apply": "Anwenden",
+  "dialog.picker.clearSearch": "Suche löschen",
+  "dialog.picker.browseUp": "Optionen darüber anzeigen",
+  "dialog.picker.browseDown": "Optionen darunter anzeigen",
+  "dialog.picker.moveUpAria": "{label} nach oben verschieben",
+  "dialog.picker.moveDownAria": "{label} nach unten verschieben",
+  "dialog.picker.noResults": "Keine passenden Optionen",
+  "dialog.picker.confirm": "Bestätigen und schließen",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

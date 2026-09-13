@@ -24,6 +24,7 @@ import {
 import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
 import { detectTrustRegion } from "./trust";
+import { detectPickerRegion } from "./picker";
 import { decorateCodexDisplay } from "./display";
 import { codexDraftCarriesSend } from "./paste";
 import { draftCarriesSend } from "../../draft-match";
@@ -33,6 +34,14 @@ function raw(lines: StyledLine[]): Block {
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
+  const picker = detectPickerRegion(lines);
+  if (picker) {
+    const before = trimTrailingBlank(lines.slice(0, picker.startLine));
+    return [
+      ...(before.length > 0 ? [raw(before)] : []),
+      { kind: "picker", picker: picker.model, lines: lines.slice(picker.startLine) },
+    ];
+  }
   const trust = detectTrustRegion(lines);
   if (trust) {
     const before = trimTrailingBlank(lines.slice(0, trust.startLine));

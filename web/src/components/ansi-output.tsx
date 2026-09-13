@@ -10,6 +10,8 @@ import {
   splitLines,
   type Block,
   type MenuModel,
+  type PickerModel,
+  type PickerIntent,
   type MultiSelectModel,
   type PreviewSelectModel,
   type PromptModel,
@@ -35,6 +37,7 @@ import { PreviewSelectBlock, type PreviewBlockAction } from "@/components/previe
 import { MultiSelectBlock } from "@/components/multi-select-block";
 import { MenuBlock, type MenuBlockAction } from "@/components/menu-block";
 import { AutocompleteBlock } from "@/components/autocomplete-block";
+import { PickerBlock } from "@/components/picker-block";
 import type { MultiSelectIntent } from "@/lib/multi-select-action";
 
 /** A raw block, narrowed off the Block union (the highlight/offset paths only touch these). */
@@ -52,6 +55,7 @@ type GenericMenuBlock = Extract<Block, { kind: "menu" }>;
 /** The (at most one) completion-popup block — tail, and the only non-raw kind that is NOT a modal:
  *  the agent's input box is live under it, so it renders with no controls and locks nothing. */
 type AutoBlock = Extract<Block, { kind: "autocomplete" }>;
+type NativePickerBlock = Extract<Block, { kind: "picker" }>;
 
 export interface AnsiOutputProps {
   text: string;
@@ -107,6 +111,7 @@ export interface AnsiOutputProps {
   /** Injected handler for a generic-menu tap (a footer-named key, or an arrow — the race-guarded
    *  send lives in lib/menu-action.ts). Same presentational contract as onPromptAction. */
   onMenuAction?: (action: MenuBlockAction, menu: MenuModel) => void | Promise<void>;
+  onPickerAction?: (action: PickerIntent, picker: PickerModel) => void | Promise<void>;
   /** Disable the prompt-select/wizard/preview/multi-select/menu buttons (read-only / gone pane). */
   promptDisabled?: boolean;
   /**
@@ -307,6 +312,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   onPreviewAction,
   onMultiSelectAction,
   onMenuAction,
+  onPickerAction,
   promptDisabled,
   hideLeadingLines = 0,
   images,
@@ -348,6 +354,10 @@ export const AnsiOutput = memo(function AnsiOutput({
   );
   const autoBlock = useMemo(
     () => blocks.find((b): b is AutoBlock => b.kind === "autocomplete") ?? null,
+    [blocks],
+  );
+  const pickerBlock = useMemo(
+    () => blocks.find((b): b is NativePickerBlock => b.kind === "picker") ?? null,
     [blocks],
   );
 
@@ -450,6 +460,12 @@ export const AnsiOutput = memo(function AnsiOutput({
       lines={menuBlock.lines}
       disabled={promptDisabled || !onMenuAction}
       onAction={(action) => onMenuAction?.(action, menuBlock.menu)}
+    />
+  ) : pickerBlock ? (
+    <PickerBlock
+      picker={pickerBlock.picker}
+      disabled={promptDisabled || !onPickerAction}
+      onAction={(action) => onPickerAction?.(action, pickerBlock.picker)}
     />
   ) : autoBlock ? (
     // No handler and no `disabled`: the completion popup emits no keystroke, so there is nothing for
