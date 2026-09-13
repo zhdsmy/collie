@@ -167,7 +167,7 @@ function ComposerDock({
     <div className="-mx-3 mb-2 flex flex-col border-t border-border bg-background">
       <div className="flex items-center justify-between gap-2 px-3 py-1">
         <h2 className="min-w-0">
-          <SectionLabel className="min-w-0 shrink text-base font-bold normal-case tracking-normal text-foreground">{title}</SectionLabel>
+          <SectionLabel className="min-w-0 shrink text-base font-bold normal-case tracking-normal">{title}</SectionLabel>
         </h2>
         <Button
           variant="ghost"

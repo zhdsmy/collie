@@ -30,6 +30,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+- **Restore consistent muted titles across Composer panels.** Quick, Agent and Display titles use the original shared gray tone in both themes while retaining the larger bold typography and current dock layout.
+
 ## [1.8.2+collie.4] - 2026-09-13
 
 ### Changed
