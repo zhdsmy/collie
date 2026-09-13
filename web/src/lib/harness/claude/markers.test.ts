@@ -234,6 +234,7 @@ describe("classifyFooter", () => {
     expect(classifyFooter("⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents")).toBeNull();
     expect(classifyFooter("← for agents")).toBeNull();
     expect(classifyFooter("Do you want to proceed?")).toBeNull();
+    expect(classifyFooter("Press enter to confirm or esc to go back")).toBeNull();
   });
 });
 

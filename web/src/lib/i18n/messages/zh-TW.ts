@@ -677,6 +677,10 @@ export const zhTW: Dictionary = {
   "dialog.picker.submitAll": "提交全部答案",
   "dialog.picker.answerRemaining": "提交前請回答剩餘問題。",
 
+  "dialog.plan.title": "計畫",
+  "dialog.plan.body": "計畫內容",
+  "dialog.plan.partial": "目前僅顯示終端可見的計畫片段。",
+
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox": "未偵測到 Agent 輸入框，可能正處於彈出視窗或選單中。未輸入任何內容。",
   "reply.blocked.noEcho":

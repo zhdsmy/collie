@@ -25,6 +25,8 @@ export interface PickerModel {
   footer: string;
   signature: string;
   regionSignature: string;
+  /** Visible plan body, kept exact; a verified journal match may supply its complete source. */
+  plan?: { text: string; complete: boolean };
   /** A question within one native questionnaire; the footer declares what Enter will do. */
   questionnaire?: {
     index: number;
@@ -66,6 +68,7 @@ export type PickerIntent =
 
 export function pickersEqual(a: PickerModel, b: PickerModel): boolean {
   return pickersSameIdentity(a, b) && a.signature === b.signature &&
+    a.plan?.text === b.plan?.text && a.plan?.complete === b.plan?.complete &&
     a.questionnaire?.unanswered === b.questionnaire?.unanswered &&
     a.questionnaire?.answered === b.questionnaire?.answered &&
     a.questionnaire?.submit === b.questionnaire?.submit;
@@ -73,6 +76,7 @@ export function pickersEqual(a: PickerModel, b: PickerModel): boolean {
 
 export function pickersSameIdentity(a: PickerModel, b: PickerModel): boolean {
   return a.kind === b.kind && a.identity === b.identity &&
+    a.plan?.text === b.plan?.text && a.plan?.complete === b.plan?.complete &&
     a.questionnaire?.index === b.questionnaire?.index &&
     a.questionnaire?.total === b.questionnaire?.total;
 }

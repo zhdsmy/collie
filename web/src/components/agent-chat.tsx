@@ -575,15 +575,15 @@ export function AgentChat({
   // `kind !== "raw"`. The two were the same set until a PRESENTATIONAL non-raw kind shipped: the
   // slash-command `autocomplete` popup is painted while the agent's input box is live under it, so
   // treating it as a dialog would lock the composer out of a pane that is demonstrably typeable.
-  const dialogPresent = useMemo(
+  const displayBlocks = useMemo(
     () =>
       grammarsOn
-        ? (adapterFor(agent?.agent)?.buildBlocks(splitLines(parseAnsi(display))) ?? []).some(
-            blockOwnsKeyboard,
-          )
-        : false,
+        ? (adapterFor(agent?.agent)?.buildBlocks(splitLines(parseAnsi(display))) ?? [])
+        : [],
     [display, agent?.agent, grammarsOn],
   );
+  const dialogPresent = displayBlocks.some(blockOwnsKeyboard);
+  const planPresent = displayBlocks.some((block) => block.kind === "picker" && block.picker.plan !== undefined);
 
   // Both are threaded to the composer: the RAW value (live) plus a stabilised one. extractInputDraft
   // is stateless, so it can't distinguish a stranded draft from the ~350ms flash where our OWN
@@ -679,7 +679,7 @@ export function AgentChat({
   const latestReply = useLatestReply({
     paneId,
     scope,
-    enabled: historyAvailable && prefs.expandClippedReply,
+    enabled: historyAvailable && (prefs.expandClippedReply || planPresent),
     mirrorText: display,
   });
   const placement = useMemo(
@@ -699,7 +699,7 @@ export function AgentChat({
   });
   // Find searches the mirror, so while it is open the mirror is WHOLE and the card stands down —
   // otherwise a hit inside the reply would be unfindable in the one surface find can highlight.
-  const clippedReply = placement?.fit === "clipped" && !findOpen ? latestReply : null;
+  const clippedReply = prefs.expandClippedReply && !planPresent && placement?.fit === "clipped" && !findOpen ? latestReply : null;
   // Collapsing the card is a judgement about ONE message ("show me the raw rows instead"), so it is
   // remembered by uuid: a new reply arrives expanded without an effect to reset anything.
   const [collapsedReply, setCollapsedReply] = useState<string | null>(null);
@@ -1749,6 +1749,7 @@ export function AgentChat({
                     onMultiSelectAction={handleMultiSelectAction}
                     onMenuAction={handleMenuAction}
                     onPickerAction={handlePickerAction}
+                    planEntry={planPresent ? latestReply : null}
                     promptDisabled={readOnly || gone}
                     hideLeadingLines={hiddenMirrorLines}
                     images={mirrorImages}

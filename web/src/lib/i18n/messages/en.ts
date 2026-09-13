@@ -723,6 +723,10 @@ export const en = {
   "dialog.picker.submitAll": "Submit all answers",
   "dialog.picker.answerRemaining": "Answer the remaining questions before submitting.",
 
+  "dialog.plan.title": "Plan",
+  "dialog.plan.body": "Plan content",
+  "dialog.plan.partial": "Only the visible part of the plan is available.",
+
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":
     "The agent's input box isn't on screen — a menu or dialog is probably up. Nothing was typed.",

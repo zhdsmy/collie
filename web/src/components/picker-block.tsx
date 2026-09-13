@@ -21,6 +21,7 @@ import { t, tn } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 import { MIRROR_INVERT, MIRROR_SPACE, styleFor } from "@/components/mirror-space";
 import { Button } from "@/components/ui/button";
+import { PlanContent } from "@/components/plan-content";
 import { OptionButton, optionSurface, PromptPanel, QuestionHeading } from "@/components/option-button";
 
 export interface PickerBlockProps {
@@ -30,6 +31,8 @@ export interface PickerBlockProps {
   onAction: (intent: PickerIntent) => void | Promise<void>;
   /** Read-only device or gone pane: preserve the picker, but disable every control. */
   disabled?: boolean;
+  /** Original Markdown, supplied only after matching this plan's visible text to the journal. */
+  planText?: string | null;
 }
 
 function Spinner({ size = "sm" }: { size?: "sm" | "md" }) {
@@ -433,7 +436,7 @@ function SingleOption({
   );
 }
 
-export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
+export function PickerBlock({ picker, onAction, disabled, planText }: PickerBlockProps) {
   useLocale();
   const [sending, setSending] = useState<string | null>(null);
   const [queryDraft, setQueryDraft] = useState(picker.query ?? "");
@@ -494,6 +497,14 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
 
   return (
     <PromptPanel ariaLabel={picker.title}>
+      {picker.plan ? (
+        <PlanContent
+          key={picker.identity}
+          text={planText ?? picker.plan.text}
+          format={planText ? "markdown" : "terminal"}
+          complete={Boolean(planText) || picker.plan.complete}
+        />
+      ) : null}
       {questionnaire ? (
         <QuestionnaireHeader
           questionnaire={questionnaire}
@@ -551,7 +562,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
         </p>
       )}
 
-      {isQuestionnaire ? null : (
+      {isQuestionnaire || picker.plan ? null : (
         <BrowseControls
           locked={locked || picker.options.length === 0}
           onPress={(direction) => void press(`navigate:${direction}`, { kind: "navigate", direction })}
@@ -560,7 +571,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
 
       <Preview lines={picker.preview} />
 
-      <div className="flex items-center justify-end gap-1.5 border-t border-border/70 pt-1.5">
+      {!picker.plan ? <div className="flex items-center justify-end gap-1.5 border-t border-border/70 pt-1.5">
         {!isQuestionnaire ? (
           <Button
             type="button"
@@ -606,9 +617,9 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
             {t("dialog.picker.confirm")}
           </Button>
         ) : null}
-      </div>
+      </div> : null}
 
-      {isQuestionnaire ? null : <Footer footer={picker.footer} />}
+      {isQuestionnaire || picker.plan ? null : <Footer footer={picker.footer} />}
     </PromptPanel>
   );
 }

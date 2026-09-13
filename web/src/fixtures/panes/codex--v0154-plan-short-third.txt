@@ -1,0 +1,53 @@
+
+[0m[2m╭───────────────────────────────────────╮[0m
+[0m[2m│ >_ [0m[1mOpenAI Codex[0m[2m (v0.154.0)            │[0m
+[0m[2m│                                       │[0m
+[0m[2m│ model:     [0mgpt-5.6[0m[2m   [0m[38;5;6m/model[0m[2m to change │[0m
+[0m[2m│ directory: [0m/tmp/collie-plan-ySNCch[0m[2m    │[0m
+[0m[2m╰───────────────────────────────────────╯[0m
+
+  [0m[1mTip:[0m [0m[3mNew[0m Build faster with the [0m[1mDesktop app[0m. Run 'codex app' or visit
+  https://chatgpt.com/codex?app-landing-page=true
+
+[0m[2m• [0mModel changed to gpt-5.6 medium for Plan mode.
+
+
+[0m[1m[2m[48;2;57;57;71m› [0m[48;2;57;57;71mShow the short test plan.                                                                            [0m
+
+
+[0m[38;5;3m⚠ Model metadata for `gpt-5.6` not found. Defaulting to fallback metadata; this can degrade performance[0m
+  [0m[38;5;3mand cause issues.[0m
+
+[0m[2m• [0m[1mProposed Plan[0m
+
+
+[0m[48;2;57;57;71m  [0m[1m[4m[48;2;57;57;71m# Codex plan card[0m[48;2;57;57;71m                                                                                    [0m
+
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71m## Intended result[0m[48;2;57;57;71m                                                                                   [0m
+
+[0m[48;2;57;57;71m  Show the complete plan in a readable card. Keep the implementation choices below its scrolling       [0m
+[0m[48;2;57;57;71m  body.                                                                                                [0m
+
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71m## Implementation[0m[48;2;57;57;71m                                                                                    [0m
+
+[0m[48;2;57;57;71m  - Preserve the native actions and their descriptions.                                                [0m
+[0m[48;2;57;57;71m  - Match the plan against the journal before restoring the complete Markdown.                         [0m
+[0m[48;2;57;57;71m  - Keep code, tables and paragraphs readable on a narrow phone.                                       [0m
+
+[0m[48;2;57;57;71m  [0m[38;2;203;166;247m[48;2;57;57;71mconst[0m[38;2;205;214;244m[48;2;57;57;71m action [0m[38;2;148;226;213m[48;2;57;57;71m=[0m[38;2;205;214;244m[48;2;57;57;71m [0m[38;2;166;227;161m[48;2;57;57;71m"review before implementation"[0m[38;2;147;153;178m[48;2;57;57;71m;[0m[48;2;57;57;71m                                                       [0m
+[0m[48;2;57;57;71m  [0m[38;2;249;226;175m[48;2;57;57;71mconsole[0m[38;2;148;226;213m[48;2;57;57;71m.[0m[38;2;137;180;250m[48;2;57;57;71mlog[0m[38;2;205;214;244m[48;2;57;57;71m(action)[0m[38;2;147;153;178m[48;2;57;57;71m;[0m[48;2;57;57;71m                                                                                 [0m
+
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71m## Verification[0m[48;2;57;57;71m                                                                                      [0m
+
+[0m[48;2;57;57;71m  Check the original plan, the selected native option and the final result. This is the final          [0m
+[0m[48;2;57;57;71m  paragraph of the short plan.                                                                         [0m
+
+ 
+[0m[48;2;57;57;71m                                                                                                       [0m
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71mImplement this plan?[0m[48;2;57;57;71m                                                                                 [0m
+[0m[48;2;57;57;71m                                                                                                       [0m
+[0m[48;2;57;57;71m  1. Yes, implement this plan          [0m[2m[48;2;57;57;71mSwitch to Default and start coding.[0m[48;2;57;57;71m                             [0m
+[0m[48;2;57;57;71m  2. Yes, clear context and implement  [0m[2m[48;2;57;57;71mFresh thread with this plan.[0m[48;2;57;57;71m                                    [0m
+[0m[1m[38;5;6m[48;2;57;57;71m› 3. No, stay in Plan mode             Continue planning with the model.[0m[48;2;57;57;71m                               [0m
+[0m[48;2;57;57;71m                                                                                                       [0m
+  [0m[2mPress enter to confirm or esc to go back                                                             [0m

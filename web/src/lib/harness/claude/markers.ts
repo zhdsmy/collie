@@ -186,6 +186,8 @@ export type { PromptFamily };
  */
 export function classifyFooter(text: string): PromptFamily | null {
   const t = text.toLowerCase();
+  // Codex's plan picker uses pointer + Enter, not this adapter's digit-only trust action.
+  if (t.trim() === "press enter to confirm or esc to go back") return null;
   if (/\benter to select\b/.test(t)) return "select";
   if (/\benter to confirm\b/.test(t)) return "trust";
   if (/ctrl\+g to edit\b/.test(t) || /\.claude\/plans\//.test(t)) return "plan";

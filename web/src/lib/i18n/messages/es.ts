@@ -701,6 +701,10 @@ export const es: Dictionary = {
   "dialog.picker.submitAll": "Enviar todas las respuestas",
   "dialog.picker.answerRemaining": "Responde las preguntas restantes antes de enviar.",
 
+  "dialog.plan.title": "Plan",
+  "dialog.plan.body": "Contenido del plan",
+  "dialog.plan.partial": "Solo está disponible la parte visible del plan.",
+
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":
     "El campo de entrada del agente no está en pantalla. Probablemente hay un menú o diálogo abierto. No se introdujo texto.",

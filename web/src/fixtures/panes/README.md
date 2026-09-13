@@ -16,6 +16,19 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Codex 0.154 plan cards (captured 2026-09-13)
+
+`codex--v0154-plan-*.txt` are byte-faithful captures from an isolated Codex 0.154.0 session
+using a temporary configuration and deterministic local Responses provider. `short` and its
+`second`/`third` variants preserve the complete plan and all native pointer states; `long`
+contains only the tail of a 24-section plan. `stayed`, `implemented` and `cleared` capture
+the three decision outcomes. The matching original plan entries, parsed through Collie's
+Codex journal adapter, are in `../codex-plan-transcript.json`.
+
+The current client guard and API code drove each native decision. No real work session,
+external model or daily credentials were involved. See `lib/harness/codex/PLAN_NOTES.md`
+for the verified choreography, source-matching requirements and long-body behavior.
+
 ## Codex 0.154 question cards (captured 2026-09-13)
 
 `codex--v0154-question-*.txt` are byte-faithful captures of the installed Codex TUI

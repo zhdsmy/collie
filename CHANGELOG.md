@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Codex plans become readable cards with separate decision controls.** Keep long plan bodies in a collapsible scrolling region above the native implementation choices. Match the visible plan against its journal source before displaying complete Markdown; otherwise retain the visible terminal text and identify clipped plans explicitly. Preserve all three native decisions, including fresh-context implementation, with the existing guarded pointer-and-confirm flow; a different plan after confirmation is not success evidence. Prevent Claude and Antigravity from misreading this Codex menu as their own folder-trust prompt.
+
 ## [1.8.0+collie.15] - 2026-09-13
 
 ### Changed

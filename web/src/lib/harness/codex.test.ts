@@ -53,6 +53,12 @@ const QUESTIONS = [
   "codex--v0154-question-q2-unanswered.txt",
   "codex--v0154-question-q2.txt",
 ];
+const PLANS = [
+  "codex--v0154-plan-long.txt",
+  "codex--v0154-plan-short-second.txt",
+  "codex--v0154-plan-short-third.txt",
+  "codex--v0154-plan-short.txt",
+];
 
 const PINNED = [
   "codex--approval-exec.txt",
@@ -76,6 +82,10 @@ const PINNED = [
   "codex--v0154-particles-draft.txt",
   "codex--v0154-particles-working.txt",
   ...PICKERS,
+  "codex--v0154-plan-cleared.txt",
+  "codex--v0154-plan-implemented.txt",
+  ...PLANS,
+  "codex--v0154-plan-stayed.txt",
   "codex--v0154-question-completed.txt",
   "codex--v0154-question-notes.txt",
   ...QUESTIONS,
@@ -95,6 +105,7 @@ const PINNED = [
 // box), so it belongs to the neutral (raw-only) cohort with composerReady false.
 const DIALOG = [
   ...PICKERS,
+  ...PLANS,
   ...QUESTIONS,
   "codex--approval-exec.txt",
   "codex--ask-fruit.txt",

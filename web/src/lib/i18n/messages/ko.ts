@@ -692,6 +692,10 @@ export const ko: Dictionary = {
   "dialog.picker.submitAll": "모든 답변 제출",
   "dialog.picker.answerRemaining": "제출하기 전에 남은 질문에 답변하세요.",
 
+  "dialog.plan.title": "계획",
+  "dialog.plan.body": "계획 내용",
+  "dialog.plan.partial": "현재 터미널에 보이는 계획의 일부만 표시됩니다.",
+
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":
     "에이전트 입력창을 찾을 수 없습니다. 메뉴나 대화상자가 활성화되어 있을 수 있습니다. 입력된 내용이 없습니다.",

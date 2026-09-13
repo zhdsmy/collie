@@ -1,0 +1,56 @@
+[0m[48;2;57;57;71m  reading position.                                                                                    [0m
+
+[0m[48;2;57;57;71m  - Check the original source and the visible terminal tail.                                           [0m
+[0m[48;2;57;57;71m  - Keep the decision buttons outside the scrolling plan body.                                         [0m
+
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71m## Step 21: Preserve plan content[0m[48;2;57;57;71m                                                                    [0m
+
+[0m[48;2;57;57;71m  Keep the complete source for section 21. The phone must retain paragraphs and code while the native  [0m
+[0m[48;2;57;57;71m  terminal wraps this text to its own width. Changes to the selected action must not reset the         [0m
+[0m[48;2;57;57;71m  reading position.                                                                                    [0m
+
+[0m[48;2;57;57;71m  - Check the original source and the visible terminal tail.                                           [0m
+[0m[48;2;57;57;71m  - Keep the decision buttons outside the scrolling plan body.                                         [0m
+
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71m## Step 22: Preserve plan content[0m[48;2;57;57;71m                                                                    [0m
+
+[0m[48;2;57;57;71m  Keep the complete source for section 22. The phone must retain paragraphs and code while the native  [0m
+[0m[48;2;57;57;71m  terminal wraps this text to its own width. Changes to the selected action must not reset the         [0m
+[0m[48;2;57;57;71m  reading position.                                                                                    [0m
+
+[0m[48;2;57;57;71m  - Check the original source and the visible terminal tail.                                           [0m
+[0m[48;2;57;57;71m  - Keep the decision buttons outside the scrolling plan body.                                         [0m
+
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71m## Step 23: Preserve plan content[0m[48;2;57;57;71m                                                                    [0m
+
+[0m[48;2;57;57;71m  Keep the complete source for section 23. The phone must retain paragraphs and code while the native  [0m
+[0m[48;2;57;57;71m  terminal wraps this text to its own width. Changes to the selected action must not reset the         [0m
+[0m[48;2;57;57;71m  reading position.                                                                                    [0m
+
+[0m[48;2;57;57;71m  - Check the original source and the visible terminal tail.                                           [0m
+[0m[48;2;57;57;71m  - Keep the decision buttons outside the scrolling plan body.                                         [0m
+
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71m## Step 24: Preserve plan content[0m[48;2;57;57;71m                                                                    [0m
+
+[0m[48;2;57;57;71m  Keep the complete source for section 24. The phone must retain paragraphs and code while the native  [0m
+[0m[48;2;57;57;71m  terminal wraps this text to its own width. Changes to the selected action must not reset the         [0m
+[0m[48;2;57;57;71m  reading position.                                                                                    [0m
+
+[0m[48;2;57;57;71m  - Check the original source and the visible terminal tail.                                           [0m
+[0m[48;2;57;57;71m  - Keep the decision buttons outside the scrolling plan body.                                         [0m
+
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71m## Final verification[0m[48;2;57;57;71m                                                                                [0m
+
+[0m[48;2;57;57;71m  The last long-plan paragraph verifies that the entire visible tail belongs to this original          [0m
+[0m[48;2;57;57;71m  document. The opening section, all twenty-four steps and this ending must remain available for       [0m
+[0m[48;2;57;57;71m  review.                                                                                              [0m
+
+ 
+[0m[48;2;57;57;71m                                                                                                       [0m
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71mImplement this plan?[0m[48;2;57;57;71m                                                                                 [0m
+[0m[48;2;57;57;71m                                                                                                       [0m
+[0m[1m[38;5;6m[48;2;57;57;71m› 1. Yes, implement this plan          Switch to Default and start coding.[0m[48;2;57;57;71m                             [0m
+[0m[48;2;57;57;71m  2. Yes, clear context and implement  [0m[2m[48;2;57;57;71mFresh thread with this plan.[0m[48;2;57;57;71m                                    [0m
+[0m[48;2;57;57;71m  3. No, stay in Plan mode             [0m[2m[48;2;57;57;71mContinue planning with the model.[0m[48;2;57;57;71m                               [0m
+[0m[48;2;57;57;71m                                                                                                       [0m
+  [0m[2mPress enter to confirm or esc to go back                                                             [0m

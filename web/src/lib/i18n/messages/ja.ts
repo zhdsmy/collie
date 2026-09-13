@@ -694,6 +694,10 @@ export const ja: Dictionary = {
   "dialog.picker.submitAll": "すべての回答を送信",
   "dialog.picker.answerRemaining": "送信する前に残りの質問に回答してください。",
 
+  "dialog.plan.title": "計画",
+  "dialog.plan.body": "計画の本文",
+  "dialog.plan.partial": "現在はターミナルに表示されている計画の一部のみ表示しています。",
+
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":
     "エージェントの入力欄が表示されていません。メニューまたはダイアログが開いている可能性があります。入力は行われていません。",

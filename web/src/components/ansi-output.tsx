@@ -39,6 +39,8 @@ import { MenuBlock, type MenuBlockAction } from "@/components/menu-block";
 import { AutocompleteBlock } from "@/components/autocomplete-block";
 import { PickerBlock } from "@/components/picker-block";
 import type { MultiSelectIntent } from "@/lib/multi-select-action";
+import type { TranscriptEntry } from "@/lib/types";
+import { completePlanText } from "@/lib/plan-content";
 
 /** A raw block, narrowed off the Block union (the highlight/offset paths only touch these). */
 type RawBlock = Extract<Block, { kind: "raw" }>;
@@ -112,6 +114,8 @@ export interface AnsiOutputProps {
    *  send lives in lib/menu-action.ts). Same presentational contract as onPromptAction. */
   onMenuAction?: (action: MenuBlockAction, menu: MenuModel) => void | Promise<void>;
   onPickerAction?: (action: PickerIntent, picker: PickerModel) => void | Promise<void>;
+  /** Candidate original plan. Its content is displayed only after matching the native plan. */
+  planEntry?: TranscriptEntry | null;
   /** Disable the prompt-select/wizard/preview/multi-select/menu buttons (read-only / gone pane). */
   promptDisabled?: boolean;
   /**
@@ -313,6 +317,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   onMultiSelectAction,
   onMenuAction,
   onPickerAction,
+  planEntry = null,
   promptDisabled,
   hideLeadingLines = 0,
   images,
@@ -464,6 +469,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   ) : pickerBlock ? (
     <PickerBlock
       picker={pickerBlock.picker}
+      planText={pickerBlock.picker.plan ? completePlanText(pickerBlock.picker.plan, planEntry) : null}
       disabled={promptDisabled || !onPickerAction}
       onAction={(action) => onPickerAction?.(action, pickerBlock.picker)}
     />

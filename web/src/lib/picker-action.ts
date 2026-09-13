@@ -445,7 +445,7 @@ async function commitAt(
     current.model,
     key === "Space" ? (model) => toggleAccepted(current.model, model, id) : () => false,
     key === "Enter",
-    key === "Enter",
+    key === "Enter" && !current.model.plan,
   );
 }
 

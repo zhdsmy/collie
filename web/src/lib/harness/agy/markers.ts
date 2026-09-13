@@ -37,6 +37,8 @@ export type { PromptFamily };
 
 export function classifyFooter(text: string): PromptFamily | null {
   const t = text.toLowerCase();
+  // Codex's plan picker uses pointer + Enter, not this adapter's digit-only trust action.
+  if (t.trim() === "press enter to confirm or esc to go back") return null;
   if (/\b(?:enter\s+confirm|enter\s+to\s+confirm)\b/.test(t)) return "trust";
   if (/\b(?:tab\s+amend|tab\s+to\s+amend)\b/.test(t)) return "permission";
   if (/\bctrl\+r\s+review\b/.test(t) && !/\btab\s+amend\b/.test(t)) return "plan";
@@ -55,4 +57,3 @@ export function isAlienBuffer(texts: string[]): boolean {
   }
   return false;
 }
-
