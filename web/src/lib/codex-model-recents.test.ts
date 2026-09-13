@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   __resetCodexModelRecents,
@@ -153,4 +153,23 @@ describe("useCodexModelRecents", () => {
     });
     expect(result.current.recents).toEqual([]);
   });
+});
+
+describe("storage guards", () => {
+  it("does not write another tab's storage event back", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const { result } = renderHook(() => useCodexModelRecents());
+
+    act(() => {
+      window.dispatchEvent(new StorageEvent("storage", {
+        key: CODEX_MODEL_RECENTS_STORAGE_KEY,
+        newValue: JSON.stringify([{ model: "gpt-remote", effort: "low" }]),
+      }));
+    });
+
+    expect(result.current.recents).toEqual([{ model: "gpt-remote", effort: "low" }]);
+    expect(setItem).not.toHaveBeenCalled();
+    setItem.mockRestore();
+  });
+
 });

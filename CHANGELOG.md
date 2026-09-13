@@ -30,6 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Make recent model choices easier to reach.** Keep the native Codex picker available with empty history, prevent cross-tab storage write-back, and clarify recent model rows with two-line hierarchy and separated actions.
+
+
 ## [1.8.2+collie.8] - 2026-09-13
 
 ### Changed

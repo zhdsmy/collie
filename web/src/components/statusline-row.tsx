@@ -277,7 +277,7 @@ export function StatuslineRow({
                 aria-hidden="true"
                 className={cn(
                   "size-3 shrink-0 transition-opacity",
-                  modelSwitchable ? "opacity-100" : "opacity-0",
+                  modelSwitchable ? "opacity-100" : "opacity-40",
                 )}
               />
             </Button>

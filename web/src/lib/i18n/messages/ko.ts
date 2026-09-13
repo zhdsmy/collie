@@ -170,6 +170,7 @@ export const ko: Dictionary = {
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "모델과 추론 수준 전환",
   "codexModel.recentsAria": "최근 사용한 모델",
+  "codexModel.emptyRecents": "아직 사용한 모델이 없습니다.",
   "codexModel.removeAria": "{model} · {effort} 삭제",
   "codexModel.clearHistory": "기록 지우기",
   "codexModel.clearHistoryConfirm": "한 번 더 눌러 지우기",

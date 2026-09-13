@@ -301,6 +301,6 @@ it("marks a switchable model field with a reserved arrow slot", () => {
 
   view.rerender(<StatuslineRow agent="codex" row={row} onModelClick={vi.fn()} />);
   // The slot is still OCCUPIED with nothing to switch to — the fields after it may not shift.
-  expect(view.getByRole("button").querySelector("svg[aria-hidden='true']")).toHaveClass("opacity-0");
+  expect(view.getByRole("button").querySelector("svg[aria-hidden='true']")).toHaveClass("opacity-40");
   expect(view.getByRole("button")).toHaveTextContent("gpt-6-astra xhigh");
 });

@@ -167,6 +167,7 @@ export const zhTW: Dictionary = {
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "切換模型與思考等級",
   "codexModel.recentsAria": "最近使用的模型",
+  "codexModel.emptyRecents": "尚未使用任何模型。",
   "codexModel.removeAria": "刪除 {model} · {effort}",
   "codexModel.clearHistory": "清除歷史記錄",
   "codexModel.clearHistoryConfirm": "再點一次清除",

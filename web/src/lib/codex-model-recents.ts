@@ -112,9 +112,14 @@ function parse(raw: string | null): readonly CodexModelTarget[] {
   return freezeRecents(kept.slice(0, CODEX_MODEL_RECENTS_MAX));
 }
 
-function setRecents(next: readonly CodexModelTarget[]): void {
+function sameRecents(a: readonly CodexModelTarget[], b: readonly CodexModelTarget[]): boolean {
+  return a.length === b.length && a.every((entry, index) => samePair(entry, b[index]!));
+}
+
+function setRecents(next: readonly CodexModelTarget[], persist = true): void {
+  if (sameRecents(recents, next)) return;
   recents = next;
-  write(next);
+  if (persist) write(next);
   for (const listener of listeners) listener();
 }
 
@@ -122,7 +127,9 @@ function onStorage(event: StorageEvent): void {
   if (event.key !== CODEX_MODEL_RECENTS_STORAGE_KEY) return;
   // A removed key is another tab clearing the history, or a fresh installation; either way this tab
   // follows it to empty rather than holding a list the storage no longer has.
-  setRecents(parse(event.newValue));
+  // Storage events are already the persisted value from another document. Writing it back here
+  // would bounce the same event between tabs indefinitely.
+  setRecents(parse(event.newValue), false);
 }
 
 globalThis.addEventListener?.("storage", onStorage);
@@ -145,7 +152,7 @@ function getSnapshot(): readonly CodexModelTarget[] {
  * write per send is a `localStorage` write per send.
  */
 export function recordRecent(model: string, effort: CodexReasoningEffort): void {
-  if (!validModel(model)) return;
+  if (!validModel(model) || !validEffort(effort)) return;
   const head = recents[0];
   if (head !== undefined && head.model === model && head.effort === effort) return;
   const pair = { model, effort };

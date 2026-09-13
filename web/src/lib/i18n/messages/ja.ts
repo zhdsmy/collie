@@ -171,6 +171,7 @@ export const ja: Dictionary = {
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "モデルと推論レベルを切り替え",
   "codexModel.recentsAria": "最近使ったモデル",
+  "codexModel.emptyRecents": "まだモデルを使っていません。",
   "codexModel.removeAria": "{model} · {effort}を削除",
   "codexModel.clearHistory": "履歴を消去",
   "codexModel.clearHistoryConfirm": "もう一度タップで消去",

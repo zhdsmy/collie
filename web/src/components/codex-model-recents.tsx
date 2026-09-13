@@ -19,10 +19,9 @@ import { cn } from "@/lib/utils";
 // keeps the trigger on screen, which is the whole point of a control you press twice in a row.
 //
 // ── TYPE SCALE ───────────────────────────────────────────────────────────────
-// Every row is 11px, the statusline's own size, because the model ids are read against the field they
-// came from and the operator asked for the two to match. The FAMILY still splits as DESIGN.md §5 says
-// it must: a model id is machine-authored and wears `font-mono`; the two chrome rows wear the app
-// face. Only the size is shared.
+// Model ids stay at the statusline's 11px size, with a quieter 10px effort line underneath. The
+// FAMILY still splits as DESIGN.md §5 says it must: model ids are machine-authored and wear
+// `font-mono`; chrome rows wear the app face.
 
 export interface CodexModelRecentsMenuProps {
   open: boolean;
@@ -64,7 +63,7 @@ function RecentRow({
   return (
     <div
       className={cn(
-        "flex min-h-11 w-full items-center rounded-lg",
+        "flex min-h-11 w-full items-center rounded-md",
         selected ? "bg-muted/60" : "hover:bg-accent",
       )}
     >
@@ -73,13 +72,15 @@ function RecentRow({
         onClick={onSelect}
         disabled={disabled}
         aria-current={selected ? "true" : undefined}
-        className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left disabled:opacity-60"
+        aria-label={`${entry.model} ${entry.effort}`}
+        className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md px-3 py-1.5 text-left disabled:opacity-60"
       >
         {/* The statusline's own spelling of the pair — `gpt-6-astra xhigh`, not `Extra high`. The
             menu is read against the field it opens from, and a second vocabulary for one value is
             how you end up unable to find the row you are looking at. */}
-        <span className="min-w-0 flex-1 truncate font-mono text-[11px] leading-none">
-          {entry.model} {entry.effort}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-mono text-[11px] leading-4">{entry.model}</span>
+          <span className="block text-[10px] leading-3 text-muted-foreground">{entry.effort}</span>
         </span>
         {selected ? <Check className="size-3 shrink-0 text-primary" aria-hidden="true" /> : null}
       </button>
@@ -88,7 +89,7 @@ function RecentRow({
         onClick={onRemove}
         disabled={disabled}
         aria-label={t("codexModel.removeAria", { model: entry.model, effort: entry.effort })}
-        className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive active:bg-muted disabled:opacity-60"
+        className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-destructive active:bg-muted disabled:opacity-60"
       >
         <Trash2 className="size-3.5" aria-hidden="true" />
       </button>
@@ -127,41 +128,53 @@ export function CodexModelRecentsMenu({
       className="left-3 right-auto max-h-[45dvh] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain"
     >
       <div className="flex flex-col">
-        {recents.map((entry) => (
-          <RecentRow
-            key={`${entry.model} ${entry.effort}`}
-            entry={entry}
-            selected={current?.model === entry.model && current.effort === entry.effort}
-            disabled={disabled}
-            onSelect={() => onSelect(entry)}
-            onRemove={() => onRemove(entry)}
-          />
-        ))}
-
-        <ActionRow
-          icon={<TerminalSquare className="size-4 shrink-0" aria-hidden="true" />}
-          label={t("codexModel.native")}
-          onClick={onNative}
-          disabled={disabled}
-          className="text-[11px]"
-        />
+        <div className="px-3 pb-1 pt-2 text-[10px] font-medium text-muted-foreground">
+          {t("codexModel.recentsAria")}
+        </div>
 
         {recents.length > 0 ? (
-          <DestructiveActionRow
-            icon={<Trash2 className="size-4 shrink-0" aria-hidden="true" />}
-            label={t("codexModel.clearHistory")}
-            confirmLabel={t("codexModel.clearHistoryConfirm")}
-            closingLabel={t("codexModel.clearHistory")}
-            armed={armed.pending === "clear"}
-            closing={false}
+          <div className="flex flex-col">
+            {recents.map((entry) => (
+              <RecentRow
+                key={`${entry.model} ${entry.effort}`}
+                entry={entry}
+                selected={current?.model === entry.model && current.effort === entry.effort}
+                disabled={disabled}
+                onSelect={() => onSelect(entry)}
+                onRemove={() => onRemove(entry)}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="px-3 py-3 text-xs text-muted-foreground">{t("codexModel.emptyRecents")}</p>
+        )}
+
+        <div className="mt-1 border-t border-border/70 pt-1">
+          <ActionRow
+            icon={<TerminalSquare className="size-4 shrink-0" aria-hidden="true" />}
+            label={t("codexModel.native")}
+            onClick={onNative}
             disabled={disabled}
             className="text-[11px]"
-            onClick={() => {
-              // Two taps, like every other destructive row in the app: the first only arms.
-              if (armed.confirm("clear")) onClear();
-            }}
           />
-        ) : null}
+
+          {recents.length > 0 ? (
+            <DestructiveActionRow
+              icon={<Trash2 className="size-4 shrink-0" aria-hidden="true" />}
+              label={t("codexModel.clearHistory")}
+              confirmLabel={t("codexModel.clearHistoryConfirm")}
+              closingLabel={t("codexModel.clearHistory")}
+              armed={armed.pending === "clear"}
+              closing={false}
+              disabled={disabled}
+              className="text-[11px]"
+              onClick={() => {
+                // Two taps, like every other destructive row in the app: the first only arms.
+                if (armed.confirm("clear")) onClear();
+              }}
+            />
+          ) : null}
+        </div>
       </div>
     </AnchoredMenu>
   );

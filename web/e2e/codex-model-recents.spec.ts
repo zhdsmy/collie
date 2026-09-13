@@ -86,9 +86,14 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await expect(panel.getByRole("button", { name: messages["codexModel.clearHistory"], exact: true })).toHaveCount(0);
     expect(await page.evaluate((key) => localStorage.getItem(key), RECENTS_KEY)).toBe("[]");
 
-    // With an empty history there is nothing to switch to: the field is plain text again.
+    // Empty history still leaves the native model picker reachable.
     await page.keyboard.press("Escape");
-    await expect(entry).toHaveCount(0);
+    await expect(entry).toHaveCount(1);
+    await entry.click();
+    const emptyPanel = page.getByRole("dialog");
+    await expect(emptyPanel.getByText(messages["codexModel.emptyRecents"], { exact: true })).toBeVisible();
+    await expect(emptyPanel.getByRole("button", { name: messages["codexModel.native"], exact: true })).toBeEnabled();
+    await page.keyboard.press("Escape");
     await expect(page.getByText("gpt-5.6-sol", { exact: true }).first()).toBeVisible();
 
     // And a history that survives a reload is the whole point of keeping it on the device.

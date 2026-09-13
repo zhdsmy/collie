@@ -173,6 +173,7 @@ export const es: Dictionary = {
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "Cambiar modelo y nivel de razonamiento",
   "codexModel.recentsAria": "Modelos usados recientemente",
+  "codexModel.emptyRecents": "Aún no se ha usado ningún modelo.",
   "codexModel.removeAria": "Quitar {model} · {effort}",
   "codexModel.clearHistory": "Borrar historial",
   "codexModel.clearHistoryConfirm": "Toca otra vez para borrar",

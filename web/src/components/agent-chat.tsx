@@ -295,11 +295,13 @@ export function AgentChat({
   const [modelSwitching, setModelSwitching] = useState(false);
   const modelSwitchAbort = useRef<AbortController | null>(null);
   const { recents, record, remove: removeRecent, clear: clearRecents } = useCodexModelRecents();
-  // What the pane's statusline is allowed to name as a model. The history is the only list of model
-  // ids this device knows, and a pair only reaches it by being parsed off a statusline first — so in
-  // practice this is the `gpt-*` shape being confirmed, which is what the parser's fallback already
-  // accepts. It stays because it is the seam that makes a statusline field a model field at all.
-  const knownModels = useMemo(() => recents.map((entry) => entry.model), [recents]);
+  // What the pane's statusline is allowed to name as a model. Keep the live session model alongside
+  // recent pairs so clearing history cannot hide a custom model's native picker entry.
+  const knownModels = useMemo(() => {
+    const models = recents.map((entry) => entry.model);
+    if (sessionModel?.model) models.unshift(sessionModel.model);
+    return [...new Set(models)];
+  }, [recents, sessionModel?.model]);
   useHoldReload(`model-switch:${paneScopeKey(scope, paneId)}`, modelSwitching);
   /**
    * The ONE reason this pane currently refuses a write, or undefined when it accepts them. Every
@@ -647,9 +649,9 @@ export function AgentChat({
     dialogPresent || Boolean(rawTerminalDraft?.trim()) ? t("codexModel.blocked") :
     agent.status !== "idle" && agent.status !== "done" ? t("codexModel.idleRequired") : undefined
   );
-  // Is there anything to switch TO? One used pair that is not the one on screen — so a device with a
-  // single pair in its history has a model field that is plain text, with no arrow and nothing to
-  // open. That is the point of the arrow: it means "there is somewhere to go", not "this is a button".
+  // Is there anything to switch TO? The arrow is emphasized when another used pair exists, but the
+  // model field remains openable with an empty or single-item history so the native picker is never
+  // hidden behind a missing shortcut.
   const modelSwitchable = useMemo(
     () => currentModel !== undefined && recents.some(
       (entry) => entry.model !== currentModel.model || entry.effort !== currentModel.effort,
@@ -1962,7 +1964,7 @@ export function AgentChat({
                       sessionModel={sessionModel}
                       knownModels={knownModels}
                       modelSwitchable={modelSwitchable}
-                      onModelClick={agent?.agent === "codex" && modelSwitchable
+                      onModelClick={agent?.agent === "codex" && currentModel
                         ? () => setDrawer("models")
                         : undefined}
                       leading={i === 0 && showWriteHost ? (

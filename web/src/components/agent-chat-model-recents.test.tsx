@@ -68,15 +68,24 @@ async function openRecents(user: ReturnType<typeof userEvent.setup>) {
   return screen.getByRole("dialog");
 }
 
-it("offers nothing to open when the only used pair is the one on screen", () => {
-  // The pane says `gpt-5.6-sol · high`, and that pair is the whole history: there is nowhere to go,
-  // so the field stays plain text — no button, no arrow, nothing to open.
+it("keeps the model field openable when history is empty", async () => {
+  const user = userEvent.setup();
+  renderPane("idle", withLevel);
+
+  const panel = await openRecents(user);
+
+  expect(within(panel).getByText("No models used yet.")).toBeInTheDocument();
+  expect(within(panel).getByRole("button", { name: "Choose model" })).toBeEnabled();
+});
+
+it("keeps the current pair visible and openable when it is the only recent", async () => {
+  const user = userEvent.setup();
   recordRecent("gpt-5.6-sol", "high");
   renderPane("idle", withLevel);
 
-  expect(screen.getByText("gpt-5.6-sol")).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /gpt-5\.6-sol/ })).toBeNull();
-  expect(screen.queryByRole("dialog")).toBeNull();
+  const panel = await openRecents(user);
+
+  expect(within(panel).getByRole("button", { name: /^gpt-5\.6-sol high$/ })).toBeEnabled();
 });
 
 it("opens the menu from the model field once a second pair has been used", async () => {
