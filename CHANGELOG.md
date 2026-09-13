@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.0+collie.14] - 2026-09-13
+
 ### Added
 
-- **Codex model and statusline menus become native option cards.** Open either picker directly from Agent commands; choose models and reasoning levels, search and toggle statusline items, move them one position at a time, and keep the terminal's preview and save/cancel behavior. Every action verifies the current picker and its target before sending keys. Saving a single-item or disabled statusline keeps subsequent composer input available.
+- **Codex model and statusline menus become native option cards.** Open either picker directly from Agent commands; choose models and reasoning levels, search and toggle statusline items, move them one position at a time, and keep the terminal's preview and save/cancel behavior. Every action verifies the current picker and its target before sending keys. Saving a single-item or disabled statusline keeps subsequent composer input available. ([af6b6514](https://github.com/zhdsmy/collie/commit/af6b6514))
 
 ## [1.8.0+collie.13] - 2026-09-13
 
