@@ -1,4 +1,4 @@
-import { act, render, within } from "@testing-library/react";
+import { act, fireEvent, render, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { parseAnsi } from "@/lib/ansi";
@@ -7,6 +7,27 @@ import { __resetLocale, setLocale, whenLocaleReady, type Locale } from "@/lib/i1
 import { StatuslineRow } from "./statusline-row";
 
 beforeEach(() => __resetLocale());
+
+it("opens model presets only from a recognized Codex model field", () => {
+  const open = vi.fn();
+  const row = splitLines(parseAnsi("gpt-6-astra xhigh · Context 85% left · main"))[0]!;
+  const view = render(<StatuslineRow agent="codex" row={row} onModelClick={open} />);
+  const button = view.getByRole("button");
+  expect(button).toHaveTextContent("gpt-6-astra xhigh");
+  expect(button).toHaveAttribute("aria-haspopup", "dialog");
+  fireEvent.click(button);
+  expect(open).toHaveBeenCalledOnce();
+  view.rerender(<StatuslineRow agent="claude" row={row} onModelClick={open} />);
+  expect(view.queryByRole("button")).toBeNull();
+});
+
+it("keeps a custom preset model clickable without changing other status fields", () => {
+  const row = splitLines(parseAnsi("private-model max · main · Working"))[0]!;
+  const view = render(<StatuslineRow agent="codex" row={row} knownModels={["private-model"]} onModelClick={vi.fn()} />);
+  expect(view.getByRole("button")).toHaveTextContent("private-model max");
+  expect(view.getAllByRole("button")).toHaveLength(1);
+  expect(view.getByText("main")).toBeVisible();
+});
 
 it("preserves the upstream mobile-transparent fill on the OMP statusline", () => {
   const row = splitLines(parseAnsi("\u001b[47mOMP status\u001b[0m"))[0]!;

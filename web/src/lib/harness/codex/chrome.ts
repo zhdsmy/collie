@@ -45,7 +45,8 @@ const PROMPT_PREFIX = "› ";
 /**
  * The live Codex composer paints its prompt arrow as a dedicated bold segment and fills the whole
  * composer row with one background. Picker selections also use a bold arrow, but keep the option
- * text in the same segment; submitted echoes are dim and unpainted. This distinction is the proof
+ * text in the same segment; submitted echoes are dim and unpainted. Advanced reasoning may color
+ * the live arrow amber. This distinction is the proof
  * needed by the broad 0.150.1 footer grammars, whose text is intentionally configurable.
  */
 function hasComposerChrome(lines: StyledLine[], promptRow: number, statusRow: number): boolean {
@@ -55,7 +56,6 @@ function hasComposerChrome(lines: StyledLine[], promptRow: number, statusRow: nu
     marker?.text !== "›" ||
     marker.bold !== true ||
     marker.dim === true ||
-    marker.fg !== undefined ||
     marker.bg === undefined
   ) {
     return false;

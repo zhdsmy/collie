@@ -37,6 +37,17 @@ it("recognizes a particle in the space immediately after the live prompt marker"
   expect(codexAdapter.composerReady!(lines)).toBe(true);
   expect(codexAdapter.extractInputDraft(lines)).toBeNull();
 });
+it("recognizes animated Plan input with a custom footer and its right-aligned mode hint", () => {
+  const lines = parse(load("working"));
+  const status = lines.findLastIndex((line) => lineText(line).trim() !== "");
+  lines[status] = parse("  \u001b[38;2;246;226;183mgpt-6-astra medium\u001b[0m\u001b[2m · \u001b[0m\u001b[38;2;242;181;144mContext 100% left               \u001b[0m\u001b[35mPlan mode (shift+tab to cycle)\u001b[0m")[0]!;
+  const marker = lines.find((line) => lineText(line).startsWith("›"))!.segments[0]!;
+  marker.fg = "rgb(248,183,90)";
+  expect(codexAdapter.composerReady!(lines)).toBe(true);
+  expect(codexAdapter.extractInputDraft(lines)).toBeNull();
+  expect(codexAdapter.composerPrompt!(lines)).toBe("› Ask Codex to do anything");
+  expect(codexAdapter.extractStatusLines(lines)).toHaveLength(1);
+});
 
 it.each([
   (text: string) => text + "\nA new dialog owns the screen.\n",

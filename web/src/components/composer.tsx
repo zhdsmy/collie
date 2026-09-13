@@ -48,6 +48,8 @@ import { NoEchoNotice } from "@/components/no-echo-notice";
 export interface ComposerHandle {
   /** Focus the input and put the caret at the end — used by the mirror-tap-to-focus in AgentChat. */
   focusInput: () => void;
+  /** A model switch must not overlap a send or the direct terminal keyboard. */
+  isWriting: () => boolean;
 }
 
 interface ComposerProps {
@@ -72,6 +74,8 @@ interface ComposerProps {
    * will never be allowed to type", the other is "this machine is quiet, wait for the next poll".
    */
   hostBlock?: string;
+  /** Another guarded operation currently owns this pane's keyboard. Drafts remain mounted. */
+  externalBusy?: boolean;
   /**
    * The soft keyboard is up, so this dock is standing on it rather than on the screen's own bottom
    * edge. Read ONCE by the pane (agent-chat.tsx, `composing`) and passed down — never re-derived
@@ -189,7 +193,7 @@ function ComposerDock({
 const ATTACH_PRESS_MS = 220;
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent },
+  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -224,7 +228,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const canType = useMuxCapability("typeText", scope);
   const canSendKeys = useMuxCapability("sendKeys", scope);
   const missingSend = !canType.capable ? canType : !canSendKeys.capable ? canSendKeys : null;
-  const locked = gone || readOnly || hostBlock !== undefined || missingSend !== null;
+  const locked = gone || readOnly || hostBlock !== undefined || missingSend !== null || externalBusy;
   // Host name for write confirmations; the pane owns the visible target row.
   const writeHostLabel = useHostLabel(scope?.host);
   // …and a ref alongside it, for the ONE caller that reads it after an await. `send()` checks
@@ -512,7 +516,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const effectiveStable = suppressEcho(terminalDraft);
   const effectiveRaw = suppressEcho(rawTerminalDraft);
 
-  useImperativeHandle(ref, () => ({ focusInput: focusInputImmediately }), []);
+  useImperativeHandle(ref, () => ({
+    focusInput: focusInputImmediately,
+    isWriting: () => sending || direct.active || direct.busy,
+  }), [sending, direct.active, direct.busy]);
 
   useEffect(
     () => () => {

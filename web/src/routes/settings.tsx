@@ -31,6 +31,7 @@ import { useScope } from "@/lib/session";
 import type { PushAvailability } from "@/lib/push";
 import { describeThrownError } from "@/lib/api-error-message";
 import { useOptionalRootData } from "@/lib/route-data";
+import { CodexModelPresetsSettings } from "@/components/codex-model-presets";
 
 const EMPTY_DEVICES: DevicesData = { enforced: false, current: null, devices: [], error: false };
 
@@ -159,6 +160,8 @@ export function SettingsRoute() {
             not a rendering pref (those live in the pane's own Display dock). Off by default, because
             zen takes away every way back except one floating button. */}
         <ZenControl />
+
+        <CodexModelPresetsSettings />
 
         <Card className="gap-0 py-0">
           <div className="flex items-center justify-between gap-4 p-4">

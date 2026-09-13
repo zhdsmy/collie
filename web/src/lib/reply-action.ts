@@ -26,7 +26,13 @@ import { draftCarriesSend } from "./draft-match";
 import { adapterFor, type HarnessAdapter } from "./harness";
 import { POLL_ATTEMPTS, POLL_DELAY_MS, defaultSleep, type Sleep } from "./harness/guard";
 import { detectNoEchoPrompt } from "./no-echo";
-import type { Scope } from "./scope";
+import { paneScopeKey, type Scope } from "./scope";
+import {
+  acquirePaneAction,
+  ownsPaneAction,
+  releasePaneAction,
+  type PaneActionOwner,
+} from "./picker-action";
 
 export type ReplyOutcome =
   /** Text was verified in the input box and the submit key went through. */
@@ -64,6 +70,12 @@ export interface GuardedReplyArgs {
   requestedLines?: number;
   /** Test seam for the poll pacing. */
   sleep?: Sleep;
+  /** Abort an in-flight choreography before its next terminal write. */
+  signal?: AbortSignal;
+  /** Existing lease held by a parent multi-step operation. */
+  owner?: PaneActionOwner;
+  /** Refuse a write when the live composer probe cannot be completed. */
+  requireComposer?: boolean;
   /**
    * Override the PRE-FLIGHT'S REFUSAL and type anyway — the user's deliberate second tap after a
    * `blocked` outcome (a mis-detected screen, an adapter that can't see a box it really has). The
@@ -138,7 +150,34 @@ function carriesReplyTail(sent: string, draft: string | null): boolean {
   return tail.length > 0 && draft !== null && draft.replace(/\s/g, "").endsWith(tail);
 }
 
+function aborted(args: Pick<GuardedReplyArgs, "signal">): boolean {
+  return args.signal?.aborted === true;
+}
+
+function cancelledReply(): ReplyOutcome {
+  return { status: "blocked", error: t("chat.status.sendFailed") };
+}
+
+/**
+ * Run a reply under the same pane lease used by picker actions. Parent flows pass their lease so
+ * `/model` can type the command and then drive its child pickers without releasing ownership.
+ */
 export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOutcome> {
+  if (aborted(args)) return cancelledReply();
+  const key = paneScopeKey(args.scope, args.paneId);
+  if (args.owner !== undefined && !ownsPaneAction(args.owner, key)) return cancelledReply();
+  const parentOwns = args.owner !== undefined;
+  const owner = args.owner ?? acquirePaneAction(args.paneId, args.scope);
+  if (!owner) return cancelledReply();
+  try {
+    return await sendGuardedReplyOwned({ ...args, owner });
+  } finally {
+    if (!parentOwns) releasePaneAction(owner);
+  }
+}
+
+async function sendGuardedReplyOwned(args: GuardedReplyArgs): Promise<ReplyOutcome> {
+  if (aborted(args)) return cancelledReply();
   const adapter = adapterFor(args.agent ?? undefined);
   // No grammar for this harness → the input box is unreadable, so there is nothing to verify
   // against and the guard cannot run. Keep the legacy one-shot send rather than guess: a heuristic
@@ -155,6 +194,7 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
   // user's text before anything notices. One read up front is the difference between "nothing
   // happened" and "your reply is now sitting in a picker".
   const { refuse, runPreType } = await preflight(adapter, args);
+  if (aborted(args)) return cancelledReply();
   if (refuse !== null) return refuse;
 
   // The ONE call site of the caller's destructive pre-type work — and it is not guarded by a
@@ -164,6 +204,7 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
   // rather than by remembering to check. `?.()` is the whole enforcement; there is no list to keep
   // in sync.
   const prepared = await runPreType?.();
+  if (aborted(args)) return cancelledReply();
   if (prepared?.abort) return prepared.abort;
   const beforeDraft = prepared?.beforeDraft;
 
@@ -175,7 +216,8 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
   let previousDraft: string | null = null;
   if (chunks.length > 1) {
     try {
-      const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope);
+      const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope, args.signal);
+      if (aborted(args)) return cancelledReply();
       const lines = splitLines(parseAnsi(fresh.text));
       if (!adapter.composerReady?.(lines)) return { status: "blocked", error: noBoxMessage() };
       previousDraft = adapter.extractInputDraft(lines);
@@ -184,6 +226,7 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
     }
   }
   for (let i = 0; i < chunks.length - 1; i++) {
+    if (aborted(args)) return cancelledReply();
     let part;
     try {
       part = await sendReply(args.paneId, chunks[i]!, false, args.scope);
@@ -194,9 +237,12 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
     delivered += chunks[i]!;
     let verified = false;
     for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+      if (aborted(args)) return cancelledReply();
       if (attempt > 0) await (args.sleep ?? defaultSleep)(POLL_DELAY_MS);
+      if (aborted(args)) return cancelledReply();
       try {
-        const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope);
+        const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope, args.signal);
+        if (aborted(args)) return cancelledReply();
         const lines = splitLines(parseAnsi(fresh.text));
         const draft = adapter.extractInputDraft(lines);
         if (draft !== previousDraft && adapter.composerReady?.(lines) && literalDraftCarriesSend(delivered, draft) && carriesReplyTail(delivered, draft)) {
@@ -211,6 +257,7 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
     if (!verified) return { status: "stalled", error: t("reply.stalled.generic") };
   }
 
+  if (aborted(args)) return cancelledReply();
   let typed;
   try {
     typed = await sendReply(args.paneId, chunks[chunks.length - 1]!, false, args.scope);
@@ -229,11 +276,14 @@ export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOut
     // Read BEFORE the first sleep: pane.read is an on-demand live read, not a cached poll, so the
     // text is often already on screen by the time the type call returns. That saves a whole
     // POLL_DELAY_MS off the common path — the old blind flow always paid a fixed 350ms here.
+    if (aborted(args)) return cancelledReply();
     if (attempt > 0) await sleep(POLL_DELAY_MS);
+    if (aborted(args)) return cancelledReply();
     let draft: string | null = null;
     let verifiedPrompt: string | undefined;
     try {
-      const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope);
+      const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope, args.signal);
+      if (aborted(args)) return cancelledReply();
       const lines = splitLines(parseAnsi(fresh.text));
       // Only a screen the adapter does NOT recognise as its composer can be a raw password prompt.
       // Without that gate a match on the tail is dangerous rather than merely wrong: the notice this
@@ -337,6 +387,7 @@ const blind = (refuse: ReplyOutcome | null): Preflight => ({ refuse, runPreType:
  * once sent they have already landed in whatever owns the keyboard.
  */
 async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promise<Preflight> {
+  if (aborted(args)) return blind(cancelledReply());
   // Nothing here can read this harness's input box, so there is no evidence to be had — and no
   // refusal to make either. Same behaviour as before an adapter grows a `composerReady`, minus the
   // sweep, which had no business going out unverified.
@@ -345,10 +396,12 @@ async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promi
   const composerReady = adapter.composerReady.bind(adapter);
   let probe;
   try {
-    probe = await fetchPane(args.paneId, args.requestedLines, args.scope);
+    probe = await fetchPane(args.paneId, args.requestedLines, args.scope, args.signal);
   } catch {
+    if (args.requireComposer) return blind({ status: "blocked", error: noBoxMessage() });
     return blind(null); // transient read failure
   }
+  if (aborted(args)) return blind(cancelledReply());
   const seen = splitLines(parseAnsi(probe.text));
   if (!composerReady(seen)) {
     // `force` is the user's deliberate "type anyway", so it overrides the refusal — but this is the
@@ -373,6 +426,7 @@ async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promi
   return {
     refuse: null,
     runPreType: async () => {
+      if (aborted(args)) return { abort: cancelledReply(), beforeDraft: undefined };
       if (!args.onComposerSeen) return { abort: null, beforeDraft };
       let prep;
       try {
@@ -388,7 +442,8 @@ async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promi
       // otherwise this ordering, which exists to stop keys reaching a dialog, would hand the dialog
       // the reply instead. Still fail-open on a throw: the submit key is guarded downstream.
       try {
-        const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope);
+        const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope, args.signal);
+        if (aborted(args)) return { abort: cancelledReply(), beforeDraft: undefined };
         const freshLines = splitLines(parseAnsi(fresh.text));
         if (composerReady(freshLines)) {
           return { abort: null, beforeDraft: adapter.extractInputDraft(freshLines) };
@@ -411,8 +466,10 @@ async function oneShot(args: GuardedReplyArgs): Promise<ReplyOutcome> {
   // home. It costs this path nothing — agent-chat derives the stranded draft through
   // `adapterFor(agent)?.extractInputDraft`, so a pane with no adapter has no draft to sweep and the
   // composer's callback was already a no-op here.
+  if (aborted(args)) return cancelledReply();
   try {
     const res = await sendReply(args.paneId, args.text, true, args.scope);
+    if (aborted(args)) return cancelledReply();
     return res.ok ? { status: "sent" } : { status: "error", error: describeApiError(res) };
   } catch (e) {
     return { status: "error", error: message(e) };
@@ -428,8 +485,10 @@ async function submitOnly(
   args: GuardedReplyArgs,
   expectedPrompt?: string,
 ): Promise<ReplyOutcome> {
+  if (aborted(args)) return cancelledReply();
   try {
     const res = await sendReply(args.paneId, "", true, args.scope, expectedPrompt);
+    if (aborted(args)) return cancelledReply();
     if (res.ok) return { status: "sent" };
     // The text is verifiably sitting in the input box and only the submit key failed — same shape as
     // the bridge's own partial-failure case. Tell the caller not to resend.

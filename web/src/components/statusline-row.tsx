@@ -24,6 +24,8 @@ import { segmentStyle, styleFor } from "@/components/mirror-space";
 import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { parseCodexModelField } from "@/lib/harness/codex/model-field";
 
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
@@ -207,12 +209,17 @@ export function StatuslineRow({
   row,
   leading,
   sessionModel,
+  onModelClick,
+  knownModels,
 }: {
   agent?: string;
   row: StyledLine;
   leading?: ReactNode;
   sessionModel?: SessionModel;
+  onModelClick?: () => void;
+  knownModels?: readonly string[];
 }) {
+  useLocale();
   if (agent !== "codex" && agent !== "hermes") {
     return (
       <div data-slot="statusline-row" className={ROW_CLASS}>
@@ -242,6 +249,20 @@ export function StatuslineRow({
         const start = offset + part.indexOf(text);
         offset += part.length;
         if (!text || i % 2 === 1) return null;
+        if (agent === "codex" && onModelClick && parseCodexModelField(text, knownModels)) {
+          return (
+            <Button
+              key={i}
+              variant="ghost"
+              onClick={onModelClick}
+              aria-label={`${t("modelPresets.openAria")}: ${text}`}
+              aria-haspopup="dialog"
+              className="h-auto min-h-3.5 shrink-0 gap-0 border-0 p-0 text-[length:inherit] leading-none font-normal"
+            >
+              <StyledText segments={sliceSegments(row.segments, start, start + text.length)} />
+            </Button>
+          );
+        }
         return (
           <Field
             key={i}

@@ -1,6 +1,6 @@
 import type { AnsiSegment } from "../../ansi";
 import { lineText, type StyledLine } from "../../blocks";
-import { isStatusRow, lastNonBlankIndex } from "./markers";
+import { isComposerStatusRow, lastNonBlankIndex } from "./markers";
 
 // Codex 0.154 paints single-dot Braille particles into SPACE cells, including spaces inside
 // real drafts. Each particle has its own RGB ink on the composer background. Typed Braille
@@ -27,7 +27,7 @@ function isPadding(line: StyledLine, background: string): boolean {
  * This same pure function also runs in the bridge before comparing a bound input region. */
 export function normalizeComposerParticles(lines: StyledLine[]): StyledLine[] {
   const status = lastNonBlankIndex(lines.map(lineText));
-  if (status < 3 || !isStatusRow(lineText(lines[status]!), lines[status])) return lines;
+  if (status < 3 || !isComposerStatusRow(lineText(lines[status]!), lines[status])) return lines;
   const bottom = status - 1;
   const background = lines[bottom]!.segments[0]?.bg;
   if (!background || !isPadding(lines[bottom]!, background)) return lines;

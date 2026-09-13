@@ -41,7 +41,7 @@ import { StatuslineRow } from "@/components/statusline-row";
 import { cn } from "@/lib/utils";
 import { paneTag } from "@/lib/pane-tag";
 import { parseAnsi } from "@/lib/ansi";
-import { splitLines } from "@/lib/blocks";
+import { lineText, splitLines } from "@/lib/blocks";
 import { adapterFor } from "@/lib/harness";
 import { blockOwnsKeyboard } from "@/lib/harness/dialog-contract";
 import { FindBar } from "@/components/find-bar";
@@ -68,6 +68,11 @@ import { submitPreviewKeys, submitPreviewNote, submitPreviewOption } from "@/lib
 import { submitMultiSelectIntent, type MultiSelectIntent } from "@/lib/multi-select-action";
 import { submitMenuKeys } from "@/lib/menu-action";
 import { submitPickerIntent } from "@/lib/picker-action";
+import { runCodexModelSwitch } from "@/lib/codex-model-switch";
+import { useCodexModelPresets, type CodexModelPreset } from "@/lib/codex-model-presets";
+import { parseCodexModelField } from "@/lib/harness/codex/model-field";
+import { CodexModelPresetsSheet } from "@/components/codex-model-presets";
+import { useHoldReload } from "@/lib/reload-guard";
 import type { PickerIntent, PickerModel } from "@/lib/harness/picker-model";
 import type { PromptBlockAction } from "@/components/prompt-select-block";
 import type { PreviewBlockAction } from "@/components/preview-select-block";
@@ -88,7 +93,7 @@ import type {
   PromptModel,
   WizardModel,
 } from "@/lib/blocks";
-import type { Scope } from "@/lib/scope";
+import { paneScopeKey, type Scope } from "@/lib/scope";
 
 interface AgentChatProps {
   paneId: string;
@@ -134,7 +139,7 @@ function foldLabelKey(tabCount: number, paneCount: number): MessageKey {
 
 // At most one drawer/sheet is open at a time; null = none. (The composer's own Keys/Quick/Agent
 // sheets are separate and live inside <Composer>.)
-type Drawer = "switcher" | "paneMenu" | null;
+type Drawer = "switcher" | "paneMenu" | "models" | null;
 
 /**
  * Is the caret in the MESSAGE COMPOSER's field, as opposed to any other input on the screen?
@@ -286,6 +291,12 @@ export function AgentChat({
   // clock: the lead answered, so this poll was live, and the ConnectionBanner stays silent.
   const hostHealth = useHostHealth(agent?.host ?? scope?.host);
   const hostBlock = writeRefusal(hostHealth);
+  const [modelSwitching, setModelSwitching] = useState(false);
+  const [modelSwitchError, setModelSwitchError] = useState<string>();
+  const modelSwitchAbort = useRef<AbortController | null>(null);
+  const { presets: modelPresets } = useCodexModelPresets();
+  const knownModels = useMemo(() => modelPresets.map((preset) => preset.model), [modelPresets]);
+  useHoldReload(`model-switch:${paneScopeKey(scope, paneId)}`, modelSwitching);
   /**
    * The ONE reason this pane currently refuses a write, or undefined when it accepts them. Every
    * write handler below starts with it, so there is a single place that decides both which gates
@@ -297,7 +308,8 @@ export function AgentChat({
    * missing host gate here means keys typed at a terminal the lead can't reach.
    */
   const refuseWrite = useCallback(
-    (): string | undefined => (readOnly ? t("chat.status.readOnly") : hostBlock),
+    (): string | undefined => (readOnly ? t("chat.status.readOnly") : hostBlock ??
+      (modelSwitchAbort.current ? t("modelPresets.busy") : undefined)),
     [readOnly, hostBlock],
   );
 
@@ -305,8 +317,22 @@ export function AgentChat({
   // unrepresentable to violate.
   const [drawer, setDrawer] = useState<Drawer>(null);
   const closeDrawer = () => {
+    modelSwitchAbort.current?.abort();
     setDrawer(null);
   };
+  useEffect(() => {
+    if (drawer !== "models") modelSwitchAbort.current?.abort();
+  }, [drawer]);
+  useEffect(() => {
+    const cancelWhenHidden = () => {
+      if (document.visibilityState === "hidden") modelSwitchAbort.current?.abort();
+    };
+    document.addEventListener("visibilitychange", cancelWhenHidden);
+    return () => {
+      modelSwitchAbort.current?.abort();
+      document.removeEventListener("visibilitychange", cancelWhenHidden);
+    };
+  }, []);
 
   // ── ZEN MODE — chrome-free, mirror-only viewing ───────────────────────────────
   // On a phone the chrome IS most of the viewport: measured at 390x844 this route spends 199px above
@@ -592,6 +618,69 @@ export function AgentChat({
   // composer adds a second guard: it suppresses a draft matching what it just sent); once shown, the
   // preview's text tracks the RAW line live, so host typing streams in without ever touching the input.
   const terminalDraft = useStableTerminalDraft(rawTerminalDraft);
+
+  // Read the live poll, never a mirror frozen while the operator scrolls its history.
+  const currentModel = useMemo(() => {
+    if (agent?.agent !== "codex") return undefined;
+    const rows = adapterFor("codex")?.extractStatusLines(splitLines(parseAnsi(text))) ?? [];
+    for (const row of rows) {
+      for (const field of lineText(row).split(" · ")) {
+        const model = parseCodexModelField(field.trim(), knownModels);
+        if (model) return model;
+      }
+    }
+    return undefined;
+  }, [agent?.agent, text, knownModels]);
+  const modelType = useMuxCapability("typeText", scope);
+  const modelKeys = useMuxCapability("sendKeys", scope);
+  const modelDisabledReason = readOnly ? t("chat.status.readOnly") : hostBlock ?? (
+    agent?.agent !== "codex" || connecting || !grammarsOn || !modelType.capable || !modelKeys.capable ||
+    dialogPresent || Boolean(rawTerminalDraft?.trim()) ? t("modelPresets.blocked") :
+    agent.status !== "idle" && agent.status !== "done" ? t("modelPresets.idleRequired") : undefined
+  );
+
+  async function switchModel(preset?: CodexModelPreset) {
+    if (modelSwitchAbort.current) return;
+    const refusal = modelDisabledReason ??
+      (composerRef.current?.isWriting() ? t("modelPresets.busy") : undefined);
+    if (refusal) {
+      setModelSwitchError(refusal);
+      return;
+    }
+    const controller = new AbortController();
+    modelSwitchAbort.current = controller;
+    setModelSwitching(true);
+    setModelSwitchError(undefined);
+    try {
+      const result = await runCodexModelSwitch({
+        paneId, scope, requestedLines, preset, signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
+      if (result.status === "switched" || result.status === "opened") {
+        if (preset) setStatus(t("modelPresets.success", { model: preset.model, effort: preset.effort }), "success");
+      } else {
+        const messages = {
+          cancelled: "modelPresets.cancelled",
+          blocked: "modelPresets.blocked",
+          "unsupported-model": "modelPresets.unsupportedModel",
+          "unsupported-effort": "modelPresets.unsupportedEffort",
+          changed: "modelPresets.changed",
+          unconfirmed: "modelPresets.unconfirmed",
+          error: "chat.status.sendFailed",
+        } as const satisfies Record<typeof result.status, MessageKey>;
+        setModelSwitchError(result.error || t(messages[result.status]));
+      }
+      const fresh = await fetchPane(paneId, requestedLines, scope);
+      if (!controller.signal.aborted) setShown({ text: fresh.text, revision: fresh.revision });
+      revalidator.revalidate();
+      if (result.status === "switched" || result.status === "opened") setDrawer(null);
+    } catch (switchError) {
+      if (!controller.signal.aborted) setModelSwitchError(describeThrownError(switchError));
+    } finally {
+      modelSwitchAbort.current = null;
+      setModelSwitching(false);
+    }
+  }
 
   // Find-in-output: search the already-fetched buffer. The bar takes over the header while open;
   // AnsiOutput highlights matches and reports the count back here; prev/next scrolls the focused
@@ -1845,6 +1934,11 @@ export function AgentChat({
                       agent={agent?.agent}
                       row={row}
                       sessionModel={sessionModel}
+                      knownModels={knownModels}
+                      onModelClick={agent?.agent === "codex" ? () => {
+                        setModelSwitchError(undefined);
+                        setDrawer("models");
+                      } : undefined}
                       leading={i === 0 && showWriteHost ? (
                         <HostChip host={writeHost} variant="caption" className="shrink-0" />
                       ) : undefined}
@@ -1875,6 +1969,7 @@ export function AgentChat({
                   // composer must not invite a reply it already knows the lead will refuse, and "which
                   // machine am I typing into" has to be answerable without tapping Send to find out.
                   hostBlock={hostBlock}
+                  externalBusy={modelSwitching}
                   dialogPresent={dialogPresent}
                   text={text}
                   terminalDraft={terminalDraft}
@@ -1892,6 +1987,16 @@ export function AgentChat({
           </Collapse>
         </div>
 
+        <CodexModelPresetsSheet
+          open={drawer === "models"}
+          onClose={closeDrawer}
+          current={currentModel}
+          onSelect={(preset) => void switchModel(preset)}
+          onNative={() => void switchModel()}
+          disabledReason={modelDisabledReason}
+          busy={modelSwitching}
+          error={modelSwitchError}
+        />
         {/* Pane switching and configured launchers share the header's switcher sheet. */}
         <BottomSheet
           open={drawer === "switcher"}

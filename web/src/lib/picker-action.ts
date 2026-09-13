@@ -24,6 +24,12 @@ import {
 import { POLL_ATTEMPTS, defaultSleep, type ActionResult, type Sleep } from "./harness/guard";
 import { paneScopeKey, type Scope } from "./scope";
 
+/** Lease for a multi-step write that owns one addressed pane's keyboard. */
+export interface PaneActionOwner {
+  readonly key: string;
+  readonly token: symbol;
+}
+
 /** Arguments shared by the picker renderer and the action choreography. */
 export interface PickerActionArgs {
   paneId: string;
@@ -38,6 +44,10 @@ export interface PickerActionArgs {
   agent?: string;
   /** Test seam for bounded read-back pacing. */
   sleep?: Sleep;
+  /** Abort an in-flight choreography before its next terminal write. */
+  signal?: AbortSignal;
+  /** Existing lease held by a parent multi-step operation. */
+  owner?: PaneActionOwner;
 }
 
 function target(args: Omit<PickerActionArgs, "intent">): DialogTarget<"picker"> {
@@ -47,10 +57,32 @@ function target(args: Omit<PickerActionArgs, "intent">): DialogTarget<"picker"> 
 // One browser context can render the same pane in more than one component for a short period while
 // revalidation is in flight. Serialize all picker actions per addressed pane so two pointer walks
 // cannot interleave and make a later Enter activate a row the operator never saw.
-const inFlight = new Set<string>();
+const inFlight = new Map<string, symbol>();
 
 function pickerKey(paneId: string, scope: Scope | undefined): string {
   return paneScopeKey(scope, paneId);
+}
+
+/** Claim a pane for a parent operation; a second writer fails closed. */
+export function acquirePaneAction(paneId: string, scope?: Scope): PaneActionOwner | null {
+  const key = pickerKey(paneId, scope);
+  if (inFlight.has(key)) return null;
+  const owner = { key, token: Symbol("pane-action") };
+  inFlight.set(key, owner.token);
+  return owner;
+}
+
+/** Release only the lease that still owns the addressed pane. */
+export function releasePaneAction(owner: PaneActionOwner): void {
+  if (inFlight.get(owner.key) === owner.token) inFlight.delete(owner.key);
+}
+
+export function ownsPaneAction(owner: PaneActionOwner | undefined, key: string): boolean {
+  return owner !== undefined && owner.key === key && inFlight.get(key) === owner.token;
+}
+
+function aborted(args: Pick<PickerActionArgs, "signal">): boolean {
+  return args.signal?.aborted === true;
 }
 
 interface PickerRead {
@@ -80,6 +112,8 @@ function argsFor(
     scope: args.scope,
     agent: args.agent,
     sleep: args.sleep,
+    signal: args.signal,
+    owner: args.owner,
   };
 }
 
@@ -304,8 +338,10 @@ function toggleAccepted(baseline: PickerModel, fresh: PickerModel, id: string): 
 }
 
 async function readPicker(args: Omit<PickerActionArgs, "intent">): Promise<PickerRead | null> {
+  if (aborted(args)) return null;
   try {
     const fresh = await readDialog(target(args));
+    if (aborted(args)) return null;
     return fresh.model ? { model: fresh.model, revision: fresh.revision } : null;
   } catch {
     return null;
@@ -314,12 +350,15 @@ async function readPicker(args: Omit<PickerActionArgs, "intent">): Promise<Picke
 
 /** Read the current pointer before calculating a walk. */
 async function readCurrent(args: PickerActionArgs): Promise<Flow<PickerRead>> {
+  if (aborted(args)) return changed();
   // The first read is a full committing guard. A pointer that moved after rendering is meaningful
   // here: the card was rendered against a different target, so refuse the action and let the next
   // poll re-render it. The same strict guard is repeated after every arrow below.
   const guarded = await guardDialog(target(args));
+  if (aborted(args)) return changed();
   if (!guarded.ok) return { ok: false, result: guarded.result };
   const fresh = await readPicker(args);
+  if (aborted(args)) return changed();
   if (!fresh || !samePickerExceptPointer(args.picker, fresh.model)) return changed();
   return result(fresh);
 }
@@ -335,7 +374,9 @@ async function readBack(
 ): Promise<PickerRead | null> {
   const sleep = args.sleep ?? defaultSleep;
   for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+    if (aborted(args)) return null;
     await sleep(250);
+    if (aborted(args)) return null;
     const fresh = await readPicker(args);
     if (!fresh) continue;
     if (!samePickerStage(baseline, fresh.model)) return null;
@@ -354,7 +395,9 @@ async function readCommitOutcome(
 ): Promise<ActionResult> {
   const sleep = args.sleep ?? defaultSleep;
   for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+    if (aborted(args)) return { status: "changed" };
     await sleep(250);
+    if (aborted(args)) return { status: "changed" };
     let fresh: PickerRead | null;
     try {
       const read = await readDialog(target(args));
@@ -382,7 +425,9 @@ async function guardedKey(
   args: Omit<PickerActionArgs, "intent">,
   keys: string[],
 ): Promise<ActionResult> {
+  if (aborted(args)) return { status: "changed" };
   const guarded = await guardDialog(target(args));
+  if (aborted(args)) return { status: "changed" };
   if (!guarded.ok) return guarded.result;
   return sendBoundKeys(args, keys, guarded.region);
 }
@@ -396,6 +441,7 @@ async function walkTo(
   let current = initial;
   const maxSteps = current.model.options.length + 2;
   for (let step = 0; step < maxSteps; step++) {
+    if (aborted(args)) return changed();
     const pointer = pointedOption(current.model);
     const targetIndex = current.model.options.findIndex((option) => option.id === id);
     if (!pointer || targetIndex < 0) return changed();
@@ -637,8 +683,10 @@ async function sendSearchText(
   args: Omit<PickerActionArgs, "intent">,
   text: string,
 ): Promise<ActionResult> {
+  if (aborted(args)) return { status: "changed" };
   try {
     const response = await sendReply(args.paneId, text, false, args.scope, args.picker.regionSignature);
+    if (aborted(args)) return { status: "changed" };
     if (!response.ok && response.code === "prompt_changed") return { status: "changed" };
     if (!response.ok) return { status: "error", error: describeApiError(response) };
     return { status: "sent" };
@@ -714,11 +762,18 @@ async function dispatch(args: PickerActionArgs): Promise<ActionResult> {
 /** Submit one picker intent, serialized per host/session/pane. */
 export async function submitPickerIntent(args: PickerActionArgs): Promise<ActionResult> {
   const key = pickerKey(args.paneId, args.scope);
-  if (inFlight.has(key)) return { status: "changed" };
-  inFlight.add(key);
+  if (aborted(args)) return { status: "changed" };
+  const parentOwns = args.owner !== undefined;
+  if (parentOwns) {
+    if (!ownsPaneAction(args.owner, key)) return { status: "changed" };
+  } else {
+    const owner = acquirePaneAction(args.paneId, args.scope);
+    if (!owner) return { status: "changed" };
+    args = { ...args, owner };
+  }
   try {
     return await dispatch(args);
   } finally {
-    inFlight.delete(key);
+    if (!parentOwns && args.owner) releasePaneAction(args.owner);
   }
 }
