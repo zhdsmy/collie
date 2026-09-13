@@ -20,7 +20,7 @@ import type { ReactNode } from "react";
 import type { AnsiSegment } from "@/lib/ansi";
 import type { SessionModel } from "@/lib/types";
 import { lineText, type StyledLine } from "@/lib/blocks";
-import { styleFor } from "@/components/mirror-space";
+import { segmentStyle, styleFor } from "@/components/mirror-space";
 import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -60,7 +60,7 @@ function sliceSegments(segments: AnsiSegment[], start: number, end: number): Ans
 
 function StyledText({ segments }: { segments: AnsiSegment[] }) {
   return segments.map((segment, i) => (
-    <span key={i} style={styleFor(segment)}>{segment.text}</span>
+    <span key={i} style={segmentStyle(segment)} className={segment.mobileTransparentBg ? "terminal-mobile-transparent-bg" : undefined}>{segment.text}</span>
   ));
 }
 

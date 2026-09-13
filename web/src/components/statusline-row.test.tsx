@@ -8,6 +8,16 @@ import { StatuslineRow } from "./statusline-row";
 
 beforeEach(() => __resetLocale());
 
+it("preserves the upstream mobile-transparent fill on the OMP statusline", () => {
+  const row = splitLines(parseAnsi("\u001b[47mOMP status\u001b[0m"))[0]!;
+  row.segments[0]!.mobileTransparentBg = true;
+  const { getByText } = render(<StatuslineRow agent="omp" row={row} />);
+  const text = getByText("OMP status");
+  expect(text).toHaveClass("terminal-mobile-transparent-bg");
+  expect(text.style.backgroundColor).toBe("");
+  expect(text.style.getPropertyValue("--terminal-seg-bg")).toBe("var(--ansi-7)");
+});
+
 it("compacts Hermes metrics without confusing cache hit with context used", () => {
   const text = " ⚕ example-model │ ~19.5K/1M │ [░░░░░░░░░░] ~2% │ ◎ 65.3% │ ◷ 1.4s │ ↑ 198 t/s │ 1h 32m │ ⏱ 5s │ ✓ 1m       ─ Example conversation ";
   const { container } = renderRow(text, "hermes");

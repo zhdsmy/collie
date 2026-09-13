@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Loader2, Plus } from "lucide-react";
 
 import { AgentIcon } from "@/components/agent-icon";
@@ -6,6 +6,7 @@ import { STRIP_TAP_TARGET_SQUARE } from "@/components/ui/labelled-strip";
 import { TabActionsSheet } from "@/components/tab-actions-sheet";
 import { StatusDot } from "@/components/status-badge";
 import { useLongPress } from "@/hooks/use-long-press";
+import { useRevealActive } from "@/hooks/use-reveal-active";
 import { cn } from "@/lib/utils";
 import { TRIAGE_STATUS, worstTriage, type TriageKey } from "@/lib/triage";
 import { hostKey } from "@/lib/hosts";
@@ -15,7 +16,6 @@ import { useMuxCapability } from "@/lib/mux-capability";
 import type { Scope } from "@/lib/scope";
 import { t as translate } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
-import { hasResizeObserver } from "@/lib/env";
 
 interface TabStripProps {
   workspaceId: string;
@@ -111,39 +111,16 @@ export function TabStrip({
   // Actions need both callbacks wired (revalidate on rename, fall back on close); without them the
   // tabs stay plain tap-to-switch — long-press is inert.
   const actionsEnabled = !!onRenamed && !!onClosed;
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  // Keyed on `selected` (not `workspaceId`): a many-tab strip must reveal the active tab on mount
+  // AND every time the operator switches tabs, and `selected` is the value that changes on a switch.
+  useRevealActive(scrollerRef, selected);
 
   // Tab status is computed over THIS machine's panes only: tab ids (`w1:t1`) collide across a crew
   // exactly as pane and workspace ids do, so an unfiltered merged list would paint a peer's blocked
   // agent onto the lead's tab. Solo panes are untagged and `host` is undefined — same set as before.
   const here = agents.filter((a) => hostKey(a) === (host ?? ""));
   const wsTabs = tabs.filter((t) => t.workspaceId === workspaceId);
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const tabIds = wsTabs.map((tab) => tab.tabId).join("\0");
-  useLayoutEffect(() => {
-    const scroller = scrollerRef.current;
-    if (!scroller) return;
-    const revealSelected = () => {
-      const active = scroller.querySelector<HTMLElement>('[aria-current="true"]');
-      if (!active) return;
-      const viewport = scroller.getBoundingClientRect();
-      const tab = active.getBoundingClientRect();
-      if (!viewport.width || !tab.width) return;
-      const padding = getComputedStyle(scroller);
-      const left = viewport.left + parseFloat(padding.paddingLeft);
-      const right = viewport.right - parseFloat(padding.paddingRight);
-      // Move only this horizontal strip: scrollIntoView can move the page and iOS safe area.
-      if (tab.left < left || tab.width > right - left) scroller.scrollLeft += tab.left - left;
-      else if (tab.right > right) scroller.scrollLeft += tab.right - right;
-    };
-    revealSelected();
-    if (!hasResizeObserver()) return;
-    const observer = new ResizeObserver(revealSelected);
-    // Also covers opening a folded strip, rotation, font loading and renamed neighbouring tabs.
-    observer.observe(scroller);
-    for (const tab of scroller.children) observer.observe(tab);
-    return () => observer.disconnect();
-    // Snapshot polling must not undo a manual pan through the other tabs.
-  }, [selected, workspaceId, host, allowAll, tabIds]);
   if (wsTabs.length === 0) return null;
 
   return (

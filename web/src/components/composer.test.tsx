@@ -2189,7 +2189,7 @@ describe("Composer — quick keys / image attach", () => {
     await user.click(attach); // clickable without throwing (opens the hidden file input)
   });
 
-  it("does not render digit shortcut buttons in the composer (they live on the Keys dock's 123 tab)", () => {
+  it("does not render digit shortcut buttons in the composer (they live behind the Keys dock's 123 chip)", () => {
     renderComposer();
     for (const d of ["1", "2", "3", "4", "5"]) {
       expect(screen.queryByRole("button", { name: d })).not.toBeInTheDocument();

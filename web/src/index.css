@@ -1,6 +1,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Adapter-marked light ANSI fills keep their desktop colour and become transparent on phones. */
+.terminal-mobile-transparent-bg {
+  background-color: var(--terminal-seg-bg);
+}
+
+@media (max-width: 640px) {
+  .terminal-mobile-transparent-bg {
+    background-color: transparent;
+  }
+}
+
 /* `dark:` must fire for BOTH an explicitly-pinned dark root and a system-dark root the user hasn't
    pinned to light — otherwise the handful of literal `dark:` utilities silently stop working for
    everyone on System (the default). Token-driven colors don't need this; these are the literals. */

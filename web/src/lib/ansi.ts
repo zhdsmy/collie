@@ -23,6 +23,8 @@ export interface AnsiSegment {
   /** True when this text is decorative terminal rule glyphs; the renderer mutes it. The parser
    *  detects self-contained runs, and splitLines may refine a strict labelled row's exact runs. */
   muted: boolean;
+  /** Adapter-owned presentation hint: retain the ANSI fill on desktop, suppress it at phone width. */
+  mobileTransparentBg?: true;
 }
 
 // The 16 indexed ANSI slots, emitted as CSS variables rather than literal hex. index.css defines

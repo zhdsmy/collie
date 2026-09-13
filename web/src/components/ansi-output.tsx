@@ -28,7 +28,7 @@ import {
 } from "@/lib/mirror-images";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
-import { MIRROR_SPACE, MIRROR_INVERT, styleFor } from "@/components/mirror-space";
+import { MIRROR_SPACE, MIRROR_INVERT, segmentStyle, styleFor } from "@/components/mirror-space";
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks } from "@/lib/links";
 import { PromptSelectBlock, type PromptBlockAction } from "@/components/prompt-select-block";
@@ -171,8 +171,8 @@ const LINK_CLASS =
 
 // User echoes have one neutral surface regardless of Codex's current ANSI palette.
 // Diff rows still retain stronger token fills above their full-row base.
-function segmentStyle(s: AnsiSegment, surface: StyledLine["surface"]): CSSProperties {
-  const style = styleFor(s);
+function surfaceSegmentStyle(s: AnsiSegment, surface: StyledLine["surface"]): CSSProperties {
+  const style = segmentStyle(s);
   if (!surface || (surface.kind !== "user" && s.bg !== surface.background)) return style;
   const { backgroundColor: _backgroundColor, ...rest } = style;
   return rest;
@@ -566,7 +566,8 @@ export const AnsiOutput = memo(function AnsiOutput({
       return (
         <span
           key={si}
-          style={segmentStyle(s, line.surface)}
+          style={surfaceSegmentStyle(s, line.surface)}
+          className={s.mobileTransparentBg ? "terminal-mobile-transparent-bg" : undefined}
         >
           {renderSegment(s.text, segStart)}
         </span>
