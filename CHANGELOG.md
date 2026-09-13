@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.8] - 2026-09-13
+
 ### Changed
-- **Codex model presets give way to a recently-used list.** The statusline's model opens a small menu above the field instead of a bottom sheet, listing the model and thinking-level pairs this device has actually sent a reply with, most recent first. Each entry can be removed and the whole history cleared with a two-tap confirm; the hand-edited editor and its Settings card are gone. An up arrow after the model marks the field when something in the list is not what is on screen.
-- **Thinking levels use Codex's own English names, and only the levels it really offers.** The picker now reads Low, Medium, High, Extra high, Max and Ultra — the six rows Codex 0.154 draws — instead of translated labels for levels such as `none` and `minimal` that its selection menu never serves.
+- **Codex model presets give way to a recently-used list.** The statusline's model opens a small menu above the field instead of a bottom sheet, listing the model and thinking-level pairs this device has actually sent a reply with, most recent first. Each entry can be removed and the whole history cleared with a two-tap confirm; the hand-edited editor and its Settings card are gone. An up arrow after the model marks the field when something in the list is not what is on screen. ([77d940b9](https://github.com/zhdsmy/collie/commit/77d940b9))
+- **Thinking levels use Codex's own English names, and only the levels it really offers.** The picker now reads Low, Medium, High, Extra high, Max and Ultra — the six rows Codex 0.154 draws — instead of translated labels for levels such as `none` and `minimal` that its selection menu never serves. ([77d940b9](https://github.com/zhdsmy/collie/commit/77d940b9))
 
 ## [1.8.2+collie.7] - 2026-09-13
 
