@@ -464,6 +464,12 @@ export const zhTW: Dictionary = {
   // --- quickActions (one-tap reply dock) ---
   "quickActions.group.confirm": "確認",
   "quickActions.group.common": "一般",
+  "quickActions.item.yes": "是",
+  "quickActions.item.no": "否",
+  "quickActions.item.continue": "繼續",
+  "quickActions.item.commitPush": "提交並推送",
+  "quickActions.item.retry": "重試",
+  "quickActions.item.skip": "跳過",
 
   // --- find (the in-mirror / in-history find bar) ---
   "find.placeholder": "在{subject}中尋找…",

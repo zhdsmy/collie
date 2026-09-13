@@ -500,6 +500,12 @@ export const en = {
   // --- quickActions (one-tap reply dock) ---
   "quickActions.group.confirm": "confirm",
   "quickActions.group.common": "common",
+  "quickActions.item.yes": "yes",
+  "quickActions.item.no": "no",
+  "quickActions.item.continue": "continue",
+  "quickActions.item.commitPush": "commit and push",
+  "quickActions.item.retry": "retry",
+  "quickActions.item.skip": "skip",
 
   // --- find (the in-mirror / in-history find bar) ---
   "find.placeholder": "Find in {subject}…",

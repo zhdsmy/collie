@@ -19,15 +19,17 @@ import type { OperatorQuickReplyRow } from "@/lib/types";
 export interface QuickReplyGroup {
   /** Lowercase section label shown above the grid. */
   title: string;
-  /** The literal strings sent — each is typed into the pane and submitted verbatim. */
+  /** Canonical values used for echo identity and operator rows; built-ins may localize on send. */
   items: readonly string[];
+  /** Built-in agent phrases may be translated for both display and sending. */
+  localizeItems?: boolean;
 }
 
 // Shared by every LLM harness. Deduped to distinct intents: no yes/ok/approve/go-ahead pile-up, and
 // no "stop" that just duplicates Esc in the Keys pad.
 const AGENT: readonly QuickReplyGroup[] = [
-  { title: "confirm", items: ["yes", "no"] },
-  { title: "common", items: ["continue", "commit and push", "retry", "skip"] },
+  { title: "confirm", items: ["yes", "no"], localizeItems: true },
+  { title: "common", items: ["continue", "commit and push", "retry", "skip"], localizeItems: true },
 ];
 
 // A bare shell has no notion of continuing or skipping a turn — the only near-universal one-tap

@@ -485,6 +485,12 @@ export const es: Dictionary = {
   // --- quickActions (one-tap reply dock) ---
   "quickActions.group.confirm": "confirmar",
   "quickActions.group.common": "comunes",
+  "quickActions.item.yes": "Sí",
+  "quickActions.item.no": "No",
+  "quickActions.item.continue": "Continuar",
+  "quickActions.item.commitPush": "Hacer commit y push",
+  "quickActions.item.retry": "Reintentar",
+  "quickActions.item.skip": "Omitir",
 
   // --- find (the in-mirror / in-history find bar) ---
   "find.placeholder": "Buscar en {subject}…",

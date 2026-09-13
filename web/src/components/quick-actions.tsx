@@ -7,7 +7,7 @@ import { ECHO_DONE_MS, useActionEcho } from "@/hooks/use-action-echo";
 import type { EchoPhase } from "@/hooks/use-action-echo";
 import { useOperatorQuickReplies } from "@/lib/operator-config";
 import { quickRepliesFor } from "@/lib/quick-replies";
-import { t as translate } from "@/lib/i18n";
+import { t as translate, type MessageKey } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 
 interface QuickActionsContentProps {
@@ -32,6 +32,21 @@ function groupTitle(title: string): string {
       : title;
 }
 
+const QUICK_REPLY_KEYS = {
+  yes: "quickActions.item.yes",
+  no: "quickActions.item.no",
+  continue: "quickActions.item.continue",
+  "commit and push": "quickActions.item.commitPush",
+  retry: "quickActions.item.retry",
+  skip: "quickActions.item.skip",
+} satisfies Record<string, MessageKey>;
+
+function replyText(raw: string, localizeItems: boolean): string {
+  if (!localizeItems) return raw;
+  const key = Object.entries(QUICK_REPLY_KEYS).find(([value]) => value === raw)?.[1];
+  return key === undefined ? raw : translate(key);
+}
+
 // Module-level so it isn't a fresh component type each render (which would remount the grid).
 function Group({
   title,
@@ -41,6 +56,7 @@ function Group({
   busy,
   phaseOf,
   onFire,
+  localizeItems,
 }: {
   title: string;
   items: readonly string[];
@@ -49,23 +65,25 @@ function Group({
   /** Some reply in the dock is in flight — the untapped siblings dim and lock out. */
   busy: boolean;
   phaseOf: (id: string) => EchoPhase;
-  onFire: (text: string) => void;
+  onFire: (id: string, text: string) => void;
+  localizeItems?: boolean;
 }) {
   return (
     <div>
       <p className="mb-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">{title}</p>
       <div className={`grid gap-2 ${cols}`}>
-        {items.map((t) => {
-          const phase = phaseOf(t);
+        {items.map((raw) => {
+          const phase = phaseOf(raw);
+          const label = replyText(raw, localizeItems === true);
           return (
             <Button
-              key={t}
+              key={raw}
               type="button"
               // The tapped reply goes accent (and stays undimmed under `disabled`, so it reads over
               // its dimmed siblings) — the same busy language the dialog option rows use.
               variant={phase === "idle" ? "outline" : "default"}
               disabled={disabled || busy}
-              onClick={() => onFire(t)}
+              onClick={() => onFire(raw, label)}
               className={cn(
                 "h-12 gap-1.5 text-sm font-medium",
                 phase !== "idle" && "disabled:opacity-100",
@@ -73,7 +91,7 @@ function Group({
             >
               {phase === "pending" && <Loader2 className="size-4 animate-spin" />}
               {phase === "done" && <Check className="size-4" />}
-              {t}
+              {label}
             </Button>
           );
         })}
@@ -112,9 +130,9 @@ export function QuickActionsContent({
     [],
   );
 
-  const fire = (text: string) => {
+  const fire = (id: string, text: string) => {
     if (disabled || echo.pending) return;
-    void echo.run(text, async () => {
+    void echo.run(id, async () => {
       const ok = await onSend(text);
       // Let the ✓ land before the dock goes. On failure we hold it open — the status bar carries the
       // reason and the user is one tap from trying again.
@@ -130,6 +148,7 @@ export function QuickActionsContent({
           key={g.title}
           title={groupTitle(g.title)}
           items={g.items}
+          localizeItems={g.localizeItems}
           cols="grid-cols-2"
           disabled={disabled}
           busy={echo.pending}

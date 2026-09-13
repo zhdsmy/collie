@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Localize built-in Composer quick replies.** Quick buttons and their sent text now follow the selected language while shell and operator-defined replies remain unchanged.
+
 ## [1.8.2+collie.1] - 2026-09-13
 
 ### Changed

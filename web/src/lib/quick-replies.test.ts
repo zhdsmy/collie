@@ -11,6 +11,14 @@ describe("quickRepliesFor", () => {
     expect(claude.flatMap((g) => g.items)).toContain("continue");
   });
 
+  it("marks only shipped agent phrases for localization", () => {
+    expect(quickRepliesFor("codex", false).every((group) => group.localizeItems)).toBe(true);
+    expect(quickRepliesFor("shell", true).some((group) => group.localizeItems)).toBe(false);
+    expect(
+      quickRepliesFor("claude", false, [{ title: "common", items: ["continue"] }])[0],
+    ).not.toHaveProperty("localizeItems");
+  });
+
   it("gives a shell y/n and NOT the agent phrases", () => {
     const shell = quickRepliesFor("shell", true);
     const items = shell.flatMap((g) => g.items);

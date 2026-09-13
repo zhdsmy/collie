@@ -2388,6 +2388,33 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
     );
   });
 
+  it.each([
+    { code: "zh" as const, expected: "继续" },
+    { code: "de" as const, expected: "Fortfahren" },
+  ])("localizes the quick reply label and payload in $code", async ({ code, expected }) => {
+    try {
+      setLocale(code);
+      await whenLocaleReady(code);
+      let replyText: string | null = null;
+      server.use(replyHandler((typed) => (replyText = typed)));
+      const user = userEvent.setup();
+      renderComposer();
+
+      await user.click(
+        screen.getByRole("button", { name: translate("composer.controls.quick") }),
+      );
+      const reply = screen.getByRole("button", { name: expected });
+      expect(reply).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "continue" })).not.toBeInTheDocument();
+      await user.click(reply);
+
+      await waitFor(() => expect(replyText).toBe(expected));
+    } finally {
+      cleanup();
+      setLocale("en");
+    }
+  });
+
   it("a quick reply echoes on its OWN button and locks its siblings while in flight", async () => {
     const user = userEvent.setup();
     // Hold the TYPE half of the guarded send open, so the in-flight state is observable rather than
