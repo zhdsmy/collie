@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.3] - 2026-09-13
+
 ### Fixed
 
-- **Render Markdown in every Codex plan card body.** Format headings, lists, emphasis and fenced code in the visible terminal plan even when no matching journal entry is available; preserve verified full-plan recovery, partial-plan notices and the bounded reading area.
+- **Render Markdown in every Codex plan card body.** Format headings, lists, emphasis and fenced code in the visible terminal plan even when no matching journal entry is available; preserve verified full-plan recovery, partial-plan notices and the bounded reading area. ([47df931c](https://github.com/zhdsmy/collie/commit/47df931c))
 
 ## [1.8.2+collie.2] - 2026-09-13
 
