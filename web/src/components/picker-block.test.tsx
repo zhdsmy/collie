@@ -320,7 +320,25 @@ describe("PickerBlock", () => {
       />,
     );
     await user.click(screen.getByRole("button", { name: "Submit answer" }));
-    expect(onAction).toHaveBeenCalledWith({ kind: "confirm" });
+    expect(onAction).toHaveBeenCalledWith({ kind: "answer", notes: "" });
+  });
+
+  it("keeps local notes through polls and question navigation without terminal writes", async () => {
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(<PickerBlock picker={questionnaireSinglePicker} onAction={onAction} />);
+    const input = screen.getByRole("textbox", { name: "Notes or custom answer (optional)" });
+    expect(input).not.toHaveFocus();
+    await user.type(input, "More details");
+    expect(onAction).not.toHaveBeenCalled();
+    rerender(<PickerBlock picker={{ ...questionnaireSinglePicker }} onAction={onAction} />);
+    expect(input).toHaveValue("More details");
+    rerender(<PickerBlock picker={{ ...questionnaireSinglePicker, identity: "question:2" }} onAction={onAction} />);
+    expect(input).toHaveValue("");
+    rerender(<PickerBlock picker={questionnaireSinglePicker} onAction={onAction} />);
+    expect(input).toHaveValue("More details");
+    await user.click(screen.getByRole("button", { name: "Submit answer" }));
+    expect(onAction).toHaveBeenCalledWith({ kind: "answer", notes: "More details" });
   });
 
   it("disables questionnaire controls in read-only mode", () => {

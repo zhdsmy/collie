@@ -1,0 +1,33 @@
+[0m[1m[38;5;2m➜  [0m[1m[38;5;6mtmp[0m env CODEX_HOME=/private/tmp/collie-card-notes.uyTjQy codex -C /private/tmp/collie-card-notes.uyTjQy --no-alt-screen
+[0m[2m╭──────────────────────────────────────────────────╮[0m
+[0m[2m│ >_ [0m[1mOpenAI Codex[0m[2m (v0.154.0)                       │[0m
+[0m[2m│                                                  │[0m
+[0m[2m│ model:     [0mgpt-5.6[0m[2m   [0m[38;5;6m/model[0m[2m to change            │[0m
+[0m[2m│ directory: [0m/private/tmp/collie-card-notes.uyTjQy[0m[2m │[0m
+[0m[2m╰──────────────────────────────────────────────────╯[0m
+
+  [0m[1mTip:[0m Use /rename to rename your threads for easier thread resuming.
+
+
+[0m[1m[2m[48;2;57;57;71m› [0m[48;2;57;57;71mShow two test questions.                                                                                                                                     [0m
+
+
+[0m[38;5;3m⚠ Model metadata for `gpt-5.6` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.[0m
+
+[0m[2m•[0m [0m[1mQuestions[0m[2m 2/2 answered[0m
+  • 目前 Codex 的模型选择和状态栏命令是否一起改成直接打开对应选择界面，并保持原生对话中的全部选项和说明？
+[0m[2m    answer: [0m[38;5;6m同步优化入口（推荐）[0m
+[0m[2m    note: [0m[38;5;6mCard note 中文 first line[0m
+[0m[2m          [0m[38;5;6mSecond line with 1, 2, 3.[0m
+  • Which presentation should the question card use?
+[0m[2m    answer: [0m[38;5;6mNone of the above[0m
+[0m[2m    note: [0m[38;5;6mCustom answer 中文: use a third approach.[0m
+[0m[2m          [0m[38;5;6mKeep readable buttons.[0m
+
+[0m[2m• [0mQuestion test completed: {"answers":{"style":{"answers":["None of the above","user_note: Custom answer 中文: use a third approach.\n\nKeep readable
+  buttons."]},"entry":{"answers":["同步优化入口（推荐）","user_note: Card note 中文 first line\n\nSecond line with 1, 2, 3."]}}}
+ 
+[0m[48;2;57;57;71m                                                                                                                                                               [0m
+[0m[1m[48;2;57;57;71m›[0m[48;2;57;57;71m [0m[2m[48;2;57;57;71mAsk Codex to do anything[0m[48;2;57;57;71m                                                                                                                                     [0m
+[0m[48;2;57;57;71m                                                                                                                                                               [0m
+  [0m[38;2;246;226;183mgpt-5.6 default[0m[2m · [0m[38;2;171;223;167m/private/tmp/collie-card-notes.uyTjQy[0m

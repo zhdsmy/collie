@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { Loader2, MessageSquarePlus } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { ChevronDown, Loader2, MessageSquarePlus } from "lucide-react";
 
 import type { PromptFamily, PromptFeedbackPurpose, PromptModel, PromptOption } from "@/lib/blocks";
 import { FEEDBACK_MAX_LENGTH } from "@/lib/prompt-action";
 import { OptionButton, OptionGroupCaption, PromptPanel } from "@/components/option-button";
+import { Button } from "@/components/ui/button";
+import { Collapse } from "@/components/ui/collapse";
 import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 
@@ -83,11 +85,91 @@ function feedbackCopyFor(purpose: PromptFeedbackPurpose): FeedbackCopy {
   };
 }
 
-// Native, tappable rendering of a Claude single-choice dialog. Every visible string — the option
+const APPROVAL_COMMAND_PREVIEW_LENGTH = 160;
+
+function ApprovalContext({ approval }: { approval: NonNullable<PromptModel["approval"]> }) {
+  const [expanded, setExpanded] = useState(false);
+  const command = approval.command;
+  const compactCommand = command.replace(/\s+/g, " ").trim();
+  const longCommand = command.includes("\n") || command.length > APPROVAL_COMMAND_PREVIEW_LENGTH;
+  const preview = longCommand
+    ? `${compactCommand.slice(0, APPROVAL_COMMAND_PREVIEW_LENGTH)}…`
+    : command;
+  const commandText = `$ ${command}`;
+  const commandDetailsId = useId();
+
+  return (
+    <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-border/70 bg-muted/30 px-2.5 py-2">
+      <dl className="grid min-w-0 gap-1.5 text-xs">
+        <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2">
+          <dt className="font-medium text-muted-foreground">{t("prompt.approval.environment")}</dt>
+          <dd className="min-w-0 break-words font-content text-foreground">{approval.environment}</dd>
+        </div>
+        <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-2">
+          <dt className="font-medium text-muted-foreground">{t("prompt.approval.reason")}</dt>
+          <dd className="min-w-0 break-words font-content text-foreground">{approval.reason}</dd>
+        </div>
+      </dl>
+
+      <div className="min-w-0 border-t border-border/60 pt-2">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <span className="text-xs font-medium text-muted-foreground">{t("prompt.approval.command")}</span>
+          {longCommand ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-expanded={expanded}
+              aria-controls={commandDetailsId}
+              onClick={() => setExpanded((open) => !open)}
+              className="min-h-11 shrink-0 px-1.5 text-[11px] text-primary"
+            >
+              {expanded ? t("prompt.approval.hideCommand") : t("prompt.approval.showCommand")}
+              <ChevronDown
+                aria-hidden="true"
+                className={`size-3.5 transition-transform ${expanded ? "rotate-180" : ""}`}
+              />
+            </Button>
+          ) : null}
+        </div>
+        {!expanded ? (
+          <code className="mt-1 block min-w-0 whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
+            {`$ ${preview}`}
+          </code>
+        ) : null}
+        <Collapse open={expanded}>
+          <div id={commandDetailsId} role="region" aria-label={t("prompt.approval.command")}>
+            <code className="mt-1 block min-w-0 whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-foreground">
+              {commandText}
+            </code>
+          </div>
+        </Collapse>
+      </div>
+
+      {approval.persistentOptions.length > 0 ? (
+        <div className="min-w-0 border-t border-border/60 pt-2">
+          <div className="text-[11px] font-medium text-muted-foreground">
+            {t("prompt.approval.persistentOptions")}
+          </div>
+          <div className="mt-1 grid gap-1">
+            {approval.persistentOptions.map((option) => (
+              <div key={option} className="break-words font-content text-xs text-muted-foreground">
+                {option}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// Native, tappable rendering of a single-choice dialog. Every visible string — the option
 // label and its description — is a React text node (the XSS boundary is unchanged; nothing is ever
 // set as innerHTML). Real <button>s, so they're keyboard-focusable and screen-reader-announced; the
-// group is labelled by the question (which stays visible in the raw scrollback just above, so it's
-// not repeated here). Each row leads with its terminal-menu digit (KeyBadge) so the mapping is
+// group is labelled by the question. Ordinary dialogs keep that question in the raw scrollback just
+// above; Codex approvals place their native context in this card. Each row leads with its terminal-
+// menu digit (KeyBadge) so the mapping is
 // visible. One option can be in flight at a time — its spinner shows and the rest lock, preventing a
 // double-send.
 //
@@ -151,6 +233,7 @@ export function PromptSelectBlock({ prompt, onAction, disabled }: PromptSelectBl
 
   return (
     <PromptPanel ariaLabel={prompt.question}>
+      {prompt.approval ? <ApprovalContext approval={prompt.approval} /> : null}
       <OptionGroupCaption>{familyCaption(prompt.family)}</OptionGroupCaption>
       <div className="flex flex-col gap-1">
         {prompt.options.map((option, index) => {

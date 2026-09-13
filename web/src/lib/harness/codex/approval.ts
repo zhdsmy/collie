@@ -32,6 +32,64 @@ function buttonLabel(label: string): string {
   return label.replace(/\s*\([^)]*\)\s*$/, "").trim();
 }
 
+const ENVIRONMENT = /^\s*Environment:\s*(.+)$/;
+const REASON = /^\s*Reason:\s*(.+)$/;
+const COMMAND = /^\s*\$\s?(.*)$/;
+const MAX_HEADER_LOOKBACK = 256;
+
+/** Read the stable context immediately above the option run. */
+function approvalContext(
+  texts: string[],
+  headerRow: number,
+  firstOptionRow: number,
+  persistentOptions: string[],
+): PromptModel["approval"] {
+  const context = texts.slice(headerRow + 1, firstOptionRow);
+  const environmentIndex = context.findIndex((text) => ENVIRONMENT.test(text));
+  const reasonIndex = context.findIndex(
+    (text, index) => index > environmentIndex && REASON.test(text),
+  );
+  const commandIndex = context.findIndex((text, index) => index > reasonIndex && COMMAND.test(text));
+  if (environmentIndex < 0 || reasonIndex < 0 || commandIndex < 0) return undefined;
+  if (context.slice(0, environmentIndex).some((text) => !isBlank(text))) return undefined;
+
+  // The labels are stable, but their values can wrap. Ignore blank separator rows and join only the
+  // value rows in each field; an unexpected option row means the capture is not safe to lift.
+  function fieldValue(start: number, end: number, marker: RegExp): string | undefined {
+    const values: string[] = [];
+    for (let index = start; index < end; index++) {
+      const text = context[index]!;
+      if (isBlank(text)) continue;
+      if (OPTION.test(text) || (index !== start && (ENVIRONMENT.test(text) || REASON.test(text)))) {
+        return undefined;
+      }
+      const value = marker.exec(text)?.[1] ?? text.replace(/^\s{2}/, "");
+      if (value.trim()) values.push(value.trim());
+    }
+    return values.length > 0 ? values.join(" ") : undefined;
+  }
+
+  const environment = fieldValue(environmentIndex, reasonIndex, ENVIRONMENT);
+  const reason = fieldValue(reasonIndex, commandIndex, REASON);
+  if (!environment || !reason) return undefined;
+
+  // `$` begins the command. Keep every following row, including internal blank rows, and remove
+  // only the common two-space dialog indent from wrapped continuations. Trailing separator rows are
+  // outside the command and are removed after collection.
+  const commandMatch = COMMAND.exec(context[commandIndex]!);
+  if (!commandMatch?.[1]?.trim()) return undefined;
+  const commandIndent = context[commandIndex]!.match(/^\s*/)?.[0].length ?? 0;
+  const commandLines = [commandMatch[1]!];
+  for (const text of context.slice(commandIndex + 1)) {
+    commandLines.push(commandIndent > 0 && text.startsWith(" ".repeat(commandIndent))
+      ? text.slice(commandIndent)
+      : text);
+  }
+  while (commandLines.length > 1 && isBlank(commandLines.at(-1)!)) commandLines.pop();
+  const command = commandLines.join("\n");
+  return command ? { environment, reason, command, persistentOptions } : undefined;
+}
+
 /** Exec-approval card at the tail, or null. */
 export function detectApprovalRegion(lines: StyledLine[]): ApprovalRegion | null {
   const texts = lines.map((l) => rstrip(lineText(l)));
@@ -67,7 +125,7 @@ export function detectApprovalRegion(lines: StyledLine[]): ApprovalRegion | null
   // blank-separated content the mirror keeps. The header itself must be on screen within a
   // short reach.
   let headerRow = -1;
-  for (let k = i; k >= 0 && i - k < 12; k--) {
+  for (let k = i; k >= 0 && i - k < MAX_HEADER_LOOKBACK; k--) {
     if (HEADER.test(texts[k]!)) {
       headerRow = k;
       break;
@@ -78,12 +136,21 @@ export function detectApprovalRegion(lines: StyledLine[]): ApprovalRegion | null
 
   const signature = regionSignature(lines, headerRow, fi + 1);
   if (signature === "") return null;
+  const approval = approvalContext(
+    texts,
+    headerRow,
+    i + 1,
+    ordered.slice(1, -1).map((row) => buttonLabel(row.label)),
+  );
+  // Keep the old short lookback for incomplete captures; the wider scan is only for a complete
+  // context whose long command legitimately pushed the header farther up the pane.
+  if (approval === undefined && i - headerRow >= 12) return null;
 
   return {
-    // Persistent rows sit between Yes and the reject. Replacing from the first option
-    // swallowed them (they are never buttons). The block starts at the reject so they
-    // stay in the raw mirror with the header, Reason, and `$ command`.
-    startLine: bottom,
+  // The complete context starts at the header when all stable fields are present. Persistent rows
+  // are carried as read-only metadata; they never become native actions. Incomplete captures retain
+  // the old option-only boundary so no context is silently discarded.
+    startLine: approval ? headerRow : bottom,
     model: {
       question: "Would you like to run the following command?",
       options: [
@@ -91,6 +158,7 @@ export function detectApprovalRegion(lines: StyledLine[]): ApprovalRegion | null
         { label: buttonLabel(no.label), keys: [String(n)] },
       ],
       family: "permission",
+      approval,
       coreSignature: texts[headerRow]!.trim(),
       signature,
     },

@@ -440,6 +440,7 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
   useLocale();
   const [sending, setSending] = useState<string | null>(null);
   const [queryDraft, setQueryDraft] = useState(picker.query ?? "");
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
   // A draft belongs to this picker stage. Polls that keep the same terminal query must not erase
   // characters typed locally before the operator submits the search form.
@@ -450,6 +451,7 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
   const locked = Boolean(disabled) || sending !== null;
   const filtered = picker.query !== null && picker.query.length > 0;
   const questionnaire = picker.questionnaire;
+  const noteDraft = noteDrafts[picker.identity] ?? questionnaire?.notes?.text ?? "";
   const isQuestionnaire = questionnaire !== undefined;
   const remainingOtherQuestions =
     questionnaire?.submit === "all"
@@ -569,6 +571,19 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
       )}
 
       <Preview lines={picker.preview} />
+      {questionnaire ? (
+        <label className="flex min-w-0 flex-col gap-1.5 text-xs text-muted-foreground">
+          {t("dialog.picker.notes")}
+          <textarea
+            value={noteDraft}
+            onChange={(event) => setNoteDrafts((drafts) => ({ ...drafts, [picker.identity]: event.target.value }))}
+            disabled={locked}
+            rows={3}
+            placeholder={t("dialog.picker.notesPlaceholder")}
+            className="font-content min-h-20 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-base leading-snug text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          />
+        </label>
+      ) : null}
 
       {!picker.plan ? <div className="flex items-center justify-end gap-1.5 border-t border-border/70 pt-1.5">
         {!isQuestionnaire ? (
@@ -594,7 +609,7 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
               variant="default"
               size="sm"
               disabled={questionnaireSubmitLocked}
-              onClick={() => void press("confirm", { kind: "confirm" })}
+                onClick={() => void press("confirm", { kind: "answer", notes: noteDraft })}
             >
               {sending === "confirm" ? <Spinner /> : null}
               {t(

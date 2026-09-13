@@ -1,6 +1,34 @@
 # Codex `request_user_input` — keystroke recipe
 
-## Current card flow — Codex 0.154.0, verified 2026-09-13
+## Notes inside the card — Codex 0.154.0, verified 2026-09-14
+
+The `codex--v0154-notes-*.txt` corpus comes from a disposable native Codex pane with
+an isolated configuration and a deterministic loopback Responses provider. No production
+credentials or model calls were used. `empty`, `text`, `returned`, `multiline`,
+`multiline-focused`, and `completed` preserve the actual ANSI output.
+
+The complete question remains a picker while notes are visible. The native footer distinguishes
+notes focus from restored option focus: the latter has question-navigation hints. A phone draft
+stays local until explicit submission and is retained when browsing other questions.
+
+Verified through the checkout's real `submitPickerIntent`, guard and bridge API:
+
+- Tab from options enters notes without clearing an existing note.
+- Escape on a verified visible notes composer clears notes and returns to choices; Escape is
+  never sent from a question without notes.
+- Bracketed paste preserves Chinese text, digits and blank lines without submitting.
+- After read-back verifies the note, one Enter confirms it and advances/submits the questionnaire.
+- A matching note already present is submitted without typing it again. An uncertain write stops;
+  committing keys are not retried.
+- Ctrl+N/Ctrl+P navigate while notes have focus; Left/Right navigate when choices have focus.
+  Returning restores the note and option focus. Up/Down can change the selected option in notes.
+- Selecting `None of the above` and submitting a note returns a custom answer. The final capture
+  shows both original answer labels plus exact `user_note:` values, including interior blank lines.
+
+Unrecognised footers, partial option lists, countdowns and clipped question headers still fail
+closed. Native text outside the visible composer is never reconstructed from the conversation.
+
+## Previous option-only card flow — Codex 0.154.0, verified 2026-09-13
 
 The `codex--v0154-question-*.txt` fixtures were captured from the installed Codex TUI
 in a disposable Herdr pane, with a separate temporary configuration and a deterministic

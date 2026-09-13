@@ -1,5 +1,13 @@
 # Codex exec-approval — keystroke recipe
 
+## Collie card rendering
+
+When `Environment`, `Reason`, and `$ command` are all present, the adapter lifts the complete
+approval context with the decision rows. The persistent "don't ask again" rows remain visible as
+read-only text in the card but are never rendered as tappable actions. Wrapped command rows are kept
+in the model; commands longer than the compact preview can be expanded in the card. If any context
+field is missing, the adapter keeps the previous option-only lift and leaves the context in the mirror.
+
 Captured 2026-08-22 on Codex v0.149.0 in a sandbox pane started with
 `--ask-for-approval on-request -c approvals_reviewer=user`. Note the config dependency: with
 `approvals_reviewer = "auto_review"` (this host's default) eligible approval requests are routed

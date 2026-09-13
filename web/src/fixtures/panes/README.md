@@ -31,6 +31,12 @@ for the verified choreography, source-matching requirements and long-body behavi
 
 ## Codex 0.154 question cards (captured 2026-09-13)
 
+The additional `codex--v0154-notes-*.txt` corpus was captured 2026-09-14 in an isolated
+Codex 0.154.0 pane with a deterministic local provider. It covers empty/filled notes,
+returning to a previous question, multiline notes with both focus states, and the completed
+answer map. All paths identify a disposable test directory; text is synthetic. The native
+ANSI and line endings are unchanged. See `ASK_NOTES.md` for the verified paste/submit flow.
+
 `codex--v0154-question-*.txt` are byte-faithful captures of the installed Codex TUI
 using a disposable configuration and deterministic local Responses provider. The
 corpus covers a wrapped Chinese question, changing an option without confirming,

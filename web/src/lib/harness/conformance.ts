@@ -158,7 +158,13 @@ function perturbLine(lines: StyledLine[], i: number): StyledLine[] {
   const text = lineText(line);
   // Keep a framed row's right edge intact: text outside it tests shape rejection, not freshness.
   const right = /^│.*│\s*$/u.test(text) ? text.lastIndexOf("│") : -1;
-  if (right < 0) copy[i] = { segments: [...line.segments, { text: " zqx", style: {}, muted: false }] };
+  if (right < 0) {
+    // Keep the text's paint too: a native picker with just one cyan/bold row has no unstyled
+    // content to perturb. Appending an unstyled segment tests rejection, not signature freshness.
+    const lastInk = line.segments.findLastIndex((segment) => segment.text.trim());
+    copy[i] = { ...line, segments: line.segments.map((segment, index) =>
+      index === lastInk ? { ...segment, text: segment.text + " zqx" } : segment) };
+  }
   else {
     let offset = 0;
     copy[i] = { ...line, segments: line.segments.map((segment) => {
@@ -349,7 +355,7 @@ function emittableKeys(block: Block): string[] | null {
         ...(block.menu.nav.leftRight !== undefined ? [...MENU_LEFT_KEYS, ...MENU_RIGHT_KEYS] : []),
       ];
     case "picker":
-      if (block.picker.questionnaire) return ["Up", "Down", "Left", "Right", ...block.picker.options.map((option) => option.id)];
+      if (block.picker.questionnaire) return ["Up", "Down", "Left", "Right", "Tab", "Escape", "Enter", "ctrl+n", "ctrl+p", ...block.picker.options.map((option) => option.id)];
       return block.picker.kind === "multiple"
         ? ["Up", "Down", "Left", "Right", "Space", "Backspace", "Enter", "Escape"]
         : ["Up", "Down", "Enter", "Escape"];

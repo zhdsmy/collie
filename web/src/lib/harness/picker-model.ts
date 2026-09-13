@@ -34,6 +34,8 @@ export interface PickerModel {
     unanswered: number;
     answered: boolean;
     submit: "answer" | "all";
+    /** Native note composer, including stored notes when option focus is restored. */
+    notes?: { text: string; focused: boolean };
   };
 }
 
@@ -59,6 +61,7 @@ export type PickerIntent =
   | { kind: "choose"; id: string }
   | { kind: "focus"; id: string }
   | { kind: "question"; direction: "previous" | "next" }
+  | { kind: "answer"; notes: string }
   | { kind: "toggle"; id: string }
   | { kind: "move"; id: string; direction: "up" | "down" }
   | { kind: "navigate"; direction: "up" | "down" }
@@ -71,7 +74,9 @@ export function pickersEqual(a: PickerModel, b: PickerModel): boolean {
     a.plan?.text === b.plan?.text && a.plan?.complete === b.plan?.complete &&
     a.questionnaire?.unanswered === b.questionnaire?.unanswered &&
     a.questionnaire?.answered === b.questionnaire?.answered &&
-    a.questionnaire?.submit === b.questionnaire?.submit;
+    a.questionnaire?.submit === b.questionnaire?.submit &&
+    a.questionnaire?.notes?.text === b.questionnaire?.notes?.text &&
+    a.questionnaire?.notes?.focused === b.questionnaire?.notes?.focused;
 }
 
 export function pickersSameIdentity(a: PickerModel, b: PickerModel): boolean {

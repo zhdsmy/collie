@@ -69,7 +69,7 @@ for (const width of [320, 390]) {
         const submitAll = () => second.getByRole("button", { name: messages["dialog.picker.submitAll"], exact: true });
         await expect(first.getByText(question1, { exact: true })).toBeVisible();
         await expect(previous(first)).toBeDisabled();
-        await expect(page.getByRole("textbox")).not.toBeFocused();
+        await expect(first.getByRole("textbox", { name: messages["dialog.picker.notes"], exact: true })).not.toBeFocused();
         await expect(first.getByRole("button", { name: messages["dialog.cancel"], exact: true })).toHaveCount(0);
 
         await first.getByRole("button", { name: /只优化打开后的界面/ }).click();

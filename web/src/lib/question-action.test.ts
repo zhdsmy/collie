@@ -12,7 +12,7 @@ vi.mock("./harness/registry", () => ({
   adapterFor: vi.fn(),
 }));
 
-import { fetchPane, sendKeys } from "./api";
+import { fetchPane, sendKeys, sendReply } from "./api";
 import { parseAnsi } from "./ansi";
 import { lineText, splitLines, type StyledLine } from "./blocks";
 import { codexAdapter } from "./harness/codex";
@@ -23,6 +23,7 @@ import { submitPickerIntent } from "./picker-action";
 
 const mockFetchPane = vi.mocked(fetchPane);
 const mockSendKeys = vi.mocked(sendKeys);
+const mockSendReply = vi.mocked(sendReply);
 const mockAdapterFor = vi.mocked(adapterFor);
 const PANES_DIR = join(import.meta.dirname, "..", "fixtures", "panes");
 
@@ -86,12 +87,73 @@ function args(picker: PickerModel, intent: Parameters<typeof submitPickerIntent>
 beforeEach(() => {
   mockFetchPane.mockReset();
   mockSendKeys.mockReset();
+  mockSendReply.mockReset();
   mockAdapterFor.mockReset();
   mockAdapterFor.mockImplementation((agent) => (agent === "codex" ? fakeAdapter() : undefined));
   mockSendKeys.mockResolvedValue({ ok: true });
+  mockSendReply.mockResolvedValue({ ok: true });
 });
 
 describe("Codex question actions", () => {
+  it("submits verified native notes once, without retyping on a retry", async () => {
+    const initial = fixturePicker("codex--v0154-notes-multiline-focused.txt");
+    const next = fixturePicker("codex--v0154-question-q2.txt");
+    let current = initial;
+    mockFetchPane.mockImplementation(async () => pane(current));
+    mockSendKeys.mockImplementation(async (_pane, keys) => {
+      expect(keys).toEqual(["Enter"]);
+      current = next;
+      return { ok: true };
+    });
+    expect(await submitPickerIntent(args(initial, { kind: "answer", notes: initial.questionnaire!.notes!.text }))).toEqual({ status: "sent" });
+    expect(mockSendKeys).toHaveBeenCalledTimes(1);
+    expect(mockSendReply).not.toHaveBeenCalled();
+  });
+
+  it("pastes multiline notes unsubmitted, verifies them, then sends one Enter", async () => {
+    const empty = fixturePicker("codex--v0154-notes-empty.txt");
+    const filled = fixturePicker("codex--v0154-notes-multiline-focused.txt");
+    const next = fixturePicker("codex--v0154-question-q2.txt");
+    // Derived from the live completed frame, with the pre-submission confirmation counters.
+    filled.questionnaire = { ...filled.questionnaire!, answered: false, unanswered: 2 };
+    let current = empty;
+    mockFetchPane.mockImplementation(async () => pane(current));
+    mockSendReply.mockImplementation(async () => {
+      current = filled;
+      return { ok: true };
+    });
+    mockSendKeys.mockImplementation(async () => {
+      current = next;
+      return { ok: true };
+    });
+    const text = filled.questionnaire.notes!.text;
+    expect(await submitPickerIntent(args(empty, { kind: "answer", notes: text }))).toEqual({ status: "sent" });
+    expect(mockSendReply).toHaveBeenCalledWith("w1:p1", "\x1b[200~" + text + "\x1b[201~", false, undefined, empty.regionSignature);
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Enter"]]);
+  });
+
+  it("never sends a digit into notes, and navigates focused notes with control keys", async () => {
+    const initial = fixturePicker("codex--v0154-notes-text.txt");
+    const next = fixturePicker("codex--v0154-question-q2-unanswered.txt");
+    expect(await submitPickerIntent(args(initial, { kind: "confirm" }))).toEqual({ status: "changed" });
+    expect(mockSendKeys).not.toHaveBeenCalled();
+    script(initial, next);
+    expect(await submitPickerIntent(args(initial, { kind: "question", direction: "next" }))).toEqual({ status: "sent" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["ctrl+n"]]);
+  });
+
+  it("does not commit when notes are stale or a paste is unverified", async () => {
+    const empty = fixturePicker("codex--v0154-notes-empty.txt");
+    const changed = fixturePicker("codex--v0154-notes-text.txt");
+    script(changed);
+    expect(await submitPickerIntent(args(empty, { kind: "answer", notes: "intended notes" }))).toEqual({ status: "changed" });
+    expect(mockSendReply).not.toHaveBeenCalled();
+    script(empty);
+    expect(await submitPickerIntent(args(empty, { kind: "answer", notes: "intended notes" }))).toEqual({ status: "changed" });
+    expect(mockSendReply).toHaveBeenCalledTimes(1);
+    expect(mockSendKeys).not.toHaveBeenCalled();
+  });
+
   it("moves the native pointer without committing or submitting", async () => {
     const initial = fixturePicker("codex--v0154-question-q1.txt");
     const moved = fixturePicker("codex--v0154-question-q1-selected.txt");

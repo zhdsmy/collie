@@ -98,8 +98,18 @@ describe("Codex request_user_input question picker", () => {
     expect(selected.questionnaire).toEqual(returned.questionnaire);
   });
 
-  it("fails closed for notes, torn rows, duplicate pointers, invalid counts, and foreign footers", () => {
-    expect(detectAskRegion(fixtureLines("codex--v0154-question-notes.txt"))).toBeNull();
+  it("keeps empty, filled and multiline native notes in the question card", () => {
+    expect(fixtureModel("codex--v0154-notes-empty.txt").questionnaire?.notes).toEqual({ text: "", focused: true });
+    expect(fixtureModel("codex--v0154-notes-text.txt").questionnaire?.notes).toEqual({ text: "Additional 中文 notes: keep option 1.", focused: true });
+    expect(fixtureModel("codex--v0154-notes-returned.txt").questionnaire?.notes?.focused).toBe(false);
+    expect(fixtureModel("codex--v0154-notes-multiline-focused.txt").questionnaire?.notes).toEqual({ text: "Card note 中文 first line\n\nSecond line with 1, 2, 3.", focused: true });
+    const choice = fixtureModel("codex--v0154-notes-multiline.txt");
+    const focused = fixtureModel("codex--v0154-notes-multiline-focused.txt");
+    expect(pickersSameIdentity(choice, focused)).toBe(true);
+    expect(pickersEqual(choice, focused)).toBe(false);
+  });
+
+  it("fails closed for torn rows, duplicate pointers, invalid counts, and foreign footers", () => {
 
     const torn = cloneLines(fixtureLines("codex--v0154-question-q1.txt"));
     replaceLineText(lineMatching(torn, (text) => text.includes("2. 只优化")), " ");
@@ -135,6 +145,17 @@ describe("Codex request_user_input question picker", () => {
       " tab add notes | enter to submit answer | ←/→ to navigate questions | esc to interrupt ",
     );
     expect(detectAskRegion(wrongFooter)).toBeNull();
+  });
+
+  it("does not mistake a numbered note or literal placeholder text for native controls", () => {
+    for (const text of ["1. A custom numbered answer", "Add notes", "[image #1] is only text"]) {
+      const lines = cloneLines(fixtureLines("codex--v0154-notes-text.txt"));
+      const note = lineMatching(lines, (line) => line.includes("Additional 中文 notes:"));
+      note.segments = note.segments.map((segment) => Object.assign({}, segment, {
+        text: segment.text.replace("Additional 中文 notes: keep option 1.", text),
+      }));
+      expect(detectAskRegion(lines)?.model.questionnaire?.notes?.text).toBe(text);
+    }
   });
 
   it("rejects an answered-paint mismatch instead of trusting the header count", () => {

@@ -29,6 +29,9 @@ const allGrokFixtures = readdirSync(PANES_DIR)
   .toSorted();
 
 const PICKERS = [
+  "codex--review-scope.txt",
+  "codex--review-base-branch.txt",
+  "codex--review-commit.txt",
   "codex--v0154-picker-advanced.txt",
   "codex--v0154-picker-effort.txt",
   "codex--v0154-picker-model.txt",
@@ -44,6 +47,13 @@ const PICKERS = [
 ];
 
 const QUESTIONS = [
+  "codex--ask-notes-focused.txt",
+  "codex--v0154-question-notes.txt",
+  "codex--v0154-notes-empty.txt",
+  "codex--v0154-notes-text.txt",
+  "codex--v0154-notes-returned.txt",
+  "codex--v0154-notes-multiline.txt",
+  "codex--v0154-notes-multiline-focused.txt",
   "codex--v0154-question-q1-answered.txt",
   "codex--v0154-question-q1-return.txt",
   "codex--v0154-question-q1-revised.txt",
@@ -63,7 +73,6 @@ const PLANS = [
 const PINNED = [
   "codex--approval-exec.txt",
   "codex--ask-fruit.txt",
-  "codex--ask-notes-focused.txt",
   "codex--ask-wizard-q1.txt",
   "codex--ask-wizard-q2.txt",
   "codex--draft-wrapped.txt",
@@ -79,6 +88,7 @@ const PINNED = [
   "codex--v0150-paste-placeholder.txt",
   "codex--v0151-draft-indented-line.txt",
   "codex--v0154-command-status.txt",
+  "codex--v0154-notes-completed.txt",
   "codex--v0154-particles-draft.txt",
   "codex--v0154-particles-working.txt",
   ...PICKERS,
@@ -87,7 +97,6 @@ const PINNED = [
   ...PLANS,
   "codex--v0154-plan-stayed.txt",
   "codex--v0154-question-completed.txt",
-  "codex--v0154-question-notes.txt",
   ...QUESTIONS,
   "codex--v0154-statusline-disabled-default.txt",
   "codex--v0154-statusline-disabled-draft.txt",
@@ -100,9 +109,7 @@ const PINNED = [
   "codex--working.txt",
 ];
 
-// The dialog captures — screens that lift an interactive block. The notes-focused ask is NOT
-// here: it is a live modal the adapter deliberately REFUSES (a digit would type into the notes
-// box), so it belongs to the neutral (raw-only) cohort with composerReady false.
+// Dialog captures include both option focus and the native notes composer.
 const DIALOG = [
   ...PICKERS,
   ...PLANS,
@@ -125,7 +132,7 @@ describeAdapterConformance(codexAdapter, {
 
 describe("the codex corpus", () => {
   it("is exactly the captures this adapter was developed against", () => {
-    expect(allCodexFixtures).toEqual(PINNED);
+    expect(allCodexFixtures).toEqual(PINNED.toSorted());
   });
 });
 
@@ -666,17 +673,85 @@ describe("codexBuildBlocks", () => {
     ]);
     expect(prompt.prompt.options.map((o) => o.keys)).toEqual([["1"], ["3"]]);
     expect(prompt.prompt.options.some((o) => /don't ask again/i.test(o.label))).toBe(false);
-    // Header, Reason, `$ command`, and the persistent row stay in the raw mirror — swallowing
-    // the whole option run hid digit 2 from both the buttons and the phone.
+    expect(prompt.prompt.approval).toEqual({
+      environment: "local",
+      reason: "Do you want to allow creating /tmp/collie-codex-probe.txt outside the sandbox?",
+      command: "touch /tmp/collie-codex-probe.txt",
+      persistentOptions: [
+        "Yes, and don't ask again for commands that start with `touch /tmp/collie-codex-probe.txt`",
+      ],
+    });
+    // Header, Reason, `$ command`, and the persistent row now travel with the approval card;
+    // only the two one-shot rows become actions.
     const raw = blocks[0];
     expect(raw?.kind).toBe("raw");
     if (raw?.kind !== "raw") return;
     const above = raw.lines.map(lineText).join("\n");
-    expect(above).toContain("Would you like to run the following command?");
-    expect(above).toContain("$ touch /tmp/collie-codex-probe.txt");
-    expect(above).toMatch(/2\.\s+Yes, and don't ask again/);
-    expect(prompt.lines.map(lineText).join("\n")).not.toMatch(/don't ask again/);
-    expect(lineText(prompt.lines[0]!)).toMatch(/3\.\s+No, and tell Codex/);
+    expect(above).not.toContain("Would you like to run the following command?");
+    expect(above).not.toContain("$ touch /tmp/collie-codex-probe.txt");
+    expect(above).not.toMatch(/2\.\s+Yes, and don't ask again/);
+    expect(prompt.lines.map(lineText).join("\n")).toMatch(/3\.\s+No, and tell Codex/);
+  });
+
+  it("keeps a wrapped command complete and lifts the whole approval context", () => {
+    const rows = [
+      "  Would you like to run the following command?",
+      "",
+      "  Environment: remote",
+      "",
+      "  Reason: Need to inspect the generated report",
+      "",
+      "  $ printf '%s' 'a very long command that continues below with flags and values'",
+      "    --format json --output /tmp/report.json",
+      "",
+      "› 1. Yes, proceed (y)",
+      "  2. Yes, and don't ask again for commands that start with `printf` (p)",
+      "  3. No, and tell Codex what to do differently (esc)",
+      "",
+      "  Press enter to confirm or esc to cancel",
+    ].join("\n");
+    const detected = detectApprovalRegion(splitLines(parseAnsi(rows)));
+    expect(detected).not.toBeNull();
+    expect(detected?.startLine).toBe(0);
+    expect(detected?.model.approval).toEqual({
+      environment: "remote",
+      reason: "Need to inspect the generated report",
+      command:
+        "printf '%s' 'a very long command that continues below with flags and values'\n  --format json --output /tmp/report.json",
+      persistentOptions: [
+        "Yes, and don't ask again for commands that start with `printf`",
+      ],
+    });
+  });
+
+  it("joins wrapped reasons and preserves blank lines and indentation in commands", () => {
+    const rows = [
+      "  Would you like to run the following command?",
+      "",
+      "  Environment: local",
+      "",
+      "  Reason: The command writes a report",
+      "    after collecting all generated files.",
+      "",
+      "  $ cat <<'EOF'",
+      "    first line",
+      "",
+      "    second line",
+      "  EOF",
+      "",
+      "› 1. Yes, proceed (y)",
+      "  2. Yes, and don't ask again for commands that start with `cat` (p)",
+      "  3. No, and tell Codex what to do differently (esc)",
+      "",
+      "  Press enter to confirm or esc to cancel",
+    ].join("\n");
+    const detected = detectApprovalRegion(splitLines(parseAnsi(rows)));
+    expect(detected?.model.approval).toEqual({
+      environment: "local",
+      reason: "The command writes a report after collecting all generated files.",
+      command: "cat <<'EOF'\n  first line\n\n  second line\nEOF",
+      persistentOptions: ["Yes, and don't ask again for commands that start with `cat`"],
+    });
   });
 
   it("lifts a question card with per-row digits; the question stays in the mirror", () => {
@@ -711,10 +786,10 @@ describe("codexBuildBlocks", () => {
     }
   });
 
-  it("the notes-focused ask refuses to raw — a digit would type into the notes box", () => {
+  it("keeps native notes in the question card with explicit editor state", () => {
     const lines = fixtureLines("codex--ask-notes-focused.txt");
-    expect(detectAskRegion(lines)).toBeNull();
-    expect(codexAdapter.buildBlocks(lines).every((b) => b.kind === "raw")).toBe(true);
+    expect(detectAskRegion(lines)?.model.questionnaire?.notes).toEqual({ text: "", focused: true });
+    expect(codexAdapter.buildBlocks(lines).some((b) => b.kind === "picker")).toBe(true);
   });
 
   it("approval refuses an unclassified middle row — no partial lift", () => {

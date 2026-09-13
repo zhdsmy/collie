@@ -76,6 +76,18 @@ export interface PromptFeedback {
   purpose?: PromptFeedbackPurpose;
 }
 
+/** Codex exec approval context shown alongside its one-shot decision buttons. */
+export interface PromptApproval {
+  /** The execution environment reported by the agent. */
+  environment: string;
+  /** Why the agent is requesting permission. */
+  reason: string;
+  /** The complete command, with terminal-wrapped rows joined by newlines. */
+  command: string;
+  /** Persistent policy choices shown as read-only text; they are intentionally not actions. */
+  persistentOptions: string[];
+}
+
 /** A recognised single-choice dialog: the question, its selectable options, and the family. */
 export interface PromptModel {
   /** Literal current frame for a bound write when timers/status paint are excluded from identity. */
@@ -85,6 +97,8 @@ export interface PromptModel {
   family: PromptFamily;
   /** The dialog's inline free-text input row, when it has one. Absent on dialogs without one. */
   feedback?: PromptFeedback;
+  /** Codex-only exec approval details; absent for every other prompt family/agent. */
+  approval?: PromptApproval;
   /**
    * The dialog's identity, independent of everything OUR OWN choreography changes: the `❯` pointer,
    * the feedback row's contents, and the row's HEIGHT (a long value wraps, which re-flows the screen
@@ -143,6 +157,10 @@ export function promptsSameIdentity(a: PromptModel, b: PromptModel): boolean {
     a.family === b.family &&
     a.question === b.question &&
     a.coreSignature === b.coreSignature &&
+    a.approval?.environment === b.approval?.environment &&
+    a.approval?.reason === b.approval?.reason &&
+    a.approval?.command === b.approval?.command &&
+    a.approval?.persistentOptions.join("\n") === b.approval?.persistentOptions.join("\n") &&
     // The row's key and purpose, not its state: a feedback row that appeared, vanished,
     // renumbered, or changed purpose is a different dialog, and the flow's remaining
     // keystrokes would be aimed at the wrong row.

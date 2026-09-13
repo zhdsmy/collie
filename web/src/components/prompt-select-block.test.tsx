@@ -85,6 +85,32 @@ describe("PromptSelectBlock — presentation", () => {
     render(<PromptSelectBlock prompt={selectModel} onAction={vi.fn()} disabled />);
     for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
   });
+
+  it("keeps Codex approval context in the card and expands long commands", async () => {
+    const command = `git ${"status --short ".repeat(14)}`.trim();
+    const prompt: PromptModel = {
+      ...selectModel,
+      family: "permission",
+      approval: {
+        environment: "local",
+        reason: "The command needs access outside the sandbox.",
+        command,
+        persistentOptions: ["Yes, and don't ask again for commands that start with `git`"],
+      },
+    };
+    const user = userEvent.setup();
+    render(<PromptSelectBlock prompt={prompt} onAction={vi.fn()} />);
+
+    expect(screen.getByText("local")).toBeInTheDocument();
+    expect(screen.getByText("The command needs access outside the sandbox.")).toBeInTheDocument();
+    expect(screen.getByText(/Yes, and don't ask again for commands that start with `git`/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /don't ask again/ })).toBeNull();
+    const toggle = screen.getByRole("button", { name: "Show full command" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(`$ ${command}`)).toBeInTheDocument();
+  });
 });
 
 describe("submitPromptOption — race guard + per-family keystroke recipe", () => {
