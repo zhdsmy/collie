@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Agent commands share the compact Composer dock.** Replace the command sheet with the same inline panel as Quick and Display, keep three command rows above a fixed bottom search field, and enlarge all three dock titles. Preserve full-catalog search, operator commands, direct submission, argument insertion and destructive-command confirmation.
+
 ## [1.8.2+collie.3] - 2026-09-13
 
 ### Fixed

@@ -4,12 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { CommandPalette } from "./command-palette";
 import type { OperatorCommand } from "@/lib/types";
 
-function setup(overrides?: { agent?: string | null; mine?: OperatorCommand[] }) {
+function setup(overrides?: { agent?: string | null; mine?: OperatorCommand[]; disabled?: boolean }) {
   // Widened at the binding, not asserted at the literal: the overrides below hand `null` and
   // `undefined` for the same prop, so the base value has to carry the whole domain.
   const agentProp: string | null | undefined = "claude";
   const props = {
-    open: true,
     onClose: vi.fn(),
     agent: agentProp,
     onInsert: vi.fn(),
@@ -45,6 +44,39 @@ describe("CommandPalette", () => {
     expect(screen.getByText(/No commands match/)).toBeInTheDocument();
   });
 
+  it("starts search results at the top and clears a pending destructive confirmation", async () => {
+    const user = userEvent.setup();
+    const props = setup();
+    const list = screen.getByRole("list", { name: "Agent commands" });
+    list.scrollTop = 128;
+    await user.click(screen.getByText("/clear"));
+    expect(screen.getByText("Confirm?")).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox"), "clear");
+    expect(list.scrollTop).toBe(0);
+    expect(screen.queryByText("Confirm?")).toBeNull();
+    await user.click(screen.getByText("/clear"));
+    expect(props.onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("locks command actions when the composer becomes unavailable", async () => {
+    const user = userEvent.setup();
+    const props = setup({ disabled: true });
+    for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
+    expect(screen.getByRole("textbox")).toBeDisabled();
+    await user.click(screen.getByText("/status"));
+    expect(props.onSubmit).not.toHaveBeenCalled();
+    expect(props.onClose).not.toHaveBeenCalled();
+  });
+
+  it("still submits Codex commands carrying an Enter action immediately", async () => {
+    const user = userEvent.setup();
+    const props = setup({ agent: "codex" });
+    await user.click(screen.getByText("/compact"));
+    expect(props.onSubmit).toHaveBeenCalledExactlyOnceWith("/compact");
+    expect(props.onInsert).not.toHaveBeenCalled();
+    expect(props.onClose).toHaveBeenCalledOnce();
+  });
+
   it("submits a no-arg command immediately and closes", async () => {
     const user = userEvent.setup();
     const props = setup();
@@ -78,7 +110,7 @@ describe("CommandPalette", () => {
     expect(props.onClose).toHaveBeenCalledOnce();
   });
 
-  it("renders nothing for an unknown agent (empty catalog → sheet still opens but no commands)", () => {
+  it("renders no commands for an unknown agent with an empty catalog", () => {
     setup({ agent: "gemini" });
     expect(screen.queryByText("/status")).toBeNull();
     expect(screen.queryByText("/compact")).toBeNull();
@@ -133,7 +165,7 @@ describe("CommandPalette", () => {
       ],
     });
     expect(screen.getByText("/fork-in-herdr")).toBeInTheDocument();
-    // The sheet is the operator's shortcuts now — no searching past ten rows nobody picked.
+    // The dock is the operator's shortcuts now — no searching past ten rows nobody picked.
     expect(screen.queryByText("/compact")).toBeNull();
   });
 

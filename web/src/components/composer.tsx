@@ -112,7 +112,7 @@ interface ComposerProps {
 // own: quick actions, an agent-aware slash-command palette, a direct-input keyboard (via
 // `pane.send_keys`), attachment upload, display prefs, and the reply Send (with a destructive-command
 // two-tap guard). Its state (draft, sending, upload, pending preview, its own Quick/Agent/Display
-// sheets) is entirely local; it reaches AgentChat only through `onSent` (to re-follow the tail) and
+// docks) is entirely local; it reaches AgentChat only through `onSent` (to re-follow the tail) and
 // exposes `focusInput` so the mirror tap can bring up the keyboard.
 //
 // "display" joined the drawer union when the permanent icon-only View row was retired: wrap / raw
@@ -148,12 +148,12 @@ const SENT_ECHO_GRACE_MS = 5_000;
 // Burst window for post-keypress revalidation (see scheduleKeyRevalidate).
 const KEY_REVALIDATE_MS = 300;
 
-// Shared in-flow dock chrome for Quick/Display — an IN-FLOW panel (never an overlay), so the terminal
+// Shared in-flow dock chrome for Quick/Agent/Display — an IN-FLOW panel (never an overlay), so the terminal
 // mirror's flex-1 box shrinks and its tail stays visible while the dock is open (a covering sheet
 // hid exactly the prompt you were driving). Full-bleed top border + capped height keep the mirror
 // usable on a phone. The header (title + Close X) is a NON-scrolling child of a flex column; only the
 // body below it scrolls (max-h + overflow), so the Close X can never scroll out of reach on a short
-// viewport with a tall tray. One wrapper so Quick and Display cannot drift apart.
+// viewport with a tall tray. One wrapper so Quick, Agent and Display cannot drift apart.
 function ComposerDock({
   title,
   onClose,
@@ -165,14 +165,14 @@ function ComposerDock({
 }) {
   return (
     <div className="-mx-3 mb-2 flex flex-col border-t border-border bg-background">
-      <div className="flex items-center justify-between px-3 pt-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <SectionLabel>{title}</SectionLabel>
-        </div>
+      <div className="flex items-center justify-between gap-2 px-3 py-1">
+        <h2 className="min-w-0">
+          <SectionLabel className="min-w-0 shrink text-base font-bold normal-case tracking-normal text-foreground">{title}</SectionLabel>
+        </h2>
         <Button
           variant="ghost"
           size="icon"
-          className="size-7 text-muted-foreground"
+          className="size-9 text-muted-foreground"
           onClick={onClose}
           aria-label={translate("composer.dock.closeAria", { title })}
         >
@@ -1037,6 +1037,18 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
+        {drawer === "cmd" && (
+          <ComposerDock title={translate("composer.controls.agent")} onClose={closeDrawer}>
+            <CommandPalette
+              onClose={closeDrawer}
+              agent={agent}
+              mine={operatorCommands}
+              disabled={locked || sending}
+              onInsert={insertCommand}
+              onSubmit={(t) => send(t, false)}
+            />
+          </ComposerDock>
+        )}
         {/* The pane owns the optional write-target row above this four-control group. */}
         <div
           data-slot="composer-controls"
@@ -1087,8 +1099,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             className={cn(CONTROL_BUTTON, drawer === "cmd" ? CONTROL_ON : CONTROL_OFF)}
             disabled={locked || commands.length === 0}
             aria-label={translate("composer.controls.agent")}
-            onClick={() => requestDrawer("cmd")}
-            >
+            aria-expanded={drawer === "cmd"}
+            onClick={() => requestDrawer(drawer === "cmd" ? null : "cmd")}
+          >
             <Slash className="size-5" />
             <span className={CONTROL_LABEL}>{translate("composer.controls.agent")}</span>
           </Button>
@@ -1466,15 +1479,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         </div>
       </div>
 
-      {/* Slash-command palette */}
-      <CommandPalette
-        open={drawer === "cmd"}
-        onClose={closeDrawer}
-        agent={agent}
-        mine={operatorCommands}
-        onInsert={insertCommand}
-        onSubmit={(t) => send(t, false)}
-      />
     </>
   );
 });

@@ -2319,6 +2319,59 @@ describe("Composer — clipboard image paste", () => {
   });
 });
 
+describe("Composer — Agent dock", () => {
+  it("opens inline without focusing, toggles closed, and resets search on reopen", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const toggle = screen.getByRole("button", { name: "Agent" });
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const search = screen.getByPlaceholderText(/Search \d+ commands/);
+    expect(search.closest('[data-slot="composer"]')).not.toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(search).not.toHaveFocus();
+    expect(screen.getByPlaceholderText(/type a reply/i)).not.toHaveFocus();
+    await user.type(search, "doctor");
+    expect(screen.getByText("/doctor")).toBeVisible();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("/doctor")).toBeNull();
+    await user.click(toggle);
+    expect(screen.getByPlaceholderText(/Search \d+ commands/)).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: "Close Agent" }));
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("switches exclusively between Agent, Quick, Display and direct input", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const agent = screen.getByRole("button", { name: "Agent" });
+    await user.click(screen.getByRole("button", { name: "Quick" }));
+    await user.click(agent);
+    expect(screen.queryByRole("button", { name: "yes" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Display settings" }));
+    expect(agent).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("/status")).toBeNull();
+    await user.click(agent);
+    expect(screen.queryByRole("switch", { name: "Wrap lines" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Type into terminal" }));
+    expect(agent).toHaveAttribute("aria-expanded", "false");
+    await user.click(agent);
+    expect(screen.getByRole("button", { name: "Type into terminal" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByPlaceholderText(/Search \d+ commands/)).not.toHaveFocus();
+  });
+
+  it("inserts argument-taking commands into the draft and focuses the reply field", async () => {
+    const user = userEvent.setup();
+    renderComposer({ agent: "codex" });
+    await user.click(screen.getByRole("button", { name: "Agent" }));
+    await user.click(screen.getByText("/mention"));
+    expect(screen.getByPlaceholderText(/type a reply/i)).toHaveValue("/mention ");
+    await waitFor(() => expect(screen.getByPlaceholderText(/type a reply/i)).toHaveFocus());
+    expect(screen.getByRole("button", { name: "Agent" })).toHaveAttribute("aria-expanded", "false");
+  });
+});
+
 describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
   it("tapping Quick docks the reply grids in the normal flow (no fixed overlay) and toggles it closed", async () => {
     const user = userEvent.setup();
