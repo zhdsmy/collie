@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.1] - 2026-09-13
+
 ### Changed
 
-- **Upstream 1.8.2 improves mobile chrome and reliable PWA updates.** Adopt the upstream shared strip band, active-tab reveal, navigation transitions, OMP rendering, channel icons, static compression and service-worker update flow. Preserve downstream direct input, bottom safe-area coverage, statusline and Codex cards; see the complete Chinese reconciliation in `docs/upstream-v1.8.2.md`.
+- **Upstream 1.8.2 improves mobile chrome and reliable PWA updates.** Adopt the upstream shared strip band, active-tab reveal, navigation transitions, OMP rendering, channel icons, static compression and service-worker update flow. Preserve downstream direct input, bottom safe-area coverage, statusline and Codex cards; see the complete Chinese reconciliation in `docs/upstream-v1.8.2.md`. ([9a30f1e1](https://github.com/zhdsmy/collie/commit/9a30f1e1))
 
 ## [1.8.0+collie.16] - 2026-09-13
 
