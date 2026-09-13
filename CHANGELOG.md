@@ -30,8 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.6] - 2026-09-13
+
 ### Added
-- **Switch Codex model and reasoning with editable device presets.** Open presets from the statusline model, manage model/effort pairs on this device, and switch through verified native menus while Codex is idle. Preserve Composer drafts and attachments, cancel remaining steps when the panel closes, and keep native selection available when a preset cannot be applied. Apply both the global default and Plan override when Codex asks for scope, and recognize animated Plan input with advanced reasoning's colored prompt.
+- **Switch Codex model and reasoning with editable device presets.** Open presets from the statusline model, manage model/effort pairs on this device, and switch through verified native menus while Codex is idle. Preserve Composer drafts and attachments, cancel remaining steps when the panel closes, and keep native selection available when a preset cannot be applied. Apply both the global default and Plan override when Codex asks for scope, and recognize animated Plan input with advanced reasoning's colored prompt. ([2cd9021f](https://github.com/zhdsmy/collie/commit/2cd9021f))
 
 ## [1.8.2+collie.5] - 2026-09-13
 
