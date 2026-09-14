@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.21] - 2026-09-14
+
 ### Added
 
-- **Tap Claude's statusline mode to cycle it.** The permission mode on the statusline row becomes a button that sends the terminal's own `shift+tab` and confirms the mode text moved; the `(shift+tab to cycle)` prose is replaced by the two keys it names, drawn with the composer keyboard's own Shift and Tab icons. It stays tappable while Claude works — an unmoved mode reports "sent, unconfirmed" — and disappears while a permission dialog owns the keyboard, because that dialog itself answers on `shift+tab`.
+- **Tap Claude's statusline mode to cycle it.** The permission mode on the statusline row becomes a button that sends the terminal's own `shift+tab` and confirms the mode text moved; the `(shift+tab to cycle)` prose is replaced by the two keys it names, drawn with the composer keyboard's own Shift and Tab icons. It stays tappable while Claude works — an unmoved mode reports "sent, unconfirmed" — and disappears while a permission dialog owns the keyboard, because that dialog itself answers on `shift+tab`. ([df97c8a4](https://github.com/zhdsmy/collie/commit/df97c8a4))
 
 ## [1.8.2+collie.20] - 2026-09-14
 
