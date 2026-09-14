@@ -26,6 +26,7 @@ import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { CodexModeToggle, type CodexModeToggleProps } from "@/components/codex-mode-toggle";
 import { parseCodexModelField, parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
 
 // These are display-only matches over complete fields, never composer recognition rules.
@@ -156,6 +157,40 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
 const ROW_CLASS =
   "flex min-w-0 min-h-3.5 items-center gap-1.5 overflow-x-auto overscroll-x-contain whitespace-nowrap leading-none tabular-nums [scrollbar-width:none]";
 
+type CodexControlProps = Omit<CodexModeToggleProps, "mode">;
+
+function StatuslineDivider() {
+  return <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/25" />;
+}
+
+function CodexModelButton({ label, onClick, disabledReason, expanded, switchable, children }: {
+  label: string;
+  onClick: () => void;
+  disabledReason?: string;
+  expanded: boolean;
+  switchable: boolean;
+  children: ReactNode;
+}) {
+  useLocale();
+  return (
+    <Button
+      variant="ghost"
+      onClick={onClick}
+      disabled={disabledReason !== undefined}
+      aria-label={`${t("codexModel.openAria")}: ${label}`}
+      aria-expanded={expanded}
+      aria-controls="codex-model-recents"
+      className="h-auto min-h-3.5 shrink-0 gap-0 border-0 p-0 has-[>svg]:px-0 text-[length:inherit] leading-none font-normal"
+    >
+      {children}
+      <ChevronUp
+        aria-hidden="true"
+        className={cn("size-3 shrink-0 transition-[opacity,transform] motion-reduce:transition-none", expanded && "rotate-180", switchable ? "opacity-100" : "opacity-40")}
+      />
+    </Button>
+  );
+}
+
 function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]; text: string; sessionModel?: SessionModel }) {
   useLocale();
   const context = /^\[[█░]+\]\s*(~?\d+(?:\.\d+)?%)$/.exec(text);
@@ -205,6 +240,111 @@ function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]
   );
 }
 
+type CodexStatuslineField = { index: number; text: string; start: number };
+
+function isNativeCodexControlField(text: string): boolean {
+  return /^Fast[ :](?:on|off)$/i.test(text) || /^Plan mode(?: \([^)]*\))?$/i.test(text);
+}
+
+function CodexControlledStatusline({
+  row,
+  leading,
+  onModelClick,
+  knownModels,
+  modelSwitchable,
+  modelExpanded,
+  modelDisabledReason,
+  codexControls,
+}: {
+  row: StyledLine;
+  leading?: ReactNode;
+  onModelClick?: () => void;
+  knownModels?: readonly string[];
+  modelSwitchable: boolean;
+  modelExpanded: boolean;
+  modelDisabledReason?: string;
+  codexControls: { plan: CodexControlProps; fast: CodexControlProps };
+}) {
+  const parts = lineText(row).split(/( \u00b7 )/);
+  const fields: CodexStatuslineField[] = [];
+  let offset = 0;
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index] ?? "";
+    const text = part.trim();
+    const start = offset + (text ? part.indexOf(text) : 0);
+    offset += part.length;
+    if (text && index % 2 === 0) fields.push({ index, text, start });
+  }
+
+  let model: { field: CodexStatuslineField; effort?: CodexStatuslineField } | undefined;
+  for (let index = 0; index < fields.length; index += 1) {
+    const field = fields[index]!;
+    const parsed = parseCodexModelField(field.text, knownModels);
+    if (!parsed) continue;
+    const next = fields[index + 1];
+    const joinEffort = parsed.effort === null && next?.index === field.index + 2 &&
+      parseCodexStatuslineField(field.text, next.text, knownModels)?.effort != null;
+    model = {
+      field,
+      effort: joinEffort ? next : undefined,
+    };
+    break;
+  }
+
+  const consumed = new Set([model?.field.index, model?.effort?.index]);
+  const rest = fields.filter((field) => !consumed.has(field.index) && !isNativeCodexControlField(field.text));
+  const content: ReactNode[] = [];
+
+  if (model) {
+    const fullText = model.effort ? `${model.field.text} ${model.effort.text}` : model.field.text;
+    const modelContent = (
+      <span>
+        <StyledText segments={sliceSegments(row.segments, model.field.start, model.field.start + model.field.text.length)} />
+        {model.effort && (
+          <>
+            {" "}
+            <StyledText segments={sliceSegments(row.segments, model.effort.start, model.effort.start + model.effort.text.length)} />
+          </>
+        )}
+      </span>
+    );
+    if (onModelClick) {
+      content.push(
+        <span key="model" className="inline-flex shrink-0 items-center gap-1" title={modelDisabledReason}>
+          <CodexModelButton label={fullText} onClick={onModelClick} disabledReason={modelDisabledReason}
+            expanded={modelExpanded} switchable={modelSwitchable}>
+            {modelContent}
+          </CodexModelButton>
+        </span>,
+      );
+    } else {
+      content.push(<span key="model" className="inline-flex min-h-3.5 shrink-0 items-center" title={fullText}>{modelContent}</span>);
+    }
+  }
+
+  if (model) content.push(<StatuslineDivider key="model-plan" />);
+  content.push(<CodexModeToggle key="plan" mode="plan" {...codexControls.plan} />);
+  content.push(<StatuslineDivider key="plan-fast" />);
+  content.push(<CodexModeToggle key="fast" mode="fast" {...codexControls.fast} />);
+  for (const field of rest) {
+    content.push(<StatuslineDivider key={`divider-${field.index}`} />);
+    content.push(
+      <CodexField
+        key={field.index}
+        text={field.text}
+        segments={sliceSegments(row.segments, field.start, field.start + field.text.length)}
+      />,
+    );
+  }
+
+  return (
+    <div data-slot="codex-statusline" className={ROW_CLASS}>
+      {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
+      {content}
+    </div>
+  );
+}
+
 export function StatuslineRow({
   agent,
   row,
@@ -215,6 +355,7 @@ export function StatuslineRow({
   modelSwitchable = false,
   modelExpanded = false,
   modelDisabledReason,
+  codexControls,
 }: {
   agent?: string;
   row: StyledLine;
@@ -226,6 +367,7 @@ export function StatuslineRow({
   modelSwitchable?: boolean;
   modelExpanded?: boolean;
   modelDisabledReason?: string;
+  codexControls?: { plan: CodexControlProps; fast: CodexControlProps };
 }) {
   useLocale();
   if (agent !== "codex" && agent !== "hermes") {
@@ -236,6 +378,21 @@ export function StatuslineRow({
           <StyledText segments={row.segments} />
         </span>
       </div>
+    );
+  }
+
+  if (agent === "codex" && codexControls) {
+    return (
+      <CodexControlledStatusline
+        row={row}
+        leading={leading}
+        onModelClick={onModelClick}
+        knownModels={knownModels}
+        modelSwitchable={modelSwitchable}
+        modelExpanded={modelExpanded}
+        modelDisabledReason={modelDisabledReason}
+        codexControls={codexControls}
+      />
     );
   }
 
@@ -259,7 +416,7 @@ export function StatuslineRow({
         offset += part.length;
         if (!text || i % 2 === 1 || i === groupedEffortIndex) return null;
         const model = agent === "codex" && onModelClick ? parseCodexModelField(text, knownModels) : null;
-        if (model) {
+        if (model && onModelClick) {
           const nextPart = parts[i + 2] ?? "";
           const next = nextPart.trim();
           const joinEffort = model.effort === null && parseCodexStatuslineField(text, next, knownModels)?.effort != null;
@@ -267,15 +424,8 @@ export function StatuslineRow({
           const effortStart = offset + (parts[i + 1]?.length ?? 0) + nextPart.indexOf(next);
           return (
             <span key={i} className="inline-flex shrink-0 items-center gap-1" title={modelDisabledReason}>
-              <Button
-                variant="ghost"
-                onClick={onModelClick}
-                disabled={modelDisabledReason !== undefined}
-                aria-label={`${t("codexModel.openAria")}: ${joinEffort ? `${text} ${next}` : text}`}
-                aria-expanded={modelExpanded}
-                aria-controls="codex-model-recents"
-                className="h-auto min-h-3.5 shrink-0 gap-0 border-0 p-0 has-[>svg]:px-0 text-[length:inherit] leading-none font-normal"
-              >
+              <CodexModelButton label={joinEffort ? `${text} ${next}` : text} onClick={onModelClick}
+                disabledReason={modelDisabledReason} expanded={modelExpanded} switchable={modelSwitchable}>
                 <span>
                   <StyledText segments={sliceSegments(row.segments, start, start + text.length)} />
                   {joinEffort && (
@@ -285,12 +435,7 @@ export function StatuslineRow({
                     </>
                   )}
                 </span>
-                {/* Keep the arrow slot occupied so later status fields never jump as history changes. */}
-                <ChevronUp
-                  aria-hidden="true"
-                  className={cn("size-3 shrink-0 transition-[opacity,transform] motion-reduce:transition-none", modelExpanded && "rotate-180", modelSwitchable ? "opacity-100" : "opacity-40")}
-                />
-              </Button>
+              </CodexModelButton>
               {parts[i + (joinEffort ? 4 : 2)]?.trim() && (
                 <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/25" />
               )}

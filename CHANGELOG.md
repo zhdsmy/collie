@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Keep Codex model, Plan, and Fast controls in one statusline.** Replace the separate Plan strip with compact Plan and Fast buttons immediately after the model and thinking level, separated by quiet vertical rules. Keep multi-host targets first and other native fields in their original order, remove duplicate native mode hints, and scroll the single row horizontally on narrow screens. Both controls distinguish on, off, unknown, and busy states without changing size, and share the model switcher's disabled and session protections. Fast sends one guarded native `/fast` command and confirms the resulting status before showing success; it never retries an uncertain toggle or accepts a native confirmation automatically.
+
 ## [1.8.2+collie.16] - 2026-09-14
 
 ### Added

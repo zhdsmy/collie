@@ -24,7 +24,7 @@ test.use({ serviceWorkers: "block" });
 const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}`, import.meta.url), "utf8");
 
 for (const theme of ["light", "dark"]) test(`plan controls: ${theme}`, async ({ page }, testInfo) => {
-  const enabledPane = fixture("codex--v0154-statusline-single-color-plan.txt");
+  const enabledPane = pane.trimEnd() + " \u001b[35mPlan mode (shift+tab to cycle)\u001b[0m\n";
   let current = pane;
   let revision = 1;
   let working = false;
@@ -83,6 +83,82 @@ for (const theme of ["light", "dark"]) test(`plan controls: ${theme}`, async ({ 
   await expect(plan).toHaveAttribute("aria-pressed", "false");
   await expect(plan).toBeDisabled();
   expect(keyCount).toBe(2);
+});
+
+for (const theme of ["light", "dark"]) test(`inline Fast controls: ${theme}`, async ({ page }, testInfo) => {
+  const fastOff = fixture("codex--v0154-statusline-single-color-default.txt")
+    .replace(/gpt-5\.6-sol(?=[^\n]*$)/, "gpt-5.6-sol xhigh · Fast off · Context 70% left · main");
+  let current = fastOff;
+  let revision = 1;
+  let enabled = false;
+  let commands = 0;
+  let submits = 0;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.setViewportSize({ width: theme === "light" ? 390 : 320, height: 844 });
+  await page.addInitScript((chosenTheme) => {
+    localStorage.setItem("collie:theme:v1", chosenTheme);
+    localStorage.setItem("collie:locale:v1", "zh");
+  }, theme);
+  await installApiStub(page);
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: { ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, i) => i === 0 ? { ...agent, agent: "codex", status: "idle" } : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({
+    json: { paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: SESSION_KEY },
+  }));
+  const submit = async () => {
+    submits++;
+    if (submits === 1) await gate;
+    enabled = !enabled;
+    current = enabled ? fastOff.replace("Fast off", "Fast on") : fastOff;
+    revision++;
+  };
+  await page.route("**/api/pane/*/reply*", async (route) => {
+    const body = route.request().postDataJSON();
+    if (body.submit) await submit();
+    else {
+      expect(body.text).toBe("/fast");
+      commands++;
+      current = fixture("codex--v0154-command-status.txt").replaceAll("/status", "/fast");
+      revision++;
+    }
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.route("**/api/pane/*/keys*", async (route) => {
+    expect(route.request().postDataJSON().keys).toEqual(["Enter"]);
+    await submit();
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/pane/w1:p1");
+  const plan = page.getByRole("button", { name: new RegExp(`^${zh["codexPlan.title"]}:`) });
+  const fast = page.getByRole("button", { name: new RegExp(`^${zh["codexFast.title"]}:`) });
+  const model = page.getByRole("button", { name: new RegExp(`^${zh["codexModel.openAria"]}:`) });
+  const row = page.locator('[data-slot="codex-statusline"]');
+  await expect(fast).toBeEnabled();
+  const [modelBox, planBox, fastBox] = await Promise.all([model.boundingBox(), plan.boundingBox(), fast.boundingBox()]);
+  expect(planBox!.x).toBeGreaterThan(modelBox!.x + modelBox!.width);
+  expect(fastBox!.x).toBeGreaterThan(planBox!.x + planBox!.width);
+  expect(planBox!.y).toBeCloseTo(modelBox!.y, 0);
+  expect(fastBox!.y).toBeCloseTo(planBox!.y, 0);
+  expect(await row.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(24);
+  await fast.click();
+  await expect(fast).toBeDisabled();
+  await expect(plan).toBeDisabled();
+  await expect(model).toBeDisabled();
+  release();
+  await expect(fast).toHaveAttribute("aria-pressed", "true");
+  await expect(fast).toBeEnabled();
+  await page.screenshot({ path: testInfo.outputPath("inline-fast-enabled.png") });
+  await fast.click();
+  await expect(fast).toHaveAttribute("aria-pressed", "false");
+  await expect(fast).toBeEnabled();
+  expect(commands).toBe(2);
+  expect(submits).toBe(2);
+  await row.evaluate((el) => { el.scrollLeft = el.scrollWidth; });
+  const scroll = await row.evaluate((el) => ({ left: el.scrollLeft, max: el.scrollWidth - el.clientWidth }));
+  expect(scroll.left).toBeCloseTo(scroll.max, 0);
+  if (theme === "dark") expect(scroll.max).toBeGreaterThan(0);
 });
 
 for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async ({ page }, testInfo) => {
@@ -155,7 +231,7 @@ for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async
     };
   });
   expect(maskGeometry).toEqual({ inert: true, blur: "blur(1px)", coversOnlyPanel: true, transcriptInteractive: true });
-  const planRow = page.locator('[data-slot="codex-plan-toggle"]');
+  const planRow = page.locator('[data-slot="codex-statusline"]').locator("..");
   await expect.poll(async () => Math.abs((await planRow.boundingBox())!.y - await message.evaluate(
     (el) => el.parentElement!.getBoundingClientRect().bottom,
   ))).toBeLessThanOrEqual(8);
@@ -298,6 +374,6 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     const reopened = page.getByRole("button", { name: new RegExp(`^${messages["codexModel.openAria"]}:`) });
     await expect(reopened).toBeDisabled();
     await expect(page.getByRole("region", { name: messages["codexModel.recentsAria"] })).toHaveCount(0);
-    await expect(page.locator('[data-slot="codex-plan-toggle"] button')).toBeDisabled();
+    await expect(page.getByRole("button", { name: new RegExp(`^${messages["codexPlan.title"]}:`) })).toBeDisabled();
   });
 }

@@ -19,7 +19,7 @@ import { AgentChat } from "./agent-chat";
 import { codexAdapter } from "@/lib/harness/codex";
 import { parseAnsi } from "@/lib/ansi";
 import { splitLines } from "@/lib/blocks";
-import { runCodexPlanSwitch } from "@/lib/codex-plan";
+import { runCodexModeSwitch } from "@/lib/codex-mode-switch";
 import { t } from "@/lib/i18n";
 
 const SESSION_KEY = "codex-session-a";
@@ -27,8 +27,8 @@ const recordRecent = (model: string, effort: Parameters<typeof recordSessionRece
   recordSessionRecent(SESSION_KEY, model, effort);
 
 vi.mock("@/lib/codex-model-switch", () => ({ runCodexModelSwitch: vi.fn() }));
-vi.mock("@/lib/codex-plan", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/codex-plan")>(),
-  runCodexPlanSwitch: vi.fn() }));
+vi.mock("@/lib/codex-mode-switch", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/codex-mode-switch")>(),
+  runCodexModeSwitch: vi.fn() }));
 
 const idle = readFileSync(join(process.cwd(), "src/fixtures/panes/codex--v0154-statusline-single-idle.txt"), "utf8");
 /** The same pane with its level printed beside the model, the way Codex 0.154 draws it. */
@@ -61,7 +61,7 @@ function pairs(...entries: [string, string][]): string {
 
 beforeEach(() => {
   vi.mocked(runCodexModelSwitch).mockReset();
-  vi.mocked(runCodexPlanSwitch).mockReset();
+  vi.mocked(runCodexModeSwitch).mockReset();
   localStorage.clear();
   __resetCodexModelRecents();
   if (!Element.prototype.scrollTo) Element.prototype.scrollTo = () => {};
@@ -82,19 +82,19 @@ async function openRecents(user: ReturnType<typeof userEvent.setup>) {
 
 it("keeps Plan visible and disables both controls while its verified toggle runs", async () => {
   const user = userEvent.setup();
-  let finish!: (result: Awaited<ReturnType<typeof runCodexPlanSwitch>>) => void;
-  vi.mocked(runCodexPlanSwitch).mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+  let finish!: (result: Awaited<ReturnType<typeof runCodexModeSwitch>>) => void;
+  vi.mocked(runCodexModeSwitch).mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
   renderPane("idle", withLevel);
   const plan = screen.getByRole("button", { name: new RegExp(`^${t("codexPlan.title")}:`) });
   expect(plan).toHaveAttribute("aria-pressed", "false");
   await user.click(plan);
-  expect(runCodexPlanSwitch).toHaveBeenCalledOnce();
-  expect(vi.mocked(runCodexPlanSwitch).mock.calls[0]![0]).toMatchObject({ enabled: true, codexSessionKey: SESSION_KEY });
+  expect(runCodexModeSwitch).toHaveBeenCalledOnce();
+  expect(vi.mocked(runCodexModeSwitch).mock.calls[0]![0]).toMatchObject({ mode: "plan", enabled: true, codexSessionKey: SESSION_KEY });
   expect(plan).toBeDisabled();
   expect(screen.getByRole("button", { name: /gpt-5\.6/ })).toBeDisabled();
   expect(screen.getByRole("textbox")).toBeDisabled();
   await user.click(plan);
-  expect(runCodexPlanSwitch).toHaveBeenCalledOnce();
+  expect(runCodexModeSwitch).toHaveBeenCalledOnce();
   finish({ status: "switched", text: idle, revision: 2 });
   await waitFor(() => expect(plan).toBeEnabled());
   expect(plan).toHaveAttribute("aria-pressed", "true");
@@ -106,7 +106,38 @@ it("shows Plan state but disables switching while Codex works", () => {
   expect(plan).toHaveAttribute("aria-pressed", "true");
   expect(plan).toBeDisabled();
   expect(screen.getByRole("button", { name: /gpt-5\.6/ })).toBeDisabled();
-  expect(document.querySelector('[data-slot="codex-statusline"]')).not.toHaveTextContent("Plan mode");
+  expect(screen.getByRole("button", { name: /gpt-5\.6/ })).not.toHaveTextContent("Plan mode");
+});
+
+it("keeps Fast beside Plan and locks all controls through a verified switch", async () => {
+  const user = userEvent.setup();
+  const fastOff = readFileSync(join(process.cwd(), "src/fixtures/panes/codex--v0154-statusline-single-color-default.txt"), "utf8")
+    .replace(/gpt-5\.6-sol(?=[^\n]*$)/, "gpt-5.6-sol xhigh · Fast off");
+  let finish!: (result: Awaited<ReturnType<typeof runCodexModeSwitch>>) => void;
+  vi.mocked(runCodexModeSwitch).mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+  renderPane("idle", fastOff);
+  const fast = screen.getByRole("button", { name: new RegExp(`^${t("codexFast.title")}:`) });
+  const plan = screen.getByRole("button", { name: new RegExp(`^${t("codexPlan.title")}:`) });
+  expect(fast).toHaveAttribute("aria-pressed", "false");
+  expect(fast.closest('[data-slot="codex-statusline"]')).toBe(plan.closest('[data-slot="codex-statusline"]'));
+  await user.click(fast);
+  expect(vi.mocked(runCodexModeSwitch).mock.calls[0]![0]).toMatchObject({ mode: "fast", enabled: true, codexSessionKey: SESSION_KEY });
+  expect(fast).toBeDisabled();
+  expect(plan).toBeDisabled();
+  expect(screen.getByRole("button", { name: /gpt-5\.6/ })).toBeDisabled();
+  expect(screen.getByRole("textbox")).toBeDisabled();
+  await user.click(fast);
+  expect(runCodexModeSwitch).toHaveBeenCalledOnce();
+  finish({ status: "switched", text: fastOff.replace("Fast off", "Fast on"), revision: 2 });
+  await waitFor(() => expect(fast).toBeEnabled());
+  expect(fast).toHaveAttribute("aria-pressed", "true");
+});
+
+it("keeps unknown Fast visible and disabled when its native field is absent", () => {
+  renderPane("idle", withLevel);
+  const fast = screen.getByRole("button", { name: new RegExp(`^${t("codexFast.title")}:`) });
+  expect(fast).toBeDisabled();
+  expect(fast).not.toHaveAttribute("aria-pressed");
 });
 
 it("disables model and Plan controls while direct typing owns the terminal", async () => {

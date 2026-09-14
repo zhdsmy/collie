@@ -68,6 +68,8 @@ export interface GuardedReplyArgs {
   /** Lines to request per verification read (undefined = the bridge's default tail, which is where
    *  the input box always is). */
   requestedLines?: number;
+  /** Bind the first typed chunk to this live composer/footer region. */
+  initialPrompt?: string;
   /** Test seam for the poll pacing. */
   sleep?: Sleep;
   /** Abort an in-flight choreography before its next terminal write. */
@@ -229,7 +231,9 @@ async function sendGuardedReplyOwned(args: GuardedReplyArgs): Promise<ReplyOutco
     if (aborted(args)) return cancelledReply();
     let part;
     try {
-      part = await sendReply(args.paneId, chunks[i]!, false, args.scope);
+      part = args.initialPrompt !== undefined && i === 0
+        ? await sendReply(args.paneId, chunks[i]!, false, args.scope, args.initialPrompt)
+        : await sendReply(args.paneId, chunks[i]!, false, args.scope);
     } catch (e) {
       return { status: "error", error: message(e) };
     }
@@ -260,7 +264,9 @@ async function sendGuardedReplyOwned(args: GuardedReplyArgs): Promise<ReplyOutco
   if (aborted(args)) return cancelledReply();
   let typed;
   try {
-    typed = await sendReply(args.paneId, chunks[chunks.length - 1]!, false, args.scope);
+    typed = args.initialPrompt !== undefined && chunks.length === 1
+      ? await sendReply(args.paneId, chunks[chunks.length - 1]!, false, args.scope, args.initialPrompt)
+      : await sendReply(args.paneId, chunks[chunks.length - 1]!, false, args.scope);
   } catch (e) {
     return { status: "error", error: message(e) };
   }

@@ -314,3 +314,58 @@ it("marks a switchable model field with a reserved arrow slot", () => {
   expect(view.getByRole("button").querySelector("svg[aria-hidden='true']")).toHaveClass("opacity-40");
   expect(view.getByRole("button")).toHaveTextContent("gpt-6-astra xhigh");
 });
+
+it("orders Codex mode controls after the model and filters native mode fields", () => {
+  const row = splitLines(parseAnsi("main · Fast on · gpt-6-astra · xhigh · Plan mode (Shift+Tab to cycle) · Context 85% left"))[0]!;
+  const view = render(
+    <StatuslineRow
+      agent="codex"
+      row={row}
+      onModelClick={vi.fn()}
+      modelSwitchable
+      codexControls={{
+        plan: { enabled: false, busy: false, onClick: vi.fn() },
+        fast: { enabled: true, busy: false, onClick: vi.fn() },
+      }}
+    />,
+  );
+
+  const strip = view.container.querySelector<HTMLElement>('[data-slot="codex-statusline"]')!;
+  const controls = [...strip.querySelectorAll<HTMLElement>('[data-slot="codex-mode-toggle"]')];
+  expect(controls.map((control) => control.dataset.mode)).toEqual(["plan", "fast"]);
+  expect(strip.textContent).toContain("gpt-6-astra xhigh");
+  expect(strip.textContent).toContain("PlanFast");
+  expect(strip.textContent).not.toContain("Fast on");
+  expect(strip.textContent).not.toContain("Plan mode");
+  expect(strip.querySelectorAll(".bg-white\\/25")).toHaveLength(4);
+  expect(strip).toHaveClass("overflow-x-auto", "whitespace-nowrap");
+  expect([...strip.children].some((child) => child.className.includes("overflow-x-auto"))).toBe(false);
+});
+
+it("renders Plan and Fast controls even when the Codex row is empty", () => {
+  const view = render(
+    <StatuslineRow
+      agent="codex"
+      row={{ segments: [] }}
+      codexControls={{
+        plan: { enabled: null, busy: false, onClick: vi.fn() },
+        fast: { enabled: false, busy: false, onClick: vi.fn() },
+      }}
+    />,
+  );
+
+  expect(view.container.querySelectorAll('[data-slot="codex-mode-toggle"]')).toHaveLength(2);
+  expect(view.getByRole("button", { name: "Plan mode: UNKNOWN" })).toBeDisabled();
+  expect(view.getByRole("button", { name: "Fast mode: OFF" })).not.toBeDisabled();
+});
+
+it("does not consume task status when thinking level is already inside the model field", () => {
+  const row = splitLines(parseAnsi("gpt-6-astra xhigh · Working · Fast off · Context 70% left"))[0]!;
+  const view = render(<StatuslineRow agent="codex" row={row} onModelClick={vi.fn()} codexControls={{
+    plan: { enabled: false, busy: false, onClick: vi.fn() },
+    fast: { enabled: false, busy: false, onClick: vi.fn() },
+  }} />);
+  expect(view.getByRole("button", { name: "Switch model and thinking level: gpt-6-astra xhigh" })).not.toHaveTextContent("Working");
+  expect(view.getByRole("img", { name: "Working" })).toBeVisible();
+  expect(view.getByRole("img", { name: "Context 70% left" })).toBeVisible();
+});
