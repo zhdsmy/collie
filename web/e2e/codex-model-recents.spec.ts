@@ -74,29 +74,51 @@ for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async
   const entryBefore = await entry.boundingBox();
   await entry.click();
   await page.getByRole("button", { name: "gpt-6-astra low", exact: true }).click();
-  const message = page.getByRole("status").filter({ hasText: "gpt-6-astra · low" });
+  const message = page.getByRole("status").filter({ hasText: "gpt-6-astra low" });
   const modelTitle = page.getByText("Select Model and Effort", { exact: true });
   await expect(message).toBeVisible();
-  await expect(modelTitle).toBeInViewport();
-  expect(await modelTitle.evaluate((el) => Boolean(el.closest("[inert]")))).toBe(true);
+  await expect(modelTitle).toBeVisible();
+  const maskGeometry = await modelTitle.evaluate((el) => {
+    const panel = el.closest('[role="group"]')!;
+    const mask = panel.parentElement!;
+    const panelRect = panel.getBoundingClientRect();
+    const maskRect = mask.getBoundingClientRect();
+    return {
+      inert: mask.hasAttribute("inert"),
+      blur: getComputedStyle(mask, "::after").backdropFilter,
+      coversOnlyPanel: panelRect.top === maskRect.top && panelRect.bottom === maskRect.bottom
+        && panelRect.left === maskRect.left && panelRect.right === maskRect.right,
+      transcriptInteractive: mask.previousElementSibling?.tagName === "PRE"
+        && !mask.previousElementSibling.closest("[inert]"),
+    };
+  });
+  expect(maskGeometry).toEqual({ inert: true, blur: "blur(2px)", coversOnlyPanel: true, transcriptInteractive: true });
   await expect.poll(async () => Math.abs(entryBefore!.y - await message.evaluate(
     (el) => el.parentElement!.getBoundingClientRect().bottom,
   ))).toBeLessThanOrEqual(8);
   expect(await entry.boundingBox()).toMatchObject({ y: entryBefore!.y });
   const progressStyle = await message.evaluate((el) => {
     const bar = el.parentElement!;
-    const mask = bar.parentElement!;
     return {
       solid: getComputedStyle(bar).backgroundColor === getComputedStyle(document.body).backgroundColor,
       radius: getComputedStyle(bar).borderRadius,
-      flushBottom: bar.getBoundingClientRect().bottom === mask.getBoundingClientRect().bottom,
-      flushSides: bar.getBoundingClientRect().left === mask.getBoundingClientRect().left
-        && bar.getBoundingClientRect().right === mask.getBoundingClientRect().right,
+      oneLine: bar.getBoundingClientRect().height <= 45,
+      flushSides: bar.getBoundingClientRect().left === 0 && bar.getBoundingClientRect().right === window.innerWidth,
     };
   });
-  expect(progressStyle).toEqual({ solid: true, radius: "0px", flushBottom: true, flushSides: true });
+  expect(progressStyle).toEqual({ solid: true, radius: "0px", oneLine: true, flushSides: true });
+  // A narrow phone has a taller card: its title can scroll offscreen, but remains reachable
+  // under the local mask, and the scrollport must end before the progress controls.
+  const scrollport = modelTitle.locator('xpath=ancestor::div[contains(@class, "overflow-y-auto")][1]');
+  await modelTitle.scrollIntoViewIfNeeded();
+  await expect(modelTitle).toBeInViewport();
+  const progressTop = await message.evaluate((el) => el.parentElement!.getBoundingClientRect().top);
+  expect(await scrollport.evaluate((el) => el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(progressTop);
+  await scrollport.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+  await expect.poll(() => modelTitle.evaluate((el) => el.closest('[role="group"]')!.getBoundingClientRect().bottom))
+    .toBeLessThanOrEqual(progressTop);
   if (theme === "dark") {
-    const targetFont = await message.getByText("gpt-6-astra · low", { exact: true }).evaluate((el) => ({
+    const targetFont = await message.getByText("gpt-6-astra low", { exact: true }).evaluate((el) => ({
       family: getComputedStyle(el).fontFamily,
       weight: getComputedStyle(el).fontWeight,
     }));

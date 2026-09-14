@@ -118,6 +118,8 @@ export interface AnsiOutputProps {
   planEntry?: TranscriptEntry | null;
   /** Disable the prompt-select/wizard/preview/multi-select/menu buttons (read-only / gone pane). */
   promptDisabled?: boolean;
+  /** Mask only the native picker while a parent-owned automatic action is in progress. */
+  pickerAutomating?: boolean;
   /**
    * Hide this many screen rows off the TOP of the mirror. Default 0.
    *
@@ -319,6 +321,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   onPickerAction,
   planEntry = null,
   promptDisabled,
+  pickerAutomating = false,
   hideLeadingLines = 0,
   images,
   onImageClusterCount,
@@ -467,12 +470,16 @@ export const AnsiOutput = memo(function AnsiOutput({
       onAction={(action) => onMenuAction?.(action, menuBlock.menu)}
     />
   ) : pickerBlock ? (
-    <PickerBlock
-      picker={pickerBlock.picker}
-      planText={pickerBlock.picker.plan ? completePlanText(pickerBlock.picker.plan, planEntry) : null}
-      disabled={promptDisabled || !onPickerAction}
-      onAction={(action) => onPickerAction?.(action, pickerBlock.picker)}
-    />
+    <div inert={pickerAutomating}
+      className={cn("relative isolate my-1.5 rounded-xl [&>[role=group]]:my-0", pickerAutomating &&
+        "after:absolute after:inset-0 after:z-10 after:rounded-[inherit] after:bg-background/20 after:backdrop-blur-[2px]")}>
+      <PickerBlock
+        picker={pickerBlock.picker}
+        planText={pickerBlock.picker.plan ? completePlanText(pickerBlock.picker.plan, planEntry) : null}
+        disabled={promptDisabled || !onPickerAction}
+        onAction={(action) => onPickerAction?.(action, pickerBlock.picker)}
+      />
+    </div>
   ) : autoBlock ? (
     // No handler and no `disabled`: the completion popup emits no keystroke, so there is nothing for
     // a read-only device to be refused. It is last in the chain only because it is the least

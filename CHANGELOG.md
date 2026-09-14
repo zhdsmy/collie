@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Automatic model switching masks only the active picker card.** Add a soft translucent blur while keeping the transcript clear and scrollable. Reserve a separate single-line progress row for the spinner, current step, target model and effort, and Stop action so it never overlaps the picker footer; long progress text scrolls horizontally on narrow phones.
+
 ## [1.8.2+collie.13] - 2026-09-14
 
 ### Changed

@@ -1803,7 +1803,7 @@ export function AgentChat({
             role="presentation"
             className={cn(
               mirrorGap,
-              "relative min-h-0 min-w-0 flex-1 border-t border-rule",
+              "min-h-0 min-w-0 flex-1 border-t border-rule",
               mirrorFace.className,
             )}
             style={mirrorFace.style}
@@ -1811,7 +1811,6 @@ export function AgentChat({
           >
             <ChatMessageList
               ref={listRef}
-              inert={modelSwitching}
               dep={display}
               onAtBottomChange={setFollowing}
               hasNew={hasNew}
@@ -1916,6 +1915,7 @@ export function AgentChat({
                     onMultiSelectAction={handleMultiSelectAction}
                     onMenuAction={handleMenuAction}
                     onPickerAction={handlePickerAction}
+                    pickerAutomating={modelSwitching && modelTarget !== null}
                     planEntry={planPresent ? latestReply : null}
                     promptDisabled={readOnly || gone}
                     hideLeadingLines={hiddenMirrorLines}
@@ -1929,23 +1929,25 @@ export function AgentChat({
                 </div>
               )}
             </ChatMessageList>
-            {modelSwitching && modelTarget && (
-              <div className="absolute inset-0 z-20 flex items-end bg-black/10 dark:bg-black/20">
-                <Notice tone="neutral" variant="box" announce="status"
-                  className="w-full items-center rounded-none border-x-0 border-b-0 bg-background px-3 py-2 font-sans font-normal text-foreground"
-                  action={<Button variant="ghost" className="h-11 min-w-11 shrink-0 px-2 text-[13px] font-normal text-muted-foreground"
-                    onClick={() => modelSwitchAbort.current?.abort()}>{t("codexModel.stop")}</Button>}>
-                  <p className="flex items-center gap-2 text-sm font-medium leading-5">
-                    <Loader2 aria-hidden="true" className="size-3.5 shrink-0 animate-spin text-muted-foreground motion-reduce:animate-none" />
-                    {t(`codexModel.stage.${modelProgress?.stage ?? "model"}`)}
-                  </p>
-                  <p className="break-words pl-5.5 font-mono text-[13px] font-normal leading-5 text-muted-foreground" style={mirrorFace.style}>
-                    {modelTarget.model} · {modelTarget.effort}
-                  </p>
-                </Notice>
-              </div>
-            )}
           </div>
+
+          {/* Own a layout row, so the progress controls can never cover the picker's footer. */}
+          <Collapse open={modelSwitching && modelTarget !== null} className="shrink-0">
+            {modelSwitching && modelTarget && (
+              <Notice tone="neutral" variant="strip" announce="status"
+                className="border-t border-b-0 bg-background px-3 py-0 font-sans"
+                icon={<Loader2 aria-hidden="true" className="size-3.5 animate-spin motion-reduce:animate-none" />}
+                action={<Button variant="ghost" className="h-11 min-w-11 shrink-0 px-2 text-[13px] font-normal text-muted-foreground"
+                  onClick={() => modelSwitchAbort.current?.abort()}>{t("codexModel.stop")}</Button>}>
+                <span className="flex items-center gap-2 overflow-x-auto whitespace-nowrap text-[13px] font-normal leading-5">
+                  <span className="shrink-0">{t(`codexModel.stage.${modelProgress?.stage ?? "model"}`)}</span>
+                  <span className="shrink-0 font-mono text-xs text-muted-foreground" style={mirrorFace.style}>
+                    {modelTarget.model} {modelTarget.effort}
+                  </span>
+                </span>
+              </Notice>
+            )}
+          </Collapse>
 
           {/* Bottom region, in the order it paints: the agent's own statusline (the mirror's last row),
               the pane-switch handle, the composer. The connection status line USED to float here as an
