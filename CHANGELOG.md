@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.13] - 2026-09-14
+
 ### Changed
 
-- **Clarify automated model switching with a quieter progress strip.** Keep the model and reasoning cards behind a lighter translucent interaction mask, with an opaque two-line progress strip flush above the statusline. Show the current step and target without duplicate headings or underlying text bleeding through; retain the Stop action, respect the selected UI and terminal fonts, and keep picker descriptions at normal weight.
+- **Clarify automated model switching with a quieter progress strip.** Keep the model and reasoning cards behind a lighter translucent interaction mask, with an opaque two-line progress strip flush above the statusline. Show the current step and target without duplicate headings or underlying text bleeding through; retain the Stop action, respect the selected UI and terminal fonts, and keep picker descriptions at normal weight. ([7c22a1d2](https://github.com/zhdsmy/collie/commit/7c22a1d2))
 
 ## [1.8.2+collie.12] - 2026-09-14
 
