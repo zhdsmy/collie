@@ -92,7 +92,7 @@ for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async
         && !mask.previousElementSibling.closest("[inert]"),
     };
   });
-  expect(maskGeometry).toEqual({ inert: true, blur: "blur(2px)", coversOnlyPanel: true, transcriptInteractive: true });
+  expect(maskGeometry).toEqual({ inert: true, blur: "blur(1px)", coversOnlyPanel: true, transcriptInteractive: true });
   await expect.poll(async () => Math.abs(entryBefore!.y - await message.evaluate(
     (el) => el.parentElement!.getBoundingClientRect().bottom,
   ))).toBeLessThanOrEqual(8);

@@ -472,7 +472,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   ) : pickerBlock ? (
     <div inert={pickerAutomating}
       className={cn("relative isolate my-1.5 rounded-xl [&>[role=group]]:my-0", pickerAutomating &&
-        "after:absolute after:inset-0 after:z-10 after:rounded-[inherit] after:bg-background/20 after:backdrop-blur-[2px]")}>
+        "after:absolute after:inset-0 after:z-10 after:rounded-[inherit] after:bg-background/10 after:backdrop-blur-[1px] after:ring-1 after:ring-inset after:ring-white/10")}>
       <PickerBlock
         picker={pickerBlock.picker}
         planText={pickerBlock.picker.plan ? completePlanText(pickerBlock.picker.plan, planEntry) : null}
