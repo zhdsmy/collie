@@ -30,13 +30,15 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.16] - 2026-09-14
+
 ### Added
 
-- **Keep Codex Plan mode visible with a guarded toggle.** A permanent control above the statusline distinguishes enabled, disabled, unknown, and switching states with icons and color. Switch once through Codex's native Shift+Tab binding, protect the current session and terminal draft, and confirm the result from the live composer footer; retain the last verified mode while busy and remove its duplicate native hint from the compact statusline.
+- **Keep Codex Plan mode visible with a guarded toggle.** A permanent control above the statusline distinguishes enabled, disabled, unknown, and switching states with icons and color. Switch once through Codex's native Shift+Tab binding, protect the current session and terminal draft, and confirm the result from the live composer footer; retain the last verified mode while busy and remove its duplicate native hint from the compact statusline. ([2189ee03](https://github.com/zhdsmy/collie/commit/2189ee03))
 
 ### Changed
 
-- **Disable Plan and model controls when switching is unavailable.** Keep both entries visible but inactive while Codex is working, a dialog or terminal draft owns input, direct typing or sending is active, the connection is unavailable, or another switch is running. Existing app drafts remain mounted, and all seven UI languages include mode labels and failure messages.
+- **Disable Plan and model controls when switching is unavailable.** Keep both entries visible but inactive while Codex is working, a dialog or terminal draft owns input, direct typing or sending is active, the connection is unavailable, or another switch is running. Existing app drafts remain mounted, and all seven UI languages include mode labels and failure messages. ([2189ee03](https://github.com/zhdsmy/collie/commit/2189ee03))
 
 ## [1.8.2+collie.15] - 2026-09-14
 
