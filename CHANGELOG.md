@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.14] - 2026-09-14
+
 ### Fixed
 
-- **Automatic model switching masks only the active picker card.** Add a soft translucent blur while keeping the transcript clear and scrollable. Reserve a separate single-line progress row for the spinner, current step, target model and effort, and Stop action so it never overlaps the picker footer; long progress text scrolls horizontally on narrow phones.
+- **Automatic model switching masks only the active picker card.** Add a soft translucent blur while keeping the transcript clear and scrollable. Reserve a separate single-line progress row for the spinner, current step, target model and effort, and Stop action so it never overlaps the picker footer; long progress text scrolls horizontally on narrow phones. ([290c2c05](https://github.com/zhdsmy/collie/commit/290c2c05))
 
 ## [1.8.2+collie.13] - 2026-09-14
 
