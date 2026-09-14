@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.15] - 2026-09-14
+
 ### Changed
 
-- **Model switching uses a lighter frosted glass overlay.** Reduce the picker blur and tint by half and add a faint inset highlight, keeping model names and the selected row easier to recognize while automatic switching blocks manual input.
+- **Model switching uses a lighter frosted glass overlay.** Reduce the picker blur and tint by half and add a faint inset highlight, keeping model names and the selected row easier to recognize while automatic switching blocks manual input. ([717f430f](https://github.com/zhdsmy/collie/commit/717f430f))
 
 ## [1.8.2+collie.14] - 2026-09-14
 
