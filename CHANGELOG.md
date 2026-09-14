@@ -30,10 +30,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.11] - 2026-09-14
+
 ### Changed
 
-- **Share the existing Composer panel container.** Quick actions, agent commands and display settings reuse one UI primitive so additional Composer panels inherit the same visual style.
-- **Integrate recent models into the Composer panel layout.** Open a compact, full-width list above the statusline without covering it or moving the reply input. Align model names and thinking levels on one row, show up to three rows before scrolling, and reveal removal and two-tap clearing only in Manage. Keep other Composer docks mutually exclusive and separate the model from task status with a subtle gray rule after removing inherited button padding.
+- **Share the existing Composer panel container.** Quick actions, agent commands and display settings reuse one UI primitive so additional Composer panels inherit the same visual style. ([c7665c63](https://github.com/zhdsmy/collie/commit/c7665c63))
+- **Integrate recent models into the Composer panel layout.** Open a compact, full-width list above the statusline without covering it or moving the reply input. Align model names and thinking levels on one row, show up to three rows before scrolling, and reveal removal and two-tap clearing only in Manage. Keep other Composer docks mutually exclusive and separate the model from task status with a subtle gray rule after removing inherited button padding. ([99223c35](https://github.com/zhdsmy/collie/commit/99223c35))
 
 ## [1.8.2+collie.10] - 2026-09-14
 
