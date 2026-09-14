@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.12] - 2026-09-14
+
 ### Changed
 
-- **Recent Codex models follow their session and show switching progress.** The recent list is now scoped to the actual Codex session on this device, preserving resume history without sharing pairs across sessions; legacy global history is retained without guessing its owner. Automatic switching displays the native model and reasoning pickers in sequence beneath a translucent interaction-blocking mask with a Stop action, and uses a chevron for expansion. Split model/effort statuslines verify correctly, session changes stop the flow, unavailable targets remain explicit errors without fallback, and Plan/global scope choices are left for the operator in the native card.
+- **Recent Codex models follow their session and show switching progress.** The recent list is now scoped to the actual Codex session on this device, preserving resume history without sharing pairs across sessions; legacy global history is retained without guessing its owner. Automatic switching displays the native model and reasoning pickers in sequence beneath a translucent interaction-blocking mask with a Stop action, and uses a chevron for expansion. Split model/effort statuslines verify correctly, session changes stop the flow, unavailable targets remain explicit errors without fallback, and Plan/global scope choices are left for the operator in the native card. ([c11effa0](https://github.com/zhdsmy/collie/commit/c11effa0))
 
 ## [1.8.2+collie.11] - 2026-09-14
 
