@@ -29,6 +29,11 @@ function sliceSegments(segments: AnsiSegment[], start: number, end: number): Ans
   });
 }
 
+/** A frame segment keeps the terminal's ink: see the note in {@link fitResponseRule}. */
+function keepSkinInk(segment: AnsiSegment): AnsiSegment {
+  return { ...segment, muted: false };
+}
+
 interface Footer {
   statusStart: number;
   top: number;
@@ -81,9 +86,15 @@ function fitResponseRule(line: StyledLine): StyledLine {
   const end = text.length - 1;
   const start = /─+[╮╯]$/u.exec(text)?.index;
   if (start === undefined) return line;
-  const leading = sliceSegments(line.segments, 0, start);
-  const rule = sliceSegments(line.segments, start, end);
-  const trailing = sliceSegments(line.segments, end, text.length);
+  // THE FRAME IS THE SKIN'S LINE, NOT APP CHROME. `checkMuted` (lib/ansi.ts) sees a row of nothing
+  // but rule glyphs and marks it decorative, which mirror-space.ts repaints neutral — right for a
+  // separator, wrong for a border the terminal painted in its accent. It showed as a message whose
+  // TOP border was gold and whose BOTTOM one was grey, and on a wrapped frame as a gold line that
+  // turned grey halfway along (measured on the operator's pane, 2026-09-14). Clear the flag here:
+  // this row is adapter-verified as a frame, which is exactly the context the parser lacks.
+  const leading = sliceSegments(line.segments, 0, start).map(keepSkinInk);
+  const rule = sliceSegments(line.segments, start, end).map(keepSkinInk);
+  const trailing = sliceSegments(line.segments, end, text.length).map(keepSkinInk);
   return {
     ...line,
     segments: [...leading, ...rule, ...trailing],

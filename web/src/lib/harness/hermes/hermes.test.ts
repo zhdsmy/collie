@@ -117,6 +117,17 @@ describe("Hermes display chrome", () => {
     }
   });
 
+  it("paints a fitted frame in the terminal's ink, not the app's rule grey", () => {
+    const source = lines(capture);
+    const output = hermesAdapter.buildBlocks(source)[0]!.lines;
+    // The closing border is nothing but rule glyphs, so the parser marks it decorative chrome and
+    // mirror-space repaints it neutral. That is right for a separator and wrong for a frame the
+    // skin painted in its accent: it left a message gold on top and grey along the bottom.
+    expect(source[4]!.segments.every((s) => s.muted)).toBe(true);
+    expect(output[0]!.segments.every((s) => !s.muted && s.fg === source[0]!.segments[0]!.fg)).toBe(true);
+    expect(output[4]!.segments.every((s) => !s.muted)).toBe(true);
+  });
+
   it("fits a frame the pane cut in two, without moving a source row", () => {
     const pane = recut(capture, 211, 159);
     const rows = lines(pane);

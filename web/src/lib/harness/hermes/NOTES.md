@@ -23,8 +23,16 @@ last row onto this array before hiding it), and one blank row where the wrap was
 of dashes that no border opened — a Markdown rule after a closed nested box — is left exactly where
 it is; only a corner-terminated run is claimed.
 
-`hermes.test.ts` re-cuts the captured fixture at a narrower width to pin both halves: the rejoined
-border and the spent row, and the untouched rule that follows a nested box.
+Fitting it also means UN-MUTING it. `checkMuted` (`lib/ansi.ts`) marks a segment that is nothing but
+rule glyphs as decorative TUI chrome, and `mirror-space.ts` repaints those `#a1a1a1` — the right call
+for a separator, and the wrong one for a border the skin painted in its accent. The two decisions
+compose into the fault the operator reported (2026-09-14): a message whose top border was gold and
+whose bottom one was grey, and — on a wrapped frame — a gold line that turned grey halfway along,
+because the label row is not all rule glyphs and its continuation is. `fitResponseRule` clears the
+flag, which is exactly the context the parser says it cannot have.
+
+`hermes.test.ts` re-cuts the captured fixture at a narrower width to pin all three: the rejoined
+border and the spent row, the untouched rule that follows a nested box, and the frame's ink.
 
 ## Diff and clarify adaptation — 2026-09-10
 
