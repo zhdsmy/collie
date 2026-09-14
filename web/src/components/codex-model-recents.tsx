@@ -1,104 +1,31 @@
-import { Check, TerminalSquare, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Trash2, X } from "lucide-react";
 
-import { ActionRow, DestructiveActionRow } from "@/components/action-sheet-rows";
-import { AnchoredMenu } from "@/components/ui/anchored-menu";
+import { DestructiveActionRow } from "@/components/action-sheet-rows";
+import { Button } from "@/components/ui/button";
+import { Collapse } from "@/components/ui/collapse";
+import { ComposerDock } from "@/components/ui/composer-dock";
+import { OneOf } from "@/components/ui/one-of";
 import { useLocale } from "@/hooks/use-locale";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import type { CodexModelTarget } from "@/lib/harness/codex/model-field";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-// The statusline's model switcher: a small menu ABOVE the model it belongs to, listing the
-// model/thinking-level pairs this device has actually used, most recent first.
-//
-// ── WHY IT IS NOT A SHEET ────────────────────────────────────────────────────
-// It replaces a bottom sheet, and the sheet is what was wrong: the model field sits in the strip
-// welded to the mirror's bottom edge, the answer to "switch back to what I was using" is one tap, and
-// a sheet slides up from the same bottom edge — over the very field that was tapped, so the tap's own
-// feedback never survives (the argument `ui/anchored-menu.tsx` was built on). Opening upward also
-// keeps the trigger on screen, which is the whole point of a control you press twice in a row.
-//
-// ── TYPE SCALE ───────────────────────────────────────────────────────────────
-// Model ids stay at the statusline's 11px size, with a quieter 10px effort line underneath. The
-// FAMILY still splits as DESIGN.md §5 says it must: model ids are machine-authored and wear
-// `font-mono`; chrome rows wear the app face.
-
-export interface CodexModelRecentsMenuProps {
-  open: boolean;
+export interface CodexModelRecentsPanelProps {
   onClose: () => void;
-  /** What the statusline shows right now, so the row in use can be marked. Absent when unreadable. */
   current?: { model: string; effort: string | null };
   recents: readonly CodexModelTarget[];
   onSelect: (target: CodexModelTarget) => void;
   onNative: () => void;
   onRemove: (target: CodexModelTarget) => void;
   onClear: () => void;
-  /** The one reason a switch would be refused right now, or absent when it would be accepted. */
   disabledReason?: string;
   busy?: boolean;
 }
 
-/**
- * One history row: the pair, and its own delete.
- *
- * Not `ActionRow`, for two reasons that are not styling: the row carries a SECOND control (deleting
- * one entry is its own act, not the row's), and `ActionRow` is itself a `<button>` — nesting one
- * inside it is invalid HTML and a hit-testing trap. So the row is a container holding a grow button
- * and an icon button, side by side. It is the first of its shape in the tree, which is why it lives
- * here rather than in `ui/` (DESIGN.md §1 promotes on the second caller, not the first).
- */
-function RecentRow({
-  entry,
-  selected,
-  disabled,
-  onSelect,
-  onRemove,
-}: {
-  entry: CodexModelTarget;
-  selected: boolean;
-  disabled: boolean;
-  onSelect: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex min-h-11 w-full items-center rounded-md",
-        selected ? "bg-muted/60" : "hover:bg-accent",
-      )}
-    >
-      <button
-        type="button"
-        onClick={onSelect}
-        disabled={disabled}
-        aria-current={selected ? "true" : undefined}
-        aria-label={`${entry.model} ${entry.effort}`}
-        className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md px-3 py-1.5 text-left disabled:opacity-60"
-      >
-        {/* The statusline's own spelling of the pair — `gpt-6-astra xhigh`, not `Extra high`. The
-            menu is read against the field it opens from, and a second vocabulary for one value is
-            how you end up unable to find the row you are looking at. */}
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-mono text-[11px] leading-4">{entry.model}</span>
-          <span className="block text-[10px] leading-3 text-muted-foreground">{entry.effort}</span>
-        </span>
-        {selected ? <Check className="size-3 shrink-0 text-primary" aria-hidden="true" /> : null}
-      </button>
-      <button
-        type="button"
-        onClick={onRemove}
-        disabled={disabled}
-        aria-label={t("codexModel.removeAria", { model: entry.model, effort: entry.effort })}
-        className="flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-destructive active:bg-muted disabled:opacity-60"
-      >
-        <Trash2 className="size-3.5" aria-hidden="true" />
-      </button>
-    </div>
-  );
-}
-
-export function CodexModelRecentsMenu({
-  open,
+/** An in-flow Composer dock above the statusline; opening it never focuses the reply input. */
+export function CodexModelRecentsPanel({
   onClose,
   current,
   recents,
@@ -108,57 +35,77 @@ export function CodexModelRecentsMenu({
   onClear,
   disabledReason,
   busy = false,
-}: CodexModelRecentsMenuProps) {
+}: CodexModelRecentsPanelProps) {
   useLocale();
+  const [managing, setManaging] = useState(false);
   const armed = usePendingConfirm();
   const disabled = busy || disabledReason !== undefined;
 
-  return (
-    <AnchoredMenu
-      open={open}
-      onClose={onClose}
-      label={t("codexModel.recentsAria")}
-      // Anchored to the LEFT edge of the statusline, where the model field sits, rather than the
-      // right edge `AnchoredMenu` defaults to. `right-auto` wins over the base `right-0` because
-      // `cn` is tailwind-merge and the two are the same group.
-      //
-      // The bounds are not decoration: `min-w-44` plus shrink-to-fit plus one long unbreakable model
-      // id is a panel wider than a 320px phone, and with the keyboard up the bottom region is ~260px
-      // of a ~440px viewport, so a full list would otherwise run off the top.
-      className="left-3 right-auto max-h-[45dvh] max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain"
-    >
-      <div className="flex flex-col">
-        <div className="px-3 pb-1 pt-2 text-[10px] font-medium text-muted-foreground">
-          {t("codexModel.recentsAria")}
-        </div>
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
+  return (
+    <section id="codex-model-recents" aria-label={t("codexModel.recentsAria")}>
+      <ComposerDock
+        title={t("codexModel.recentsTitle")}
+        onClose={onClose}
+        className="mx-0 mb-0"
+        actions={
+          <>
+            <Button variant="ghost" disabled={disabled} onClick={onNative}
+              className="h-11 px-2 text-xs font-normal text-muted-foreground">
+              {t("codexModel.native")}
+            </Button>
+            <Button variant="ghost" disabled={disabled || recents.length === 0}
+              aria-pressed={managing} onClick={() => setManaging(!managing)}
+              className="h-11 px-2 text-xs font-normal text-muted-foreground">
+              <OneOf active={managing ? "done" : "manage"} options={[
+                { key: "manage", node: t("codexModel.manage") },
+                { key: "done", node: t("codexModel.done") },
+              ]} />
+            </Button>
+          </>
+        }
+      >
         {recents.length > 0 ? (
-          <div className="flex flex-col">
-            {recents.map((entry) => (
-              <RecentRow
-                key={`${entry.model} ${entry.effort}`}
-                entry={entry}
-                selected={current?.model === entry.model && current.effort === entry.effort}
-                disabled={disabled}
-                onSelect={() => onSelect(entry)}
-                onRemove={() => onRemove(entry)}
-              />
-            ))}
+          <div className="max-h-33 overflow-y-auto overscroll-contain px-3">
+            {recents.map((entry) => {
+              const selected = current?.model === entry.model && current.effort === entry.effort;
+              return (
+                <div key={`${entry.model} ${entry.effort}`}
+                  className={cn("flex min-h-11 items-center rounded-md", selected ? "bg-muted/60" : "hover:bg-accent")}>
+                  <button type="button" onClick={() => onSelect(entry)} disabled={disabled}
+                    aria-current={selected ? "true" : undefined}
+                    aria-label={`${entry.model} ${entry.effort}`}
+                    className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60">
+                    <Check aria-hidden="true" className={cn("size-3.5 shrink-0 text-primary", !selected && "invisible")} />
+                    <span className="min-w-0 flex-1 font-mono text-xs leading-4 [overflow-wrap:anywhere]">{entry.model}</span>
+                    <span className="shrink-0 font-mono text-xs leading-4 text-muted-foreground">{entry.effort}</span>
+                  </button>
+                  {/* Animate the management column without leaving an empty slot in the normal list. */}
+                  <div inert={!managing} aria-hidden={!managing}
+                    className={cn("shrink-0 overflow-hidden transition-[width] duration-[240ms] motion-reduce:transition-none", managing ? "w-11" : "w-0")}>
+                    <Button variant="ghost" size="icon" disabled={disabled}
+                      onClick={() => onRemove(entry)}
+                      aria-label={t("codexModel.removeAria", { model: entry.model, effort: entry.effort })}
+                      className="size-11 text-muted-foreground hover:text-destructive">
+                      <X className="size-3.5" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <p className="px-3 py-3 text-xs text-muted-foreground">{t("codexModel.emptyRecents")}</p>
         )}
-
-        <div className="mt-1 border-t border-border/70 pt-1">
-          <ActionRow
-            icon={<TerminalSquare className="size-4 shrink-0" aria-hidden="true" />}
-            label={t("codexModel.native")}
-            onClick={onNative}
-            disabled={disabled}
-            className="text-[11px]"
-          />
-
-          {recents.length > 0 ? (
+        <Collapse open={managing && recents.length > 0}>
+          <div className="border-t border-border px-3 py-1">
             <DestructiveActionRow
               icon={<Trash2 className="size-4 shrink-0" aria-hidden="true" />}
               label={t("codexModel.clearHistory")}
@@ -167,15 +114,12 @@ export function CodexModelRecentsMenu({
               armed={armed.pending === "clear"}
               closing={false}
               disabled={disabled}
-              className="text-[11px]"
-              onClick={() => {
-                // Two taps, like every other destructive row in the app: the first only arms.
-                if (armed.confirm("clear")) onClear();
-              }}
+              className="text-xs"
+              onClick={() => { if (armed.confirm("clear")) onClear(); }}
             />
-          ) : null}
-        </div>
-      </div>
-    </AnchoredMenu>
+          </div>
+        </Collapse>
+      </ComposerDock>
+    </section>
   );
 }

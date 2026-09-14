@@ -72,7 +72,7 @@ import { runCodexModelSwitch } from "@/lib/codex-model-switch";
 import { useCodexModelRecents } from "@/lib/codex-model-recents";
 import type { CodexModelTarget } from "@/lib/harness/codex/model-field";
 import { parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
-import { CodexModelRecentsMenu } from "@/components/codex-model-recents";
+import { CodexModelRecentsPanel } from "@/components/codex-model-recents";
 import { useHoldReload } from "@/lib/reload-guard";
 import type { PickerIntent, PickerModel } from "@/lib/harness/picker-model";
 import type { PromptBlockAction } from "@/components/prompt-select-block";
@@ -1907,12 +1907,28 @@ export function AgentChat({
         {/* The statusline, optional write target and composer leave together in zen mode. */}
           <Collapse open={!zen}>
             <div className="relative shrink-0">
+              {/* In flow and outside mirror inversion: only the transcript gives up height.
+                  The statusline and reply input stay below the panel, visible at the same position. */}
+              <Collapse open={drawer === "models" && statuslineVisible && currentModel !== null}>
+                {currentModel && (
+                  <CodexModelRecentsPanel
+                    onClose={closeDrawer}
+                    current={currentModel}
+                    recents={recents}
+                    onSelect={(target) => void switchModel(target)}
+                    onNative={() => void switchModel()}
+                    onRemove={(target) => removeRecent(target.model, target.effort)}
+                    onClear={clearRecents}
+                    disabledReason={modelDisabledReason}
+                    busy={modelSwitching}
+                  />
+                )}
+              </Collapse>
 
               {/* The agent's statusline, re-surfaced as app chrome (its branch/model/ctx/permission mode
-                  would otherwise vanish with the stripped input box). It is the LAST ROW OF THE MIRROR,
-                  so it is welded to the mirror's bottom edge and nothing may come between the two — it
-                  was cut from the pane tail and it reads as the bottom of the screen it was cut from,
-                  exactly as it did in the TUI. Verbatim text — React text nodes, so no XSS surface.
+                  would otherwise vanish with the stripped input box). With the model dock closed,
+                  it is welded to the mirror's bottom edge, where it was cut from the TUI.
+                  Verbatim text — React text nodes, so no XSS surface.
 
                   STACKED, one row per line, each truncated — deliberately, over the two alternatives:
                   joining the rows with a separator would put ~150 chars on a strip that fits ~55 at this
@@ -1964,8 +1980,15 @@ export function AgentChat({
                       sessionModel={sessionModel}
                       knownModels={knownModels}
                       modelSwitchable={modelSwitchable}
+                      modelExpanded={drawer === "models"}
                       onModelClick={agent?.agent === "codex" && currentModel
-                        ? () => setDrawer("models")
+                        ? () => {
+                          if (drawer === "models") closeDrawer();
+                          else {
+                            composerRef.current?.closeDock();
+                            setDrawer("models");
+                          }
+                        }
                         : undefined}
                       leading={i === 0 && showWriteHost ? (
                         <HostChip host={writeHost} variant="caption" className="shrink-0" />
@@ -1981,33 +2004,6 @@ export function AgentChat({
                 </div>
                 )}
               </Collapse>
-
-              {/* The model switcher, and it is a SIBLING of the strip rather than a child of it, for
-                  two reasons that are both silent failures if ignored. Inside the strip it would be
-                  clipped by that box's `overflow-y-auto`; inside it it would also be under
-                  `MIRROR_INVERT`, so the panel would render inverted and its own text unreadable. As
-                  a sibling in this `relative` box it anchors above the model field and wears normal
-                  app chrome.
-
-                  Gated on the anchor existing: this strip unmounts in zen mode and whenever the
-                  statusline is stood down, and a menu left open over a field that is gone is a panel
-                  with nothing to point at. `drawer` is reused rather than a second flag so the
-                  existing rules come along — leaving `"models"` aborts an in-flight switch, and zen
-                  already clears the drawer. */}
-              {statuslineVisible && currentModel ? (
-                <CodexModelRecentsMenu
-                  open={drawer === "models"}
-                  onClose={closeDrawer}
-                  current={currentModel}
-                  recents={recents}
-                  onSelect={(target) => void switchModel(target)}
-                  onNative={() => void switchModel()}
-                  onRemove={(target) => removeRecent(target.model, target.effort)}
-                  onClear={clearRecents}
-                  disabledReason={modelDisabledReason}
-                  busy={modelSwitching}
-                />
-              ) : null}
 
               {/* One boundary separates the terminal status strip from the input controls. */}
               <div data-slot="chrome-block" className="border-t border-rule bg-chrome">
@@ -2025,6 +2021,7 @@ export function AgentChat({
                   // machine am I typing into" has to be answerable without tapping Send to find out.
                   hostBlock={hostBlock}
                   externalBusy={modelSwitching}
+                  onDockOpen={closeDrawer}
                   dialogPresent={dialogPresent}
                   text={text}
                   terminalDraft={terminalDraft}

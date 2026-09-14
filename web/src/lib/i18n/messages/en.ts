@@ -187,6 +187,9 @@ export const en = {
 
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "Switch model and thinking level",
+  "codexModel.recentsTitle": "Recent models",
+  "codexModel.manage": "Manage",
+  "codexModel.done": "Done",
   "codexModel.recentsAria": "Recently used models",
   "codexModel.emptyRecents": "No models used yet.",
   "codexModel.removeAria": "Remove {model} · {effort}",

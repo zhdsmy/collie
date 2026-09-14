@@ -65,7 +65,7 @@ function renderPane(status: AgentStatus = "idle", pane = idle) {
 /** The statusline's model field, which is a button only when the history has somewhere to go. */
 async function openRecents(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: /gpt-5\.6/ }));
-  return screen.getByRole("dialog");
+  return screen.getByRole("region", { name: "Recently used models" });
 }
 
 it("keeps the model field openable when history is empty", async () => {
@@ -121,7 +121,7 @@ it("keeps text and an uploaded image mounted and locked while switching, then re
     paneId: "w1:p1", preset: { model: "gpt-5.6-luna", effort: "max" },
   });
   finish({ status: "switched" });
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Recently used models" })).toBeNull());
   expect(draft).not.toBeDisabled();
   expect(draft).toHaveValue(savedDraft);
 });
@@ -159,6 +159,8 @@ it("removes one entry from the menu without switching to it", async () => {
   renderPane();
   const panel = await openRecents(user);
 
+  expect(within(panel).queryByRole("button", { name: "Remove gpt-5.6-luna · max" })).toBeNull();
+  await user.click(within(panel).getByRole("button", { name: "Manage" }));
   await user.click(within(panel).getByRole("button", { name: "Remove gpt-5.6-luna · max" }));
 
   expect(storedRaw()).toBe(pairs(["gpt-6-astra", "xhigh"]));
@@ -171,6 +173,7 @@ it("clears the history on the second tap only", async () => {
   renderPane();
   const panel = await openRecents(user);
 
+  await user.click(within(panel).getByRole("button", { name: "Manage" }));
   await user.click(within(panel).getByRole("button", { name: /Clear history/ }));
   expect(storedRaw()).toBe(pairs(["gpt-5.6-luna", "max"]));
 
@@ -210,4 +213,21 @@ it("records the pair only once a reply has actually been sent with it", async ()
   await user.click(screen.getByRole("button", { name: "Send" }));
 
   await waitFor(() => expect(storedRaw()).toBe(pairs(["gpt-5.6-sol", "high"])));
+});
+
+it("toggles the in-flow model panel and keeps Composer docks mutually exclusive", async () => {
+  const user = userEvent.setup();
+  renderPane("idle", withLevel);
+  const field = screen.getByRole("button", { name: /gpt-5\.6/ });
+  await user.click(field);
+  expect(field).toHaveAttribute("aria-expanded", "true");
+  await user.click(field);
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Recently used models" })).toBeNull());
+  await user.click(screen.getByRole("button", { name: "Quick" }));
+  expect(screen.getByRole("heading", { name: "Quick" })).toBeVisible();
+  await user.click(field);
+  expect(screen.queryByRole("heading", { name: "Quick" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Display settings" }));
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Recently used models" })).toBeNull());
+  expect(screen.getByRole("heading", { name: "Display" })).toBeVisible();
 });

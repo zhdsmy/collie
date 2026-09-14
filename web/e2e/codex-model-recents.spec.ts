@@ -42,9 +42,11 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await page.goto("/pane/w1:p1");
 
     // The model field is a button because the history holds a pair that is not the one on screen.
-    const entry = page.getByRole("button", { name: /gpt-5\.6-sol/ });
+    const entry = page.getByRole("button", { name: new RegExp(`^${messages["codexModel.openAria"]}:`) });
+    const entryBefore = await entry.boundingBox();
+    const inputBefore = await page.getByRole("textbox").boundingBox();
     await entry.click();
-    const panel = page.getByRole("dialog");
+    const panel = page.getByRole("region", { name: messages["codexModel.recentsAria"] });
     const luna = panel.getByRole("button", { name: "gpt-5.6-luna max", exact: true });
     await expect(panel).toBeVisible();
     await expect(page.getByRole("textbox")).not.toBeFocused();
@@ -64,10 +66,23 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
       fits: el.scrollWidth <= el.clientWidth,
       left: el.getBoundingClientRect().left,
       withinViewport: el.getBoundingClientRect().right <= window.innerWidth,
-    }))).toEqual({ fits: true, left: 12, withinViewport: true });
+    }))).toEqual({ fits: true, left: 0, withinViewport: true });
+    await page.evaluate(() => Promise.all(document.getAnimations()
+      .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+      .map((animation) => animation.finished)));
+    const entryAfter = await entry.boundingBox();
+    const inputAfter = await page.getByRole("textbox").boundingBox();
+    expect(entryAfter!.y).toBeCloseTo(entryBefore!.y, 0);
+    expect(inputAfter!.y).toBeCloseTo(inputBefore!.y, 0);
+    const panelBox = await panel.boundingBox();
+    expect(panelBox!.width).toBe(width);
+    expect(panelBox!.y + panelBox!.height).toBeLessThanOrEqual(entryAfter!.y);
+    expect(await entry.evaluate((el) => getComputedStyle(el).paddingRight)).toBe("0px");
     await page.screenshot({ path: testInfo.outputPath("recent-models.png") });
 
     // One entry goes on its own, without switching to anything.
+    await expect(panel.getByRole("button", { name: messages["codexModel.clearHistory"], exact: true })).toHaveCount(0);
+    await panel.getByRole("button", { name: messages["codexModel.manage"], exact: true }).click();
     await panel.getByRole("button", {
       name: messages["codexModel.removeAria"].replace("{model}", "gpt-5.6-luna").replace("{effort}", "max"),
       exact: true,
@@ -90,7 +105,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await page.keyboard.press("Escape");
     await expect(entry).toHaveCount(1);
     await entry.click();
-    const emptyPanel = page.getByRole("dialog");
+    const emptyPanel = page.getByRole("region", { name: messages["codexModel.recentsAria"] });
     await expect(emptyPanel.getByText(messages["codexModel.emptyRecents"], { exact: true })).toBeVisible();
     await expect(emptyPanel.getByRole("button", { name: messages["codexModel.native"], exact: true })).toBeEnabled();
     await page.keyboard.press("Escape");
@@ -100,12 +115,12 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await page.evaluate(({ key, seeded }) => localStorage.setItem(key, JSON.stringify(seeded)), { key: RECENTS_KEY, seeded: SEEDED });
     working = true;
     await page.reload();
-    const reopened = page.getByRole("button", { name: /gpt-5\.6-sol/ });
+    const reopened = page.getByRole("button", { name: new RegExp(`^${messages["codexModel.openAria"]}:`) });
     await reopened.click();
-    const rowsAgain = page.getByRole("dialog").getByRole("button", { name: "gpt-5.6-luna max", exact: true });
+    const rowsAgain = page.getByRole("region", { name: messages["codexModel.recentsAria"] }).getByRole("button", { name: "gpt-5.6-luna max", exact: true });
     await expect(rowsAgain).toBeVisible();
     // Codex is working: the history can be read and pruned, but nothing may be switched.
     await expect(rowsAgain).toBeDisabled();
-    await expect(page.getByRole("dialog").getByRole("button", { name: messages["codexModel.native"], exact: true })).toBeDisabled();
+    await expect(page.getByRole("region", { name: messages["codexModel.recentsAria"] }).getByRole("button", { name: messages["codexModel.native"], exact: true })).toBeDisabled();
   });
 }

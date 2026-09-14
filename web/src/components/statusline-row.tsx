@@ -26,7 +26,7 @@ import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { parseCodexModelField } from "@/lib/harness/codex/model-field";
+import { parseCodexModelField, parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
 
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
@@ -213,6 +213,7 @@ export function StatuslineRow({
   onModelClick,
   knownModels,
   modelSwitchable = false,
+  modelExpanded = false,
 }: {
   agent?: string;
   row: StyledLine;
@@ -222,6 +223,7 @@ export function StatuslineRow({
   knownModels?: readonly string[];
   /** Is there anything to switch TO — a used pair other than the one on screen? */
   modelSwitchable?: boolean;
+  modelExpanded?: boolean;
 }) {
   useLocale();
   if (agent !== "codex" && agent !== "hermes") {
@@ -238,6 +240,7 @@ export function StatuslineRow({
   // Split the joined text, not each ANSI span: a field's label and value can have different paint.
   // Keep unknown fields verbatim and scroll long rows rather than dropping their final fields.
   let offset = 0;
+  let groupedEffortIndex = -1;
   const Field = agent === "hermes" ? HermesField : CodexField;
   const parts = agent === "hermes"
     ? lineText(row).split(/(\s*│\s*|\s{2,}─\s*)/)
@@ -252,35 +255,43 @@ export function StatuslineRow({
         const text = part.trim();
         const start = offset + part.indexOf(text);
         offset += part.length;
-        if (!text || i % 2 === 1) return null;
-        if (agent === "codex" && onModelClick && parseCodexModelField(text, knownModels)) {
+        if (!text || i % 2 === 1 || i === groupedEffortIndex) return null;
+        const model = agent === "codex" && onModelClick ? parseCodexModelField(text, knownModels) : null;
+        if (model) {
+          const nextPart = parts[i + 2] ?? "";
+          const next = nextPart.trim();
+          const joinEffort = model.effort === null && parseCodexStatuslineField(text, next, knownModels)?.effort != null;
+          if (joinEffort) groupedEffortIndex = i + 2;
+          const effortStart = offset + (parts[i + 1]?.length ?? 0) + nextPart.indexOf(next);
           return (
-            <Button
-              key={i}
-              variant="ghost"
-              onClick={onModelClick}
-              aria-label={`${t("codexModel.openAria")}: ${text}`}
-              aria-haspopup="dialog"
-              className="h-auto min-h-3.5 shrink-0 gap-0 border-0 p-0 text-[length:inherit] leading-none font-normal"
-            >
-              <StyledText segments={sliceSegments(row.segments, start, start + text.length)} />
-              {/* The switchability mark, and it is INSIDE this button on purpose: the whole field is
-                  one target, so the arrow needs no handler of its own and adds no second focusable
-                  control to a strip that already has exactly one.
-
-                  Its SLOT IS ALWAYS OCCUPIED and only the opacity moves. A conditional mount here
-                  would re-lay-out the fields after it — `· Working · Context 85% left` would jump
-                  sideways the first time a second model is used — which DESIGN.md §2 forbids for any
-                  state, and §11 rule 1's `Collapse` escape cannot help: `ui/collapse.tsx` animates
-                  `grid-template-rows`, and this would be a width. */}
-              <ArrowUp
-                aria-hidden="true"
-                className={cn(
-                  "size-3 shrink-0 transition-opacity",
-                  modelSwitchable ? "opacity-100" : "opacity-40",
-                )}
-              />
-            </Button>
+            <span key={i} className="inline-flex shrink-0 items-center gap-1">
+              <Button
+                variant="ghost"
+                onClick={onModelClick}
+                aria-label={`${t("codexModel.openAria")}: ${joinEffort ? `${text} ${next}` : text}`}
+                aria-expanded={modelExpanded}
+                aria-controls="codex-model-recents"
+                className="h-auto min-h-3.5 shrink-0 gap-0 border-0 p-0 has-[>svg]:px-0 text-[length:inherit] leading-none font-normal"
+              >
+                <span>
+                  <StyledText segments={sliceSegments(row.segments, start, start + text.length)} />
+                  {joinEffort && (
+                    <>
+                      {" "}
+                      <StyledText segments={sliceSegments(row.segments, effortStart, effortStart + next.length)} />
+                    </>
+                  )}
+                </span>
+                {/* Keep the arrow slot occupied so later status fields never jump as history changes. */}
+                <ArrowUp
+                  aria-hidden="true"
+                  className={cn("size-3 shrink-0 transition-opacity", modelSwitchable ? "opacity-100" : "opacity-40")}
+                />
+              </Button>
+              {parts[i + (joinEffort ? 4 : 2)]?.trim() && (
+                <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/25" />
+              )}
+            </span>
           );
         }
         return (

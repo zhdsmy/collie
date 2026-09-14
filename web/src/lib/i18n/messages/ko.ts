@@ -169,6 +169,9 @@ export const ko: Dictionary = {
   "settings.fonts.system": "시스템 기본값",
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "모델과 추론 수준 전환",
+  "codexModel.recentsTitle": "최근 모델",
+  "codexModel.manage": "관리",
+  "codexModel.done": "완료",
   "codexModel.recentsAria": "최근 사용한 모델",
   "codexModel.emptyRecents": "아직 사용한 모델이 없습니다.",
   "codexModel.removeAria": "{model} · {effort} 삭제",

@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { ChangeEvent, ClipboardEvent, CSSProperties } from "react";
 import { useRevalidator } from "react-router";
-import { Check, FileText, Image, Keyboard, Loader2, Mic, Paperclip, Send, Settings2, Slash, Square, Terminal, X, Zap } from "lucide-react";
+import { Check, FileText, Image, Keyboard, Loader2, Mic, Paperclip, Send, Settings2, Slash, Square, Terminal, Zap } from "lucide-react";
 
 import { applyDraftFontSize, fontStack, inputFocusZoomsPage } from "@/hooks/use-display-prefs";
 import type { DisplayPrefs } from "@/hooks/use-display-prefs";
@@ -51,6 +51,8 @@ export interface ComposerHandle {
   focusInput: () => void;
   /** A model switch must not overlap a send or the direct terminal keyboard. */
   isWriting: () => boolean;
+  /** Close local docks when the statusline's model panel opens. Drafts stay mounted. */
+  closeDock: () => void;
 }
 
 interface ComposerProps {
@@ -77,6 +79,7 @@ interface ComposerProps {
   hostBlock?: string;
   /** Another guarded operation currently owns this pane's keyboard. Drafts remain mounted. */
   externalBusy?: boolean;
+  onDockOpen?: () => void;
   /**
    * The soft keyboard is up, so this dock is standing on it rather than on the screen's own bottom
    * edge. Read ONCE by the pane (agent-chat.tsx, `composing`) and passed down — never re-derived
@@ -159,7 +162,7 @@ const KEY_REVALIDATE_MS = 300;
 const ATTACH_PRESS_MS = 220;
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent },
+  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, onDockOpen, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -286,6 +289,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // At most one auxiliary dock is open (Quick / Agent / Display).
   const [drawer, setDrawer] = useState<ComposerDrawer>(null);
   function requestDrawer(next: ComposerDrawer) {
+    onDockOpen?.();
     if (next !== null && direct.active) direct.deactivateSilently();
     setDrawer(next);
   }
@@ -484,8 +488,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
 
   useImperativeHandle(ref, () => ({
     focusInput: focusInputImmediately,
+    closeDock: () => {
+      setDrawer(null);
+      inputRef.current?.blur();
+      if (direct.active) direct.deactivateSilently();
+    },
     isWriting: () => sending || direct.active || direct.busy,
-  }), [sending, direct.active, direct.busy]);
+  }), [sending, direct]);
 
   useEffect(
     () => () => {

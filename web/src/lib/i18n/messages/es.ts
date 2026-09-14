@@ -172,6 +172,9 @@ export const es: Dictionary = {
   "settings.fonts.system": "Predeterminada del sistema",
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "Cambiar modelo y nivel de razonamiento",
+  "codexModel.recentsTitle": "Modelos recientes",
+  "codexModel.manage": "Gestionar",
+  "codexModel.done": "Listo",
   "codexModel.recentsAria": "Modelos usados recientemente",
   "codexModel.emptyRecents": "Aún no se ha usado ningún modelo.",
   "codexModel.removeAria": "Quitar {model} · {effort}",

@@ -170,6 +170,9 @@ export const ja: Dictionary = {
   "settings.fonts.system": "システム標準",
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "モデルと推論レベルを切り替え",
+  "codexModel.recentsTitle": "最近のモデル",
+  "codexModel.manage": "管理",
+  "codexModel.done": "完了",
   "codexModel.recentsAria": "最近使ったモデル",
   "codexModel.emptyRecents": "まだモデルを使っていません。",
   "codexModel.removeAria": "{model} · {effort}を削除",

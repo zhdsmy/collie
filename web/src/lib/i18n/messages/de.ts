@@ -174,6 +174,9 @@ export const de: Dictionary = {
   "settings.fonts.system": "Systemstandard",
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "Modell und Denkstufe wechseln",
+  "codexModel.recentsTitle": "Letzte Modelle",
+  "codexModel.manage": "Verwalten",
+  "codexModel.done": "Fertig",
   "codexModel.recentsAria": "Zuletzt verwendete Modelle",
   "codexModel.emptyRecents": "Noch keine Modelle verwendet.",
   "codexModel.removeAria": "{model} · {effort} entfernen",

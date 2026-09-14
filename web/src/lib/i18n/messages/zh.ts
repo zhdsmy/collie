@@ -160,6 +160,9 @@ export const zh: Dictionary = {
   "settings.fonts.system": "系统默认",
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
   "codexModel.openAria": "切换模型与思考等级",
+  "codexModel.recentsTitle": "最近模型",
+  "codexModel.manage": "管理",
+  "codexModel.done": "完成",
   "codexModel.recentsAria": "最近使用的模型",
   "codexModel.emptyRecents": "还没有使用过模型。",
   "codexModel.removeAria": "删除 {model} · {effort}",

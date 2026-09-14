@@ -14,11 +14,21 @@ it("opens the model menu only from a recognized Codex model field", () => {
   const view = render(<StatuslineRow agent="codex" row={row} onModelClick={open} />);
   const button = view.getByRole("button");
   expect(button).toHaveTextContent("gpt-6-astra xhigh");
-  expect(button).toHaveAttribute("aria-haspopup", "dialog");
+  expect(button).toHaveAttribute("aria-expanded", "false");
   fireEvent.click(button);
   expect(open).toHaveBeenCalledOnce();
   view.rerender(<StatuslineRow agent="claude" row={row} onModelClick={open} />);
   expect(view.queryByRole("button")).toBeNull();
+});
+
+it("groups a separate Codex thinking level with the model before task status", () => {
+  const row = splitLines(parseAnsi("gpt-6-astra · \u001b[33mxhigh\u001b[0m · Working · main"))[0]!;
+  const view = render(<StatuslineRow agent="codex" row={row} onModelClick={vi.fn()} />);
+  const button = view.getByRole("button", { name: "Switch model and thinking level: gpt-6-astra xhigh" });
+  expect(button).toHaveTextContent("gpt-6-astra xhigh");
+  expect(within(button).getByText("xhigh")).toHaveStyle({ color: "var(--ansi-3)" });
+  expect(view.getAllByText("xhigh")).toHaveLength(1);
+  expect(view.getByRole("img", { name: "Working" })).toBeVisible();
 });
 
 it("keeps a custom known model clickable without changing other status fields", () => {
