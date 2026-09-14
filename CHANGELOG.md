@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Share the existing Composer panel container.** Quick actions, agent commands and display settings reuse one UI primitive so additional Composer panels inherit the same visual style.
+
 ## [1.8.2+collie.10] - 2026-09-14
 
 ### Added

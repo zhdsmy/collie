@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import type { ChangeEvent, ClipboardEvent, CSSProperties, ReactNode } from "react";
+import type { ChangeEvent, ClipboardEvent, CSSProperties } from "react";
 import { useRevalidator } from "react-router";
 import { Check, FileText, Image, Keyboard, Loader2, Mic, Paperclip, Send, Settings2, Slash, Square, Terminal, X, Zap } from "lucide-react";
 
@@ -22,6 +22,7 @@ import { QuickActionsContent } from "@/components/quick-actions";
 import { DisplayPrefsContent } from "@/components/display-prefs";
 import { SectionLabel } from "@/components/ui/section-label";
 import { Collapse } from "@/components/ui/collapse";
+import { ComposerDock } from "@/components/ui/composer-dock";
 import { ActionRow } from "@/components/action-sheet-rows";
 import { AnchoredMenu } from "@/components/ui/anchored-menu";
 import * as api from "@/lib/api";
@@ -152,41 +153,6 @@ const SENT_ECHO_GRACE_MS = 5_000;
 // Burst window for post-keypress revalidation (see scheduleKeyRevalidate).
 const KEY_REVALIDATE_MS = 300;
 
-// Shared in-flow dock chrome for Quick/Agent/Display — an IN-FLOW panel (never an overlay), so the terminal
-// mirror's flex-1 box shrinks and its tail stays visible while the dock is open (a covering sheet
-// hid exactly the prompt you were driving). Full-bleed top border + capped height keep the mirror
-// usable on a phone. The header (title + Close X) is a NON-scrolling child of a flex column; only the
-// body below it scrolls (max-h + overflow), so the Close X can never scroll out of reach on a short
-// viewport with a tall tray. One wrapper so Quick, Agent and Display cannot drift apart.
-function ComposerDock({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <div className="-mx-3 mb-2 flex flex-col border-t border-border bg-background">
-      <div className="flex items-center justify-between gap-2 px-3 py-1">
-        <h2 className="min-w-0">
-          <SectionLabel className="min-w-0 shrink text-base font-bold normal-case tracking-normal">{title}</SectionLabel>
-        </h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-9 text-muted-foreground"
-          onClick={onClose}
-          aria-label={translate("composer.dock.closeAria", { title })}
-        >
-          <X className="size-4" />
-        </Button>
-      </div>
-      <div className="max-h-[45dvh] min-h-0 overflow-y-auto">{children}</div>
-    </div>
-  );
-}
 
 /** How long the attach button holds its pressed tone, in ms. Just under the sheet's own 240ms
  *  entrance, so the flash hands over to the sheet rather than lingering behind it. */
