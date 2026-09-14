@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Add compact branch and version icons to Codex statuslines.** Prefix conventional or explicitly labelled branches with a Git branch icon and version numbers with a tag icon, preserving their full text, terminal colors, and the existing row height. Leave unrecognized fields and absolute paths unchanged.
+
 ## [1.8.2+collie.17] - 2026-09-14
 
 ### Changed

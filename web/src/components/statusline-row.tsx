@@ -7,10 +7,12 @@ import {
   CircleCheck,
   CircleOff,
   Gauge,
+  GitBranch,
   Hourglass,
   ListChecks,
   Pause,
   ShieldCheck,
+  Tag,
   Target,
   Timer,
   Zap,
@@ -32,6 +34,10 @@ import { parseCodexModelField, parseCodexStatuslineField } from "@/lib/harness/c
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
 const CODEX_FIELDS: { pattern: RegExp; icon: LucideIcon; fill?: "currentColor"; color?: string }[] = [
+  // ponytail: bare TUI fields have no type; custom branch names need upstream field metadata.
+  { pattern: /^(main|master|develop|development|trunk|(?:feat|feature|fix|bugfix|hotfix|release|chore|refactor|test|docs)\/\S+)$/, icon: GitBranch },
+  { pattern: /^(?:[Bb]ranch[: ]+|git[: ]+|\s+)(\S+)$/, icon: GitBranch },
+  { pattern: /^(v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/, icon: Tag },
   { pattern: /^(?:Context|Ctx) (\d+%)$/, icon: Gauge },
   { pattern: /^Ready$/, icon: CircleCheck },
   { pattern: /^Working$/, icon: Hourglass },

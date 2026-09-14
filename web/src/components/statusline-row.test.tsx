@@ -110,6 +110,11 @@ it("can render a target-only row when the agent has no status text", () => {
 });
 
 it.each([
+  ["main", "main", "lucide-git-branch"],
+  ["feature/statusline", "feature/statusline", "lucide-git-branch"],
+  ["Branch: custom-name", "custom-name", "lucide-git-branch"],
+  ["0.154.0", "0.154.0", "lucide-tag"],
+  ["v1.8.2+collie.17", "v1.8.2+collie.17", "lucide-tag"],
   ["Ctx 62%", "62%", "lucide-gauge"],
   ["Ready", "", "lucide-circle-check"],
   ["Working", "", "lucide-hourglass"],
@@ -128,7 +133,7 @@ it.each([
   ["Goal abandoned", "", "lucide-circle-off"],
   ["Goal achieved", "", "lucide-circle-check"],
 ])("renders %s as a compact, accessible field", (label, value, icon) => {
-  const { container } = renderRow(`  model \u00b7 ${label} \u00b7 main`);
+  const { container } = renderRow(`  model \u00b7 ${label} \u00b7 project-name`);
   const field = within(container).getByRole("img", { name: label });
   expect(field.textContent).toBe(value);
   expect(field).toHaveAttribute("title", label);
@@ -267,10 +272,16 @@ it("preserves unknown fields, terminal colors and literal text, without matching
   const { container } = renderRow(
     '  model \u00b7 \x1b[36mfeature/Working\x1b[0m \u00b7 Context 75% left soon \u00b7 <img src=x> \u00b7 Main [default]',
   );
-  expect(within(container).queryAllByRole("img")).toHaveLength(0);
+  expect(within(container).getAllByRole("img")).toHaveLength(1);
+  expect(within(container).getByRole("img", { name: "feature/Working" }).querySelector("svg")).toHaveClass("lucide-git-branch");
   expect(within(container).getByText("feature/Working").style.color).toBe("var(--ansi-6)");
   expect(container.textContent).toContain("Context 75% left soon<img src=x>Main [default]");
   expect(container.querySelector("img")).toBeNull();
+});
+
+it("leaves project paths, arbitrary names and partial versions undecorated", () => {
+  const { container } = renderRow("/repo/main · ~/feature/statusline · project-name · Main [default] · 0.154 · 0.154.0 preview");
+  expect(container.querySelector("svg")).toBeNull();
 });
 
 it.each(["claude", "pi", "opencode", "unknown"])("leaves %s status rows verbatim", (agent) => {
