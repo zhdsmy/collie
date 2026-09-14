@@ -76,6 +76,8 @@ import type { CodexModelTarget } from "@/lib/harness/codex/model-field";
 import { parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
 import { defaultSleep } from "@/lib/harness/guard";
 import { CodexModelRecentsPanel } from "@/components/codex-model-recents";
+import { CodexPlanToggle } from "@/components/codex-plan-toggle";
+import { isCodexPlanHint, readCodexPlanState, runCodexPlanSwitch } from "@/lib/codex-plan";
 import { useHoldReload } from "@/lib/reload-guard";
 import type { PickerIntent, PickerModel } from "@/lib/harness/picker-model";
 import type { PromptBlockAction } from "@/components/prompt-select-block";
@@ -303,6 +305,17 @@ export function AgentChat({
   const [modelSwitchMessage, setModelSwitchMessage] = useState("");
   const [modelTarget, setModelTarget] = useState<CodexModelTarget | null>(null);
   const modelSwitchAbort = useRef<AbortController | null>(null);
+  const [composerWriting, setComposerWriting] = useState(false);
+  const [planSwitching, setPlanSwitching] = useState(false);
+  const planSwitchAbort = useRef<AbortController | null>(null);
+  const [lastPlanState, setLastPlanState] = useState<{ sessionKey?: string; enabled: boolean | null }>({ enabled: null });
+  useHoldReload(`plan-switch:${paneScopeKey(scope, paneId)}`, planSwitching);
+  useEffect(() => () => { planSwitchAbort.current?.abort(); }, [codexSessionKey]);
+  useEffect(() => {
+    const cancelWhenHidden = () => { if (document.visibilityState === "hidden") planSwitchAbort.current?.abort(); };
+    document.addEventListener("visibilitychange", cancelWhenHidden);
+    return () => document.removeEventListener("visibilitychange", cancelWhenHidden);
+  }, []);
   const activeCodexSession = useRef(codexSessionKey);
   useLayoutEffect(() => { activeCodexSession.current = codexSessionKey; }, [codexSessionKey]);
   const { recents, record, remove: removeRecent, clear: clearRecents } = useCodexModelRecents(codexSessionKey);
@@ -326,7 +339,7 @@ export function AgentChat({
    */
   const refuseWrite = useCallback(
     (): string | undefined => (readOnly ? t("chat.status.readOnly") : hostBlock ??
-      (modelSwitchAbort.current ? t("codexModel.busy") : undefined)),
+      (modelSwitchAbort.current || planSwitchAbort.current ? t("codexModel.busy") : undefined)),
     [readOnly, hostBlock],
   );
 
@@ -664,10 +677,31 @@ export function AgentChat({
   }, [agent?.agent, text, knownModels, modelSwitching, modelSwitchBase]);
   const modelType = useMuxCapability("typeText", scope);
   const modelKeys = useMuxCapability("sendKeys", scope);
+  const liveCodexState = useMemo(
+    () => agent?.agent === "codex" ? readCodexPlanState(text) : null,
+    [agent?.agent, text],
+  );
+  const codexIdle = agent?.status === "idle" || agent?.status === "done";
+  // A working footer may omit Plan; only an idle composer can establish that it is off.
+  const observedPlan = liveCodexState?.enabled === true ? true : codexIdle ? liveCodexState?.enabled ?? null : null;
+  useEffect(() => {
+    setLastPlanState((previous) => {
+      if (previous.sessionKey !== codexSessionKey) return { sessionKey: codexSessionKey, enabled: observedPlan };
+      return observedPlan !== null && observedPlan !== previous.enabled
+        ? { sessionKey: codexSessionKey, enabled: observedPlan } : previous;
+    });
+  }, [codexSessionKey, observedPlan]);
+  const planEnabled = lastPlanState.sessionKey === codexSessionKey ? lastPlanState.enabled ?? observedPlan : observedPlan;
+  const codexControlsBusy = modelSwitching || planSwitching || composerWriting;
   const modelDisabledReason = readOnly ? t("chat.status.readOnly") : hostBlock ?? (
     agent?.agent !== "codex" || connecting || !grammarsOn || !modelType.capable || !modelKeys.capable ||
-    dialogPresent || Boolean(rawTerminalDraft?.trim()) ? t("codexModel.blocked") :
-    agent.status !== "idle" && agent.status !== "done" ? t("codexModel.idleRequired") : undefined
+    !liveCodexState || liveCodexState.draft !== null ? t("codexModel.blocked") :
+    !codexIdle ? t("codexModel.idleRequired") : codexControlsBusy ? t("codexPlan.busy") : undefined
+  );
+  const planDisabledReason = readOnly ? t("chat.status.readOnly") : hostBlock ?? (
+    connecting || !grammarsOn || !modelKeys.capable || !codexSessionKey ||
+    !liveCodexState || liveCodexState.draft !== null ? t("codexPlan.blocked") :
+    !codexIdle ? t("codexPlan.idleRequired") : codexControlsBusy ? t("codexPlan.busy") : undefined
   );
   // Is there anything to switch TO? The arrow is emphasized when another used pair exists, but the
   // model field remains openable with an empty or single-item history so the native picker is never
@@ -680,7 +714,7 @@ export function AgentChat({
   );
 
   async function switchModel(target?: CodexModelTarget) {
-    if (modelSwitchAbort.current) return;
+    if (modelSwitchAbort.current || planSwitchAbort.current) return;
     const refusal = modelDisabledReason ??
       (composerRef.current?.isWriting() ? t("codexModel.busy") : undefined);
     if (refusal) {
@@ -744,6 +778,35 @@ export function AgentChat({
       modelSwitchAbort.current = null;
       setModelSwitching(false);
       setModelProgress(null);
+      revalidator.revalidate();
+    }
+  }
+
+  async function switchPlan() {
+    if (planDisabledReason || planEnabled === null || !codexSessionKey ||
+      modelSwitchAbort.current || planSwitchAbort.current || composerRef.current?.isWriting()) return;
+    const controller = new AbortController();
+    planSwitchAbort.current = controller;
+    setPlanSwitching(true);
+    composerRef.current?.closeDock();
+    setDrawer(null);
+    const enabled = !planEnabled;
+    try {
+      const result = await runCodexPlanSwitch({
+        paneId, scope, requestedLines, codexSessionKey, enabled, signal: controller.signal,
+      });
+      if (controller.signal.aborted || activeCodexSession.current !== codexSessionKey) return;
+      if (result.status === "switched") {
+        setLastPlanState({ sessionKey: codexSessionKey, enabled });
+        setFollowing(true);
+        setShown({ text: result.text, revision: result.revision });
+        setStatus(t(enabled ? "codexPlan.successOn" : "codexPlan.successOff"), "success");
+      } else if (result.status !== "cancelled") {
+        setStatus(result.status === "error" ? result.error : t(`codexPlan.${result.status}`), "error");
+      }
+    } finally {
+      planSwitchAbort.current = null;
+      setPlanSwitching(false);
       revalidator.revalidate();
     }
   }
@@ -2027,6 +2090,10 @@ export function AgentChat({
                   exit, so nothing is left focusable behind a row that is not on screen. */}
               {/* Statusline stays visible while typing: it is already a narrow strip, and keeping it
                   mounted prevents the multi-host target from jumping between separate rows. */}
+              {agent?.agent === "codex" && (
+                <CodexPlanToggle enabled={planEnabled} busy={planSwitching}
+                  disabledReason={planDisabledReason} onClick={() => void switchPlan()} />
+              )}
               <Collapse open={statuslineVisible}>
                 {statuslineVisible && (
                 <div
@@ -2049,13 +2116,15 @@ export function AgentChat({
                     <StatuslineRow
                       key={i}
                       agent={agent?.agent}
-                      row={row}
+                        row={agent?.agent === "codex" ? { ...row, segments: row.segments.filter((segment) => !isCodexPlanHint(segment)) } : row}
                       sessionModel={sessionModel}
                       knownModels={knownModels}
                       modelSwitchable={modelSwitchable}
                       modelExpanded={drawer === "models"}
+                      modelDisabledReason={modelDisabledReason}
                       onModelClick={agent?.agent === "codex" && currentModel
-                        ? () => {
+                  ? () => {
+                      if (modelDisabledReason || composerRef.current?.isWriting()) return;
                           if (drawer === "models") closeDrawer();
                           else {
                             composerRef.current?.closeDock();
@@ -2093,7 +2162,8 @@ export function AgentChat({
                   // composer must not invite a reply it already knows the lead will refuse, and "which
                   // machine am I typing into" has to be answerable without tapping Send to find out.
                   hostBlock={hostBlock}
-                  externalBusy={modelSwitching}
+                  externalBusy={modelSwitching || planSwitching}
+                  onWritingChange={setComposerWriting}
                   onDockOpen={closeDrawer}
                   dialogPresent={dialogPresent}
                   text={text}

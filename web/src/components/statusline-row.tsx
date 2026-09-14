@@ -214,6 +214,7 @@ export function StatuslineRow({
   knownModels,
   modelSwitchable = false,
   modelExpanded = false,
+  modelDisabledReason,
 }: {
   agent?: string;
   row: StyledLine;
@@ -224,6 +225,7 @@ export function StatuslineRow({
   /** Is there anything to switch TO — a used pair other than the one on screen? */
   modelSwitchable?: boolean;
   modelExpanded?: boolean;
+  modelDisabledReason?: string;
 }) {
   useLocale();
   if (agent !== "codex" && agent !== "hermes") {
@@ -264,10 +266,11 @@ export function StatuslineRow({
           if (joinEffort) groupedEffortIndex = i + 2;
           const effortStart = offset + (parts[i + 1]?.length ?? 0) + nextPart.indexOf(next);
           return (
-            <span key={i} className="inline-flex shrink-0 items-center gap-1">
+            <span key={i} className="inline-flex shrink-0 items-center gap-1" title={modelDisabledReason}>
               <Button
                 variant="ghost"
                 onClick={onModelClick}
+                disabled={modelDisabledReason !== undefined}
                 aria-label={`${t("codexModel.openAria")}: ${joinEffort ? `${text} ${next}` : text}`}
                 aria-expanded={modelExpanded}
                 aria-controls="codex-model-recents"

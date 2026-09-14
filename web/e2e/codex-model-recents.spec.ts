@@ -23,6 +23,68 @@ test.use({ serviceWorkers: "block" });
 
 const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}`, import.meta.url), "utf8");
 
+for (const theme of ["light", "dark"]) test(`plan controls: ${theme}`, async ({ page }, testInfo) => {
+  const enabledPane = fixture("codex--v0154-statusline-single-color-plan.txt");
+  let current = pane;
+  let revision = 1;
+  let working = false;
+  let keyCount = 0;
+  let releaseToggle!: () => void;
+  const toggleGate = new Promise<void>((resolve) => { releaseToggle = resolve; });
+  await page.setViewportSize({ width: theme === "light" ? 390 : 320, height: 844 });
+  await page.addInitScript((chosenTheme) => {
+    localStorage.setItem("collie:theme:v1", chosenTheme);
+    localStorage.setItem("collie:locale:v1", "zh");
+  }, theme);
+  await installApiStub(page);
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: { ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+      ? { ...agent, agent: "codex", status: working ? "working" : "idle" } : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: SESSION_KEY,
+  } }));
+  await page.route("**/api/pane/*/keys*", async (route) => {
+    const body = route.request().postDataJSON();
+    expect(body.keys).toEqual(["shift+tab"]);
+    expect(body.expected_prompt).toContain("›");
+    keyCount++;
+    if (keyCount === 1) await toggleGate;
+    else expect(body.expected_prompt).toContain("Plan mode (shift+tab to cycle)");
+    current = current === pane ? enabledPane : pane;
+    revision++;
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/pane/w1:p1");
+  const plan = page.getByRole("button", { name: new RegExp(`^${zh["codexPlan.title"]}:`) });
+  const model = page.getByRole("button", { name: new RegExp(`^${zh["codexModel.openAria"]}:`) });
+  await expect(plan).toHaveAttribute("aria-pressed", "false");
+  const planBefore = await plan.boundingBox();
+  await plan.click();
+  await expect(plan).toBeDisabled();
+  await expect(model).toBeDisabled();
+  releaseToggle();
+  await expect(plan).toHaveAttribute("aria-pressed", "true");
+  await expect(plan).toBeEnabled();
+  expect(await plan.boundingBox()).toMatchObject(planBefore!);
+  await page.screenshot({ path: testInfo.outputPath("plan-enabled.png") });
+  await plan.click();
+  await expect(plan).toHaveAttribute("aria-pressed", "false");
+  await expect(plan).toBeEnabled();
+  expect(keyCount).toBe(2);
+  working = true;
+  await expect(plan).toBeDisabled();
+  await expect(model).toBeDisabled();
+  expect(await plan.boundingBox()).toMatchObject(planBefore!);
+  await page.screenshot({ path: testInfo.outputPath("plan-disabled.png") });
+  current = fixture("codex--v0154-picker-model.txt");
+  revision++;
+  await expect(page.getByText("Select Model and Effort", { exact: true })).toBeVisible();
+  await expect(plan).toHaveAttribute("aria-pressed", "false");
+  await expect(plan).toBeDisabled();
+  expect(keyCount).toBe(2);
+});
+
 for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async ({ page }, testInfo) => {
   const modelText = fixture("codex--v0154-picker-model.txt");
   const effortText = fixture("codex--v0154-picker-effort.txt");
@@ -93,7 +155,8 @@ for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async
     };
   });
   expect(maskGeometry).toEqual({ inert: true, blur: "blur(1px)", coversOnlyPanel: true, transcriptInteractive: true });
-  await expect.poll(async () => Math.abs(entryBefore!.y - await message.evaluate(
+  const planRow = page.locator('[data-slot="codex-plan-toggle"]');
+  await expect.poll(async () => Math.abs((await planRow.boundingBox())!.y - await message.evaluate(
     (el) => el.parentElement!.getBoundingClientRect().bottom,
   ))).toBeLessThanOrEqual(8);
   expect(await entry.boundingBox()).toMatchObject({ y: entryBefore!.y });
@@ -233,11 +296,8 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     working = true;
     await page.reload();
     const reopened = page.getByRole("button", { name: new RegExp(`^${messages["codexModel.openAria"]}:`) });
-    await reopened.click();
-    const rowsAgain = page.getByRole("region", { name: messages["codexModel.recentsAria"] }).getByRole("button", { name: "gpt-5.6-luna max", exact: true });
-    await expect(rowsAgain).toBeVisible();
-    // Codex is working: the history can be read and pruned, but nothing may be switched.
-    await expect(rowsAgain).toBeDisabled();
-    await expect(page.getByRole("region", { name: messages["codexModel.recentsAria"] }).getByRole("button", { name: messages["codexModel.native"], exact: true })).toBeDisabled();
+    await expect(reopened).toBeDisabled();
+    await expect(page.getByRole("region", { name: messages["codexModel.recentsAria"] })).toHaveCount(0);
+    await expect(page.locator('[data-slot="codex-plan-toggle"] button')).toBeDisabled();
   });
 }

@@ -19,12 +19,16 @@ import { AgentChat } from "./agent-chat";
 import { codexAdapter } from "@/lib/harness/codex";
 import { parseAnsi } from "@/lib/ansi";
 import { splitLines } from "@/lib/blocks";
+import { runCodexPlanSwitch } from "@/lib/codex-plan";
+import { t } from "@/lib/i18n";
 
 const SESSION_KEY = "codex-session-a";
 const recordRecent = (model: string, effort: Parameters<typeof recordSessionRecent>[2]) =>
   recordSessionRecent(SESSION_KEY, model, effort);
 
 vi.mock("@/lib/codex-model-switch", () => ({ runCodexModelSwitch: vi.fn() }));
+vi.mock("@/lib/codex-plan", async (importOriginal) => ({ ...await importOriginal<typeof import("@/lib/codex-plan")>(),
+  runCodexPlanSwitch: vi.fn() }));
 
 const idle = readFileSync(join(process.cwd(), "src/fixtures/panes/codex--v0154-statusline-single-idle.txt"), "utf8");
 /** The same pane with its level printed beside the model, the way Codex 0.154 draws it. */
@@ -57,6 +61,7 @@ function pairs(...entries: [string, string][]): string {
 
 beforeEach(() => {
   vi.mocked(runCodexModelSwitch).mockReset();
+  vi.mocked(runCodexPlanSwitch).mockReset();
   localStorage.clear();
   __resetCodexModelRecents();
   if (!Element.prototype.scrollTo) Element.prototype.scrollTo = () => {};
@@ -74,6 +79,44 @@ async function openRecents(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: /gpt-5\.6/ }));
   return screen.getByRole("region", { name: "Recently used models" });
 }
+
+it("keeps Plan visible and disables both controls while its verified toggle runs", async () => {
+  const user = userEvent.setup();
+  let finish!: (result: Awaited<ReturnType<typeof runCodexPlanSwitch>>) => void;
+  vi.mocked(runCodexPlanSwitch).mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+  renderPane("idle", withLevel);
+  const plan = screen.getByRole("button", { name: new RegExp(`^${t("codexPlan.title")}:`) });
+  expect(plan).toHaveAttribute("aria-pressed", "false");
+  await user.click(plan);
+  expect(runCodexPlanSwitch).toHaveBeenCalledOnce();
+  expect(vi.mocked(runCodexPlanSwitch).mock.calls[0]![0]).toMatchObject({ enabled: true, codexSessionKey: SESSION_KEY });
+  expect(plan).toBeDisabled();
+  expect(screen.getByRole("button", { name: /gpt-5\.6/ })).toBeDisabled();
+  expect(screen.getByRole("textbox")).toBeDisabled();
+  await user.click(plan);
+  expect(runCodexPlanSwitch).toHaveBeenCalledOnce();
+  finish({ status: "switched", text: idle, revision: 2 });
+  await waitFor(() => expect(plan).toBeEnabled());
+  expect(plan).toHaveAttribute("aria-pressed", "true");
+});
+
+it("shows Plan state but disables switching while Codex works", () => {
+  renderPane("working", idle);
+  const plan = screen.getByRole("button", { name: new RegExp(`^${t("codexPlan.title")}:`) });
+  expect(plan).toHaveAttribute("aria-pressed", "true");
+  expect(plan).toBeDisabled();
+  expect(screen.getByRole("button", { name: /gpt-5\.6/ })).toBeDisabled();
+  expect(document.querySelector('[data-slot="codex-statusline"]')).not.toHaveTextContent("Plan mode");
+});
+
+it("disables model and Plan controls while direct typing owns the terminal", async () => {
+  const user = userEvent.setup();
+  renderPane("idle", withLevel);
+  await user.click(screen.getByRole("button", { name: /^Type / }));
+  expect(screen.getByRole("button", { name: /gpt-5\.6/ })).toBeDisabled();
+  expect(screen.getByRole("button", { name: new RegExp(`^${t("codexPlan.title")}:`) })).toBeDisabled();
+  expect(screen.getByRole("textbox")).not.toHaveFocus();
+});
 
 it("keeps the model field openable when history is empty", async () => {
   const user = userEvent.setup();
@@ -182,14 +225,14 @@ it("keeps text and an uploaded image mounted and locked while switching, then re
   expect(draft).toHaveValue(savedDraft);
 });
 
-it("allows inspecting the history while working but never queues a switch", async () => {
+it("disables the model entry while working and never opens or queues a switch", async () => {
   const user = userEvent.setup();
   recordRecent("gpt-5.6-luna", "max");
   renderPane("working");
-  const panel = await openRecents(user);
-  const choice = within(panel).getByRole("button", { name: "gpt-5.6-luna max" });
-  expect(choice).toBeDisabled();
-  await user.click(choice);
+  const entry = screen.getByRole("button", { name: /gpt-5\.6/ });
+  expect(entry).toBeDisabled();
+  await user.click(entry);
+  expect(screen.queryByRole("region", { name: "Recently used models" })).toBeNull();
   expect(runCodexModelSwitch).not.toHaveBeenCalled();
 });
 

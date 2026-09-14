@@ -80,6 +80,8 @@ interface ComposerProps {
   /** Another guarded operation currently owns this pane's keyboard. Drafts remain mounted. */
   externalBusy?: boolean;
   onDockOpen?: () => void;
+  /** Let sibling mode/model controls reflect typing and send operations immediately. */
+  onWritingChange?: (writing: boolean) => void;
   /**
    * The soft keyboard is up, so this dock is standing on it rather than on the screen's own bottom
    * edge. Read ONCE by the pane (agent-chat.tsx, `composing`) and passed down — never re-derived
@@ -162,7 +164,7 @@ const KEY_REVALIDATE_MS = 300;
 const ATTACH_PRESS_MS = 220;
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, onDockOpen, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent },
+  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, onDockOpen, onWritingChange, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -485,6 +487,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // its text tracks and that the send()-time pre-clear sweeps.
   const effectiveStable = suppressEcho(terminalDraft);
   const effectiveRaw = suppressEcho(rawTerminalDraft);
+  const writing = sending || uploading || direct.active || direct.busy;
+  useEffect(() => {
+    onWritingChange?.(writing);
+    return () => onWritingChange?.(false);
+  }, [writing, onWritingChange]);
 
   useImperativeHandle(ref, () => ({
     focusInput: focusInputImmediately,
@@ -493,8 +500,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       inputRef.current?.blur();
       if (direct.active) direct.deactivateSilently();
     },
-    isWriting: () => sending || direct.active || direct.busy,
-  }), [sending, direct]);
+    isWriting: () => writing,
+  }), [writing, direct]);
 
   useEffect(
     () => () => {

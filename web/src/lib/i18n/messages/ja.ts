@@ -197,6 +197,18 @@ export const ja: Dictionary = {
   "codexModel.unconfirmed": "新しい設定を確認できませんでした。",
   "codexModel.success": "使用中: {model} · {effort}",
   "codexModel.cancelled": "モデルの切り替えをキャンセルしました。",
+  "codexPlan.title": "Plan モード",
+  "codexPlan.on": "オン",
+  "codexPlan.off": "オフ",
+  "codexPlan.unknown": "不明",
+  "codexPlan.switching": "切り替え中…",
+  "codexPlan.blocked": "現在は切り替えられません。Codex の入力欄が準備できるまでお待ちください。",
+  "codexPlan.idleRequired": "Codex がアイドル状態のときに Plan モードを切り替えられます。",
+  "codexPlan.busy": "操作中です。しばらくお待ちください。",
+  "codexPlan.changed": "ターミナルの状態が変わりました。現在のモードを確認して再試行してください。",
+  "codexPlan.unconfirmed": "Plan モードの変更を確認できませんでした。",
+  "codexPlan.successOn": "Plan モードをオンにしました。",
+  "codexPlan.successOff": "Plan モードをオフにしました。",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "行の折り返し",

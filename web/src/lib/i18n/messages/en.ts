@@ -214,6 +214,18 @@ export const en = {
   "codexModel.unconfirmed": "The new setting could not be confirmed.",
   "codexModel.success": "Using {model} · {effort}",
   "codexModel.cancelled": "Model switch cancelled.",
+  "codexPlan.title": "Plan mode",
+  "codexPlan.on": "ON",
+  "codexPlan.off": "OFF",
+  "codexPlan.unknown": "UNKNOWN",
+  "codexPlan.switching": "SWITCHING…",
+  "codexPlan.blocked": "Plan mode cannot be switched right now. Wait for the Codex input to be ready.",
+  "codexPlan.idleRequired": "Plan mode can be changed when Codex is idle.",
+  "codexPlan.busy": "An operation is already in progress. Please wait.",
+  "codexPlan.changed": "The terminal state changed. Confirm the current mode and try again.",
+  "codexPlan.unconfirmed": "The Plan mode change could not be confirmed.",
+  "codexPlan.successOn": "Plan mode enabled.",
+  "codexPlan.successOff": "Plan mode disabled.",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "Wrap lines",

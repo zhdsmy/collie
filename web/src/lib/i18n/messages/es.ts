@@ -199,6 +199,18 @@ export const es: Dictionary = {
   "codexModel.unconfirmed": "No se pudo confirmar la nueva configuración.",
   "codexModel.success": "Usando {model} · {effort}",
   "codexModel.cancelled": "Cambio de modelo cancelado.",
+  "codexPlan.title": "Modo Plan",
+  "codexPlan.on": "ACTIVADO",
+  "codexPlan.off": "DESACTIVADO",
+  "codexPlan.unknown": "DESCONOCIDO",
+  "codexPlan.switching": "CAMBIANDO…",
+  "codexPlan.blocked": "El modo Plan no se puede cambiar ahora. Espera a que la entrada de Codex esté lista.",
+  "codexPlan.idleRequired": "El modo Plan se puede cambiar cuando Codex está inactivo.",
+  "codexPlan.busy": "Hay una operación en curso. Espera un momento.",
+  "codexPlan.changed": "El estado del terminal cambió. Confirma el modo actual y vuelve a intentarlo.",
+  "codexPlan.unconfirmed": "No se pudo confirmar el cambio del modo Plan.",
+  "codexPlan.successOn": "Modo Plan activado.",
+  "codexPlan.successOff": "Modo Plan desactivado.",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "Ajuste de línea",

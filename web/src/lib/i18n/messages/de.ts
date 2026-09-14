@@ -201,6 +201,18 @@ export const de: Dictionary = {
   "codexModel.unconfirmed": "Die neue Einstellung konnte nicht bestätigt werden.",
   "codexModel.success": "Verwendet: {model} · {effort}",
   "codexModel.cancelled": "Modellwechsel abgebrochen.",
+  "codexPlan.title": "Planmodus",
+  "codexPlan.on": "AN",
+  "codexPlan.off": "AUS",
+  "codexPlan.unknown": "UNBEKANNT",
+  "codexPlan.switching": "WECHSEL…",
+  "codexPlan.blocked": "Der Planmodus kann gerade nicht gewechselt werden. Warte, bis die Codex-Eingabe bereit ist.",
+  "codexPlan.idleRequired": "Der Planmodus kann geändert werden, wenn Codex untätig ist.",
+  "codexPlan.busy": "Ein Vorgang läuft bereits. Bitte warten.",
+  "codexPlan.changed": "Der Terminalstatus hat sich geändert. Prüfe den aktuellen Modus und versuche es erneut.",
+  "codexPlan.unconfirmed": "Die Änderung des Planmodus konnte nicht bestätigt werden.",
+  "codexPlan.successOn": "Planmodus aktiviert.",
+  "codexPlan.successOff": "Planmodus deaktiviert.",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "Zeilenumbruch",

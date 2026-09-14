@@ -187,6 +187,18 @@ export const zh: Dictionary = {
   "codexModel.unconfirmed": "无法确认新的设置。",
   "codexModel.success": "当前使用 {model} · {effort}",
   "codexModel.cancelled": "模型切换已取消。",
+  "codexPlan.title": "Plan 模式",
+  "codexPlan.on": "已开启",
+  "codexPlan.off": "已关闭",
+  "codexPlan.unknown": "未知",
+  "codexPlan.switching": "切换中…",
+  "codexPlan.blocked": "当前无法切换，请等待 Codex 输入区就绪。",
+  "codexPlan.idleRequired": "Codex 正在运行，空闲时才能切换 Plan 模式。",
+  "codexPlan.busy": "操作进行中，请稍候。",
+  "codexPlan.changed": "终端状态已变化，请确认当前模式后重试。",
+  "codexPlan.unconfirmed": "无法确认 Plan 模式更改。",
+  "codexPlan.successOn": "Plan 模式已开启。",
+  "codexPlan.successOff": "Plan 模式已关闭。",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "自动换行",
