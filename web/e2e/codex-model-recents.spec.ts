@@ -36,6 +36,10 @@ for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async
   await page.addInitScript(({ theme: chosenTheme, key }) => {
     localStorage.setItem("collie:theme:v1", chosenTheme);
     localStorage.setItem("collie:locale:v1", "zh");
+    if (chosenTheme === "dark") {
+      localStorage.setItem("collie:design:v1", JSON.stringify({ font: "geist" }));
+      localStorage.setItem("collie:display-prefs:v4", JSON.stringify({ fontFamily: "geist" }));
+    }
     localStorage.setItem(key, JSON.stringify([{ model: "gpt-6-astra", effort: "low" }]));
   }, { theme, key: RECENTS_KEY });
   await installApiStub(page);
@@ -70,12 +74,35 @@ for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async
   const entryBefore = await entry.boundingBox();
   await entry.click();
   await page.getByRole("button", { name: "gpt-6-astra low", exact: true }).click();
-  const message = page.getByText(zh["codexModel.switching"], { exact: true });
+  const message = page.getByRole("status").filter({ hasText: "gpt-6-astra · low" });
   const modelTitle = page.getByText("Select Model and Effort", { exact: true });
   await expect(message).toBeVisible();
   await expect(modelTitle).toBeInViewport();
   expect(await modelTitle.evaluate((el) => Boolean(el.closest("[inert]")))).toBe(true);
+  await expect.poll(async () => Math.abs(entryBefore!.y - await message.evaluate(
+    (el) => el.parentElement!.getBoundingClientRect().bottom,
+  ))).toBeLessThanOrEqual(8);
   expect(await entry.boundingBox()).toMatchObject({ y: entryBefore!.y });
+  const progressStyle = await message.evaluate((el) => {
+    const bar = el.parentElement!;
+    const mask = bar.parentElement!;
+    return {
+      solid: getComputedStyle(bar).backgroundColor === getComputedStyle(document.body).backgroundColor,
+      radius: getComputedStyle(bar).borderRadius,
+      flushBottom: bar.getBoundingClientRect().bottom === mask.getBoundingClientRect().bottom,
+      flushSides: bar.getBoundingClientRect().left === mask.getBoundingClientRect().left
+        && bar.getBoundingClientRect().right === mask.getBoundingClientRect().right,
+    };
+  });
+  expect(progressStyle).toEqual({ solid: true, radius: "0px", flushBottom: true, flushSides: true });
+  if (theme === "dark") {
+    const targetFont = await message.getByText("gpt-6-astra · low", { exact: true }).evaluate((el) => ({
+      family: getComputedStyle(el).fontFamily,
+      weight: getComputedStyle(el).fontWeight,
+    }));
+    expect(targetFont.family).toContain("Geist Mono");
+    expect(targetFont.weight).toBe("400");
+  }
   await page.screenshot({ path: testInfo.outputPath("switch-model-mask.png") });
   releaseModel();
   const effortTitle = page.getByText("Select Reasoning Level for gpt-6-astra", { exact: true });

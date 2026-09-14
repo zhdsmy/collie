@@ -1930,15 +1930,18 @@ export function AgentChat({
               )}
             </ChatMessageList>
             {modelSwitching && modelTarget && (
-              <div className="absolute inset-0 z-20 flex items-end bg-background/40 p-3">
+              <div className="absolute inset-0 z-20 flex items-end bg-black/10 dark:bg-black/20">
                 <Notice tone="neutral" variant="box" announce="status"
-                  className="w-full bg-background/90 font-sans"
-                  icon={<Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />}
-                  action={<Button variant="ghost" className="min-h-11 shrink-0 px-2 text-xs"
+                  className="w-full items-center rounded-none border-x-0 border-b-0 bg-background px-3 py-2 font-sans font-normal text-foreground"
+                  action={<Button variant="ghost" className="h-11 min-w-11 shrink-0 px-2 text-[13px] font-normal text-muted-foreground"
                     onClick={() => modelSwitchAbort.current?.abort()}>{t("codexModel.stop")}</Button>}>
-                  <p className="font-medium">{t("codexModel.switching")}</p>
-                  <p className="break-words font-mono text-xs">{modelTarget.model} · {modelTarget.effort}</p>
-                  <p className="text-xs text-muted-foreground">{t(`codexModel.stage.${modelProgress?.stage ?? "model"}`)}</p>
+                  <p className="flex items-center gap-2 text-sm font-medium leading-5">
+                    <Loader2 aria-hidden="true" className="size-3.5 shrink-0 animate-spin text-muted-foreground motion-reduce:animate-none" />
+                    {t(`codexModel.stage.${modelProgress?.stage ?? "model"}`)}
+                  </p>
+                  <p className="break-words pl-5.5 font-mono text-[13px] font-normal leading-5 text-muted-foreground" style={mirrorFace.style}>
+                    {modelTarget.model} · {modelTarget.effort}
+                  </p>
                 </Notice>
               </div>
             )}

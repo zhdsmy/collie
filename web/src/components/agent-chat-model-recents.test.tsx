@@ -111,14 +111,14 @@ it("shows both native stages beneath one mask and stops remaining actions", asyn
   renderPane("idle", withLevel);
   const panel = await openRecents(user);
   await user.click(within(panel).getByRole("button", { name: "gpt-5.6-luna max" }));
-  const mask = screen.getByText("Switching model…").closest('[role="status"]')!;
+  const progress = screen.getByText("Selecting model").closest('[role="status"]')!;
   expect(screen.getByRole("group", { name: "Select Model and Effort" }).closest("[inert]")).not.toBeNull();
   expect(screen.getByText("Selecting model")).toBeInTheDocument();
   await waitFor(() => expect(screen.getByRole("group", { name: /Select Reasoning Level/ })).toBeInTheDocument());
-  expect(screen.getByText("Switching model…").closest('[role="status"]')).toBe(mask);
+  expect(screen.getByText("Selecting thinking level").closest('[role="status"]')).toBe(progress);
   expect(screen.getByText("Selecting thinking level")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Stop" }));
-  await waitFor(() => expect(screen.queryByText("Switching model…")).toBeNull());
+  await waitFor(() => expect(screen.queryByText("Selecting thinking level")).toBeNull());
   expect(screen.getByText("Switching stopped. Any changes already applied are kept.")).toBeInTheDocument();
   expect(vi.mocked(runCodexModelSwitch).mock.calls[0]![0].signal.aborted).toBe(true);
 });
@@ -131,7 +131,7 @@ it("leaves manual model selection interactive without the switching mask", async
   await user.click(within(panel).getByRole("button", { name: "Choose model" }));
   await waitFor(() => expect(runCodexModelSwitch).toHaveBeenCalledOnce());
   expect(vi.mocked(runCodexModelSwitch).mock.calls[0]![0].onProgress).toBeUndefined();
-  expect(screen.queryByText("Switching model…")).toBeNull();
+  expect(screen.queryByText("Selecting model")).toBeNull();
 });
 
 it("keeps the current pair visible and openable when it is the only recent", async () => {

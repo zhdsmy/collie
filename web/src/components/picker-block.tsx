@@ -77,7 +77,7 @@ function OptionCopy({ option }: { option: PickerOption }) {
         {option.label}
       </span>
       {option.description ? (
-        <span className="font-content block break-words text-xs leading-snug text-muted-foreground">
+        <span className="font-content block break-words text-xs font-normal leading-snug text-muted-foreground">
           {option.description}
         </span>
       ) : null}
@@ -515,7 +515,7 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
       ) : null}
       <QuestionHeading>{picker.title}</QuestionHeading>
       {picker.description.map((line, index) => (
-        <p key={index} className="font-content break-words text-xs leading-snug text-muted-foreground">
+        <p key={index} className="font-content break-words text-xs font-normal leading-snug text-muted-foreground">
           {line}
         </p>
       ))}
