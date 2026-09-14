@@ -24,7 +24,7 @@ import { codexAdapter } from "./harness/codex";
 import { parseAnsi } from "./ansi";
 import { splitLines } from "./blocks";
 import { acquirePaneAction, submitPickerIntent } from "./picker-action";
-import { runCodexModelSwitch } from "./codex-model-switch";
+import { runCodexModelSwitch, type CodexModelSwitchProgress } from "./codex-model-switch";
 import type { CodexModelTarget } from "./harness/codex/model-field";
 import type { PaneReadResponse, SnapshotResponse } from "./types";
 
@@ -58,12 +58,26 @@ function fixture(name: string): string {
   return readFileSync(join(PANES, name), "utf8");
 }
 
-function pane(text: string): PaneReadResponse {
-  return { paneId: "w1:p1", text, truncated: false, revision: 0 };
+function pane(text: string, codexSessionKey?: string): PaneReadResponse {
+  return {
+    paneId: "w1:p1",
+    text,
+    truncated: false,
+    revision: 0,
+    codexSessionKey,
+  };
 }
 
 function script(...screens: string[]): void {
-  const queue = screens.map(pane);
+  const queue = screens.map((screen) => pane(screen));
+  mockFetchPane.mockImplementation(async () => {
+    const next = queue.length > 1 ? queue.shift()! : queue[0]!;
+    return next;
+  });
+}
+
+function scriptPanes(...screens: Array<{ text: string; codexSessionKey?: string }>): void {
+  const queue = screens.map(({ text, codexSessionKey }) => pane(text, codexSessionKey));
   mockFetchPane.mockImplementation(async () => {
     const next = queue.length > 1 ? queue.shift()! : queue[0]!;
     return next;
@@ -76,6 +90,11 @@ function commandPicker(): string {
 
 function idleWithConfirmation(model: string, effort: string): string {
   return `${fixture("codex--v0154-statusline-single-idle.txt")}\n• Model changed to ${model} ${effort}.`;
+}
+
+function splitStatusline(text: string, model = "gpt-5.6-sol", effort = "high"): string {
+  const marker = text.lastIndexOf(model);
+  return marker < 0 ? text : `${text.slice(0, marker)}${model} · ${effort}${text.slice(marker + model.length)}`;
 }
 
 function args(preset?: CodexModelTarget) {
@@ -113,6 +132,110 @@ describe("runCodexModelSwitch", () => {
     expect(intentKinds()).toEqual([]);
   });
 
+  it("matches a split model and effort statusline after a direct commit", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    const final = splitStatusline(idle);
+    const progress: CodexModelSwitchProgress[] = [];
+    script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), fixture("codex--v0154-picker-effort.txt").replace("gpt-6-astra", "gpt-5.6-sol"), final);
+
+    await expect(runCodexModelSwitch({
+      ...args({ model: "gpt-5.6-sol", effort: "high" }),
+      onProgress: (value) => {
+        progress.push(value);
+      },
+    })).resolves.toEqual({ status: "switched" });
+    expect(progress.map(({ stage }) => stage)).toEqual(["model", "effort", "verifying"]);
+    expect(progress[0]?.text).toContain("Select Model");
+    expect(progress[1]?.text).toContain("Select Reasoning Level");
+  });
+
+  it("reports every visible native stage before the next action", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    const effort = fixture("codex--v0154-picker-effort.txt").replace("gpt-6-astra", "gpt-5.6-luna");
+    const progress: CodexModelSwitchProgress[] = [];
+    script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), effort, fixture("codex--v0154-picker-advanced.txt"), fixture("codex--v0154-picker-scope.txt"));
+
+    await expect(runCodexModelSwitch({
+      ...args({ model: "gpt-5.6-luna", effort: "max" }),
+      onProgress: async (value) => {
+        progress.push(value);
+      },
+    })).resolves.toEqual({ status: "scope-required" });
+    expect(progress.map(({ stage }) => stage)).toEqual(["model", "effort", "advanced", "scope"]);
+    expect(progress.every(({ picker, text, revision }) => picker !== undefined && text?.length && revision === 0)).toBe(true);
+    expect(progress.at(-1)?.scope).toBe("global-plan");
+  });
+
+  it("stops before choosing the next stage when progress is cancelled", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    const controller = new AbortController();
+    const stages: string[] = [];
+    script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), fixture("codex--v0154-picker-effort.txt"));
+
+    await expect(runCodexModelSwitch({
+      ...args({ model: "gpt-6-astra", effort: "xhigh" }),
+      signal: controller.signal,
+      onProgress: ({ stage }) => {
+        stages.push(stage);
+        if (stage === "effort") controller.abort();
+      },
+    })).resolves.toEqual({ status: "cancelled" });
+    expect(stages).toEqual(["model", "effort"]);
+    expect(intentKinds()).toEqual(["choose"]);
+  });
+
+  it("fails closed when the expected Codex session changes before typing /model", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    scriptPanes(
+      { text: idle, codexSessionKey: "session-a" },
+      { text: idle, codexSessionKey: "session-b" },
+    );
+
+    await expect(runCodexModelSwitch({
+      ...args({ model: "gpt-6-astra", effort: "xhigh" }),
+      codexSessionKey: "session-a",
+    })).resolves.toEqual({ status: "changed" });
+    expect(mockSendReply).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the expected Codex session changes between picker stages", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    scriptPanes(
+      { text: idle, codexSessionKey: "session-a" },
+      { text: idle, codexSessionKey: "session-a" },
+      { text: idle, codexSessionKey: "session-a" },
+      { text: commandPicker(), codexSessionKey: "session-a" },
+      { text: fixture("codex--v0154-picker-model.txt"), codexSessionKey: "session-a" },
+      { text: fixture("codex--v0154-picker-model.txt"), codexSessionKey: "session-a" },
+      { text: fixture("codex--v0154-picker-effort.txt"), codexSessionKey: "session-b" },
+    );
+
+    await expect(runCodexModelSwitch({
+      ...args({ model: "gpt-6-astra", effort: "xhigh" }),
+      codexSessionKey: "session-a",
+    })).resolves.toEqual({ status: "changed" });
+    expect(intentKinds()).toEqual(["choose"]);
+  });
+
+  it("does not treat a previously visible Model changed line as fresh confirmation", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    const stale = (text: string) => `• Model changed to gpt-6-astra Extra high.\n${text}`;
+    script(
+      idle,
+      idle,
+      idle,
+      commandPicker(),
+      stale(fixture("codex--v0154-picker-model.txt")),
+      fixture("codex--v0154-picker-effort.txt"),
+      stale(idle),
+    );
+
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
+      status: "unconfirmed",
+    });
+    expect(intentKinds()).toEqual(["choose", "choose"]);
+  });
+
   it.each([
     ["gpt-6-astra", "xhigh", "codex--v0154-picker-scope.txt"],
     ["gpt-5.6-luna", "max", "codex--v0154-picker-advanced.txt"],
@@ -130,11 +253,11 @@ describe("runCodexModelSwitch", () => {
     script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), ...stages, final);
 
     const outcome = await runCodexModelSwitch(args({ model, effort }));
-    expect(outcome).toEqual({ status: "switched" });
+    expect(outcome).toEqual({ status: "scope-required" });
     expect(lastStage).toContain("picker");
     expect(intentKinds()).toEqual(stages.length === 2
-      ? ["choose", "choose", "choose"]
-      : ["choose", "choose", "choose", "choose"]);
+      ? ["choose", "choose"]
+      : ["choose", "choose", "choose"]);
   });
 
   it("does not accept an effort picker for a different model", async () => {
@@ -168,9 +291,9 @@ describe("runCodexModelSwitch", () => {
     );
 
     await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
-      status: "switched",
+      status: "scope-required",
     });
-    expect(intentKinds()).toEqual(["navigate", "choose", "choose", "choose"]);
+    expect(intentKinds()).toEqual(["navigate", "choose", "choose"]);
   });
 
   it("reverses at a clamped list edge to find a model above the initial window", async () => {
@@ -191,9 +314,9 @@ describe("runCodexModelSwitch", () => {
     );
 
     await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
-      status: "switched",
+      status: "scope-required",
     });
-    expect(intentKinds()).toEqual(["navigate", "navigate", "choose", "choose", "choose"]);
+    expect(intentKinds()).toEqual(["navigate", "navigate", "choose", "choose"]);
   });
 
   it("reports missing models and unsupported effort without fallback writes", async () => {
@@ -257,7 +380,7 @@ describe("runCodexModelSwitch", () => {
     const final = idleWithConfirmation("gpt-6-astra", "Extra high");
     script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), fixture("codex--v0154-picker-effort.txt"), fixture("codex--v0154-picker-scope.txt"), final);
 
-    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({ status: "switched" });
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({ status: "scope-required" });
   });
 
   it("strips both native current and default suffixes from an effort row", async () => {
@@ -266,8 +389,8 @@ describe("runCodexModelSwitch", () => {
     const final = idleWithConfirmation("gpt-6-astra", "medium");
     script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"), effort, fixture("codex--v0154-picker-scope.txt"), final);
 
-    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "medium" }))).resolves.toEqual({ status: "switched" });
-    expect(intentKinds()).toEqual(["choose", "choose", "choose"]);
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "medium" }))).resolves.toEqual({ status: "scope-required" });
+    expect(intentKinds()).toEqual(["choose", "choose"]);
   });
 
   it("rechecks the composer after the preflight read before opening /model", async () => {

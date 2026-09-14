@@ -558,6 +558,8 @@ export interface UpdateStatus {
 
 /** GET /api/pane/:id — recent terminal output for one agent (ANSI/SGR, rendered colored). */
 export interface PaneReadResponse {
+  /** Stable opaque key for a live Codex session; the native reference never leaves the bridge. */
+  codexSessionKey?: string;
   /** Optional, persisted model/effort of this pane's exact active journal session. */
   sessionModel?: SessionModel;
   paneId: string;

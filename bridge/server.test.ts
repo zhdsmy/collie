@@ -12,6 +12,7 @@ import {
   BUILD_HEADER,
   cacheControlFor,
   checkAccess,
+  codexSessionKeyFor,
   launch,
   marksPaneSeen,
   SEEN_HEADER,
@@ -811,6 +812,24 @@ describe("paneReadResponse — pane read → REST body", () => {
       truncated: false,
       revision: 0,
     });
+  });
+});
+
+describe("codexSessionKeyFor — opaque pane session identity", () => {
+  const sessionId = "00112233-4455-6677-8899-aabbccddeeff";
+
+  test("hashes only a valid Codex id and is stable across id casing", () => {
+    const key = codexSessionKeyFor("codex", { kind: "id", value: sessionId });
+    expect(key).toMatch(/^codex-sha256:[0-9a-f]{64}$/);
+    expect(key).not.toContain(sessionId);
+    expect(codexSessionKeyFor("codex", { kind: "id", value: sessionId.toUpperCase() })).toBe(key);
+  });
+
+  test("does not expose other agents, path references, or malformed ids", () => {
+    expect(codexSessionKeyFor("claude", { kind: "id", value: sessionId })).toBeUndefined();
+    expect(codexSessionKeyFor("codex", { kind: "path", value: "/tmp/session.jsonl" })).toBeUndefined();
+    expect(codexSessionKeyFor("codex", { kind: "id", value: "session-id" })).toBeUndefined();
+    expect(codexSessionKeyFor(undefined, undefined)).toBeUndefined();
   });
 });
 

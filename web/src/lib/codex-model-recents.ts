@@ -7,39 +7,20 @@ import {
   type CodexReasoningEffort,
 } from "@/lib/harness/codex/model-field";
 
-// The RECENTLY-USED Codex models, per device — the pairs the operator has actually started a turn
-// with, most recent first. It is the replacement for the hand-edited preset list (`codex-model-
-// presets.ts`, deleted): a list you had to curate by hand recorded nothing about what you use, and
-// the one thing this has to get right is which combinations you reach for.
-//
-// ── WHY THERE IS NO ADD-ONE-BY-HAND ROW ──────────────────────────────────────
-// That is the first thing to want back, so here is the whole argument. A hand-written row is a claim
-// about a model that has not run, and Codex is the only thing that can honour it: a name it does not
-// serve comes back `unsupported-model` from a driver that has to walk a native picker to find out.
-// The list's job is the opposite — it holds pairs that are PROVEN to work, each one having already
-// carried a reply, which is what makes a single tap on it safe. The cost this buys is real and
-// accepted: a private, non-`gpt-*` model id can no longer be taught to Collie, because a statusline
-// only starts being read as a model field once the id is known (`knownModels`, derived from this
-// list). Anyone who needs that back should re-add a teaching path, not a free-text row.
-//
-// ORDER IS THE ONLY DATUM. The pair `(model, effort)` is the identity — the old list's generated
-// `id` was already redundant, because its own validator refused two rows with the same pair. There is
-// no timestamp either: nothing displays one, nothing prunes by one, and a field nothing reads is a
-// field that would only invite a redundant write.
-//
-// Module-scoped `useSyncExternalStore`, no provider — the shape the store it replaces used, and the
-// same one `lib/i18n/index.ts` uses: several readers agree without prop-drilling, and it survives the
-// router unmounting.
-
-/** How many pairs this device remembers. Older ones fall off the end. */
+/** How many pairs each Codex session remembers. Older ones fall off the end. */
 export const CODEX_MODEL_RECENTS_MAX = 8;
 
+/** Retained for migration visibility; v2 deliberately never reads this global list. */
 export const CODEX_MODEL_RECENTS_STORAGE_KEY = "collie:codex-model-recents:v1";
+export const CODEX_MODEL_RECENTS_STORAGE_PREFIX = "collie:codex-model-recents:v2:";
 
-const listeners = new Set<() => void>();
+const EMPTY_RECENTS: readonly CodexModelTarget[] = Object.freeze([]);
+const stores = new Map<string, readonly CodexModelTarget[]>();
+const listeners = new Map<string, Set<() => void>>();
 
-/** The whole store. Frozen, and replaced only when it actually changes, so a snapshot stays stable. */
-let recents: readonly CodexModelTarget[] = parse(readStored());
+export function codexModelRecentsStorageKey(codexSessionKey: string): string {
+  return `${CODEX_MODEL_RECENTS_STORAGE_PREFIX}${codexSessionKey}`;
+}
 
 function freezeRecents(next: readonly CodexModelTarget[]): readonly CodexModelTarget[] {
   return Object.freeze(next.map((entry) => Object.freeze({ ...entry })));
@@ -47,6 +28,10 @@ function freezeRecents(next: readonly CodexModelTarget[]): readonly CodexModelTa
 
 function samePair(a: CodexModelTarget, b: CodexModelTarget): boolean {
   return a.model === b.model && a.effort === b.effort;
+}
+
+function validSessionKey(key: string | undefined): key is string {
+  return key !== undefined && key.length > 0 && key.length <= 128 && !/[\p{C}\s]/u.test(key);
 }
 
 function validModel(model: string): boolean {
@@ -65,112 +50,135 @@ function storage(): Storage | null {
   }
 }
 
-function readStored(): string | null {
+function readStored(codexSessionKey: string): string | null {
   try {
-    return storage()?.getItem(CODEX_MODEL_RECENTS_STORAGE_KEY) ?? null;
+    return storage()?.getItem(codexModelRecentsStorageKey(codexSessionKey)) ?? null;
   } catch {
     return null;
   }
 }
 
-function write(next: readonly CodexModelTarget[]): void {
+function write(codexSessionKey: string, next: readonly CodexModelTarget[]): void {
   try {
-    storage()?.setItem(CODEX_MODEL_RECENTS_STORAGE_KEY, JSON.stringify(next));
+    storage()?.setItem(codexModelRecentsStorageKey(codexSessionKey), JSON.stringify(next));
   } catch {
-    // Private mode, a quota, no storage at all: this session still works, it just will not persist.
-    // The old store surfaced a boolean here because its editor had a "couldn't save" alert; nothing
-    // in this one can report a failure the operator could act on.
+    // Private mode, a quota, or no storage: the current page still keeps its list in memory.
   }
 }
 
-/**
- * The stored list, or `[]` for anything that is not one — an absent key, a corrupt payload, a hand
- * edit. All-or-nothing per entry, like the store this replaces: salvaging the good rows out of a
- * blob somebody has been editing would quietly resurrect a list nobody wrote.
- *
- * An over-long list is the one thing TRUNCATED rather than discarded. It is not corrupt, it is stale,
- * and cutting it reuses the same bound a live `record` applies.
- */
+/** Parse one session's entry without salvaging partially corrupt rows. */
 function parse(raw: string | null): readonly CodexModelTarget[] {
-  if (raw === null) return [];
+  if (raw === null) return EMPTY_RECENTS;
   const value = parseJson(raw);
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) return EMPTY_RECENTS;
   const kept: CodexModelTarget[] = [];
   const seen = new Set<string>();
   for (const item of value) {
     const row = asJsonObject(item);
-    if (row === undefined) return [];
+    if (row === undefined) return EMPTY_RECENTS;
     const model = asJsonString(row.model);
-    const effortText = asJsonString(row.effort);
-    if (model === undefined || !validModel(model)) return [];
-    if (effortText === undefined || !validEffort(effortText)) return [];
-    const key = `${model} ${effortText}`;
-    if (seen.has(key)) return [];
+    const effort = asJsonString(row.effort);
+    if (model === undefined || !validModel(model) || effort === undefined || !validEffort(effort)) {
+      return EMPTY_RECENTS;
+    }
+    const pair = { model, effort };
+    const key = `${model} ${effort}`;
+    if (seen.has(key)) return EMPTY_RECENTS;
     seen.add(key);
-    kept.push({ model, effort: effortText });
+    kept.push(pair);
   }
   return freezeRecents(kept.slice(0, CODEX_MODEL_RECENTS_MAX));
+}
+
+function ensureLoaded(codexSessionKey: string): readonly CodexModelTarget[] {
+  const current = stores.get(codexSessionKey);
+  if (current !== undefined) return current;
+  const loaded = parse(readStored(codexSessionKey));
+  stores.set(codexSessionKey, loaded);
+  return loaded;
 }
 
 function sameRecents(a: readonly CodexModelTarget[], b: readonly CodexModelTarget[]): boolean {
   return a.length === b.length && a.every((entry, index) => samePair(entry, b[index]!));
 }
 
-function setRecents(next: readonly CodexModelTarget[], persist = true): void {
-  if (sameRecents(recents, next)) return;
-  recents = next;
-  if (persist) write(next);
-  for (const listener of listeners) listener();
+function notify(codexSessionKey: string): void {
+  for (const listener of listeners.get(codexSessionKey) ?? []) listener();
+}
+
+function setRecents(
+  codexSessionKey: string | undefined,
+  next: readonly CodexModelTarget[],
+  persist = true,
+): void {
+  if (!validSessionKey(codexSessionKey)) return;
+  const current = ensureLoaded(codexSessionKey);
+  if (sameRecents(current, next)) return;
+  stores.set(codexSessionKey, next);
+  if (persist) write(codexSessionKey, next);
+  notify(codexSessionKey);
 }
 
 function onStorage(event: StorageEvent): void {
-  if (event.key !== CODEX_MODEL_RECENTS_STORAGE_KEY) return;
-  // A removed key is another tab clearing the history, or a fresh installation; either way this tab
-  // follows it to empty rather than holding a list the storage no longer has.
-  // Storage events are already the persisted value from another document. Writing it back here
-  // would bounce the same event between tabs indefinitely.
-  setRecents(parse(event.newValue), false);
+  if (event.key === null) {
+    for (const key of stores.keys()) setRecents(key, EMPTY_RECENTS, false);
+    return;
+  }
+  if (!event.key.startsWith(CODEX_MODEL_RECENTS_STORAGE_PREFIX)) return;
+  const key = event.key.slice(CODEX_MODEL_RECENTS_STORAGE_PREFIX.length);
+  // Do not let arbitrary storage events grow this map. A later hook mount reads the current value.
+  if (!validSessionKey(key) || !stores.has(key)) return;
+  setRecents(key, parse(event.newValue), false);
 }
 
 globalThis.addEventListener?.("storage", onStorage);
 
-function subscribe(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+function subscribe(codexSessionKey: string | undefined, listener: () => void): () => void {
+  if (!validSessionKey(codexSessionKey)) return () => undefined;
+  const keyListeners = listeners.get(codexSessionKey) ?? new Set<() => void>();
+  keyListeners.add(listener);
+  listeners.set(codexSessionKey, keyListeners);
+  return () => {
+    keyListeners.delete(listener);
+    if (keyListeners.size === 0) listeners.delete(codexSessionKey);
+  };
 }
 
-/** The array itself is the snapshot: frozen, and replaced only when it actually changes. */
-function getSnapshot(): readonly CodexModelTarget[] {
-  return recents;
+function getSnapshot(codexSessionKey: string | undefined): readonly CodexModelTarget[] {
+  return validSessionKey(codexSessionKey) ? ensureLoaded(codexSessionKey) : EMPTY_RECENTS;
 }
 
-/**
- * Move a pair to the front, or add it there.
- *
- * A pair already AT THE FRONT is a no-op that touches nothing — no state, no notify, no write. That
- * guard is load-bearing rather than tidy: the caller records on every verified send, and a redundant
- * write per send is a `localStorage` write per send.
- */
-export function recordRecent(model: string, effort: CodexReasoningEffort): void {
-  if (!validModel(model) || !validEffort(effort)) return;
-  const head = recents[0];
+export function recordRecent(
+  codexSessionKey: string | undefined,
+  model: string,
+  effort: CodexReasoningEffort,
+): void {
+  if (!validSessionKey(codexSessionKey) || !validModel(model) || !validEffort(effort)) return;
+  const current = ensureLoaded(codexSessionKey);
+  const head = current[0];
   if (head !== undefined && head.model === model && head.effort === effort) return;
   const pair = { model, effort };
-  const rest = recents.filter((entry) => !samePair(entry, pair));
-  setRecents(freezeRecents([pair, ...rest].slice(0, CODEX_MODEL_RECENTS_MAX)));
+  const rest = current.filter((entry) => !samePair(entry, pair));
+  setRecents(codexSessionKey, freezeRecents([pair, ...rest].slice(0, CODEX_MODEL_RECENTS_MAX)));
 }
 
-export function removeRecent(model: string, effort: CodexReasoningEffort): void {
+export function removeRecent(
+  codexSessionKey: string | undefined,
+  model: string,
+  effort: CodexReasoningEffort,
+): void {
+  if (!validSessionKey(codexSessionKey)) return;
+  const current = ensureLoaded(codexSessionKey);
   const pair = { model, effort };
-  const next = recents.filter((entry) => !samePair(entry, pair));
-  // Pairs are unique, so a shorter list is the only way this removed anything.
-  if (next.length === recents.length) return;
-  setRecents(freezeRecents(next));
+  const next = current.filter((entry) => !samePair(entry, pair));
+  if (next.length === current.length) return;
+  setRecents(codexSessionKey, freezeRecents(next));
 }
 
-export function clearRecents(): void {
-  if (recents.length === 0) return;
-  setRecents(freezeRecents([]));
+export function clearRecents(codexSessionKey: string | undefined): void {
+  if (!validSessionKey(codexSessionKey)) return;
+  if (ensureLoaded(codexSessionKey).length === 0) return;
+  setRecents(codexSessionKey, EMPTY_RECENTS);
 }
 
 export interface UseCodexModelRecentsReturn {
@@ -180,23 +188,29 @@ export interface UseCodexModelRecentsReturn {
   clear: () => void;
 }
 
-export function useCodexModelRecents(): UseCodexModelRecentsReturn {
-  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+export function useCodexModelRecents(codexSessionKey: string | undefined): UseCodexModelRecentsReturn {
+  const snapshot = useSyncExternalStore(
+    (listener) => subscribe(codexSessionKey, listener),
+    () => getSnapshot(codexSessionKey),
+    () => EMPTY_RECENTS,
+  );
   return {
     recents: snapshot,
-    record: recordRecent,
-    remove: removeRecent,
-    clear: clearRecents,
+    record: (model, effort) => recordRecent(codexSessionKey, model, effort),
+    remove: (model, effort) => removeRecent(codexSessionKey, model, effort),
+    clear: () => clearRecents(codexSessionKey),
   };
 }
 
-/** Test seam for the module-scoped store. */
+/** Test seam; only clears session keys loaded by this module, never the legacy v1 entry. */
 export function __resetCodexModelRecents(): void {
-  recents = freezeRecents([]);
+  const keys = new Set([...stores.keys(), ...listeners.keys()]);
   try {
-    storage()?.removeItem(CODEX_MODEL_RECENTS_STORAGE_KEY);
+    const store = storage();
+    for (const key of keys) store?.removeItem(codexModelRecentsStorageKey(key));
   } catch {
     // Ignore test-environment/private-mode storage failures.
   }
-  for (const listener of listeners) listener();
+  stores.clear();
+  for (const key of keys) notify(key);
 }

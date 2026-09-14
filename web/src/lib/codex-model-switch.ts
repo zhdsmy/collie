@@ -5,7 +5,7 @@ import { blockOwnsKeyboard } from "./harness/dialog-contract";
 import { codexAdapter } from "./harness/codex";
 import { defaultSleep, POLL_ATTEMPTS, POLL_DELAY_MS, type ActionResult, type Sleep } from "./harness/guard";
 import { splitLines, lineText } from "./blocks";
-import { parseCodexModelField } from "./harness/codex/model-field";
+import { parseCodexStatuslineField } from "./harness/codex/model-field";
 import {
   acquirePaneAction,
   releasePaneAction,
@@ -16,6 +16,7 @@ import { sendGuardedReply, type ReplyOutcome } from "./reply-action";
 import type { CodexModelTarget, CodexReasoningEffort } from "./harness/codex/model-field";
 import type { PickerModel } from "./harness/picker-model";
 import type { Scope } from "./scope";
+import type { PaneReadResponse } from "./types";
 
 export type CodexModelSwitchStatus =
   | "switched"
@@ -24,6 +25,7 @@ export type CodexModelSwitchStatus =
   | "blocked"
   | "unsupported-model"
   | "unsupported-effort"
+  | "scope-required"
   | "changed"
   | "unconfirmed"
   | "error";
@@ -33,10 +35,23 @@ export interface CodexModelSwitchArgs {
   scope?: Scope;
   requestedLines: number;
   preset?: CodexModelTarget;
+  /** Expected Codex session identity; a changed or missing key fails closed. */
+  codexSessionKey?: string;
   signal: AbortSignal;
   /** Test seam for bounded native TUI polling. */
   sleep?: Sleep;
+  /** Reports native stages before the driver sends the next action. */
+  onProgress?: (progress: CodexModelSwitchProgress) => void | Promise<void>;
 }
+
+export type CodexModelSwitchProgress = {
+  stage: "model" | "effort" | "advanced" | "scope" | "verifying";
+  picker?: PickerModel;
+  /** Raw pane snapshot that produced the picker, for rendering the native screen. */
+  text?: string;
+  revision?: number;
+  scope?: "global-plan";
+};
 
 export interface CodexModelSwitchResult {
   status: CodexModelSwitchStatus;
@@ -54,6 +69,10 @@ interface FreshPane {
   revision: number;
   lines: ReturnType<typeof splitLines>;
 }
+
+type PickerReadResult = PickerRead | CodexModelSwitchResult | null;
+
+const SESSION_CHANGED_ERROR = "codex session changed";
 
 const MODEL_TITLE = /^Select Model(?: and Effort)?$/;
 const EFFORT_TITLE = /^Select Reasoning Level for (.+)$/;
@@ -99,23 +118,94 @@ function modelField(lines: ReturnType<typeof splitLines>, model: string): { mode
   for (const row of statusLines) {
     const text = lineText(row).trim();
     const parts = text.split(/\s+·\s+/);
-    for (const field of [text, ...parts]) {
-      const parsed = parseCodexModelField(field, [model]);
+    for (let index = 0; index < parts.length; index++) {
+      const parsed = parseCodexStatuslineField(parts[index]!, parts[index + 1], [model]);
       if (parsed?.model === model) return parsed;
     }
   }
   return null;
 }
 
-function freshConfirmation(beforeText: string, afterText: string, preset: CodexModelTarget): boolean {
-  if (beforeText === afterText) return false;
+function sessionMatches(args: CodexModelSwitchArgs, read: PaneReadResponse): boolean {
+  return args.codexSessionKey === undefined || read.codexSessionKey === args.codexSessionKey;
+}
+
+async function reportProgress(
+  args: CodexModelSwitchArgs,
+  progress: CodexModelSwitchProgress,
+): Promise<CodexModelSwitchResult | null> {
+  if (isCancelled(args.signal)) return result("cancelled");
+  try {
+    await args.onProgress?.(progress);
+  } catch (error) {
+    return isCancelled(args.signal) ? result("cancelled") : result("error", describeThrownError(error));
+  }
+  return isCancelled(args.signal) ? result("cancelled") : null;
+}
+
+async function reportPickerProgress(
+  args: CodexModelSwitchArgs,
+  read: PickerRead,
+): Promise<CodexModelSwitchResult | null> {
+  if (isModelPicker(read.model)) {
+    return reportProgress(args, {
+      stage: "model",
+      picker: read.model,
+      text: read.text,
+      revision: read.revision,
+    });
+  }
+  if (isEffortPicker(read.model)) {
+    return reportProgress(args, {
+      stage: "effort",
+      picker: read.model,
+      text: read.text,
+      revision: read.revision,
+    });
+  }
+  if (isAdvancedPicker(read.model)) {
+    return reportProgress(args, {
+      stage: "advanced",
+      picker: read.model,
+      text: read.text,
+      revision: read.revision,
+    });
+  }
+  if (isScopePicker(read.model)) {
+    return reportProgress(args, {
+      stage: "scope",
+      picker: read.model,
+      scope: "global-plan",
+      text: read.text,
+      revision: read.revision,
+    });
+  }
+  return null;
+}
+
+function confirmationPattern(preset: CodexModelTarget): RegExp {
   const model = preset.model.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const effort = preset.effort === "xhigh"
     ? "(?:xhigh|extra\\s+high)"
     : preset.effort.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = new RegExp(`\\bModel changed(?: to)?\\s+${model}\\s+${effort}(?:\\s+for Plan mode)?[.!]?\\s*$`, "i");
-  const count = (text: string): number => splitLines(parseAnsi(text)).filter((line) => pattern.test(lineText(line).trim())).length;
-  return count(afterText) > count(beforeText);
+  return new RegExp(`\\bModel changed(?: to)?\\s+${model}\\s+${effort}(?:\\s+for Plan mode)?[.!]?\\s*$`, "i");
+}
+
+function confirmationLines(text: string, preset: CodexModelTarget): string[] {
+  const pattern = confirmationPattern(preset);
+  return splitLines(parseAnsi(text))
+    .map((line) => lineText(line).trim())
+    .filter((line) => pattern.test(line));
+}
+
+function freshConfirmation(
+  beforeText: string,
+  afterText: string,
+  preset: CodexModelTarget,
+  alreadySeen: ReadonlySet<string> = new Set(confirmationLines(beforeText, preset)),
+): boolean {
+  if (beforeText === afterText) return false;
+  return confirmationLines(afterText, preset).some((line) => !alreadySeen.has(line));
 }
 
 function statusMatches(text: string, preset: CodexModelTarget): boolean {
@@ -136,6 +226,7 @@ function mapReply(outcome: ReplyOutcome, signal: AbortSignal): CodexModelSwitchR
   if (isCancelled(signal)) return result("cancelled");
   if (outcome.status === "sent") return null;
   if (outcome.status === "blocked") return result("blocked", outcome.error);
+  if (outcome.status === "error" && outcome.error === SESSION_CHANGED_ERROR) return result("changed");
   if (outcome.status === "error") return result("error", outcome.error);
   return result("unconfirmed", outcome.error);
 }
@@ -167,6 +258,7 @@ async function readFreshPane(args: CodexModelSwitchArgs): Promise<FreshPane | Co
     return isCancelled(args.signal) ? result("cancelled") : result("error", describeThrownError(error));
   }
   if (isCancelled(args.signal)) return result("cancelled");
+  if (!sessionMatches(args, read)) return result("changed");
   const lines = splitLines(parseAnsi(read.text));
   if (!codexAdapter.composerReady?.(lines)) return result("blocked");
   if (codexAdapter.extractInputDraft(lines) !== null) return result("blocked");
@@ -174,11 +266,12 @@ async function readFreshPane(args: CodexModelSwitchArgs): Promise<FreshPane | Co
   return { text: read.text, revision: read.revision, lines };
 }
 
-async function readPicker(args: CodexModelSwitchArgs): Promise<PickerRead | null> {
+async function readPicker(args: CodexModelSwitchArgs): Promise<PickerReadResult> {
   if (isCancelled(args.signal)) return null;
   try {
     const read = await fetchPane(args.paneId, args.requestedLines, args.scope, args.signal);
     if (isCancelled(args.signal)) return null;
+    if (!sessionMatches(args, read)) return result("changed");
     const model = detectPicker(read.text);
     return model ? { model, revision: read.revision, text: read.text } : null;
   } catch {
@@ -189,14 +282,19 @@ async function readPicker(args: CodexModelSwitchArgs): Promise<PickerRead | null
 async function waitForPicker(
   args: CodexModelSwitchArgs,
   accept: (model: PickerModel) => boolean,
-): Promise<PickerRead | null> {
+  onObserved?: (read: PickerRead) => void,
+): Promise<PickerReadResult> {
   const sleep = args.sleep ?? defaultSleep;
   for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
     if (isCancelled(args.signal)) return null;
     if (attempt > 0) await sleep(POLL_DELAY_MS);
     if (isCancelled(args.signal)) return null;
     const read = await readPicker(args);
-    if (read && accept(read.model)) return read;
+    if (read !== null && "status" in read) return read;
+    if (read) {
+      onObserved?.(read);
+      if (accept(read.model)) return read;
+    }
   }
   return null;
 }
@@ -228,6 +326,13 @@ async function pickerAction(
   intent: Parameters<typeof submitPickerIntent>[0]["intent"],
 ): Promise<CodexModelSwitchResult | null> {
   if (isCancelled(args.signal)) return result("cancelled");
+  // A visible stage may have been held for the UI. Recheck its session after that pause,
+  // before handing off to the picker's revision/shape guard.
+  if (args.codexSessionKey !== undefined) {
+    const current = await readPicker(args);
+    if (!current) return isCancelled(args.signal) ? result("cancelled") : result("changed");
+    if ("status" in current) return current;
+  }
   const action = await submitPickerIntent(pickerArgs(args, owner, read, intent));
   return mapPickerAction(action, args.signal);
 }
@@ -246,6 +351,7 @@ async function locateModel(
   owner: PaneActionOwner,
   initial: PickerRead,
   preset: CodexModelTarget,
+  onObserved?: (text: string) => void,
 ): Promise<PickerRead | CodexModelSwitchResult> {
   let current = initial;
   let direction: "up" | "down" = "down";
@@ -261,8 +367,9 @@ async function locateModel(
     seen.add(fingerprint);
     const navigated = await pickerAction(args, owner, current, { kind: "navigate", direction });
     if (navigated) return navigated;
-    const next = await waitForPicker(args, (model) => isModelPicker(model));
+    const next = await waitForPicker(args, (model) => isModelPicker(model), (read) => onObserved?.(read.text));
     if (!next) return isCancelled(args.signal) ? result("cancelled") : result("changed");
+    if ("status" in next) return next;
     if (next.model.signature === fingerprint) {
       if (reversed) return result("unsupported-model");
       direction = "up";
@@ -293,15 +400,16 @@ function advancedOption(model: PickerModel, effort: CodexReasoningEffort): strin
   return model.options.find((option) => stripNativeSuffix(option.label).toLowerCase() === effort)?.id ?? null;
 }
 
-function globalPlanOption(model: PickerModel): string | null {
-  return model.options.find((option) => /^apply(?: to)? global default\b/i.test(stripNativeSuffix(option.label)))?.id ?? null;
-}
-
 async function finishAndVerify(
   args: CodexModelSwitchArgs,
   baselineText: string,
   preset: CodexModelTarget,
+  alreadySeen: ReadonlySet<string> = new Set(confirmationLines(baselineText, preset)),
 ): Promise<CodexModelSwitchResult> {
+  const progress = await reportProgress(args, {
+    stage: "verifying",
+  });
+  if (progress) return progress;
   const sleep = args.sleep ?? defaultSleep;
   for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
     if (isCancelled(args.signal)) return result("cancelled");
@@ -310,13 +418,14 @@ async function finishAndVerify(
     try {
       const read = await fetchPane(args.paneId, args.requestedLines, args.scope, args.signal);
       if (isCancelled(args.signal)) return result("cancelled");
+      if (!sessionMatches(args, read)) return result("changed");
       const picker = detectPicker(read.text);
       if (picker !== null) {
         // A successor picker is handled by the caller; any leftover picker means the final key did
         // not commit, so never report success just because the command output changed.
         continue;
       }
-      if (statusMatches(read.text, preset) || freshConfirmation(baselineText, read.text, preset)) {
+      if (statusMatches(read.text, preset) || freshConfirmation(baselineText, read.text, preset, alreadySeen)) {
         return result("switched");
       }
     } catch {
@@ -332,6 +441,11 @@ async function drive(
   fresh: FreshPane,
 ): Promise<CodexModelSwitchResult> {
   if (args.preset && statusMatches(fresh.text, args.preset)) return result("switched");
+  const alreadySeen = new Set<string>(args.preset ? confirmationLines(fresh.text, args.preset) : []);
+  const rememberConfirmation = (text: string): void => {
+    if (!args.preset) return;
+    for (const line of confirmationLines(text, args.preset)) alreadySeen.add(line);
+  };
   const opened = await sendGuardedReply({
     paneId: args.paneId,
     text: "/model",
@@ -344,17 +458,21 @@ async function drive(
     onComposerSeen: async () => {
       const read = await readFreshPane(args);
       return "status" in read
-        ? { ok: false, error: read.error ?? "Codex composer changed before the model picker opened." }
+        ? { ok: false, error: read.status === "changed" ? SESSION_CHANGED_ERROR : read.error ?? "Codex composer changed before the model picker opened." }
         : { ok: true, keysSent: false };
     },
   });
   const openResult = mapReply(opened, args.signal);
   if (openResult) return openResult;
-  const modelPicker = await waitForPicker(args, isModelPicker);
+  const modelPicker = await waitForPicker(args, isModelPicker, (read) => rememberConfirmation(read.text));
   if (!modelPicker) return isCancelled(args.signal) ? result("cancelled") : result("unconfirmed");
+  if ("status" in modelPicker) return modelPicker;
+  rememberConfirmation(modelPicker.text);
+  const modelProgress = await reportPickerProgress(args, modelPicker);
+  if (modelProgress) return modelProgress;
   if (!args.preset) return result("opened");
 
-  const modelRead = await locateModel(args, owner, modelPicker, args.preset);
+  const modelRead = await locateModel(args, owner, modelPicker, args.preset, rememberConfirmation);
   if ("status" in modelRead) return modelRead;
   const modelOption = modelRead.model.options.find((option) => stripNativeSuffix(option.label) === args.preset!.model);
   if (!modelOption) return result("unsupported-model");
@@ -364,8 +482,12 @@ async function drive(
   const next = await waitForPicker(
     args,
     (model) => isEffortPickerFor(model, args.preset!.model) || isAdvancedPicker(model) || isScopePicker(model),
+    (read) => rememberConfirmation(read.text),
   );
-  if (!next) return isCancelled(args.signal) ? result("cancelled") : await finishAndVerify(args, fresh.text, args.preset);
+  if (!next) return isCancelled(args.signal) ? result("cancelled") : await finishAndVerify(args, fresh.text, args.preset, alreadySeen);
+  if ("status" in next) return next;
+  const nextProgress = await reportPickerProgress(args, next);
+  if (nextProgress) return nextProgress;
 
   let stage = next;
   if (isEffortPickerFor(stage.model, args.preset.model)) {
@@ -373,8 +495,18 @@ async function drive(
     if (!effort) return result("unsupported-effort");
     const choseEffort = await chooseVisible(args, owner, stage, effort.id);
     if (choseEffort) return choseEffort;
-    stage = (await waitForPicker(args, (model) => isAdvancedPicker(model) || isScopePicker(model))) ?? stage;
-    if (isEffortPickerFor(stage.model, args.preset.model)) return await finishAndVerify(args, fresh.text, args.preset);
+    const nextStage = await waitForPicker(
+      args,
+      (model) => isAdvancedPicker(model) || isScopePicker(model),
+      (read) => rememberConfirmation(read.text),
+    );
+    if (nextStage !== null && "status" in nextStage) return nextStage;
+    if (nextStage !== null) {
+      const stageProgress = await reportPickerProgress(args, nextStage);
+      if (stageProgress) return stageProgress;
+      stage = nextStage;
+    }
+    if (isEffortPickerFor(stage.model, args.preset.model)) return await finishAndVerify(args, fresh.text, args.preset, alreadySeen);
   }
 
   if (isAdvancedPicker(stage.model)) {
@@ -383,18 +515,24 @@ async function drive(
     if (!id) return result("unsupported-effort");
     const choseAdvanced = await chooseVisible(args, owner, stage, id);
     if (choseAdvanced) return choseAdvanced;
-    stage = (await waitForPicker(args, isScopePicker)) ?? stage;
-    if (isAdvancedPicker(stage.model)) return await finishAndVerify(args, fresh.text, args.preset);
+    const nextStage = await waitForPicker(args, isScopePicker, (read) => rememberConfirmation(read.text));
+    if (nextStage !== null && "status" in nextStage) return nextStage;
+    if (nextStage !== null) {
+      const stageProgress = await reportPickerProgress(args, nextStage);
+      if (stageProgress) return stageProgress;
+      stage = nextStage;
+    }
+    if (isAdvancedPicker(stage.model)) return await finishAndVerify(args, fresh.text, args.preset, alreadySeen);
   }
 
   if (isScopePicker(stage.model)) {
-    const id = globalPlanOption(stage.model);
-    if (!id) return result("unsupported-effort");
-    const choseScope = await chooseVisible(args, owner, stage, id);
-    if (choseScope) return choseScope;
+    // Applying a reasoning level to the global default also changes Plan mode. Keep the native
+    // scope picker visible so the operator can make that explicit choice instead of silently
+    // widening a quick switch beyond the current session.
+    return result("scope-required");
   }
 
-  return finishAndVerify(args, fresh.text, args.preset);
+  return finishAndVerify(args, fresh.text, args.preset, alreadySeen);
 }
 
 /** Guarded native Codex `/model` flow. No preset only opens the native model picker. */

@@ -12,10 +12,17 @@ import type { AgentStatus } from "@/lib/types";
 import { runCodexModelSwitch } from "@/lib/codex-model-switch";
 import {
   __resetCodexModelRecents,
-  CODEX_MODEL_RECENTS_STORAGE_KEY,
-  recordRecent,
+  codexModelRecentsStorageKey,
+  recordRecent as recordSessionRecent,
 } from "@/lib/codex-model-recents";
 import { AgentChat } from "./agent-chat";
+import { codexAdapter } from "@/lib/harness/codex";
+import { parseAnsi } from "@/lib/ansi";
+import { splitLines } from "@/lib/blocks";
+
+const SESSION_KEY = "codex-session-a";
+const recordRecent = (model: string, effort: Parameters<typeof recordSessionRecent>[2]) =>
+  recordSessionRecent(SESSION_KEY, model, effort);
 
 vi.mock("@/lib/codex-model-switch", () => ({ runCodexModelSwitch: vi.fn() }));
 
@@ -41,7 +48,7 @@ function codexPaneWithDraft(draft: string): string {
 
 /** The history as it is on the device, compared as text so the assertion needs no cast. */
 function storedRaw(): string | null {
-  return localStorage.getItem(CODEX_MODEL_RECENTS_STORAGE_KEY);
+  return localStorage.getItem(codexModelRecentsStorageKey(SESSION_KEY));
 }
 
 function pairs(...entries: [string, string][]): string {
@@ -55,10 +62,10 @@ beforeEach(() => {
   if (!Element.prototype.scrollTo) Element.prototype.scrollTo = () => {};
 });
 
-function renderPane(status: AgentStatus = "idle", pane = idle) {
+function renderPane(status: AgentStatus = "idle", pane = idle, sessionKey: string | undefined = SESSION_KEY) {
   const agent = { ...fixtureAgents[0]!, agent: "codex", status };
   return render(<RouterProvider router={createMemoryRouter([{ path: "/", element: withHeaderHost(
-    <AgentChat paneId={agent.paneId} agent={agent} agents={[agent]} shellPanes={[]} tabs={[]} text={pane} onBack={vi.fn()} onSelect={vi.fn()} />,
+    <AgentChat paneId={agent.paneId} agent={agent} agents={[agent]} shellPanes={[]} tabs={[]} text={pane} codexSessionKey={sessionKey} onBack={vi.fn()} onSelect={vi.fn()} />,
   ) }])} />);
 }
 
@@ -76,6 +83,55 @@ it("keeps the model field openable when history is empty", async () => {
 
   expect(within(panel).getByText("No models used yet.")).toBeInTheDocument();
   expect(within(panel).getByRole("button", { name: "Choose model" })).toBeEnabled();
+});
+
+it("keeps another Codex session's recent models out of this pane", async () => {
+  recordRecent("gpt-5.6-luna", "max");
+  renderPane("idle", withLevel, "codex-session-b");
+  const panel = await openRecents(userEvent.setup());
+  expect(within(panel).getByText("No models used yet.")).toBeInTheDocument();
+  expect(within(panel).queryByRole("button", { name: "gpt-5.6-luna max" })).toBeNull();
+});
+
+it("shows both native stages beneath one mask and stops remaining actions", async () => {
+  const user = userEvent.setup();
+  vi.mocked(runCodexModelSwitch).mockImplementation(async ({ signal, onProgress }) => {
+    for (const stage of ["model", "effort"] as const) {
+      const text = readFileSync(join(process.cwd(), `src/fixtures/panes/codex--v0154-picker-${stage}.txt`), "utf8");
+      const block = codexAdapter.buildBlocks(splitLines(parseAnsi(text))).find((candidate) => candidate.kind === "picker");
+      if (block?.kind !== "picker") throw new Error("Missing native picker");
+      await onProgress?.({ stage, picker: block.picker, text, revision: 2 });
+      if (signal.aborted) return { status: "cancelled" };
+    }
+    return new Promise((resolve) => {
+      signal.addEventListener("abort", () => resolve({ status: "cancelled" }), { once: true });
+    });
+  });
+  recordRecent("gpt-5.6-luna", "max");
+  renderPane("idle", withLevel);
+  const panel = await openRecents(user);
+  await user.click(within(panel).getByRole("button", { name: "gpt-5.6-luna max" }));
+  const mask = screen.getByText("Switching model…").closest('[role="status"]')!;
+  expect(screen.getByRole("group", { name: "Select Model and Effort" }).closest("[inert]")).not.toBeNull();
+  expect(screen.getByText("Selecting model")).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByRole("group", { name: /Select Reasoning Level/ })).toBeInTheDocument());
+  expect(screen.getByText("Switching model…").closest('[role="status"]')).toBe(mask);
+  expect(screen.getByText("Selecting thinking level")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Stop" }));
+  await waitFor(() => expect(screen.queryByText("Switching model…")).toBeNull());
+  expect(screen.getByText("Switching stopped. Any changes already applied are kept.")).toBeInTheDocument();
+  expect(vi.mocked(runCodexModelSwitch).mock.calls[0]![0].signal.aborted).toBe(true);
+});
+
+it("leaves manual model selection interactive without the switching mask", async () => {
+  vi.mocked(runCodexModelSwitch).mockResolvedValue({ status: "opened" });
+  const user = userEvent.setup();
+  renderPane("idle", withLevel);
+  const panel = await openRecents(user);
+  await user.click(within(panel).getByRole("button", { name: "Choose model" }));
+  await waitFor(() => expect(runCodexModelSwitch).toHaveBeenCalledOnce());
+  expect(vi.mocked(runCodexModelSwitch).mock.calls[0]![0].onProgress).toBeUndefined();
+  expect(screen.queryByText("Switching model…")).toBeNull();
 });
 
 it("keeps the current pair visible and openable when it is the only recent", async () => {

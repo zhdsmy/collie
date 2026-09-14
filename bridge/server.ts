@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { extname, join, normalize, sep } from "node:path";
@@ -36,7 +37,8 @@ import {
 import type { StateEngine } from "./state-engine.ts";
 import { adapterFor, buildJournalRegistry } from "./journal/registry.ts";
 import { TranscriptStore } from "./journal/store.ts";
-import type { JournalAdapter } from "./journal/types.ts";
+import type { AgentSessionRef, JournalAdapter } from "./journal/types.ts";
+import { isCodexSessionId } from "./journal/codex.ts";
 import { isBlobHash, resolveBlobPath } from "./journal/pi.ts";
 import { statFile } from "./journal/files.ts";
 import {
@@ -169,6 +171,19 @@ export function isLoopbackPeer(address: string | null | undefined): boolean {
 }
 
 const PANE_ROUTE = /^\/api\/pane\/([^/]+)(?:\/(reply|keys|upload|close|rename|history|focus))?$/;
+
+const CODEX_SESSION_KEY_PREFIX = "codex-sha256:";
+
+/** Keep the native session reference server-side while giving the UI a stable opaque key. */
+export function codexSessionKeyFor(
+  agent: string | undefined,
+  ref: AgentSessionRef | undefined,
+): string | undefined {
+  if (agent !== "codex" || ref?.kind !== "id" || !isCodexSessionId(ref.value)) return undefined;
+  return `${CODEX_SESSION_KEY_PREFIX}${createHash("sha256")
+    .update(ref.value.toLowerCase(), "utf8")
+    .digest("hex")}`;
+}
 
 /**
  * A pairing claim's refusal, as an error code.
@@ -1980,6 +1995,8 @@ async function readPane(
     // Only the matching live agent's journal can name its model. Missing metadata never breaks
     // the terminal read, and disabled transcripts perform no filesystem lookup.
     const pane = engine.current().agents.find((a) => a.paneId === paneId);
+    const codexKey = codexSessionKeyFor(pane?.agent, pane?.agentSession);
+    if (codexKey !== undefined) data.codexSessionKey = codexKey;
     if (journals !== null && pane?.agentSession) {
       const adapter = adapterFor(journals, pane.agent);
       const model = await adapter?.sessionModel?.(pane.agentSession).catch(() => null);

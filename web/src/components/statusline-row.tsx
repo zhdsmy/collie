@@ -1,5 +1,5 @@
 import {
-  ArrowUp,
+  ChevronUp,
   CalendarDays,
   Clock,
   Database,
@@ -283,9 +283,9 @@ export function StatuslineRow({
                   )}
                 </span>
                 {/* Keep the arrow slot occupied so later status fields never jump as history changes. */}
-                <ArrowUp
+                <ChevronUp
                   aria-hidden="true"
-                  className={cn("size-3 shrink-0 transition-opacity", modelSwitchable ? "opacity-100" : "opacity-40")}
+                  className={cn("size-3 shrink-0 transition-[opacity,transform] motion-reduce:transition-none", modelExpanded && "rotate-180", modelSwitchable ? "opacity-100" : "opacity-40")}
                 />
               </Button>
               {parts[i + (joinEffort ? 4 : 2)]?.trim() && (

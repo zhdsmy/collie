@@ -1077,6 +1077,11 @@ reuse of the four-field one above, for two reasons that are both load-bearing:
 
 ### 9.1 Proxied reads (pane mirror, history)
 
+`GET /api/pane/:id` may include the additive-optional `codexSessionKey` field in its JSON body. It is
+an opaque, stable key derived by the owning bridge from a valid Codex session id; the native session
+reference and any filesystem path never cross the crew link. Older peers omit the field, and clients
+must treat omission as "no session-scoped model history" rather than as a protocol mismatch.
+
 The lead forwards the request to the owning peer and returns the peer's response **unmodified**:
 status, body bytes, `content-type`, and — critically — **`etag`**.
 

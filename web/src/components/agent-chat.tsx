@@ -68,10 +68,13 @@ import { submitPreviewKeys, submitPreviewNote, submitPreviewOption } from "@/lib
 import { submitMultiSelectIntent, type MultiSelectIntent } from "@/lib/multi-select-action";
 import { submitMenuKeys } from "@/lib/menu-action";
 import { submitPickerIntent } from "@/lib/picker-action";
-import { runCodexModelSwitch } from "@/lib/codex-model-switch";
+import { runCodexModelSwitch, type CodexModelSwitchProgress } from "@/lib/codex-model-switch";
+import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/ui/notice";
 import { useCodexModelRecents } from "@/lib/codex-model-recents";
 import type { CodexModelTarget } from "@/lib/harness/codex/model-field";
 import { parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
+import { defaultSleep } from "@/lib/harness/guard";
 import { CodexModelRecentsPanel } from "@/components/codex-model-recents";
 import { useHoldReload } from "@/lib/reload-guard";
 import type { PickerIntent, PickerModel } from "@/lib/harness/picker-model";
@@ -109,6 +112,7 @@ interface AgentChatProps {
   /** Pane output from the route loader (refreshed by polling/revalidation). */
   text: string;
   sessionModel?: SessionModel;
+  codexSessionKey?: string;
   /** The scrollback window `text` was fetched with — tells a grown fetch from a stale in-flight poll. */
   requestedLines?: number;
   /** The pane's `revision` for `text` — the race guard checks a tapped menu against this. */
@@ -194,6 +198,7 @@ export function AgentChat({
   text,
   requestedLines = 0,
   sessionModel,
+  codexSessionKey,
   revision = 0,
   device,
   bridge = "connected",
@@ -293,8 +298,14 @@ export function AgentChat({
   const hostHealth = useHostHealth(agent?.host ?? scope?.host);
   const hostBlock = writeRefusal(hostHealth);
   const [modelSwitching, setModelSwitching] = useState(false);
+  const [modelProgress, setModelProgress] = useState<CodexModelSwitchProgress | null>(null);
+  const [modelSwitchBase, setModelSwitchBase] = useState("");
+  const [modelSwitchMessage, setModelSwitchMessage] = useState("");
+  const [modelTarget, setModelTarget] = useState<CodexModelTarget | null>(null);
   const modelSwitchAbort = useRef<AbortController | null>(null);
-  const { recents, record, remove: removeRecent, clear: clearRecents } = useCodexModelRecents();
+  const activeCodexSession = useRef(codexSessionKey);
+  useLayoutEffect(() => { activeCodexSession.current = codexSessionKey; }, [codexSessionKey]);
+  const { recents, record, remove: removeRecent, clear: clearRecents } = useCodexModelRecents(codexSessionKey);
   // What the pane's statusline is allowed to name as a model. Keep the live session model alongside
   // recent pairs so clearing history cannot hide a custom model's native picker entry.
   const knownModels = useMemo(() => {
@@ -326,6 +337,15 @@ export function AgentChat({
     modelSwitchAbort.current?.abort();
     setDrawer(null);
   };
+  useEffect(() => () => { modelSwitchAbort.current?.abort(); }, [codexSessionKey]);
+  useEffect(() => {
+    if (!modelSwitching) return;
+    const stopOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") modelSwitchAbort.current?.abort();
+    };
+    document.addEventListener("keydown", stopOnEscape);
+    return () => document.removeEventListener("keydown", stopOnEscape);
+  }, [modelSwitching]);
   useEffect(() => {
     if (drawer !== "models") modelSwitchAbort.current?.abort();
   }, [drawer]);
@@ -564,7 +584,7 @@ export function AgentChat({
       prev.text === text && prev.revision === revision ? prev : { text, revision },
     );
   }, [text, revision, following]);
-  const display = shown.text;
+  const display = modelSwitching ? modelProgress?.text ?? modelSwitchBase : shown.text;
   const hasNew = !following && display !== text;
 
   // The agent's own statusline (model · ctx% · cwd · branch · tokens · permission mode) is stripped
@@ -578,8 +598,8 @@ export function AgentChat({
   // render hot path.
   const statusLines = useMemo(
     () =>
-      grammarsOn ? adapterFor(agent?.agent)?.extractStatusLines(splitLines(parseAnsi(display))) ?? [] : [],
-    [display, agent?.agent, grammarsOn],
+      grammarsOn ? adapterFor(agent?.agent)?.extractStatusLines(splitLines(parseAnsi(modelSwitching ? modelSwitchBase : display))) ?? [] : [],
+    [display, agent?.agent, grammarsOn, modelSwitching, modelSwitchBase],
   );
   const statuslineVisible = statusLines.length > 0 || showWriteHost;
 
@@ -632,7 +652,7 @@ export function AgentChat({
   // level asks its neighbour whether it is one (harness/codex/model-field.ts).
   const currentModel = useMemo(() => {
     if (agent?.agent !== "codex") return undefined;
-    const rows = adapterFor("codex")?.extractStatusLines(splitLines(parseAnsi(text))) ?? [];
+    const rows = adapterFor("codex")?.extractStatusLines(splitLines(parseAnsi(modelSwitching ? modelSwitchBase : text))) ?? [];
     for (const row of rows) {
       const fields = lineText(row).split(" · ");
       for (const [index, field] of fields.entries()) {
@@ -641,7 +661,7 @@ export function AgentChat({
       }
     }
     return undefined;
-  }, [agent?.agent, text, knownModels]);
+  }, [agent?.agent, text, knownModels, modelSwitching, modelSwitchBase]);
   const modelType = useMuxCapability("typeText", scope);
   const modelKeys = useMuxCapability("sendKeys", scope);
   const modelDisabledReason = readOnly ? t("chat.status.readOnly") : hostBlock ?? (
@@ -669,17 +689,43 @@ export function AgentChat({
     }
     const controller = new AbortController();
     modelSwitchAbort.current = controller;
+    setModelProgress(null);
+    setModelTarget(target ?? null);
+    setModelSwitchBase(text);
+    setModelSwitchMessage("");
     setModelSwitching(true);
+    setFollowing(true);
+    let previousStage: CodexModelSwitchProgress["stage"] | undefined;
     try {
       const result = await runCodexModelSwitch({
-        paneId, scope, requestedLines, preset: target, signal: controller.signal,
+        paneId, scope, requestedLines, preset: target, codexSessionKey, signal: controller.signal,
+        onProgress: target ? async (progress) => {
+          if (controller.signal.aborted) return;
+          setModelProgress((previous) => ({ ...previous, ...progress }));
+          // Give each actual native stage one paint interval the operator can perceive. The
+          // driver awaits this before sending keys; ordinary polling cannot skip the preview.
+          if (previousStage !== progress.stage && progress.picker) {
+            previousStage = progress.stage;
+            let stopWait: (() => void) | undefined;
+            const stopped = new Promise<void>((resolve) => {
+              stopWait = () => resolve();
+              controller.signal.addEventListener("abort", stopWait, { once: true });
+            });
+            await Promise.race([defaultSleep(450), stopped]);
+            if (stopWait) controller.signal.removeEventListener("abort", stopWait);
+          }
+        } : undefined,
       });
-      if (controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        setModelSwitchMessage(t("codexModel.stopped"));
+        return;
+      }
       if (result.status === "switched" || result.status === "opened") {
         if (target) setStatus(t("codexModel.success", { model: target.model, effort: target.effort }), "success");
       } else {
         const messages = {
-          cancelled: "codexModel.cancelled",
+          cancelled: "codexModel.stopped",
+          "scope-required": "codexModel.stage.scope",
           blocked: "codexModel.blocked",
           "unsupported-model": "codexModel.unsupportedModel",
           "unsupported-effort": "codexModel.unsupportedEffort",
@@ -687,20 +733,18 @@ export function AgentChat({
           unconfirmed: "codexModel.unconfirmed",
           error: "chat.status.sendFailed",
         } as const satisfies Record<typeof result.status, MessageKey>;
-        // Failures go to the FLOATING status, never to the menu: this used to be a private error slot
-        // the bottom sheet rendered, and the menu that replaced the sheet has no room to explain
-        // itself — a refused switch that reports nothing is the §11 fault exactly.
-        setStatus(result.error || t(messages[result.status]), "error");
+        setModelSwitchMessage(result.error || t(messages[result.status]));
       }
       const fresh = await fetchPane(paneId, requestedLines, scope);
       if (!controller.signal.aborted) setShown({ text: fresh.text, revision: fresh.revision });
-      revalidator.revalidate();
-      if (result.status === "switched" || result.status === "opened") setDrawer(null);
+      setDrawer(null);
     } catch (switchError) {
-      if (!controller.signal.aborted) setStatus(describeThrownError(switchError), "error");
+      if (!controller.signal.aborted) setModelSwitchMessage(describeThrownError(switchError));
     } finally {
       modelSwitchAbort.current = null;
       setModelSwitching(false);
+      setModelProgress(null);
+      revalidator.revalidate();
     }
   }
 
@@ -877,7 +921,9 @@ export function AgentChat({
     // pair reached by opening the picker and walking away is not one you reach for, and recording on
     // sight would fill the list with models that were merely passed through. `currentModel` is the
     // live statusline read, so this records what the turn actually ran on.
-    if (currentModel?.effort) record(currentModel.model, currentModel.effort);
+    if (currentModel?.effort && codexSessionKey === activeCodexSession.current) {
+      record(currentModel.model, currentModel.effort);
+    }
   };
 
   // Tap a prompt-select option. This can type into a real terminal, so it runs the revision-based
@@ -1114,6 +1160,7 @@ export function AgentChat({
         return;
       }
       if (result.status === "changed") setStatus(t("chat.status.selectionChanged"), "warn");
+      if (result.status === "sent") setModelSwitchMessage("");
       // Reaching a tall picker's search box scrolls away from the tail and freezes the mirror.
       // Adopt this action's fresh text/revision pair once, even while frozen, without jumping away
       // from the control the operator just used. Ordinary transcript polling keeps its freeze.
@@ -1756,14 +1803,15 @@ export function AgentChat({
             role="presentation"
             className={cn(
               mirrorGap,
-              "min-h-0 min-w-0 flex-1 border-t border-rule",
+              "relative min-h-0 min-w-0 flex-1 border-t border-rule",
               mirrorFace.className,
             )}
             style={mirrorFace.style}
-            onClick={focusFromMirror}
+            onClick={modelSwitching ? undefined : focusFromMirror}
           >
             <ChatMessageList
               ref={listRef}
+              inert={modelSwitching}
               dep={display}
               onAtBottomChange={setFollowing}
               hasNew={hasNew}
@@ -1881,6 +1929,19 @@ export function AgentChat({
                 </div>
               )}
             </ChatMessageList>
+            {modelSwitching && modelTarget && (
+              <div className="absolute inset-0 z-20 flex items-end bg-background/40 p-3">
+                <Notice tone="neutral" variant="box" announce="status"
+                  className="w-full bg-background/90 font-sans"
+                  icon={<Loader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />}
+                  action={<Button variant="ghost" className="min-h-11 shrink-0 px-2 text-xs"
+                    onClick={() => modelSwitchAbort.current?.abort()}>{t("codexModel.stop")}</Button>}>
+                  <p className="font-medium">{t("codexModel.switching")}</p>
+                  <p className="break-words font-mono text-xs">{modelTarget.model} · {modelTarget.effort}</p>
+                  <p className="text-xs text-muted-foreground">{t(`codexModel.stage.${modelProgress?.stage ?? "model"}`)}</p>
+                </Notice>
+              </div>
+            )}
           </div>
 
           {/* Bottom region, in the order it paints: the agent's own statusline (the mirror's last row),
@@ -1909,7 +1970,13 @@ export function AgentChat({
             <div className="relative shrink-0">
               {/* In flow and outside mirror inversion: only the transcript gives up height.
                   The statusline and reply input stay below the panel, visible at the same position. */}
-              <Collapse open={drawer === "models" && statuslineVisible && currentModel !== null}>
+              <Collapse open={Boolean(modelSwitchMessage)}>
+                <Notice tone="caution" variant="box" announce="alert" className="mx-3 my-1"
+                  onDismiss={() => setModelSwitchMessage("")} dismissLabel={t("common.closeAria")}>
+                  {modelSwitchMessage}
+                </Notice>
+              </Collapse>
+              <Collapse open={drawer === "models" && !modelSwitching && statuslineVisible && currentModel !== null}>
                 {currentModel && (
                   <CodexModelRecentsPanel
                     onClose={closeDrawer}
@@ -1921,6 +1988,7 @@ export function AgentChat({
                     onClear={clearRecents}
                     disabledReason={modelDisabledReason}
                     busy={modelSwitching}
+                    sessionAvailable={Boolean(codexSessionKey)}
                   />
                 )}
               </Collapse>

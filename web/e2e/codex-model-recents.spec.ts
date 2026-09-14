@@ -10,7 +10,8 @@ import { installApiStub } from "./fixtures/api";
 // the menu's "in use" row and the arrow are both judged against.
 const pane = readFileSync(new URL("../src/fixtures/panes/codex--v0154-statusline-multiple-muted-default.txt", import.meta.url), "utf8");
 const dictionaries = { en, de, zh };
-const RECENTS_KEY = "collie:codex-model-recents:v1";
+const SESSION_KEY = "codex-session-a";
+const RECENTS_KEY = `collie:codex-model-recents:v2:${SESSION_KEY}`;
 
 /** Two used pairs, one of which is what the pane is running — so there IS somewhere to switch to. */
 const SEEDED = [
@@ -19,6 +20,73 @@ const SEEDED = [
 ];
 
 test.use({ serviceWorkers: "block" });
+
+const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}`, import.meta.url), "utf8");
+
+for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async ({ page }, testInfo) => {
+  const modelText = fixture("codex--v0154-picker-model.txt");
+  const effortText = fixture("codex--v0154-picker-effort.txt");
+  let current = pane;
+  let revision = 1;
+  let releaseModel!: () => void;
+  let releaseEffort!: () => void;
+  const modelGate = new Promise<void>((resolve) => { releaseModel = resolve; });
+  const effortGate = new Promise<void>((resolve) => { releaseEffort = resolve; });
+  await page.setViewportSize({ width: theme === "light" ? 390 : 320, height: 844 });
+  await page.addInitScript(({ theme: chosenTheme, key }) => {
+    localStorage.setItem("collie:theme:v1", chosenTheme);
+    localStorage.setItem("collie:locale:v1", "zh");
+    localStorage.setItem(key, JSON.stringify([{ model: "gpt-6-astra", effort: "low" }]));
+  }, { theme, key: RECENTS_KEY });
+  await installApiStub(page);
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+      ? { ...agent, agent: "codex", status: "idle" } : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: SESSION_KEY,
+  } }));
+  await page.route("**/api/pane/*/reply*", async (route) => {
+    current = route.request().postDataJSON().submit ? modelText
+      : fixture("codex--v0154-command-status.txt").replaceAll("/status", "/model");
+    revision++;
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.route("**/api/pane/*/keys*", async (route) => {
+    expect(route.request().postDataJSON().keys).toEqual(["Enter"]);
+    if (current === modelText) {
+      await modelGate;
+      current = effortText;
+    } else {
+      await effortGate;
+      current = `${pane}\n• Model changed to gpt-6-astra low.`;
+    }
+    revision++;
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/pane/w1:p1");
+  const entry = page.getByRole("button", { name: new RegExp(`^${zh["codexModel.openAria"]}:`) });
+  const entryBefore = await entry.boundingBox();
+  await entry.click();
+  await page.getByRole("button", { name: "gpt-6-astra low", exact: true }).click();
+  const message = page.getByText(zh["codexModel.switching"], { exact: true });
+  const modelTitle = page.getByText("Select Model and Effort", { exact: true });
+  await expect(message).toBeVisible();
+  await expect(modelTitle).toBeInViewport();
+  expect(await modelTitle.evaluate((el) => Boolean(el.closest("[inert]")))).toBe(true);
+  expect(await entry.boundingBox()).toMatchObject({ y: entryBefore!.y });
+  await page.screenshot({ path: testInfo.outputPath("switch-model-mask.png") });
+  releaseModel();
+  const effortTitle = page.getByText("Select Reasoning Level for gpt-6-astra", { exact: true });
+  await expect(effortTitle).toBeInViewport();
+  await expect(message).toBeVisible();
+  await expect(page.getByText(zh["codexModel.stage.effort"], { exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("switch-effort-mask.png") });
+  releaseEffort();
+  await expect(message).toHaveCount(0, { timeout: 10000 });
+  await expect(page.getByRole("textbox")).toBeEnabled();
+});
 
 for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (const locale of ["en", "de", "zh"] as const) {
   test(`recent models: ${width} ${theme} ${locale}`, async ({ page }, testInfo) => {
@@ -37,7 +105,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
         ? Object.assign({}, agent, { agent: "codex", status: working ? "working" : "idle" }) : agent),
     } }));
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
-      paneId: "w1:p1", text: pane, revision: 1, truncated: false,
+      paneId: "w1:p1", text: pane, revision: 1, truncated: false, codexSessionKey: SESSION_KEY,
     } }));
     await page.goto("/pane/w1:p1");
 

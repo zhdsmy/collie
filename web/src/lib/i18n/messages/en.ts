@@ -186,6 +186,15 @@ export const en = {
   "settings.fonts.system": "System default",
 
   // --- codexModel (the statusline's model/thinking-level switcher and its recents) ---
+  "codexModel.sessionPending": "Waiting for this Codex session to be reported. Recent models will be saved for this session.",
+  "codexModel.switching": "Switching model…",
+  "codexModel.stop": "Stop",
+  "codexModel.stage.model": "Selecting model",
+  "codexModel.stage.effort": "Selecting thinking level",
+  "codexModel.stage.advanced": "Selecting advanced thinking level",
+  "codexModel.stage.scope": "Choose where to apply this change in Codex.",
+  "codexModel.stage.verifying": "Verifying model and thinking level",
+  "codexModel.stopped": "Switching stopped. Any changes already applied are kept.",
   "codexModel.openAria": "Switch model and thinking level",
   "codexModel.recentsTitle": "Recent models",
   "codexModel.manage": "Manage",

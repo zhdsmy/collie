@@ -22,6 +22,7 @@ export interface CodexModelRecentsPanelProps {
   onClear: () => void;
   disabledReason?: string;
   busy?: boolean;
+  sessionAvailable?: boolean;
 }
 
 /** An in-flow Composer dock above the statusline; opening it never focuses the reply input. */
@@ -35,6 +36,7 @@ export function CodexModelRecentsPanel({
   onClear,
   disabledReason,
   busy = false,
+  sessionAvailable = true,
 }: CodexModelRecentsPanelProps) {
   useLocale();
   const [managing, setManaging] = useState(false);
@@ -102,7 +104,7 @@ export function CodexModelRecentsPanel({
             })}
           </div>
         ) : (
-          <p className="px-3 py-3 text-xs text-muted-foreground">{t("codexModel.emptyRecents")}</p>
+          <p className="px-3 py-3 text-xs text-muted-foreground">{t(sessionAvailable ? "codexModel.emptyRecents" : "codexModel.sessionPending")}</p>
         )}
         <Collapse open={managing && recents.length > 0}>
           <div className="border-t border-border px-3 py-1">

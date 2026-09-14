@@ -682,6 +682,8 @@ export interface SnapshotResponse {
 }
 
 export interface PaneReadResponse {
+  /** Stable opaque key for the Codex session, when this pane is a Codex session. */
+  codexSessionKey?: string;
   /** The matching session's saved display metadata; not an assertion of live provider settings. */
   sessionModel?: SessionModel;
   paneId: string;
