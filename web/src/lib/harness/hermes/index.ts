@@ -12,6 +12,12 @@ const RESPONSE_BOTTOM = /^╰─{8,}╯$/u;
 const STATUS_HEAD = /^\s*⚕\s+\S/u;
 const CONTEXT = /(?:ctx\s+--|~?[\d.]+[KMB]?\/[\d.]+[KMB]?|\[[█░]+\]\s*(?:~?\d+(?:\.\d+)?%|--))/u;
 const WORKING_HINT = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
+/** A frame border whose row cannot carry its closing corner: the pane cut it. See {@link rejoinWrappedBorders}. */
+const BORDER_OPEN = /^(?:╭─\s*⚕\s*Hermes|╰─{8,})/u;
+/** What such a border continues onto — the rest of the dashes, corner last. */
+const BORDER_TAIL = /^─{8,}[╮╯]?$/u;
+/** Rows one border may be spread over before it stops looking like a border. */
+const BORDER_MAX_ROWS = 4;
 
 function sliceSegments(segments: AnsiSegment[], start: number, end: number): AnsiSegment[] {
   let offset = 0;
@@ -85,9 +91,53 @@ function fitResponseRule(line: StyledLine): StyledLine {
   };
 }
 
+/**
+ * Put a frame border the PANE cut back on one row.
+ *
+ * A frame is drawn at the width of the terminal that was on screen when the message completed, and
+ * Herdr re-wraps those scrollback rows at whatever width the pane has NOW — so a frame from a wider
+ * window (measured: a 211-column frame read back from a 160-column pane) arrives as its own
+ * continuation: `╭─ ⚕ Hermes ───…` on one row, `───…╮` on the next.
+ *
+ * Every pattern below is anchored to a whole row, so such a border reads as ordinary dashes, the
+ * frame is never fitted, and the operator is left with the box's leftovers — a stray `╮` at the
+ * start of the message and a `╯` at the end, which is exactly what the fitting exists to remove.
+ *
+ * The rows it was cut over are EMPTIED rather than deleted. Source-row indices must keep lining up
+ * with the screen (`latest-reply` maps a reply's last row onto this array before hiding it), and a
+ * blank row where the wrap was is the cheapest price for that; the border's own corner travels onto
+ * the joined row, so nothing the operator was meant to see is lost.
+ */
+function rejoinWrappedBorders(lines: StyledLine[]): StyledLine[] {
+  const joined = [...lines];
+  for (let top = 0; top < joined.length - 1; top++) {
+    const opening = lineText(joined[top]!);
+    if (!BORDER_OPEN.test(opening) || /[╮╯]$/u.test(opening)) continue;
+    const segments = [...joined[top]!.segments];
+    let bottom = top;
+    while (bottom + 1 < joined.length && bottom - top < BORDER_MAX_ROWS) {
+      const next = lineText(joined[bottom + 1]!);
+      if (!BORDER_TAIL.test(next)) break;
+      bottom++;
+      segments.push(...joined[bottom]!.segments);
+      if (/[╮╯]$/u.test(next)) break;
+    }
+    // Only a border that reaches its corner is a border. Anything else was dashes that happened to
+    // follow one, and guessing there would eat a rule the operator was meant to read.
+    if (bottom === top || !/[╮╯]$/u.test(lineText(joined[bottom]!))) continue;
+    // Reaching the corner is proof enough to fit it: this is a frame, whether or not the row that
+    // opened it is still on screen — and a lone closing border left as raw dashes is the very
+    // leftover the fitting exists to remove.
+    joined[top] = fitResponseRule({ ...joined[top]!, segments });
+    for (let i = top + 1; i <= bottom; i++) joined[i] = { ...joined[i]!, segments: [] };
+    top = bottom;
+  }
+  return joined;
+}
+
 function responseChrome(lines: StyledLine[], closingWidth: number): StyledLine[] {
   let responseWidth = 0;
-  return lines.map((line, index) => {
+  return rejoinWrappedBorders(lines).map((line, index, all) => {
     const text = lineText(line);
     const header = RESPONSE_TOP.exec(text);
     if (header?.[1]) {
@@ -95,7 +145,7 @@ function responseChrome(lines: StyledLine[], closingWidth: number): StyledLine[]
       return fitResponseRule(line);
     }
     const matchesClosing = (responseWidth > 0 && text.length === responseWidth) ||
-      (index === lines.length - 1 && text.length === closingWidth);
+      (index === all.length - 1 && text.length === closingWidth);
     if (matchesClosing && RESPONSE_BOTTOM.test(text)) {
       responseWidth = 0;
       return fitResponseRule(line);

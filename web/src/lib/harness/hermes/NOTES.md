@@ -1,5 +1,31 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## Frames the pane cut in two — 2026-09-14
+
+A response frame is drawn at the width of the terminal that was on screen when the message
+COMPLETED, and the pane re-wraps those scrollback rows at whatever width it has now. So a frame
+printed in a wider window arrives as its own continuation: `╭─ ⚕ Hermes ───…` on one row and
+`───…╮` on the next. Measured on the operator's own pane (`w7:p9`, Herdr 0.9.0, read-only
+`recent`): a 160-column pane returning **211-column frames**, every frame on screen split, both
+halves of every border present.
+
+Every pattern here is anchored to a whole row, so those borders read as ordinary dashes: the frame
+was never fitted and the operator was left with the box's leftovers — a `────╮` floating at the
+start of a message and a `────╯` at its end. That is the visible fault, and it is why the fitting
+looked unstable: it worked on captures whose frames happened to fit the pane and failed on every
+frame drawn before a resize.
+
+The adapter now rejoins a border that reaches its corner, on the row the label was already on, and
+fits it — reaching the corner is itself proof this is a frame, so a closing border whose opening has
+scrolled off is fitted too, rather than left as a dash band. The rows it was cut over are EMPTIED,
+never deleted: source-row indices must keep lining up with the screen (`latest-reply` maps a reply's
+last row onto this array before hiding it), and one blank row where the wrap was is the price. A run
+of dashes that no border opened — a Markdown rule after a closed nested box — is left exactly where
+it is; only a corner-terminated run is claimed.
+
+`hermes.test.ts` re-cuts the captured fixture at a narrower width to pin both halves: the rejoined
+border and the spent row, and the untouched rule that follows a nested box.
+
 ## Diff and clarify adaptation — 2026-09-10
 
 Hermes inline unified diffs print a hunk header and white text on a skin-derived change fill

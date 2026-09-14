@@ -14,6 +14,38 @@ const hint = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
 const lines = (text: string) => splitLines(parseAnsi(text));
 const mirror = (text: string) => hermesAdapter.buildBlocks(lines(text)).flatMap((b) => b.lines.map(lineText)).join("\n");
 
+const ESC = "\u001b";
+const RESET = `${ESC}[0m`;
+
+/** The SGR run these captures open a row with, up to its first visible character. */
+function sgrPrefix(row: string): string {
+  let at = 0;
+  while (row.startsWith(`${ESC}[`, at)) {
+    const end = row.indexOf("m", at);
+    if (end < 0) break;
+    at = end + 1;
+  }
+  return row.slice(0, at);
+}
+
+/**
+ * The capture with its frame borders drawn `frame` columns wide and then cut at `pane` — what Herdr
+ * hands back for a frame that was printed while the window was wider than it is now. A live pane
+ * measured 2026-09-14 returned exactly this shape: a 211-column frame read back from a 160-column
+ * pane, so every `╭─ ⚕ Hermes ─…` row ended without its corner and the next row began with one.
+ */
+function recut(text: string, frame: number, pane: number): string {
+  return text.split("\n").flatMap((row) => {
+    const head = sgrPrefix(row);
+    const rest = row.slice(head.length);
+    const body = rest.endsWith(RESET) ? rest.slice(0, -RESET.length) : rest;
+    if (!/^[╭╰]─/u.test(body)) return [row];
+    const wide = body.slice(0, -1) + "─".repeat(frame - body.length) + body.slice(-1);
+    // The continuation row re-emits the border's SGR, exactly as the emulator did on the live pane.
+    return [`${head}${wide.slice(0, pane)}`, `${head}${wide.slice(pane)}${RESET}`];
+  }).join("\n");
+}
+
 describe("Hermes display chrome", () => {
   it("extends only a captured submitted-input border pair and preserves source text", () => {
     const output = hermesAdapter.buildBlocks(lines(submitted))[0]!.lines;
@@ -83,6 +115,37 @@ describe("Hermes display chrome", () => {
       expect(hermesAdapter.extractStatusLines(lines(text))).toEqual([]);
       expect(mirror(text)).toContain(hint);
     }
+  });
+
+  it("fits a frame the pane cut in two, without moving a source row", () => {
+    const pane = recut(capture, 211, 159);
+    const rows = lines(pane);
+    const output = hermesAdapter.buildBlocks(rows)[0]!.lines;
+
+    // The border is back on one row, corner and all, on the row the label was already on.
+    expect(lineText(output[0]!)).toBe(lineText(rows[0]!) + lineText(rows[1]!));
+    expect(output[0]!.fitRule).toBeDefined();
+    expect(lineText(output[5]!)).toBe(lineText(rows[5]!) + lineText(rows[6]!));
+    expect(output[5]!.fitRule).toBeDefined();
+
+    // The row the wrap landed on is spent, not shown as leftover dashes: a `────╮` floating at the
+    // start of a message is the whole complaint. It stays IN the array so `latest-reply`'s row
+    // mapping still lines up with the screen, which is why it is blanked rather than deleted.
+    expect(lineText(output[1]!)).toBe("");
+    expect(lineText(output[6]!)).toBe("");
+    // Only the footer is gone, and every row above it keeps its index — `latest-reply` maps a
+    // reply's last row onto this array, so a source row removed up here would hide the wrong rows.
+    expect(output).toHaveLength(rows.findIndex((row) => lineText(row).startsWith(" ⚕ ")));
+    expect(output.map(lineText).some((row) => /^─{8,}[╮╯]$/u.test(row))).toBe(false);
+  });
+
+  it("leaves dashes that no border opened exactly where they are", () => {
+    // A rule row after a closed nested box is not a continuation of anything, and eating it would
+    // delete a line the response meant to draw.
+    const body = "╭────────╮\n│ keep   │\n╰────────╯\n────────────────────────────────────────";
+    const output = hermesAdapter.buildBlocks(lines(capture.replace("A verified response with a real paragraph break.", body)))[0]!.lines;
+    expect(mirror(capture.replace("A verified response with a real paragraph break.", body))).toContain(body);
+    expect(output.map(lineText)).toContain("────────────────────────────────────────");
   });
 
   it("preserves the captured frame, moves the status and hides only the empty prompt", () => {

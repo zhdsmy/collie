@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Fit Hermes response frames the pane cut in two.** A frame drawn while the window was wider is re-wrapped by the pane, so its border arrives split across two rows and no longer matched: the frame stayed raw and left a `────╮` at the start of a message and a `────╯` at the end. The border is rejoined on its label's row and fitted, including one whose opening has scrolled off; the row it was cut over becomes blank rather than disappearing, so message rows keep lining up with the screen.
+
 ## [1.8.2+collie.18] - 2026-09-14
 
 ### Changed
