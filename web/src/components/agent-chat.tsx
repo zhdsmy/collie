@@ -85,7 +85,9 @@ import type { MenuBlockAction } from "@/components/menu-block";
 import { locateReply } from "@/lib/latest-reply";
 import { canGrowRequestedLines, growRequestedLines } from "@/lib/loaders";
 import { cwdBeyondName } from "@/lib/pane-name";
-import { useMuxCapability } from "@/lib/mux-capability";
+import { keysSendable, useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux-capability";
+import { runClaudeModeSwitch } from "@/lib/claude-mode-switch";
+import { readClaudeModeState } from "@/lib/harness/claude/mode";
 import { hasJournalAdapter } from "@/lib/journal-agents";
 import { historyPath, spacePath } from "@/lib/nav";
 import { isReadOnly, statusLabel } from "@/lib/types";
@@ -306,9 +308,10 @@ export function AgentChat({
   const modelSwitchAbort = useRef<AbortController | null>(null);
   const [composerWriting, setComposerWriting] = useState(false);
   const [modeSwitching, setModeSwitching] = useState<CodexMode | null>(null);
+  const [claudeModeSwitching, setClaudeModeSwitching] = useState(false);
   const modeSwitchAbort = useRef<AbortController | null>(null);
   const [lastModeState, setLastModeState] = useState<{ sessionKey?: string; plan: boolean | null; fast: boolean | null }>({ plan: null, fast: null });
-  useHoldReload(`mode-switch:${paneScopeKey(scope, paneId)}`, modeSwitching !== null);
+  useHoldReload(`mode-switch:${paneScopeKey(scope, paneId)}`, modeSwitching !== null || claudeModeSwitching);
   useEffect(() => () => { modeSwitchAbort.current?.abort(); }, [codexSessionKey]);
   useEffect(() => {
     const cancelWhenHidden = () => { if (document.visibilityState === "hidden") modeSwitchAbort.current?.abort(); };
@@ -716,6 +719,21 @@ export function AgentChat({
     !liveCodexState || liveCodexState.fast === null || liveCodexState.draft !== null ? t("codexFast.blocked") :
     !codexIdle ? t("codexFast.idleRequired") : codexControlsBusy ? t("codexFast.busy") : undefined
   );
+  // Claude's mode row, read from the same live poll the mirror shows. Null covers three refusals at
+  // once: no input box, no mode row, and a block that owns the keyboard — the last of which is a
+  // safety gate rather than tidiness, because a permission dialog answers on `shift+tab` itself.
+  const claudeMode = useMemo(
+    () => agent?.agent === "claude" ? readClaudeModeState(text) : null,
+    [agent?.agent, text],
+  );
+  const unsupportedKeys = useMuxUnsupportedKeys();
+  const claudeModeAllowed = claudeMode !== null && keysSendable(["shift+tab"], unsupportedKeys);
+  const claudeModeDisabledReason = readOnly ? t("chat.status.readOnly") : hostBlock ?? (
+    agent?.agent !== "claude" || connecting || !grammarsOn || !modelKeys.capable || !claudeModeAllowed
+      ? t("claudeMode.blocked")
+      : modelSwitching || modeSwitching !== null || claudeModeSwitching || composerWriting
+        ? t("claudeMode.busy") : undefined
+  );
   // Is there anything to switch TO? The arrow is emphasized when another used pair exists, but the
   // model field remains openable with an empty or single-item history so the native picker is never
   // hidden behind a missing shortcut.
@@ -823,6 +841,37 @@ export function AgentChat({
     } finally {
       modeSwitchAbort.current = null;
       setModeSwitching(null);
+      revalidator.revalidate();
+    }
+  }
+
+  /**
+   * Claude's statusline mode, tapped. One `shift+tab`, then read back whether the mode text moved —
+   * and NO idle gate, deliberately: Claude keeps painting the mode (hint and all) while it works, so
+   * the app cannot tell "it will queue" from "it will swallow", and lets Claude decide. A mode that
+   * did not move is reported as unconfirmed rather than dressed up as success.
+   */
+  async function switchClaudeMode() {
+    if (claudeModeDisabledReason || !claudeMode ||
+        modelSwitchAbort.current || modeSwitchAbort.current || composerRef.current?.isWriting()) return;
+    const controller = new AbortController();
+    modeSwitchAbort.current = controller;
+    setClaudeModeSwitching(true);
+    composerRef.current?.closeDock();
+    setDrawer(null);
+    try {
+      const result = await runClaudeModeSwitch({ paneId, scope, requestedLines, signal: controller.signal });
+      if (controller.signal.aborted) return;
+      if (result.status === "switched") {
+        setFollowing(true);
+        setShown({ text: result.text, revision: result.revision });
+        setStatus(t("claudeMode.success", { mode: result.mode }), "success");
+      } else if (result.status !== "cancelled") {
+        setStatus(result.status === "error" ? result.error : t(`claudeMode.${result.status}`), "error");
+      }
+    } finally {
+      modeSwitchAbort.current = null;
+      setClaudeModeSwitching(false);
       revalidator.revalidate();
     }
   }
@@ -2137,6 +2186,11 @@ export function AgentChat({
                       codexControls={agent?.agent === "codex" ? {
                         plan: { enabled: planEnabled, busy: modeSwitching === "plan", disabledReason: planDisabledReason, onClick: () => void switchMode("plan") },
                         fast: { enabled: fastEnabled, busy: modeSwitching === "fast", disabledReason: fastDisabledReason, onClick: () => void switchMode("fast") },
+                      } : undefined}
+                      claudeMode={agent?.agent === "claude" ? {
+                        busy: claudeModeSwitching,
+                        disabledReason: claudeModeDisabledReason,
+                        onClick: () => void switchClaudeMode(),
                       } : undefined}
                       onModelClick={agent?.agent === "codex" && currentModel
                         ? () => {

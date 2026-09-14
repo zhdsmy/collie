@@ -223,6 +223,13 @@ export const ja: Dictionary = {
   "codexFast.unconfirmed": "Fast モードの変更を確認できませんでした。",
   "codexFast.successOn": "Fast モードをオンにしました。",
   "codexFast.successOff": "Fast モードをオフにしました。",
+  "claudeMode.title": "Claudeモード: {mode} — タップで切り替え",
+  "claudeMode.blocked": "現在 Claude モードを切り替えられません。",
+  "claudeMode.busy": "別の操作が実行中です。しばらくお待ちください。",
+  "claudeMode.changed": "端末の状態が変わりました。現在のモードを確認して再試行してください。",
+  "claudeMode.unconfirmed": "キーは送信しましたが、モードの変更を確認できませんでした。",
+  "claudeMode.cancelled": "モードの切り替えをキャンセルしました。",
+  "claudeMode.success": "Claudeモード: {mode}",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "行の折り返し",

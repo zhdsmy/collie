@@ -240,6 +240,13 @@ export const en = {
   "codexFast.unconfirmed": "The Fast mode change could not be confirmed.",
   "codexFast.successOn": "Fast mode enabled.",
   "codexFast.successOff": "Fast mode disabled.",
+  "claudeMode.title": "Claude mode: {mode} — tap to cycle",
+  "claudeMode.blocked": "The Claude mode cannot be switched right now.",
+  "claudeMode.busy": "An operation is already in progress. Please wait.",
+  "claudeMode.changed": "The terminal state changed. Confirm the current mode and try again.",
+  "claudeMode.unconfirmed": "The key was sent, but the mode change could not be confirmed.",
+  "claudeMode.cancelled": "Mode switch cancelled.",
+  "claudeMode.success": "Claude mode: {mode}",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "Wrap lines",

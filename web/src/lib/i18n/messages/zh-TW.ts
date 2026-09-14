@@ -219,6 +219,13 @@ export const zhTW: Dictionary = {
   "codexFast.unconfirmed": "無法確認 Fast 模式變更。",
   "codexFast.successOn": "Fast 模式已開啟。",
   "codexFast.successOff": "Fast 模式已關閉。",
+  "claudeMode.title": "Claude 模式：{mode}，點擊切換",
+  "claudeMode.blocked": "目前無法切換 Claude 模式。",
+  "claudeMode.busy": "已有操作正在進行，請稍候。",
+  "claudeMode.changed": "終端狀態已變更，請確認目前模式後重試。",
+  "claudeMode.unconfirmed": "按鍵已送出，但無法確認模式已切換。",
+  "claudeMode.cancelled": "已取消模式切換。",
+  "claudeMode.success": "Claude 模式：{mode}",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "自動換行",

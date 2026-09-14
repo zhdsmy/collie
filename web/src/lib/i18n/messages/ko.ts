@@ -222,6 +222,13 @@ export const ko: Dictionary = {
   "codexFast.unconfirmed": "Fast 모드 변경을 확인할 수 없습니다.",
   "codexFast.successOn": "Fast 모드가 켜졌습니다.",
   "codexFast.successOff": "Fast 모드가 꺼졌습니다.",
+  "claudeMode.title": "Claude 모드: {mode} — 탭하여 전환",
+  "claudeMode.blocked": "지금은 Claude 모드를 전환할 수 없습니다.",
+  "claudeMode.busy": "다른 작업이 진행 중입니다. 잠시 기다려 주세요.",
+  "claudeMode.changed": "터미널 상태가 변경되었습니다. 현재 모드를 확인한 뒤 다시 시도하세요.",
+  "claudeMode.unconfirmed": "키는 전송했지만 모드 변경을 확인할 수 없습니다.",
+  "claudeMode.cancelled": "모드 전환이 취소되었습니다.",
+  "claudeMode.success": "Claude 모드: {mode}",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "자동 줄바꿈",

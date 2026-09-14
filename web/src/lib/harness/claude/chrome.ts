@@ -177,6 +177,28 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
 }
 
 /**
+ * The literal region a write to this pane is bound to — `sendKeys`'s `region` argument, which the
+ * bridge re-checks before it types (bridge/prompt-binding.ts). A keystroke aimed at a screen that has
+ * since moved is refused with `prompt_changed` instead of landing on whatever replaced it.
+ *
+ * It runs from the box's TOP BORDER through the buffer's last non-blank row, and the far end is not
+ * arbitrary: `verifyExpectedPrompt` only accepts a match that ENDS within its last six non-blank rows.
+ * A region that stopped at the statusline would leave the region's own last row above the background
+ * agents' footer (`◯ agent …`, up to MAX_FOOTER_LINES rows), and a pane running several agents would
+ * refuse every write with `prompt_changed` for a reason that has nothing to do with the write. Taking
+ * it to the tail keeps the match where the bridge looks, whatever sits below the box.
+ */
+export function composerRegion(lines: StyledLine[]): string | null {
+  const texts = lines.map(lineText);
+  let end = lines.length;
+  while (end > 0 && isBlank(texts[end - 1]!)) end--;
+  if (end === 0) return null;
+  const box = locateInputBox(texts, end);
+  if (box === null) return null;
+  return lines.slice(box.top, end).map((line) => lineText(line).trimEnd()).join("\n");
+}
+
+/**
  * The user's draft text stranded on the input box's "❯" prompt line. When a message is queued while
  * the agent is busy and then recalled (Up/Esc), the text lands here and persists across turns — but
  * stripChrome peels the whole box off the mirror, so it becomes invisible, and the composer (local

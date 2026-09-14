@@ -213,6 +213,13 @@ export const zh: Dictionary = {
   "codexFast.unconfirmed": "无法确认 Fast 模式更改。",
   "codexFast.successOn": "Fast 模式已开启。",
   "codexFast.successOff": "Fast 模式已关闭。",
+  "claudeMode.title": "Claude 模式：{mode}，点击切换",
+  "claudeMode.blocked": "当前无法切换 Claude 模式。",
+  "claudeMode.busy": "已有操作在进行，请稍候。",
+  "claudeMode.changed": "终端状态已变化，请确认当前模式后重试。",
+  "claudeMode.unconfirmed": "按键已发送，但无法确认模式已切换。",
+  "claudeMode.cancelled": "已取消模式切换。",
+  "claudeMode.success": "Claude 模式：{mode}",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "自动换行",

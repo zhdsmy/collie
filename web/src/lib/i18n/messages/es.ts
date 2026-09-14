@@ -225,6 +225,13 @@ export const es: Dictionary = {
   "codexFast.unconfirmed": "No se pudo confirmar el cambio del modo Fast.",
   "codexFast.successOn": "Modo Fast activado.",
   "codexFast.successOff": "Modo Fast desactivado.",
+  "claudeMode.title": "Modo de Claude: {mode} — toca para cambiar",
+  "claudeMode.blocked": "El modo de Claude no se puede cambiar ahora mismo.",
+  "claudeMode.busy": "Ya hay una operación en curso. Espera un momento.",
+  "claudeMode.changed": "El estado del terminal ha cambiado. Confirma el modo actual e inténtalo de nuevo.",
+  "claudeMode.unconfirmed": "La tecla se envió, pero no se pudo confirmar el cambio de modo.",
+  "claudeMode.cancelled": "Cambio de modo cancelado.",
+  "claudeMode.success": "Modo de Claude: {mode}",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "Ajuste de línea",

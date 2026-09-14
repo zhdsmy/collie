@@ -227,6 +227,13 @@ export const de: Dictionary = {
   "codexFast.unconfirmed": "Die Änderung des Fast-Modus konnte nicht bestätigt werden.",
   "codexFast.successOn": "Fast-Modus aktiviert.",
   "codexFast.successOff": "Fast-Modus deaktiviert.",
+  "claudeMode.title": "Claude-Modus: {mode} — zum Wechseln tippen",
+  "claudeMode.blocked": "Der Claude-Modus kann gerade nicht gewechselt werden.",
+  "claudeMode.busy": "Es läuft bereits ein Vorgang. Bitte warten.",
+  "claudeMode.changed": "Der Terminal-Zustand hat sich geändert. Aktuellen Modus prüfen und erneut versuchen.",
+  "claudeMode.unconfirmed": "Die Taste wurde gesendet, der Moduswechsel konnte aber nicht bestätigt werden.",
+  "claudeMode.cancelled": "Moduswechsel abgebrochen.",
+  "claudeMode.success": "Claude-Modus: {mode}",
 
   // --- settings.display (mirror display prefs, behind the composer's ⚙ dock) ---
   "settings.display.wrap.label": "Zeilenumbruch",

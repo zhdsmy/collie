@@ -1,4 +1,6 @@
 import {
+  ArrowBigUp,
+  ArrowRightToLine,
   ChevronUp,
   CalendarDays,
   Clock,
@@ -10,6 +12,7 @@ import {
   GitBranch,
   Hourglass,
   ListChecks,
+  Loader2,
   Pause,
   ShieldCheck,
   Tag,
@@ -30,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CodexModeToggle, type CodexModeToggleProps } from "@/components/codex-mode-toggle";
 import { parseCodexModelField, parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
+import { modeFieldOf, type ClaudeModeField } from "@/lib/harness/claude/mode";
 
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
@@ -351,6 +355,62 @@ function CodexControlledStatusline({
   );
 }
 
+/**
+ * Claude's permission mode, tappable: one tap cycles it the way the terminal's own `shift+tab` does.
+ *
+ * The row Claude prints is `⏵⏵ bypass permissions on (shift+tab to cycle) · ← 1 agent`. The mode is
+ * the button; the parenthetical is REPLACED by the two keys it names, drawn with the same icons the
+ * composer's direct keyboard uses for Shift and Tab (`direct-keyboard-accessory.tsx`) — the hint is
+ * the same fact as those keys, so it costs two glyphs instead of twenty characters of prose on a
+ * statusline that has to scroll on a phone.
+ *
+ * The button is drawn even when the hint is absent (`⏸ manual mode on`): the affordance is OURS, not
+ * the terminal's, and a mode with no hint is no less switchable.
+ */
+function ClaudeModeButton({
+  field,
+  busy,
+  disabledReason,
+  onClick,
+}: {
+  field: ClaudeModeField;
+  busy: boolean;
+  disabledReason?: string;
+  onClick: () => void;
+}) {
+  useLocale();
+  const label = lineText(field.mode).trim();
+  // Busy is NOT a refusal — the key still goes out while Claude works, and Claude decides what it
+  // means. It only swaps the Tab glyph for the spinner so a slow cycle has visible motion; the
+  // refusal that greys the button is `disabledReason` alone.
+  const disabled = disabledReason !== undefined;
+  return (
+    <span className="inline-flex min-h-3.5 shrink-0 items-center" title={disabledReason}>
+      <Button
+        type="button"
+        variant="ghost"
+        disabled={disabled}
+        // The accessible name carries the mode and what the tap will do; the icons are decoration
+        // for the eye, and a screen reader gets the sentence instead of two arrow glyphs.
+        aria-label={t("claudeMode.title", { mode: label })}
+        aria-describedby={undefined}
+        onClick={onClick}
+        className="h-auto min-h-3.5 shrink-0 gap-1 rounded-sm border-0 px-0 py-0 text-[length:inherit] font-normal leading-none hover:bg-white/10"
+      >
+        <span className="whitespace-pre">
+          <StyledText segments={field.mode.segments} />
+        </span>
+        <span aria-hidden="true" className="inline-flex shrink-0 items-center gap-0.5 opacity-70">
+          <ArrowBigUp className="size-[12px] shrink-0" strokeWidth={2.25} />
+          {busy
+            ? <Loader2 className="size-[12px] shrink-0 animate-spin motion-reduce:animate-none" strokeWidth={2.25} />
+            : <ArrowRightToLine className="size-[12px] shrink-0" strokeWidth={2.25} />}
+        </span>
+      </Button>
+    </span>
+  );
+}
+
 export function StatuslineRow({
   agent,
   row,
@@ -362,6 +422,7 @@ export function StatuslineRow({
   modelExpanded = false,
   modelDisabledReason,
   codexControls,
+  claudeMode,
 }: {
   agent?: string;
   row: StyledLine;
@@ -374,8 +435,27 @@ export function StatuslineRow({
   modelExpanded?: boolean;
   modelDisabledReason?: string;
   codexControls?: { plan: CodexControlProps; fast: CodexControlProps };
+  /** Claude's statusline mode, when this pane shows one and the app may cycle it. */
+  claudeMode?: { busy: boolean; disabledReason?: string; onClick: () => void };
 }) {
   useLocale();
+  // Claude's mode row is the one place on that statusline a phone can drive. Only the mode FIELD is
+  // rebuilt; everything the terminal painted around it — the indent, the rest of the row, its own
+  // separators — is rendered from the capture, so a row without a mode is untouched.
+  const claudeField = agent === "claude" && claudeMode ? modeFieldOf(row) : null;
+  if (claudeField && claudeMode) {
+    return (
+      <div data-slot="claude-statusline" className={ROW_CLASS}>
+        {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
+        <span className="inline-flex min-w-max shrink-0 items-center">
+          <span className="whitespace-pre"><StyledText segments={claudeField.indent.segments} /></span>
+          <ClaudeModeButton field={claudeField} {...claudeMode} />
+          <span className="whitespace-pre"><StyledText segments={claudeField.rest.segments} /></span>
+        </span>
+      </div>
+    );
+  }
+
   if (agent !== "codex" && agent !== "hermes") {
     return (
       <div data-slot="statusline-row" className={ROW_CLASS}>

@@ -284,13 +284,58 @@ it("leaves project paths, arbitrary names and partial versions undecorated", () 
   expect(container.querySelector("svg")).toBeNull();
 });
 
-it.each(["claude", "pi", "opencode", "unknown"])("leaves %s status rows verbatim", (agent) => {
+it.each(["pi", "opencode", "unknown"])("leaves %s status rows verbatim", (agent) => {
   const text = "  \x1b[36mContext 73% left\x1b[0m \u00b7 Working \u00b7 Fast on   ";
   const { container, row } = renderRow(text, agent);
   expect(container.textContent).toBe(lineText(row));
     expect(container.firstElementChild).toHaveClass("overflow-x-auto", "whitespace-nowrap");
   expect(within(container).queryAllByRole("img")).toHaveLength(0);
   expect(within(container).getByText("Context 73% left").style.color).toBe("var(--ansi-6)");
+});
+
+it("leaves a claude status row verbatim when no mode control is wired", () => {
+  const text = "  \x1b[36mContext 73% left\x1b[0m \u00b7 Working";
+  const { container, row } = renderRow(text, "claude");
+  expect(container.textContent).toBe(lineText(row));
+  expect(within(container).queryAllByRole("button")).toHaveLength(0);
+});
+
+it("renders the claude mode field as a tappable control and replaces the hint with the two keys", () => {
+  // The capture paints the mode pink and the hint grey; only the mode stays, in its own colour.
+  const row = splitLines(parseAnsi(
+    "  \x1b[38;2;255;107;128m\u23f5\u23f5 bypass permissions on\x1b[0m\x1b[38;2;153;153;153m (shift+tab to cycle) \u00b7 \u2190 1 agent\x1b[0m",
+  ))[0]!;
+  const onClick = vi.fn();
+  const { container } = render(<StatuslineRow agent="claude" row={row} claudeMode={{ busy: false, onClick }} />);
+  const button = within(container).getByRole("button", { name: "Claude mode: \u23f5\u23f5 bypass permissions on \u2014 tap to cycle" });
+  expect(button).toBeEnabled();
+  expect(container.textContent).not.toContain("shift+tab");
+  expect(container.textContent).toContain("\u2190 1 agent");
+  // The two keys the hint named, drawn with the composer keyboard's own icons (no text).
+  expect(button.textContent).toContain("\u23f5\u23f5 bypass permissions on");
+  expect(within(button).queryAllByText("Shift")).toHaveLength(0);
+  expect(button.querySelectorAll("svg[aria-hidden='true']")).toHaveLength(2);
+  expect(container.textContent).toContain("\u23f5\u23f5 bypass permissions on"); // own colour survives
+  fireEvent.click(button);
+  expect(onClick).toHaveBeenCalledOnce();
+});
+
+it("greys the claude mode control while a reason stands and shows the spinner while busy", () => {
+  const row = splitLines(parseAnsi("  \u23f8 manual mode on"))[0]!;
+  const { rerender } = render(
+    <StatuslineRow agent="claude" row={row} claudeMode={{ busy: false, disabledReason: "read-only", onClick: vi.fn() }} />,
+  );
+  expect(within(document.body).getByRole("button", { name: /Claude mode/ })).toBeDisabled();
+
+  rerender(<StatuslineRow agent="claude" row={row} claudeMode={{ busy: true, onClick: vi.fn() }} />);
+  expect(within(document.body).getByRole("button", { name: /Claude mode/ })).toBeEnabled();
+});
+
+it("leaves a claude mode row without a wired control verbatim", () => {
+  const text = "  \x1b[38;2;153;153;153m\u23f8 manual mode on \u00b7 \u2190 4 agents\x1b[0m";
+  const { container, row } = renderRow(text, "claude");
+  expect(container.textContent).toBe(lineText(row));
+  expect(within(container).queryAllByRole("button")).toHaveLength(0);
 });
 
 it("shows a matched Hermes session's full model and saved effort without truncation", () => {
