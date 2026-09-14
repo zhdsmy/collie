@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.20] - 2026-09-14
+
 ### Fixed
 
-- **Keep a Hermes frame in the terminal's own colour.** A border is a row of nothing but rule glyphs, so the parser marked it decorative chrome and repainted it neutral: a message read gold along the top and grey along the bottom, and a wrapped frame turned grey halfway along. A fitted frame is now kept in the skin's ink.
+- **Keep a Hermes frame in the terminal's own colour.** A border is a row of nothing but rule glyphs, so the parser marked it decorative chrome and repainted it neutral: a message read gold along the top and grey along the bottom, and a wrapped frame turned grey halfway along. A fitted frame is now kept in the skin's ink. ([c03379ce](https://github.com/zhdsmy/collie/commit/c03379ce))
 
 ## [1.8.2+collie.19] - 2026-09-14
 
