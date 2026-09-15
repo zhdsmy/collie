@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.8.2+collie.22] - 2026-09-15
+
 ### Fixed
 
-- **Draw Claude's sent message as one full grey rectangle.** The echo is painted row by row in the terminal's own fill, so each row's grey ended where its padding ran out and the shades differed. The rows now join Codex's echoes on the shared full-row user surface: one rectangle across the row, one grey, on both themes.
+- **Draw Claude's sent message as one full grey rectangle.** The echo is painted row by row in the terminal's own fill, so each row's grey ended where its padding ran out and the shades differed. The rows now join Codex's echoes on the shared full-row user surface: one rectangle across the row, one grey, on both themes. ([6a3f1c22](https://github.com/zhdsmy/collie/commit/6a3f1c22))
 
 ## [1.8.2+collie.21] - 2026-09-14
 
