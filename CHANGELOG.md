@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.0+collie.1] - 2026-09-15
+
 ### Changed
 
-- **Merge upstream 1.9.0 and prefer its overlapping implementations.** Adopt upstream cache monitoring, configuration files, update progress, actions belt, pane naming, and wrapped-URL fixes; reconcile question cards and retain unique downstream mode/model controls, safe-area layout, fonts, and agent display fixes. See [complete upstream changes and integration decisions](./docs/upstream-v1.9.0.md).
+- **Merge upstream 1.9.0 and prefer its overlapping implementations.** Adopt upstream cache monitoring, configuration files, update progress, actions belt, pane naming, and wrapped-URL fixes; reconcile question cards and retain unique downstream mode/model controls, safe-area layout, fonts, and agent display fixes. See [complete upstream changes and integration decisions](./docs/upstream-v1.9.0.md). ([16e2a4c7](https://github.com/zhdsmy/collie/commit/16e2a4c7))
 
 ## [1.8.2+collie.22] - 2026-09-15
 
