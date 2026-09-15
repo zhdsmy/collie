@@ -12,6 +12,11 @@ decisions [`.adr/`](./.adr/) · adding a harness
 [`HARNESS_CONTRIBUTING.md`](./HARNESS_CONTRIBUTING.md) · adding a multiplexer
 [`MUX_CONTRIBUTING.md`](./MUX_CONTRIBUTING.md).
 
+How **this checkout** is deployed on its hosts (supervisord, not `collie restart`) lives in the
+untracked [`CLAUDE.local.md`](./CLAUDE.local.md).
+
+@CLAUDE.local.md
+
 ## Decision records — read before reopening a settled question
 
 [`.adr/`](./.adr/) holds the decisions whose reasoning would otherwise live only in a PR thread —

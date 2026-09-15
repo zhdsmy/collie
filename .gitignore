@@ -44,8 +44,8 @@ Thumbs.db
 # Agent / local tooling state. Same `/*`-plus-negation shape as .vscode above: the lint hook and its
 # registration are a repo-wide enforcement surface and must travel with the checkout; agent-memory,
 # worktrees and settings.local.json stay local.
-# `*.local` does not match this name. Host-specific deploy notes; AGENTS.md still points at it.
-AGENTS.local.md
+# `*.local` does not match this name. Host-specific deploy notes; CLAUDE.md still points at it.
+CLAUDE.local.md
 .claude/*
 !.claude/settings.json
 !.claude/hooks/
