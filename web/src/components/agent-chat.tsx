@@ -2282,7 +2282,7 @@ export function AgentChat({
                 {statuslineVisible && (
                 <div
                   className={cn(
-                    "max-h-[18dvh] overflow-y-auto overscroll-contain border-t border-border/40 px-3 py-1 font-mono text-[11px] leading-tight",
+                    "max-h-[18dvh] overflow-y-auto overscroll-contain border-t border-border/40 px-3 py-0.5 font-mono text-[11px] leading-tight",
                     // The strip carries the agent's OWN terminal colour, so it renders in the mirror's
                     // dark space and inverts in light with it (ADR 0002) — a bright statusline colour is
                     // chosen against a near-black background and is illegible re-themed onto app chrome.

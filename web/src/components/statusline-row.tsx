@@ -162,8 +162,10 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
   );
 }
 
+// Horizontal overflow also clips vertically. Keep glyph breathing room INSIDE the scroller;
+// padding on the outer status strip cannot protect a font's ascenders or descenders here.
 const ROW_CLASS =
-  "flex min-w-0 min-h-3.5 items-center gap-1.5 overflow-x-auto overscroll-x-contain whitespace-nowrap leading-none tabular-nums [scrollbar-width:none]";
+  "flex min-w-0 min-h-3.5 items-center gap-1.5 overflow-x-auto overscroll-x-contain whitespace-nowrap py-0.5 leading-none tabular-nums [scrollbar-width:none]";
 
 type CodexControlProps = Omit<CodexModeToggleProps, "mode">;
 

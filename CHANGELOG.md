@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Statusline text stays intact on a unified composer surface.** Move vertical breathing room inside the statusline scroller so terminal fonts are not clipped while keeping a single row's overall height. Use the composer's chrome colour across the action belt and harness commands, remove its right fade, and place the pane switcher beside the scroller so every action can scroll fully into view.
+
 ## [1.9.0+collie.4] - 2026-09-15
 
 ### Fixed
