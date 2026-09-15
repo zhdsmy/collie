@@ -95,6 +95,113 @@ beforeEach(() => {
 });
 
 describe("Codex question actions", () => {
+  it("opens async questions without submitting and refuses a vanished preview", async () => {
+    const collapsed = fixturePicker("codex--async-qa-collapsed.txt");
+    const opened = fixturePicker("codex--async-qa-options.txt");
+    script(collapsed, opened);
+    expect(await submitPickerIntent(args(collapsed, { kind: "expand" }))).toEqual({ status: "sent" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["alt+Up"]]);
+    mockSendKeys.mockClear();
+    script(null);
+    expect(await submitPickerIntent(args(collapsed, { kind: "expand" }))).toEqual({ status: "changed" });
+    expect(mockSendKeys).not.toHaveBeenCalled();
+  });
+
+  it("uses async navigation keys and returns to the main prompt without Escape", async () => {
+    const first = fixturePicker("codex--async-qa-options.txt");
+    const second = fixturePicker("codex--async-qa-freeform.txt");
+    const collapsed = fixturePicker("codex--async-qa-collapsed.txt");
+    let current = first;
+    mockFetchPane.mockImplementation(async () => pane(current));
+    mockSendKeys.mockImplementation(async (_pane, keys) => {
+      current = keys[0] === "alt+Up" ? second : current === second ? first : collapsed;
+      return { ok: true };
+    });
+    expect(await submitPickerIntent(args(first, { kind: "question", direction: "next" }))).toEqual({ status: "sent" });
+    expect(await submitPickerIntent(args(second, { kind: "cancel" }))).toEqual({ status: "sent" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["alt+Up"], ["alt+Down"], ["alt+Down"]]);
+  });
+
+  it("submits the selected async option with one Enter, ignoring stored Other text", async () => {
+    const last = fixturePicker("codex--async-qa-last.txt");
+    script(last, last, last, null);
+    expect(await submitPickerIntent(args(last, { kind: "answer", notes: "" }))).toEqual({ status: "sent" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Enter"]]);
+    expect(mockSendReply).not.toHaveBeenCalled();
+  });
+
+  it("pastes a freeform async answer with blank lines, verifies, and submits only that question", async () => {
+    const empty = fixturePicker("codex--async-qa-freeform.txt");
+    const filled = fixturePicker("codex--async-qa-freeform-text.txt");
+    const remaining = fixturePicker("codex--async-qa-last.txt");
+    let current = empty;
+    mockFetchPane.mockImplementation(async () => pane(current));
+    mockSendReply.mockImplementation(async () => { current = filled; return { ok: true }; });
+    mockSendKeys.mockImplementation(async () => { current = remaining; return { ok: true }; });
+    const answer = filled.questionnaire!.notes!.text;
+    expect(await submitPickerIntent(args(empty, { kind: "answer", notes: answer }))).toEqual({ status: "sent" });
+    expect(mockSendReply).toHaveBeenCalledWith("w1:p1", "\x1b[200~" + answer + "\x1b[201~", false, undefined, empty.regionSignature);
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Enter"]]);
+    mockSendReply.mockClear();
+    mockSendKeys.mockClear();
+    expect(await submitPickerIntent(args(filled, { kind: "answer", notes: answer }))).toEqual({ status: "changed" });
+    expect(mockSendKeys).not.toHaveBeenCalled();
+    expect(mockSendReply).not.toHaveBeenCalled();
+  });
+
+  it("moves into Other before pasting and never appends an unverified answer", async () => {
+    const selected = fixturePicker("codex--async-qa-selected.txt");
+    const other = fixturePicker("codex--async-qa-other-empty.txt");
+    let current = selected;
+    mockFetchPane.mockImplementation(async () => pane(current));
+    mockSendKeys.mockImplementation(async () => { current = other; return { ok: true }; });
+    expect(await submitPickerIntent(args(selected, { kind: "answer", notes: "custom text" }))).toEqual({ status: "changed" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Down"]]);
+    expect(mockSendReply).toHaveBeenCalledTimes(1);
+    mockSendKeys.mockClear();
+    mockSendReply.mockClear();
+    expect(await submitPickerIntent(args(other, { kind: "answer", notes: "" }))).toEqual({ status: "changed" });
+    expect(mockSendKeys).not.toHaveBeenCalled();
+    expect(mockSendReply).not.toHaveBeenCalled();
+  });
+
+  it("replaces native async text only after observing the empty editor", async () => {
+    const before = fixturePicker("codex--async-qa-replace-before.txt");
+    const empty = fixturePicker("codex--async-qa-cleared.txt");
+    const filled = fixturePicker("codex--async-qa-other-text.txt");
+    const next = { ...fixturePicker("codex--async-qa-freeform.txt") };
+    next.questionnaire = { ...next.questionnaire!, index: 1, total: 1, unanswered: 1 };
+    let current = before;
+    mockFetchPane.mockImplementation(async () => pane(current));
+    mockSendKeys.mockImplementation(async (_pane, keys) => {
+      if (keys[0] === "ctrl+u") {
+        expect(keys.every((key) => key === "ctrl+u" || key === "ctrl+k")).toBe(true);
+        current = empty;
+      } else { expect(keys).toEqual(["Enter"]); current = next; }
+      return { ok: true };
+    });
+    mockSendReply.mockImplementation(async () => { current = filled; return { ok: true }; });
+    expect(await submitPickerIntent(args(before, { kind: "answer", notes: filled.questionnaire!.notes!.text }))).toEqual({ status: "sent" });
+    expect(mockSendReply).toHaveBeenCalledTimes(1);
+    expect(mockSendKeys).toHaveBeenCalledTimes(2);
+
+    current = before;
+    mockSendReply.mockClear();
+    mockSendKeys.mockImplementation(async () => ({ ok: true }));
+    expect(await submitPickerIntent(args(before, { kind: "answer", notes: "replacement" }))).toEqual({ status: "changed" });
+    expect(mockSendReply).not.toHaveBeenCalled();
+  });
+
+  it("expects the queue to wrap to question one when its final item is delivered", async () => {
+    const initial = fixturePicker("codex--async-qa-freeform-text.txt");
+    initial.questionnaire = { ...initial.questionnaire!, index: 3, total: 3, unanswered: 3 };
+    const next = fixturePicker("codex--async-qa-options.txt");
+    script(initial, initial, initial, next);
+    expect(await submitPickerIntent(args(initial, { kind: "answer", notes: initial.questionnaire.notes!.text }))).toEqual({ status: "sent" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Enter"]]);
+    expect(mockSendReply).not.toHaveBeenCalled();
+  });
+
   it("submits verified native notes once, without retyping on a retry", async () => {
     const initial = fixturePicker("codex--v0154-notes-multiline-focused.txt");
     const next = fixturePicker("codex--v0154-question-q2.txt");

@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Codex asynchronous questions open directly as touch-friendly answer cards.** Pending questions retain a compact entry while the ordinary composer stays available. Open, browse unanswered questions, choose an option or submit a custom multiline answer through verified native controls; existing blocking questionnaires keep their separate behavior.
+
 ## [1.9.1+collie.1] - 2026-09-15
 
 ### Changed

@@ -833,6 +833,13 @@ export const en = {
   "dialog.picker.submitAnswer": "Submit answer",
   "dialog.picker.submitAll": "Submit all answers",
   "dialog.picker.answerRemaining": "Answer the remaining questions before submitting.",
+  "dialog.picker.async.title": "Questions",
+  "dialog.picker.async.waiting.one": "{count} question waiting",
+  "dialog.picker.async.waiting.other": "{count} questions waiting",
+  "dialog.picker.async.answer": "Answer",
+  "dialog.picker.async.customAnswer": "Custom answer",
+  "dialog.picker.async.customAnswerPlaceholder": "Write a custom answer",
+  "dialog.picker.async.backToInput": "Back to input",
 
   "dialog.plan.title": "Plan",
   "dialog.plan.body": "Plan content",

@@ -781,6 +781,13 @@ export const zhTW: Dictionary = {
   "dialog.picker.submitAnswer": "確認答案",
   "dialog.picker.submitAll": "提交全部答案",
   "dialog.picker.answerRemaining": "提交前請回答剩餘問題。",
+  "dialog.picker.async.title": "待回答問題",
+  "dialog.picker.async.waiting.one": "{count} 個問題待回答",
+  "dialog.picker.async.waiting.other": "{count} 個問題待回答",
+  "dialog.picker.async.answer": "回答",
+  "dialog.picker.async.customAnswer": "自訂回答",
+  "dialog.picker.async.customAnswerPlaceholder": "輸入自訂回答",
+  "dialog.picker.async.backToInput": "返回輸入",
 
   "dialog.plan.title": "計畫",
   "dialog.plan.body": "計畫內容",

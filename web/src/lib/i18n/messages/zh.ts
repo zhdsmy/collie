@@ -785,6 +785,13 @@ export const zh: Dictionary = {
   "dialog.picker.submitAnswer": "确认答案",
   "dialog.picker.submitAll": "提交全部答案",
   "dialog.picker.answerRemaining": "提交前请回答剩余问题。",
+  "dialog.picker.async.title": "待回答问题",
+  "dialog.picker.async.waiting.one": "{count} 个问题待回答",
+  "dialog.picker.async.waiting.other": "{count} 个问题待回答",
+  "dialog.picker.async.answer": "回答",
+  "dialog.picker.async.customAnswer": "自定义回答",
+  "dialog.picker.async.customAnswerPlaceholder": "输入自定义回答",
+  "dialog.picker.async.backToInput": "返回输入",
 
   "dialog.plan.title": "计划",
   "dialog.plan.body": "计划正文",

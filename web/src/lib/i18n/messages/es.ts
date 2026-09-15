@@ -805,6 +805,13 @@ export const es: Dictionary = {
   "dialog.picker.submitAnswer": "Enviar respuesta",
   "dialog.picker.submitAll": "Enviar todas las respuestas",
   "dialog.picker.answerRemaining": "Responde las preguntas restantes antes de enviar.",
+  "dialog.picker.async.title": "Preguntas",
+  "dialog.picker.async.waiting.one": "{count} pregunta pendiente",
+  "dialog.picker.async.waiting.other": "{count} preguntas pendientes",
+  "dialog.picker.async.answer": "Responder",
+  "dialog.picker.async.customAnswer": "Respuesta personalizada",
+  "dialog.picker.async.customAnswerPlaceholder": "Escribe una respuesta personalizada",
+  "dialog.picker.async.backToInput": "Volver a la entrada",
 
   "dialog.plan.title": "Plan",
   "dialog.plan.body": "Contenido del plan",

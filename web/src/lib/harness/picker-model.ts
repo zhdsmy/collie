@@ -34,6 +34,8 @@ export interface PickerModel {
     unanswered: number;
     answered: boolean;
     submit: "answer" | "all";
+    /** Async questions are individually delivered, then removed from the pending queue. */
+    async?: { collapsed: boolean; otherId: string | null };
     /** Native note composer, including stored notes when option focus is restored. */
     notes?: { text: string; focused: boolean };
   };
@@ -58,6 +60,7 @@ export function sanitizePickerSearchQuery(
 }
 
 export type PickerIntent =
+  | { kind: "expand" }
   | { kind: "choose"; id: string }
   | { kind: "focus"; id: string }
   | { kind: "question"; direction: "previous" | "next" }
@@ -81,6 +84,8 @@ export function pickersEqual(a: PickerModel, b: PickerModel): boolean {
 
 export function pickersSameIdentity(a: PickerModel, b: PickerModel): boolean {
   return a.kind === b.kind && a.identity === b.identity &&
+    a.questionnaire?.async?.collapsed === b.questionnaire?.async?.collapsed &&
+    a.questionnaire?.async?.otherId === b.questionnaire?.async?.otherId &&
     a.plan?.text === b.plan?.text && a.plan?.complete === b.plan?.complete &&
     a.questionnaire?.index === b.questionnaire?.index &&
     a.questionnaire?.total === b.questionnaire?.total;

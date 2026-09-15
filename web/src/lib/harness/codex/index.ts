@@ -22,6 +22,7 @@ import {
 } from "./chrome";
 import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
+import { detectAsyncAskRegion } from "./async-ask";
 import { detectTrustRegion } from "./trust";
 import { detectPickerRegion } from "./picker";
 import { detectPlanRegion } from "./plan";
@@ -65,7 +66,7 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
     return blocks;
   }
 
-  const ask = detectAskRegion(lines);
+  const ask = detectAskRegion(lines) ?? detectAsyncAskRegion(lines);
   if (ask) {
     const before = trimTrailingBlank(lines.slice(0, ask.startLine));
     const blocks: Block[] = [];

@@ -97,6 +97,30 @@ const questionnaireSinglePicker: PickerModel = {
   },
 };
 
+const asyncCollapsedPicker: PickerModel = {
+  ...questionnaireSinglePicker,
+  identity: "async:collapsed",
+  title: "Async questions",
+  options: [],
+  questionnaire: {
+    ...questionnaireSinglePicker.questionnaire!,
+    index: 0,
+    total: 2,
+    unanswered: 2,
+    async: { collapsed: true, otherId: null },
+  },
+};
+
+const asyncExpandedPicker: PickerModel = {
+  ...questionnaireSinglePicker,
+  identity: "async:expanded",
+  title: "What should we change?",
+  questionnaire: {
+    ...questionnaireSinglePicker.questionnaire!,
+    async: { collapsed: false, otherId: "gpt-5-mini" },
+  },
+};
+
 describe("PickerBlock", () => {
   it("formats terminal plan Markdown without a matching journal entry", () => {
     const picker: PickerModel = {
@@ -345,6 +369,79 @@ describe("PickerBlock", () => {
     render(<PickerBlock picker={questionnaireSinglePicker} onAction={vi.fn()} disabled />);
 
     for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
+  });
+
+  it("renders collapsed async questions without stealing composer focus", async () => {
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+
+    render(<PickerBlock picker={asyncCollapsedPicker} onAction={onAction} />);
+
+    expect(screen.getByText("2 questions waiting")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Answer" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Back to input" })).toBeNull();
+    expect(screen.queryByText("Question 0/2")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Previous question" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Next question" })).toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByText("No matching options")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Answer" }));
+    expect(onAction).toHaveBeenCalledWith({ kind: "expand" });
+  });
+
+  it("uses async notes as custom answers and requires text for Other", async () => {
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+    const picker = {
+      ...asyncExpandedPicker,
+      options: asyncExpandedPicker.options.map((option) => ({
+        ...option,
+        pointed: option.id === "gpt-5-mini",
+      })),
+    };
+
+    render(<PickerBlock picker={picker} onAction={onAction} />);
+
+    const input = screen.getByRole("textbox", { name: "Custom answer" });
+    const submit = screen.getByRole("button", { name: "Submit answer" });
+    expect(input).toHaveAttribute("placeholder", "Write a custom answer");
+    expect(submit).toBeDisabled();
+
+    await user.type(input, "Use the compact layout");
+    expect(submit).toBeEnabled();
+    await user.click(submit);
+    expect(onAction).toHaveBeenCalledWith({ kind: "answer", notes: "Use the compact layout" });
+  });
+
+  it("clears a custom draft when an async named option is selected", async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn();
+    render(<PickerBlock picker={asyncExpandedPicker} onAction={onAction} />);
+
+    const input = screen.getByRole("textbox", { name: "Custom answer" });
+    await user.type(input, "Use the compact layout");
+    await user.click(screen.getAllByRole("button", { name: /gpt-5/ })[0]!);
+
+    expect(input).toHaveValue("");
+    expect(onAction).toHaveBeenCalledWith({ kind: "focus", id: "gpt-5" });
+  });
+
+  it("does not show an empty-options error for async free-text questions", () => {
+    const picker: PickerModel = {
+      ...asyncExpandedPicker,
+      options: [],
+      questionnaire: {
+        ...asyncExpandedPicker.questionnaire!,
+        async: { collapsed: false, otherId: null },
+      },
+    };
+
+    render(<PickerBlock picker={picker} onAction={vi.fn()} />);
+
+    expect(screen.queryByText("No matching options")).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Custom answer" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit answer" })).toBeDisabled();
   });
 });
 

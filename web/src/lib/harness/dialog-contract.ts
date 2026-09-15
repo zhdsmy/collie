@@ -58,6 +58,8 @@ export type DialogKind = keyof DialogModels;
  * `autocomplete` it would have locked the composer out of a pane whose input box is demonstrably live.
  */
 export function blockOwnsKeyboard(block: Block): boolean {
+  // An async question preview advertises an action, while the ordinary composer keeps focus.
+  if (block.kind === "picker" && block.picker.questionnaire?.async?.collapsed) return false;
   return block.kind in DIALOG_CONTRACT;
 }
 

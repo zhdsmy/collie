@@ -798,6 +798,13 @@ export const ja: Dictionary = {
   "dialog.picker.submitAnswer": "回答を送信",
   "dialog.picker.submitAll": "すべての回答を送信",
   "dialog.picker.answerRemaining": "送信する前に残りの質問に回答してください。",
+  "dialog.picker.async.title": "質問",
+  "dialog.picker.async.waiting.one": "未回答の質問 {count} 件",
+  "dialog.picker.async.waiting.other": "未回答の質問 {count} 件",
+  "dialog.picker.async.answer": "回答する",
+  "dialog.picker.async.customAnswer": "カスタム回答",
+  "dialog.picker.async.customAnswerPlaceholder": "カスタム回答を入力",
+  "dialog.picker.async.backToInput": "入力に戻る",
 
   "dialog.plan.title": "計画",
   "dialog.plan.body": "計画の本文",

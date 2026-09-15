@@ -70,7 +70,15 @@ const PLANS = [
   "codex--v0154-plan-short.txt",
 ];
 
+const ASYNC_QUESTIONS = [
+  "codex--async-qa-options.txt", "codex--async-qa-selected.txt", "codex--async-qa-other-empty.txt",
+  "codex--async-qa-other-text.txt", "codex--async-qa-other-stored.txt", "codex--async-qa-freeform.txt",
+  "codex--async-qa-freeform-text.txt", "codex--async-qa-last.txt",
+  "codex--async-qa-replace-before.txt", "codex--async-qa-cleared.txt",
+];
+const ASYNC_PREVIEWS = ["codex--async-qa-collapsed.txt", "codex--async-qa-collapsed-single.txt"];
 const PINNED = [
+  ...ASYNC_QUESTIONS, ...ASYNC_PREVIEWS, "codex--async-qa-completed.txt",
   "codex--approval-exec.txt",
   "codex--ask-fruit.txt",
   "codex--ask-wizard-q1.txt",
@@ -112,6 +120,7 @@ const PINNED = [
 
 // Dialog captures include both option focus and the native notes composer.
 const DIALOG = [
+  ...ASYNC_QUESTIONS,
   ...PICKERS,
   ...PLANS,
   ...QUESTIONS,
@@ -122,8 +131,8 @@ const DIALOG = [
   "codex--trust-prompt.txt",
 ];
 
-const ownFixtures = DIALOG;
-const neutralFixtures = allCodexFixtures.filter((f) => !DIALOG.includes(f));
+const ownFixtures = [...DIALOG, ...ASYNC_PREVIEWS];
+const neutralFixtures = allCodexFixtures.filter((f) => !ownFixtures.includes(f));
 
 describeAdapterConformance(codexAdapter, {
   ownFixtures,

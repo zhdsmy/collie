@@ -217,7 +217,11 @@ function samePickerExceptPointer(a: PickerModel, b: PickerModel): boolean {
   const before = a.questionnaire;
   const after = b.questionnaire;
   if (before && after) {
-    if (before.notes?.text !== after.notes?.text || before.notes?.focused !== after.notes?.focused) return false;
+    if (before.async && after.async) {
+      // Other's stored preview flattens blank lines; its focused editor preserves them.
+      if ((before.notes?.text ?? "").replace(/\s+/g, " ") !==
+          (after.notes?.text ?? "").replace(/\s+/g, " ")) return false;
+    } else if (before.notes?.text !== after.notes?.text || before.notes?.focused !== after.notes?.focused) return false;
     // Moving an answered question's pointer makes that question unanswered again. This is the
     // only counter change caused by Up/Down; a terminal user confirming another answer is drift.
     const unchanged = before.answered === after.answered && before.unanswered === after.unanswered;
@@ -521,7 +525,10 @@ async function runQuestion(args: PickerActionArgs, direction: "previous" | "next
   if (args.picker.kind !== "single" || !question) return { status: "changed" };
   const nextIndex = question.index + (direction === "next" ? 1 : -1);
   if (nextIndex < 1 || nextIndex > question.total) return { status: "changed" };
-  const sent = await guardedKey(args, [question.notes?.focused
+  if (question.async?.collapsed) return { status: "changed" };
+  const sent = await guardedKey(args, [question.async
+    ? direction === "next" ? "alt+Up" : "alt+Down"
+    : question.notes?.focused
     ? direction === "next" ? "ctrl+n" : "ctrl+p"
     : direction === "next" ? "Right" : "Left"]);
   if (sent.status !== "sent") return sent;
@@ -531,6 +538,7 @@ async function runQuestion(args: PickerActionArgs, direction: "previous" | "next
 }
 
 async function confirmQuestion(args: PickerActionArgs): Promise<ActionResult> {
+  if (args.picker.questionnaire?.async) return answerAsyncQuestion(args, "");
   const question = args.picker.questionnaire;
   const pointer = pointedOption(args.picker);
   if (!question || question.notes?.focused || !pointer || !/^[1-9]$/.test(pointer.id)) return { status: "changed" };
@@ -572,6 +580,7 @@ function notesLanded(text: string, model: PickerModel): boolean {
 async function runAnswer(args: PickerActionArgs, notes: string): Promise<ActionResult> {
   const text = notes.replace(/\r\n?/g, "\n");
   if (/\p{Cc}/u.test(text.replace(/[\n\t]/g, ""))) return { status: "changed" };
+  if (args.picker.questionnaire?.async) return answerAsyncQuestion(args, text);
   const question = args.picker.questionnaire;
   if (!question || (question.submit === "all" && question.unanswered - (question.answered ? 0 : 1) > 0)) {
     return { status: "changed" };
@@ -627,6 +636,86 @@ async function runAnswer(args: PickerActionArgs, notes: string): Promise<ActionR
   question.submit === "all", false);
 }
 
+async function expandAsyncQuestion(args: PickerActionArgs): Promise<ActionResult> {
+  const question = args.picker.questionnaire;
+  if (!question?.async?.collapsed) return { status: "changed" };
+  const sent = await guardedKey(args, ["alt+Up"]);
+  if (sent.status !== "sent") return sent;
+  return readCommitOutcome(args, args.picker, (model) =>
+    model.questionnaire?.async?.collapsed === false && model.questionnaire.index === 1 &&
+    model.questionnaire.total === question.total, false, false);
+}
+
+async function collapseAsyncQuestion(args: PickerActionArgs): Promise<ActionResult> {
+  let current = { model: args.picker, revision: args.detectedRevision };
+  const total = current.model.questionnaire?.total;
+  if (!total || !current.model.questionnaire?.async || current.model.questionnaire.async.collapsed) return { status: "changed" };
+  for (let step = 0; step < total; step++) {
+    const index = current.model.questionnaire!.index;
+    const currentArgs = argsFor(args, current);
+    const sent = await guardedKey(currentArgs, ["alt+Down"]);
+    if (sent.status !== "sent") return sent;
+    const outcome = await readCommitOutcome(currentArgs, current.model, (model) =>
+      model.questionnaire?.total === total && model.questionnaire.index === index - 1 &&
+      model.questionnaire.async?.collapsed === (index === 1), false, false);
+    if (outcome.status !== "sent" || index === 1) return outcome;
+    const next = await readPicker(currentArgs);
+    if (!next || next.model.questionnaire?.total !== total || next.model.questionnaire.index !== index - 1 ||
+        next.model.questionnaire.async?.collapsed !== false) return { status: "changed" };
+    current = next;
+  }
+  return { status: "changed" };
+}
+
+/** Enter delivers one async answer; it never confirms the remaining questions as a batch. */
+async function answerAsyncQuestion(args: PickerActionArgs, text: string): Promise<ActionResult> {
+  const question = args.picker.questionnaire;
+  if (!question?.async || question.async.collapsed) return { status: "changed" };
+  const initial = await readCurrent(args);
+  if (!initial.ok) return initial.result;
+  let current = initial.value;
+  if (text.trim() && question.async.otherId) {
+    const walked = await walkTo(args, current, question.async.otherId);
+    if (!walked.ok) return walked.result;
+    current = walked.value;
+  }
+  if (current.model.questionnaire?.notes?.focused) {
+    if (!text.trim()) return { status: "changed" };
+    if (!notesLanded(text, current.model)) {
+      if (current.model.questionnaire.notes.text) {
+        // Both sides of an arbitrary caret, including blank lines. Never use Escape here.
+        // Bound the sweep; a nonempty read-back stops before any replacement paste or Enter.
+        const sweeps = Math.min(256, current.model.questionnaire.notes.text.length + 16);
+        const keys = [...Array.from({ length: sweeps }, () => "ctrl+u"),
+          ...Array.from({ length: sweeps }, () => "ctrl+k")];
+        const currentArgs = argsFor(args, current);
+        const cleared = await guardedKey(currentArgs, keys);
+        if (cleared.status !== "sent") return cleared;
+        const empty = await readBack(currentArgs, current.model, (model) =>
+          sameQuestionExceptNotes(current.model, model) && model.questionnaire?.notes?.focused === true &&
+          model.questionnaire.notes.text === "");
+        if (!empty) return { status: "changed" };
+        current = empty;
+      }
+      const currentArgs = argsFor(args, current);
+      const guard = await guardDialog(target(currentArgs));
+      if (!guard.ok) return guard.result;
+      const typed = await sendSearchText(currentArgs, "\x1b[200~" + text + "\x1b[201~");
+      if (typed.status !== "sent") return typed;
+      const landed = await readBack(currentArgs, current.model, (model) =>
+        sameQuestionExceptNotes(current.model, model) && model.questionnaire?.notes?.focused === true && notesLanded(text, model));
+      if (!landed) return { status: "changed" };
+      current = landed;
+    }
+  } else if (text.trim() || !pointedOption(current.model)) return { status: "changed" };
+  const currentArgs = argsFor(args, current);
+  const sent = await guardedKey(currentArgs, ["Enter"]);
+  if (sent.status !== "sent") return sent;
+  return readCommitOutcome(currentArgs, current.model, (model) =>
+    model.questionnaire?.async?.collapsed === false && model.questionnaire.total === question.total - 1 &&
+    model.questionnaire.index === (question.index < question.total ? question.index : 1), question.total === 1, false);
+}
+
 async function runToggle(args: PickerActionArgs, id: string): Promise<ActionResult> {
   if (args.picker.kind !== "multiple") return { status: "changed" };
   const option = args.picker.options.find((candidate) => candidate.id === id);
@@ -643,6 +732,8 @@ async function runClose(
   intent: "confirm" | "cancel",
 ): Promise<ActionResult> {
   if (args.picker.questionnaire) {
+    if (args.picker.questionnaire.async) return intent === "confirm"
+      ? answerAsyncQuestion(args, "") : collapseAsyncQuestion(args);
     // Escape interrupts the whole Codex turn, rather than dismissing just the question card.
     return intent === "confirm" ? confirmQuestion(args) : { status: "changed" };
   }
@@ -822,6 +913,8 @@ async function runSearch(args: PickerActionArgs, query: string): Promise<ActionR
 
 async function dispatch(args: PickerActionArgs): Promise<ActionResult> {
   switch (args.intent.kind) {
+    case "expand":
+      return expandAsyncQuestion(args);
     case "choose":
       return runChoose(args, args.intent.id);
     case "focus":

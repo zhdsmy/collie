@@ -796,6 +796,13 @@ export const ko: Dictionary = {
   "dialog.picker.submitAnswer": "답변 제출",
   "dialog.picker.submitAll": "모든 답변 제출",
   "dialog.picker.answerRemaining": "제출하기 전에 남은 질문에 답변하세요.",
+  "dialog.picker.async.title": "질문",
+  "dialog.picker.async.waiting.one": "답변 대기 중인 질문 {count}개",
+  "dialog.picker.async.waiting.other": "답변 대기 중인 질문 {count}개",
+  "dialog.picker.async.answer": "답변하기",
+  "dialog.picker.async.customAnswer": "직접 답변",
+  "dialog.picker.async.customAnswerPlaceholder": "직접 답변을 입력하세요",
+  "dialog.picker.async.backToInput": "입력으로 돌아가기",
 
   "dialog.plan.title": "계획",
   "dialog.plan.body": "계획 내용",

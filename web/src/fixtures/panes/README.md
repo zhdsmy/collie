@@ -16,6 +16,17 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Codex 0.154 asynchronous question cards (captured 2026-09-15)
+
+`codex--async-qa-*.txt` capture the installed native Codex TUI in an isolated Herdr
+test pane. A loopback app-server proxy supplied synthetic asynchronous question
+events; the real TUI handled all focus, editing and answer delivery. The corpus
+covers collapsed one/multiple-question entries, choices, Other with empty/stored/
+multiline text, freeform answers, the remaining final question, cleared replacement
+draft and completed composer. No external model or production conversation is in
+the captures. See [`ASYNC_ASK_NOTES.md`](../../lib/harness/codex/ASYNC_ASK_NOTES.md)
+for the verified native key flow, client/bridge read-back and conservative limits.
+
 ## Codex 0.154 plan cards (captured 2026-09-13)
 
 `codex--v0154-plan-*.txt` are byte-faithful captures from an isolated Codex 0.154.0 session
