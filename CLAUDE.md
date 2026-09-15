@@ -26,10 +26,11 @@ mark it superseded and write the next one.
 ## Versioning — MANDATORY
 
 **Default downstream delivery:** after implementing and validating a requested change, commit it,
-push `main` and the specific annotated version tag, and deploy the local Herdr-managed installation
-unless the operator explicitly limits the task to discussion, review, or source-only work. Use the
-upstream version plus `+collie.N`; verify the deployed build locally and through the configured
-access URL before reporting completion. Do not create a GitHub Release.
+push `main` and the specific annotated version tag, deploy the local Herdr-managed installation,
+and restart the Collie service, including for frontend-only deployments, unless the operator
+explicitly limits the task to discussion, review, or source-only work. Use the upstream version
+plus `+collie.N`; verify the restarted process/listener and deployed build locally and through the
+configured access URL before reporting completion. Do not create a GitHub Release.
 
 **Upstream release handoff:** report the full upstream release changes in Chinese, not only
 selected highlights. Cross-check the release notes and CHANGELOG against the actual tag-to-tag
@@ -267,7 +268,9 @@ page to be skimmed.
   ([ADR 0006](./.adr/0006-update-advances-the-checkout-herdr-installed.md)).
 - **Frontend changes** (`web/`): rebuild with `bun run build` (root) or `cd web && bun run build`.
   The bridge serves `web/dist` **from disk at request time**, so on the deployment host
-  a rebuild is **immediately live — no restart**.
+  a rebuild is immediately live. The operator's default delivery workflow still requires restarting
+  Collie after deployment, including frontend-only changes. On this Herdr-managed macOS installation,
+  use `herdr plugin action invoke restart --plugin herdr.collie`.
 - **Backend changes** (`bridge/*.ts`): Bun does **not** hot-reload the service — you must
   `systemctl --user restart collie`. Forgetting this is the #1 "my change didn't take" trap.
 - `bun run build` (root) is now **one definition**: it runs `collie build`, which gates on
