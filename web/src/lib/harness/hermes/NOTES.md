@@ -1,5 +1,34 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## The prompt icon is a closed state set — 2026-09-15
+
+The footer walk kept failing on whole classes of screen, and the reason was in the Hermes source,
+not in any capture: `cli_tui_mixin.py`'s `_get_tui_prompt_fragments` paints the prompt's LEADING
+ICON per state, from a closed set — `⚕` working · `?` clarify · `✎` clarify-freetext · `⚠` approval ·
+`🔐` sudo · `🔑` secret · `● ◉ 🎤` voice · a busy-command SPINNER frame (`⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`, `cli.py`
+`_COMMAND_SPINNER_FRAMES`, advancing ten times a second) — optionally preceded by a non-default
+profile name (`coder ❯`), and optionally followed by `❯` (minimal chrome omits it). The old prompt
+regex accepted only `❯` and `[⚕?✎]`, so two whole states rejected their footer wholesale:
+
+- **A busy slash command** (`/compact` → "Compressing context…"): the icon is a spinner frame, the
+  placeholder is `{frame} {command status}` in italics. The statusline — wrapped at the pane width,
+  with the right-aligned session title on its own row — stayed in the mirror as orphan bars.
+- **A sudo/secret password prompt** (`🔑`): same wholesale rejection; the statusline rows and the
+  italic instruction (`type password (hidden), Enter to submit · ESC to skip`) stayed behind.
+
+The prompt regex now accepts the closed set (a profile name is a WORD — letters/digits/`_`/`-` — so
+an unknown emoji followed by `❯` still reads as unknown and stays visible, which the negatives pin).
+
+**Which placeholders are lifted into the fixed strip is decided per state**, because italic alone
+does not tell instruction from suggestion: on the states whose prompt REPLACES the composer with an
+instruction (`⚠ 🔐 🔑 ● ◉ 🎤`, spinner) an all-italic placeholder is lifted as the hint row — the
+password instruction survives the composer block leaving the mirror. On `⚕` the only lifted
+placeholder is the verified working hint (canonical spelling; the join across a physical wrap would
+mangle any other text); an UNKNOWN italic there, and every idle `❯` suggestion, keep the composer
+visible exactly as before. `?`/`✎` belong to the clarify card. Typed copies are never italic, so a
+draft is never lifted. The status walk above the top rule also widened 4 → 6 rows: a wrapped
+statusline plus its title row is already three.
+
 ## Frames the pane cut in two — 2026-09-14
 
 A response frame is drawn at the width of the terminal that was on screen when the message

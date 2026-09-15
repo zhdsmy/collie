@@ -105,16 +105,84 @@ describe("Hermes display chrome", () => {
     expect(hermesAdapter.extractStatusLines(lines(unknown))).toHaveLength(1);
   });
 
-  it("leaves incomplete working footers and special-state prompts in the mirror", () => {
+  it("leaves incomplete working footers and unknown special-state prompts in the mirror", () => {
     for (const text of [
       working.trimEnd().split("\n").slice(0, -1).join("\n"),
       `${working}\nEnter to approve`,
-      working.replace("⚕ ❯ ", "⚠ ❯ "),
+      // 🔒 is not a Hermes state icon (the source paints 🔐 for sudo); ⚠ and 🔑 ARE, and are
+      // covered by the recognized cases below.
       working.replace("⚕ ❯ ", "🔒 ❯ "),
+      working.replace("⚕ ❯ ", "☎ ❯ "),
     ]) {
       expect(hermesAdapter.extractStatusLines(lines(text))).toEqual([]);
       expect(mirror(text)).toContain(hint);
     }
+  });
+
+  it("recognizes the source's closed set of special-state prompt icons", () => {
+    for (const icon of ["⚠", "🔐", "🔑", "⠋", "⠼", "●", "◉", "🎤"]) {
+      const text = working.replace("⚕ ❯ ", `${icon} ❯ `);
+      expect(hermesAdapter.extractStatusLines(lines(text))).toHaveLength(2);
+      expect(lineText(hermesAdapter.extractStatusLines(lines(text))[0]!)).toContain("example-model");
+    }
+  });
+
+  it("recognizes a profile-prefixed prompt", () => {
+    const text = working.replace("⚕ ❯ ", "coder ❯ ");
+    expect(hermesAdapter.extractStatusLines(lines(text))).toHaveLength(2);
+    expect(mirror(text)).toBe(lines(working).slice(0, 4).map(lineText).join("\n"));
+  });
+
+  it("lifts a busy command's spinner prompt and its italic status into the strip", () => {
+    // The /compact screen: the icon is a spinner frame and the placeholder names the command.
+    const busy = working.replace("⚕ ❯ ", "⠋ ❯ ").replace(hint, "⠋ Compressing context...");
+    const status = hermesAdapter.extractStatusLines(lines(busy));
+    expect(status).toHaveLength(2);
+    expect(lineText(status[1]!)).toBe("⠋ Compressing context...");
+    expect(mirror(busy)).not.toContain("Compressing context");
+  });
+
+  it("lifts a wrapped statusline and its title row during a password prompt", () => {
+    // The measured resume-session screen: the statusline wraps at the pane width and the
+    // right-aligned title lands on its own row, all above the 🔑 composer.
+    const fill = (text: string) => `\x1b[48;5;234m${text}\x1b[0m`;
+    const rule = "─".repeat(40);
+    const text = [
+      "Transcript above.",
+      fill(" ⚕ deepseek-flash │ ~126K/1M │ [██░░░░░░] ~13% │ ◎"),
+      fill("77.5% │ ◎ 3.8s │ ↑ 136 t/s │ 2h 29m │ ⏲ 32s"),
+      fill("──────────── 查询刚才保存的方案"),
+      rule,
+      "🔑 ❯ \x1b[3mtype password (hidden), Enter to submit · ESC to skip\x1b[0m",
+      rule,
+    ].join("\n");
+    const status = hermesAdapter.extractStatusLines(lines(text));
+    const joined = status.map((row) => lineText(row)).join(" ");
+    // The wrapped status rows are joined into ONE strip row, beside the lifted instruction.
+    expect(status).toHaveLength(2);
+    expect(joined).toContain("deepseek-flash");
+    expect(joined).toContain("~126K/1M");
+    expect(joined).toContain("77.5%");
+    expect(joined).toContain("查询刚才保存的方案");
+    // The password instruction is lifted as the hint rather than lost with the composer block.
+    expect(joined).toContain("type password (hidden)");
+    expect(mirror(text)).not.toContain("type password");
+    expect(mirror(text)).toContain("Transcript above.");
+  });
+
+  it("keeps a real typed draft on a special-state prompt visible", () => {
+    // A draft is not italic, so it is no placeholder: the composer block stays in the mirror.
+    const rule = "─".repeat(40);
+    const text = [
+      "Body before.",
+      " ⚕ deepseek-flash │ ~126K/1M │ [██░░░░░░] ~13%",
+      rule,
+      "🔑 ❯ a typed draft",
+      rule,
+    ].join("\n");
+    expect(hermesAdapter.extractStatusLines(lines(text))).toHaveLength(1);
+    expect(mirror(text)).toContain("a typed draft");
+    expect(mirror(text)).toContain("Body before.");
   });
 
   it("paints a fitted frame in the terminal's ink, not the app's rule grey", () => {

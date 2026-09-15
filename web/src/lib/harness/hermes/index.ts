@@ -12,6 +12,20 @@ const RESPONSE_BOTTOM = /^╰─{8,}╯$/u;
 const STATUS_HEAD = /^\s*⚕\s+\S/u;
 const CONTEXT = /(?:ctx\s+--|~?[\d.]+[KMB]?\/[\d.]+[KMB]?|\[[█░]+\]\s*(?:~?\d+(?:\.\d+)?%|--))/u;
 const WORKING_HINT = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
+/**
+ * The prompt row's LEADING ICON is state-dependent, and the set is closed — `cli_tui_mixin.py`'s
+ * `_get_tui_prompt_fragments` paints exactly: ⚕ working · ? clarify · ✎ clarify-freetext · ⚠
+ * approval · 🔐 sudo · 🔑 secret · ● ◉ 🎤 voice · a busy-command spinner frame (`⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`,
+ * cli.py `_COMMAND_SPINNER_FRAMES`, advancing ten times a second) — optionally preceded by a
+ * non-default profile name (`coder ❯`), and optionally followed by `❯` (minimal chrome omits it).
+ * Every glyph outside `[⚕?✎❯]` once rejected its whole footer: the /compact screen (spinner) and
+ * every password prompt (🔑) left the statusline, wrapped across rows, stranded in the mirror.
+ */
+const STATE_ICON = "[⚕⚠?✎🔐🔑●◉🎤]|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]";
+/** A profile name is a WORD (cli profiles): letters, digits, `_`/`-` — never an emoji, so an
+ * unknown icon followed by `❯` still reads as unknown rather than as somebody's profile. */
+const PROFILE = "[\\p{L}\\p{N}_-]+";
+const PROMPT = new RegExp(`^(?:(?:${PROFILE} )?(?:❯(?: |$)|(?:${STATE_ICON}) (?:❯(?: |$))?))`, "u");
 /** A frame border whose row cannot carry its closing corner: the pane cut it. See {@link rejoinWrappedBorders}. */
 const BORDER_OPEN = /^(?:╭─\s*⚕\s*Hermes|╰─{8,})/u;
 /** What such a border continues onto — the rest of the dashes, corner last. */
@@ -50,22 +64,32 @@ function locateFooter(lines: StyledLine[]): Footer | null {
   for (let prompt = bottom - 1; prompt >= Math.max(1, bottom - 100); prompt--) {
     const text = texts[prompt]!;
     if (RULE.test(text.trim())) return null;
-    // The default working prompt adds ⚕; minimal chrome omits the ❯ suffix.
-    const promptMatch = /^(?:❯(?: |$)|[⚕?✎] (?:❯(?: |$))?)/u.exec(text);
+    const promptMatch = PROMPT.exec(text);
     if (!promptMatch) continue;
     const top = prompt - 1;
     if (!RULE.test(texts[top]!.trim()) || texts[top]!.trim() !== texts[bottom]!.trim()) return null;
     const draft = sliceSegments(lines[prompt]!.segments, promptMatch[0].length, text.length);
     const continuation = lines.slice(prompt + 1, bottom).flatMap((line) => line.segments);
     const input = [...draft, ...continuation];
-    // Only this verified italic placeholder is lifted. Match through physical wrapping without
-    // attempting to reflow arbitrary input, and never mistake a typed copy for a placeholder.
+    // A placeholder is ALL-ITALIC input. Whether it is lifted into the fixed strip depends on the
+    // state, because the italic style alone does not tell instruction from suggestion: on the
+    // states whose prompt REPLACES the composer with an instruction (⚠ approval · 🔐 sudo · 🔑
+    // secret · ● ◉ 🎤 voice · a busy command's spinner — "type password…", "⠋ Compressing
+    // context…") it is lifted, so the composer block can leave the mirror without taking the words
+    // with it. On ⚕ the only lifted placeholder is the verified working hint (canonical one-line
+    // spelling — physical wrapping mangles the join); an UNKNOWN italic there, and every idle ❯
+    // suggestion, keep the composer visible exactly as before (clarify's own card carries ?/✎).
+    // Typed copies are never italic, so a draft is never lifted.
     const placeholder = input.find((s) => s.text.trim());
-    const hint = text.startsWith("⚕ ") && placeholder && input.every((s) => !s.text.trim() || s.italic) &&
-      input.map((s) => s.text).join("").replace(/\s/gu, "") === WORKING_HINT.replace(/\s/gu, "")
-      ? { segments: [{ ...placeholder, text: WORKING_HINT }] } : undefined;
+    const placeholderText = input.map((s) => s.text).join("").trim();
+    const isPlaceholder = placeholder !== undefined && input.every((s) => !s.text.trim() || s.italic);
+    const instructing = /^(?:\S+ )?(?:[⚠🔐🔑●◉🎤]|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]) /u.test(text);
+    const hint = !isPlaceholder ? undefined
+      : placeholderText.replace(/\s/gu, "") === WORKING_HINT.replace(/\s/gu, "")
+        ? { segments: [{ ...placeholder!, text: WORKING_HINT }] }
+        : instructing ? { segments: [{ ...placeholder!, text: placeholderText }] } : undefined;
     if (!hint && texts.slice(prompt + 1, bottom).some((row) => row.trim() && !/^ {2}/u.test(row))) return null;
-    for (let statusStart = top - 1; statusStart >= Math.max(0, top - 4); statusStart--) {
+    for (let statusStart = top - 1; statusStart >= Math.max(0, top - 6); statusStart--) {
       if (!STATUS_HEAD.test(texts[statusStart]!)) continue;
       const status = texts.slice(statusStart, top).join(" ");
       if (!status.includes("│") || !CONTEXT.test(status)) return null;
