@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.1] - 2026-09-15
+
 ### Changed
 
-- **Merge upstream 1.9.1 with operator-selected Composer and Codex behavior.** Adopt the upstream 40px tinted actions belt and right fade while retaining keys inside Input without autofocus. Preserve full-row Codex user/diff rectangles with upstream luminance-based fill detection. Include urgent update notices, Herdr idle completions, Muse light rendering, installation docs, and WebKit checks; keep workflows disabled. See [complete upstream changes and integration decisions](./docs/upstream-v1.9.1.md).
+- **Merge upstream 1.9.1 with operator-selected Composer and Codex behavior.** Adopt the upstream 40px tinted actions belt and right fade while retaining keys inside Input without autofocus. Preserve full-row Codex user/diff rectangles with upstream luminance-based fill detection. Include urgent update notices, Herdr idle completions, Muse light rendering, installation docs, and WebKit checks; keep workflows disabled. See [complete upstream changes and integration decisions](./docs/upstream-v1.9.1.md). ([79d24064](https://github.com/zhdsmy/collie/commit/79d24064))
 
 ## [1.9.0+collie.6] - 2026-09-15
 
