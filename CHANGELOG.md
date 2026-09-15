@@ -30,12 +30,14 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.3] - 2026-09-16
+
 ### Added
 
 - **Codex's saved-session picker is a card.** `/resume` opens as a list of your recorded sessions —
   title, age and branch — with the native search field, Up/Down browse and one confirming Enter; the
   `tab` toolbar, archive, density and transcript keys stay untouched and a row expanded with `ctrl+e`
-  keeps its native rendering.
+  keeps its native rendering. ([59d051f7](https://github.com/zhdsmy/collie/commit/59d051f7))
 
 ## [1.9.1+collie.2] - 2026-09-15
 
