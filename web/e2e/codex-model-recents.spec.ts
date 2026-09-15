@@ -80,8 +80,8 @@ for (const theme of ["light", "dark"]) test(`plan controls: ${theme}`, async ({ 
   current = fixture("codex--v0154-picker-model.txt");
   revision++;
   await expect(page.getByText("Select Model and Effort", { exact: true })).toBeVisible();
-  await expect(plan).toHaveAttribute("aria-pressed", "false");
-  await expect(plan).toBeDisabled();
+  await expect(plan).toHaveCount(0);
+  await expect(page.locator('[data-slot="codex-statusline"]')).toHaveCount(0);
   expect(keyCount).toBe(2);
 });
 

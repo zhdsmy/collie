@@ -766,6 +766,18 @@ describe("AgentChat — block-grammar scoping (an agent with no adapter)", () =>
     expect(screen.queryByText(/❯/)).toBeNull(); // the input box was stripped off the mirror
   });
 
+  it.each([false, true])("hides Codex controls without a statusline while preserving the host target (crew: %s)", (crew) => {
+    const overrides = {
+      agent: { ...fixtureAgents[0]!, agent: "codex", host: crew ? "bluefin" : undefined },
+      text: "Plain output without a terminal statusline",
+    };
+    const { container } = crew ? renderCrewChat("bluefin", overrides) : renderChat(overrides);
+    expect(screen.queryByRole("button", { name: /^Plan mode:/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Fast mode:/ })).toBeNull();
+    expect(screen.queryByLabelText("Sends to host: bluefin") !== null).toBe(crew);
+    if (!crew) expect(container.querySelector('[data-slot="codex-statusline"]')).toBeNull();
+  });
+
   it("compacts Codex status fields above the unchanged composer chrome", () => {
     const { container } = renderChat({
       agent: { ...fixtureAgents[0]!, agent: "codex" },

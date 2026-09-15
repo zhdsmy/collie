@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Composer fades preserve labels and empty status controls disappear.** Narrow the pinned pane switcher's fade to 16px so neighbouring action labels remain legible. Show Codex Plan/Fast controls only with an actual statusline, while preserving a standalone multi-host send target.
+
 ## [1.9.0+collie.1] - 2026-09-15
 
 ### Changed

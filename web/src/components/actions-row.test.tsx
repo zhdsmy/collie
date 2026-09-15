@@ -195,7 +195,7 @@ describe("ActionsRow", () => {
     expect(scroller.className).not.toMatch(/(?:^|\s)pr-3(?=\s|$)/);
     const spacer = scroller.lastElementChild!;
     expect(spacer.getAttribute("aria-hidden")).toBe("true");
-    expect(spacer.getAttribute("style")).toBe("width: 117px;");
+    expect(spacer.getAttribute("style")).toBe("width: 69px;");
     // The masked wrapper one level out never carries a right-hand gradient stop — `edges="left"`
     // took effect.
     const masked = scroller.parentElement!;

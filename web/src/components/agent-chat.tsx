@@ -670,7 +670,7 @@ export function AgentChat({
       grammarsOn ? adapterFor(agent?.agent)?.extractStatusLines(splitLines(parseAnsi(modelSwitching ? modelSwitchBase : display))) ?? [] : [],
     [display, agent?.agent, grammarsOn, modelSwitching, modelSwitchBase],
   );
-  const statuslineRows = useMemo(() => agent?.agent === "codex" ? [{
+  const statuslineRows = useMemo(() => agent?.agent === "codex" && statusLines.length > 0 ? [{
     segments: statusLines.flatMap((row, index) => [
       ...(index > 0 ? [{ text: " · ", style: {}, muted: false }] : []),
       ...row.segments.filter((segment) => !isCodexPlanHint(segment)),

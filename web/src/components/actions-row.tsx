@@ -124,32 +124,9 @@ import { cn } from "@/lib/utils";
 const ON = "bg-control-on text-control-on-foreground hover:bg-control-on";
 const OFF = "text-muted-foreground";
 
-/**
- * The FIRST-PAINT fallback for how much of the belt's right end the pinned Switch block owns, in
- * px — the trailing spacer's width before a `ResizeObserver` has measured the real thing (below).
- * It is the whole pinned span: 32px of control, the 1px hairline on its left, the 8px between the
- * two, the 12px of `pr-3` that keeps it off the screen edge, and the 64px of `pl-16` its own fade
- * leads in over. 32 + 1 + 8 + 12 + 64 = 117.
- *
- * The 32px is the drawn box: `STRIP_ROW_PILL`'s own 44px width floor (`min-w-11`) is overridden on
- * this one pill to `w-8 min-w-8` — the belt's operator-picked shape, "Option 6" of the belt-shade
- * deck (playground, removed 2026-09-14 once it had served; see git history): the fade doubled to
- * 64px and the mark narrowed to 32px, so the longer dissolve gets room without the belt growing any
- * shorter. It was 44px, `STRIP_ROW_PILL`'s unmodified floor, before that pick, and 78px before that
- * while the control was a bordered pill wearing the word "Switch" — Altan, from his phone: "the
- * switch button is taking up too much room for my taste, I'd argue we can just have the icon." What
- * it ANSWERS is unchanged at 46px — `STRIP_ROW_PILL`'s `::before` reaches past the drawn box, the
- * way every pill on this belt does.
- *
- * THIS NUMBER IS NO LONGER THE ANSWER — IT IS THE GUESS BEFORE ONE EXISTS. A constant here drifts
- * the moment the Switch block's own box changes (a locale with a wider glyph, a future word back on
- * the pill) and nothing re-measures it, which is exactly how the last pill ended up hidden under the
- * block: the spacer's width and the block's real width were two numbers that had to be kept equal
- * by hand and quietly stopped agreeing. `useSwitchBlockWidth` below measures the block itself with a
- * `ResizeObserver` and this constant is only its return value's first frame — see there for why the
- * block, not the belt, is what gets measured.
- */
-const SWITCH_PILL_INSET = 117;
+/** First-paint fallback; ResizeObserver then measures the full pinned block.
+ * 32px icon + 1px rule + 8px gap + 12px outer gutter + 16px fade. */
+const SWITCH_PILL_INSET = 69;
 
 /**
  * The pinned Switch block's own width, read off its DOM node — the trailing spacer's width must
@@ -334,16 +311,8 @@ export function ActionsRow({ general, agent, mine, onRun, disabled, handle }: Ac
           belt's own tint plus the fade already say the row scrolls, and the chevron sat under the
           fixed Switch pill's own hit box (below) and could not be tapped anyway — so the mark is
           gone and the fade carries the whole of the cue (operator's call, 2026-09-14).
-          `edges="left"` is the OTHER half of that call: with a handle pinned, the Switch block below
-          paints its OWN 64px fade at the belt's right end, always, whatever the scroll position — so
-          a right mask from THIS primitive would stack a second, scroll-dependent fade on top of it.
-          At rest the two together read as one wide fade; the moment the scroller reaches its end and
-          this primitive's own mask drops out (nothing left to hide), only the Switch block's constant
-          64px remains and the fade visibly SHRINKS — Altan, from the phone: "the fade is longer by
-          default than when I scroll to the very right." `edges="left"` makes the right fade the
-          Switch block's alone, constant in every scroll state, and keeps this primitive's own mask on
-          the left, where it still means something once scrolled. A caller with no handle passes no
-          `edges` at all — the default `"both"` is unchanged.
+          `edges="left"` leaves the right fade to the pinned Switch block, so a second
+          scroll-dependent mask cannot stack over it. Without a handle, both edges fade.
           `pl-3` stays fixed (paired with the `-mx-3` above, the route's own gutter); the scroller
           carries no `paddingRight` at all — see the trailing spacer, a sibling of the last pill
           inside this same scroller, for why the room the Switch block needs is bought with a real
@@ -424,45 +393,18 @@ export function ActionsRow({ general, agent, mine, onRun, disabled, handle }: Ac
           </div>
         )}
       </OverflowEdges>
-      {/* THE SWITCH PILL, PINNED AT THE BELT'S RIGHT END — see {@link SWITCH_PILL_INSET} above for
-          why the scroll cue steps around it, and `handle` for why it stands here at all.
-          It is a SIBLING of the OverflowEdges wrapper, and that is load-bearing: a mask applies to
-          its element's whole subtree (overflow-edges.tsx says so at the middle div), so a pill
-          inside the wrapper would fade out with the scrolling pills exactly where the belt
-          overflows — which is always, once a pill is pinned. `z-10` puts it over the scroller, so a
-          pill that pans under the fade cannot take the tap.
-          THE FADE IS TWO STACKED LAYERS UNDER ONE MASK, and it has to be two: the scroller it fades
-          into carries its own brand tint now (`bg-primary/10`, see the header above), so a single
-          `bg-chrome` patch would read as a hole punched in a tinted band. The second layer is the
-          Switch cell's OWN ground, `bg-chrome` — the composer's own chrome ground, the same fill the
-          reply row and its round Send button sit on below — so the cell reads as ONE surface with the
-          composer rather than as a patch cut into the belt (operator's call, from the phone: the
-          Switch cell must match the composer row under the belt). The mask fades both layers in over
-          the first 64px — twice the drawn box's own old lead-in — which is what lets a scrolling
-          pill disappear UNDER this one instead of stopping dead against it. The 64px is the
-          operator's pick, "Option 6" of the belt-shade deck (playground, removed 2026-09-14 once it
-          had served; see git history): the longest fade offered, taken because the belt reads as a
-          strip that keeps going rather than one that stops.
-          THIS OUTER SPAN IS `pointer-events-none`, AND NOT JUST THE FADE LAYERS INSIDE IT. A plain
-          `<span>` sized by flex still hits-tests over its whole box, padding included — so the 64px
-          `pl-16` lead-in, drawn only as a fade, was silently eating taps meant for whatever scrolled
-          underneath it, the belt's own right chevron among them (that chevron is gone now, but a
-          pill scrolled to the belt's end hits the same wall). Pointer events are switched back on
-          one element in, on the actual cell (hairline + button below), so the Switch pill answers a
-          tap only from ITS OWN drawn cell outward — its reach stops at the hairline, the cell's own
-          left edge, never past it into the scroller.
-          `switchBlock.ref` lands HERE, on this outer span — the whole pinned box, `pr-3` and `pl-16`
-          included, is exactly the width the scroller's `paddingRight` must match (see
-          {@link useSwitchBlockWidth}), so measuring anything narrower (the inner button alone, say)
-          would under-report it and the last pill would scroll in under the fade again. */}
+      {/* Keep Switch outside OverflowEdges so its mask never fades the pinned button.
+          The 16px lead-in softens the edge without washing out the neighbouring label.
+          Only the actual cell handles taps; pills under the fade remain clickable.
+          Measure the whole block, including the fade and gutter, for the trailing spacer. */}
       {handle && (
         <span
           ref={switchBlock.ref}
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center pr-3 pl-16"
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center pr-3 pl-4"
         >
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-chrome [mask-image:linear-gradient(to_right,transparent,black_4rem)]"
+            className="pointer-events-none absolute inset-0 bg-chrome [mask-image:linear-gradient(to_right,transparent,black_1rem)]"
           >
             <span className="absolute inset-0 bg-chrome" />
           </span>
