@@ -14,7 +14,7 @@ import { server } from "@/test/setup";
 import { fixtureServers, recordReply } from "@/test/handlers";
 import { CrewProvider } from "./crew-provider";
 import { Composer, TUI_SETTLE_MS } from "./composer";
-import type { ServerSummary } from "@/lib/types";
+import { type ServerSummary } from "@/lib/types";
 
 // A guarded send is TWO reply calls: type (submit:false), then — once the text is verified on the
 // input line — submit-only (empty text). Overriding the reply handler therefore has to keep the fake
@@ -145,8 +145,8 @@ function renderComposerWithStatus(
   return props;
 }
 
-describe("Composer - unified controls", () => {
-  it.each(LOCALES)("keeps all four labels and direct-input behavior in $code", async ({ code }) => {
+describe("Composer — actions belt", () => {
+  it.each(LOCALES)("keeps translated controls and direct typing without autofocus in $code", async ({ code }) => {
     try {
       setLocale(code);
       await whenLocaleReady(code);
@@ -154,102 +154,56 @@ describe("Composer - unified controls", () => {
       const group = screen.getByRole("group", { name: translate("composer.controls.label") });
       const buttons = within(group).getAllByRole("button");
       expect(buttons.map((button) => button.textContent)).toEqual([
+        translate("composer.controls.keys"),
         translate("composer.controls.type"),
         translate("composer.controls.quick"),
         translate("composer.controls.agent"),
         translate("composer.controls.display"),
       ]);
       expect(document.documentElement.lang).toBe(code);
-      for (const button of buttons) {
-        expect(button).toHaveClass("min-h-11", "text-xs");
-        expect(button.querySelector("svg")).toHaveClass("size-5");
-        expect(button.querySelector("span")).toHaveClass("whitespace-normal", "hyphens-auto");
-      }
-      await userEvent.setup().click(within(group).getByRole("button", {
-        name: translate("composer.controls.typeAria"),
-      }));
+      for (const button of buttons) expect(button.querySelector("svg")).not.toBeNull();
+      const type = within(group).getByRole("button", { name: translate("composer.controls.typeAria") });
+      await userEvent.setup().click(type);
+      expect(type).toHaveAttribute("aria-pressed", "true");
       expect(screen.getByPlaceholderText(translate("composer.placeholder.direct"))).not.toHaveFocus();
-      expect(screen.getByTestId("direct-keyboard-accessory")).toBeInTheDocument();
     } finally {
       cleanup();
       setLocale("en");
     }
   });
 
-  it.each([
-    { agent: "claude", isShell: false },
-    { agent: null, isShell: true },
-  ])("keeps four equal icon-and-text controls for $agent", (pane) => {
-    renderComposer(pane);
+  it("omits Agent on shells without a command catalog", () => {
+    renderComposer({ agent: null, isShell: true });
     const group = screen.getByRole("group", { name: "Controls" });
-    const buttons = within(group).getAllByRole("button");
-    expect(buttons.map((button) => button.textContent)).toEqual(["Type", "Quick", "Agent", "Display"]);
-    expect(group).toHaveClass("grid-cols-4");
-    for (const button of buttons) {
-      expect(button).toHaveClass("w-full", "min-w-0", "min-h-11", "text-xs");
-      expect(button.querySelector("svg")).toHaveClass("size-5");
-      expect(button.querySelector("span")).toHaveClass("whitespace-normal", "hyphens-auto");
-      expect(button).not.toHaveClass("flex-col");
-      expect(button.querySelector("svg")).toBeInTheDocument();
-      expect(button.querySelector("span")).toBeInTheDocument();
-    }
-    if (pane.isShell) expect(buttons[2]).toBeDisabled();
+    expect(within(group).queryByRole("button", { name: "Agent" })).toBeNull();
+    expect(within(group).getByRole("button", { name: "Keys" })).toBeEnabled();
   });
 
-  it("places the keyboard between controls and input without taking focus on accessory taps", async () => {
+  it("requires queue discard before arming Type and never restores an old queue", async () => {
     const user = userEvent.setup();
-    renderComposer();
+    const onWritingChange = vi.fn();
+    const sends = vi.fn();
+    server.use(http.post(/\/api\/pane\/[^/]+\/keys$/, () => {
+      sends();
+      return HttpResponse.json({ ok: true });
+    }));
+    renderComposer({ onWritingChange });
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+    await user.click(screen.getByRole("button", { name: "Ctrl" }));
+    await user.click(screen.getByRole("button", { name: "Tab" }));
+    expect(onWritingChange).toHaveBeenLastCalledWith(true);
     const type = screen.getByRole("button", { name: "Type into terminal" });
     await user.click(type);
-    const box = screen.getByPlaceholderText(/type into the terminal/i);
-    const rail = screen.getByTestId("direct-keyboard-accessory");
-    const group = screen.getByRole("group", { name: "Controls" });
-    expect(group.compareDocumentPosition(rail) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-    expect(rail.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-    expect(rail.closest(".fixed")).toBeNull();
-    const focus = vi.spyOn(box, "focus");
-    await user.click(screen.getByRole("button", { name: "Ctrl" }));
-    expect(box).not.toHaveFocus();
-    expect(focus).not.toHaveBeenCalled();
-    await user.click(box);
-    expect(box).toHaveFocus();
-    await user.click(screen.getByRole("button", { name: "Alt" }));
-    expect(box).toHaveFocus();
+    expect(type).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Clear queued keys" })).toBeInTheDocument();
     await user.click(type);
-    await waitFor(() => expect(screen.queryByTestId("direct-keyboard-accessory")).not.toBeInTheDocument());
-    expect(screen.getByPlaceholderText(/type a reply/i)).not.toHaveFocus();
-  });
-
-  it("ignores a retained accessory during the closing animation", async () => {
-    const keys: string[][] = [];
-    server.use(http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-      keys.push((await request.json()).keys);
-      return HttpResponse.json({ ok: true });
-    }));
-    renderComposer();
-    fireEvent.click(screen.getByRole("button", { name: "Type into terminal" }));
-    const enter = screen.getByRole("button", { name: "Enter" });
-    fireEvent.click(screen.getByRole("button", { name: "Type into terminal" }));
-    fireEvent.click(enter);
-    await waitFor(() => expect(screen.queryByTestId("direct-keyboard-accessory")).not.toBeInTheDocument());
-    expect(keys).toEqual([]);
-  });
-
-  it("applies the latest modifier to native beforeinput events", async () => {
-    const keys: string[][] = [];
-    server.use(http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-      keys.push((await request.json()).keys);
-      return HttpResponse.json({ ok: true });
-    }));
-    renderComposer();
-    fireEvent.click(screen.getByRole("button", { name: "Type into terminal" }));
-    const box = screen.getByPlaceholderText(/type into the terminal/i);
-    fireEvent.click(screen.getByRole("button", { name: "Ctrl" }));
-    fireEvent(box, new InputEvent("beforeinput", {
-      bubbles: true, cancelable: true, inputType: "insertParagraph",
-    }));
-    await waitFor(() => expect(keys).toEqual([["ctrl+Enter"]]));
-    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
+    expect(type).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByPlaceholderText(/type into the terminal/i)).not.toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+    expect(type).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("button", { name: "Clear queued keys" })).toBeNull();
+    expect(onWritingChange).toHaveBeenLastCalledWith(false);
+    expect(sends).not.toHaveBeenCalled();
   });
 });
 
@@ -736,214 +690,6 @@ describe("Composer — typing into the terminal", () => {
     fireEvent.click(screen.getByRole("button", { name: /^type into terminal$/i }));
     return screen.getByPlaceholderText(/type into the terminal/i);
   }
-
-  it("switches one fixed accessory rail between navigation and F1-F12", async () => {
-    const user = userEvent.setup();
-    renderComposer();
-    startDirectTyping();
-
-    const switcher = screen.getByRole("button", { name: "Show function keys" });
-    expect(screen.getByRole("button", { name: "Escape" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "F12" })).not.toBeInTheDocument();
-
-    await user.click(switcher);
-    expect(screen.queryByRole("button", { name: "Escape" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "F1" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "F12" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Show navigation keys" }));
-    expect(screen.getByRole("button", { name: "Escape" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "F12" })).not.toBeInTheDocument();
-  });
-
-  it("cycles each modifier through one-shot, locked, and off", async () => {
-    const user = userEvent.setup();
-    renderComposer();
-    startDirectTyping();
-
-    const ctrl = screen.getByRole("button", { name: "Ctrl" });
-    expect(ctrl).toHaveAttribute("data-mode", "off");
-    expect(ctrl).toHaveAttribute("aria-pressed", "false");
-
-    await user.click(ctrl);
-    expect(ctrl).toHaveAttribute("data-mode", "once");
-    expect(ctrl).toHaveAttribute("aria-pressed", "true");
-
-    await user.click(ctrl);
-    expect(ctrl).toHaveAttribute("data-mode", "locked");
-    expect(ctrl.querySelector("svg")).toBeInTheDocument();
-
-    await user.click(ctrl);
-    expect(ctrl).toHaveAttribute("data-mode", "off");
-    expect(ctrl).toHaveAttribute("aria-pressed", "false");
-  });
-
-  it("combines accessory modifiers with phone-keyboard characters in canonical order", async () => {
-    const user = userEvent.setup();
-    const keyCalls: string[][] = [];
-    server.use(
-      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-        keyCalls.push((await request.json()).keys);
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    renderComposer();
-    const box = startDirectTyping();
-
-    // Tap order is deliberately reversed; the wire order stays Ctrl -> Alt -> Shift -> base.
-    await user.click(screen.getByRole("button", { name: "Shift" }));
-    await user.click(screen.getByRole("button", { name: "Ctrl" }));
-    fireEvent.change(box, { target: { value: "A" } });
-
-    await waitFor(() => expect(keyCalls.flat()).toEqual(["ctrl+shift+a"]));
-    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
-    expect(screen.getByRole("button", { name: "Shift" })).toHaveAttribute("data-mode", "off");
-  });
-
-  it("applies a one-shot modifier only to the first valid key in a paste", async () => {
-    const user = userEvent.setup();
-    const keyCalls: string[][] = [];
-    server.use(
-      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-        keyCalls.push((await request.json()).keys);
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    renderComposer();
-    const box = startDirectTyping();
-
-    await user.click(screen.getByRole("button", { name: "Ctrl" }));
-    fireEvent.change(box, { target: { value: "abc" } });
-
-    await waitFor(() => expect(keyCalls.flat()).toEqual(["ctrl+a", "b", "c"]));
-    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
-  });
-
-  it("does not turn an IME commit into an invalid modifier chord", async () => {
-    const user = userEvent.setup();
-    const keyCalls: string[][] = [];
-    server.use(
-      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-        keyCalls.push((await request.json()).keys);
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    renderComposer();
-    const box = startDirectTyping();
-    const ctrl = screen.getByRole("button", { name: "Ctrl" });
-
-    await user.click(ctrl);
-    fireEvent.compositionStart(box);
-    fireEvent.compositionEnd(box, { data: "你" });
-    await waitFor(() => expect(keyCalls.flat()).toEqual(["你"]));
-    expect(ctrl).toHaveAttribute("data-mode", "once");
-
-    fireEvent.change(box, { target: { value: "c" } });
-    await waitFor(() => expect(keyCalls.flat()).toEqual(["你", "ctrl+c"]));
-    expect(ctrl).toHaveAttribute("data-mode", "off");
-  });
-
-  it("combines modifiers with accessory special keys", async () => {
-    const user = userEvent.setup();
-    const keyCalls: string[][] = [];
-    server.use(
-      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-        keyCalls.push((await request.json()).keys);
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    renderComposer();
-    startDirectTyping();
-
-    await user.click(screen.getByRole("button", { name: "Shift" }));
-    await user.click(screen.getByRole("button", { name: "Tab" }));
-
-    // Current mux adapters own key translation; the frontend sends the neutral chord.
-    await waitFor(() => expect(keyCalls.flat()).toEqual(["shift+Tab"]));
-  });
-
-  it("keeps modifiers across row switching and combines them with function keys", async () => {
-    const user = userEvent.setup();
-    const keyCalls: string[][] = [];
-    server.use(
-      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-        keyCalls.push((await request.json()).keys);
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    renderComposer();
-    startDirectTyping();
-
-    await user.click(screen.getByRole("button", { name: "Ctrl" }));
-    await user.click(screen.getByRole("button", { name: "Show function keys" }));
-    expect(keyCalls).toEqual([]); // switching rows is display-only
-    await user.click(screen.getByRole("button", { name: "F5" }));
-
-    await waitFor(() => expect(keyCalls.flat()).toEqual(["ctrl+F5"]));
-  });
-
-  it("sends accessory navigation and function keys immediately", async () => {
-    const user = userEvent.setup();
-    const keyCalls: string[][] = [];
-    server.use(
-      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-        keyCalls.push((await request.json()).keys);
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    renderComposer();
-    startDirectTyping();
-
-    await user.click(screen.getByRole("button", { name: "Escape" }));
-    await user.click(screen.getByRole("button", { name: "Tab" }));
-    await user.click(screen.getByRole("button", { name: "Left" }));
-    await user.click(screen.getByRole("button", { name: "Show function keys" }));
-    await user.click(screen.getByRole("button", { name: "F12" }));
-
-    await waitFor(() =>
-      expect(keyCalls.flat()).toEqual(["Escape", "Tab", "Left", "F12"]),
-    );
-  });
-
-  it("resets modifiers and the selected row when direct input exits", async () => {
-    const user = userEvent.setup();
-    renderComposer();
-    startDirectTyping();
-
-    await user.click(screen.getByRole("button", { name: "Ctrl" }));
-    await user.click(screen.getByRole("button", { name: "Show function keys" }));
-    await user.click(screen.getByRole("button", { name: /^stop$/i }));
-    startDirectTyping();
-
-    expect(screen.getByRole("button", { name: "Escape" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "F12" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
-  });
-
-  it("keeps locked modifiers for later keys but spends one-shot modifiers", async () => {
-    const user = userEvent.setup();
-    const keyCalls: string[][] = [];
-    server.use(
-      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-        keyCalls.push((await request.json()).keys);
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    renderComposer();
-    const box = startDirectTyping();
-    const alt = screen.getByRole("button", { name: "Alt" });
-
-    await user.click(alt);
-    await user.click(alt); // locked
-    fireEvent.change(box, { target: { value: "b" } });
-    await waitFor(() => expect(keyCalls.flat()).toEqual(["alt+b"]));
-    expect(alt).toHaveAttribute("data-mode", "locked");
-
-    fireEvent.change(box, { target: { value: "f" } });
-    await waitFor(() => expect(keyCalls.flat()).toEqual(["alt+b", "alt+f"]));
-    expect(alt).toHaveAttribute("data-mode", "locked");
-  });
-
 
   it("arms without focusing the textarea or opening the phone keyboard", () => {
     renderComposer();
@@ -1685,8 +1431,6 @@ describe("Composer — destructive-input confirm", () => {
     expect(screen.getByTestId("status")).toHaveTextContent(
       "Destructive: sudo (runs as root) on workshop — tap Send again to confirm",
     );
-    // The pane owns the persistent target label; standalone Composer still names the host in confirmation.
-    expect(screen.queryByLabelText("Sends to host: workshop")).toBeNull();
   });
 
   it("does not arm the confirm for innocent input", async () => {
@@ -1703,21 +1447,30 @@ describe("Composer — destructive-input confirm", () => {
   });
 });
 
-describe("Composer - no reserved status band", () => {
+// THE MACHINE, ON THE ACTIONS BELT. It has moved twice and the reasoning is cumulative. Docked
+// inside the text box it cost 60px of the widest part of the composer; on the 14px status band above
+// the controls row it cost nothing, but the band's other half — the pane's status word — was what
+// Altan asked to be rid of ("the server is still necessary somewhere, but the status is unnecessary
+// at this place"). So the band went and the chip came down one row, onto the belt every one of those
+// buttons writes from.
+//
+// Each claim below fails in BOTH directions: a chip that never renders passes none of them, a chip
+// that always renders fails the solo case, and a chip left on a band fails the first.
+describe("Composer — the machine opens the actions belt, and no band stands above it", () => {
   const box = () => screen.getByPlaceholderText(/type a reply/i);
   const row = () => document.querySelector<HTMLElement>('[data-slot="composer-controls"]')!;
+  /** The belt: the scrolling row, which carries the ground, the rules and the row's own margins. */
+  const actions = () => document.querySelector<HTMLElement>('[data-slot="composer-actions"]')!;
+  /** The field's own reserved strip. Read off the class, because the jsdom render has no layout. */
 
-  it("leaves host attribution to the pane and reserves no status row, solo or packed", () => {
-    for (const servers of [undefined, fixtureServers]) {
-      renderComposerWithStatus({ scope: { host: "workshop" } }, servers);
-      expect(document.querySelector('[data-slot="composer-status"]')).toBeNull();
-      expect(screen.queryByLabelText(/^sends to host:/i)).toBeNull();
-      const dock = document.querySelector('[data-slot="composer"]')!;
-      expect(row().parentElement).toBe(dock);
-      expect(dock.className).not.toMatch(/(?:^|\s)border/);
-      expect(dock.className).not.toMatch(/(?:^|\s)pt-/);
-      expect(row()).toHaveClass("my-1", "grid", "grid-cols-4");
-      cleanup();
+  it("has no status band at all any more, and adds no visible word in its place", () => {
+    // The band is gone, and the word did not move somewhere else: a status word anywhere in this
+    // footer would be the thing Altan
+    // asked to be rid of, wearing a different address.
+    renderComposerWithStatus({ scope: { host: "workshop" } }, fixtureServers);
+    expect(document.querySelector('[data-slot="composer-status"]')).toBeNull();
+    for (const word of ["needs you", "working", "done", "idle", "unknown", "shell"]) {
+      expect(screen.queryByText(word)).toBeNull();
     }
   });
 
@@ -1732,11 +1485,80 @@ describe("Composer - no reserved status band", () => {
     expect(box().className).not.toMatch(/(?:^|\s)h-\d/);
   });
 
-  it("keeps the controls group named without a visible label or status word", () => {
-    renderComposerWithStatus();
+  it("keeps the controls group NAMED once the visible word is gone", () => {
+    // "Controls" was doing two jobs and only one of them was visual. Sighted it labelled five
+    // self-labelling buttons; in the accessibility tree it is the ONLY thing naming the group. So it
+    // is `sr-only`, not deleted — which is also why `composer.controls.label` is still a live key in
+    // all seven dictionaries. Delete the label and this group announces as an unnamed run of buttons.
+    renderComposerWithStatus({ scope: { host: "workshop" } }, fixtureServers);
     expect(screen.getByRole("group", { name: "Controls" })).toBe(row());
-    expect(document.getElementById("composer-controls-label")).toHaveClass("sr-only");
-    expect(document.querySelector('[data-slot="composer-status"]')).toBeNull();
+    expect(row().getAttribute("aria-labelledby")).toBe("composer-controls-label");
+    const label = document.getElementById("composer-controls-label")!;
+    expect(label.className).toMatch(/(?:^|\s)sr-only(?=\s|$)/);
+  });
+
+  it("carries exactly ONE rule at each seam, and the belt draws its own two", () => {
+    // DESIGN.md §4: where two chrome regions stack, ONE component draws the boundary. Two drawing it
+    // gives a 2px line where the language says 1px — a fault this codebase has already fixed twice
+    // (space-strip / tab-strip).
+    //
+    // The belt closes its LOWER edge only, and the chrome block draws the upper one: the dock draws
+    // nothing (its top rule and fill moved out to the chrome block in agent-chat.tsx, which also
+    // carries the swipe handle, so the boundary against the terminal is drawn once above everything
+    // the thumb operates — agent-chat.test.tsx pins that half), the status band that used to sit
+    // between them is gone, and the belt now stands flush under that one rule with no margin.
+    renderComposerWithStatus({ scope: { host: "workshop" } }, fixtureServers);
+    expect(actions().className).toMatch(/(?:^|\s)border-b(?=\s|$)/);
+    // `border-border`, not `border-rule` — the belt's edge is a component edge inside ONE chrome
+    // surface (the input below); the regional cut is the chrome block's top rule.
+    expect(actions().className).toMatch(/(?:^|\s)border-border(?=\s|$)/);
+    expect(actions().className).not.toMatch(/(?:^|\s)border-rule(?=\s|$)/);
+    // NO top rule and NO top margin — either one would put a second hairline, or a strip of empty
+    // chrome, between the mirror and the belt.
+    expect(actions().className).not.toMatch(/(?:^|\s)(?:border-y|border-t|mt-)/);
+    // The controls group draws NOTHING at all: with the capsule retired it stands on the belt's own
+    // ground, so it can neither double a seam nor outline itself.
+    expect(row().className).not.toMatch(/(?:^|\s)border/);
+    expect(row().className).not.toMatch(/(?:^|\s)rounded/);
+    // …and the dock around them draws no edge either — the chrome block above it does.
+    const dock = actions().previousElementSibling!;
+    expect(dock.className).not.toMatch(/(?:^|\s)border/);
+    expect(dock.className).not.toMatch(/(?:^|\s)pt-/);
+    // …and the belt has no top margin of its own. It was `mt-2`, the air between the status band and
+    // these buttons, then `mt-1.5`, the room the pull-up grip's upper half hung into. Both are gone,
+    // so the belt stands flush under the chrome block's rule and there is no empty strip above it.
+    // The bottom margin is `mb-1` now, not `mb-1.5` — it came down 2px with the belt itself when the
+    // belt shrank to pill height (Option 6 of the belt-shade deck).
+    expect(actions().className).toMatch(/(?:^|\s)mb-1(?=\s|$)/);
+  });
+
+  it("runs the ground and the rules edge to edge, and puts the gutter back on the scroller", () => {
+    // FULL-BLEED: `-mx-3` cancels the dock's `px-3`, so the ground and both rules reach the viewport
+    // edges. A band that stopped 12px short would read as a wide capsule — the shape this row just
+    // stopped being — so the ground and the rules belong to the element carrying that margin and
+    // never to the scroller one level in.
+    //
+    // THE GROUND IS A FILL, AND THAT OVERRIDES DESIGN.md §4 FOR THIS ROW ALONE. §4 says chrome
+    // separates with a rule and never a fill, and the status band that used to stand here carried
+    // the measurement that argued one down. Altan asked for a belt, which is a fill, so this is the
+    // operator's call. WHICH fill is measured: against the composer's `--chrome`, `bg-foreground/6`
+    // is 1.13:1 light and 1.16:1 dark, and it is the only symmetric recipe available — `--muted` IS
+    // `--chrome` in light and `--card` IS `--chrome` in dark, so neither token separates in both.
+    renderComposerWithStatus({ scope: { host: "workshop" } }, fixtureServers);
+    expect(actions().className).toMatch(/(?:^|\s)-mx-3(?=\s|$)/);
+    expect(actions().className).toMatch(/(?:^|\s)bg-foreground\/6(?=\s|$)/);
+    expect(actions().className).not.toMatch(/rounded/);
+    // The 12px goes back on the SCROLLER, not on the OverflowEdges wrapper between them: that
+    // wrapper owns the flex sizing and the edge cues, and deliberately no padding of its own.
+    // `pl-3`/`pr-3` rather than one `px-3`: with a pinned Switch block the right half becomes a
+    // dynamic inline `paddingRight` instead (actions-row.tsx's `useSwitchBlockWidth`), so the two
+    // sides are separate classes even though this handle-less render keeps both at 12px.
+    const scrollerClass = actions().querySelector(".overflow-x-auto")!.className;
+    expect(scrollerClass).toMatch(/(?:^|\s)pl-3(?=\s|$)/);
+    expect(scrollerClass).toMatch(/(?:^|\s)pr-3(?=\s|$)/);
+    // The group's GUTTER is the scroller's and nothing else: with the capsule gone, Collie's
+    // controls stand on the belt's own ground and own no padding at all.
+    expect(row().className).not.toMatch(/(?:^|\s)px-/);
   });
 });
 
@@ -2403,10 +2225,10 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
     const user = userEvent.setup();
     renderComposer();
     await user.click(screen.getByRole("button", { name: "Type into terminal" }));
-    expect(screen.getByRole("button", { name: "Escape" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/type into the terminal/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Quick" }));
     expect(screen.getByRole("button", { name: "Type into terminal" })).toHaveAttribute("aria-pressed", "false");
-    await waitFor(() => expect(screen.queryByRole("button", { name: "Escape" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByPlaceholderText(/type into the terminal/i)).not.toBeInTheDocument());
     expect(screen.getByRole("button", { name: "yes" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/type a reply/i)).not.toHaveFocus();
   });
@@ -2544,7 +2366,7 @@ describe("Composer — display prefs behind the gear", () => {
 
     await user.click(screen.getByRole("button", { name: "Type into terminal" }));
     expect(screen.queryByRole("switch", { name: "Wrap lines" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Escape" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/type into the terminal/i)).toBeInTheDocument();
   });
 
   it("display prefs stay reachable on a read-only device", async () => {

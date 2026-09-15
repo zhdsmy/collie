@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { parseAnsi } from "../../ansi";
 import { splitLines, lineText, type StyledLine } from "../../blocks";
 import { pickersEqual, pickersSameIdentity } from "../picker-model";
+import { codexAdapter } from "./index";
 import { detectAskRegion } from "./ask";
 
 const PANES_DIR = join(import.meta.dirname, "..", "..", "..", "fixtures", "panes");
@@ -100,9 +101,15 @@ describe("Codex request_user_input question picker", () => {
 
   it("keeps empty, filled and multiline native notes in the question card", () => {
     expect(fixtureModel("codex--v0154-notes-empty.txt").questionnaire?.notes).toEqual({ text: "", focused: true });
-    expect(fixtureModel("codex--v0154-notes-text.txt").questionnaire?.notes).toEqual({ text: "Additional 中文 notes: keep option 1.", focused: true });
+    expect(fixtureModel("codex--v0154-notes-text.txt").questionnaire?.notes).toEqual({
+      text: "Additional 中文 notes: keep option 1.",
+      focused: true,
+    });
     expect(fixtureModel("codex--v0154-notes-returned.txt").questionnaire?.notes?.focused).toBe(false);
-    expect(fixtureModel("codex--v0154-notes-multiline-focused.txt").questionnaire?.notes).toEqual({ text: "Card note 中文 first line\n\nSecond line with 1, 2, 3.", focused: true });
+    expect(fixtureModel("codex--v0154-notes-multiline-focused.txt").questionnaire?.notes).toEqual({
+      text: "Card note 中文 first line\n\nSecond line with 1, 2, 3.",
+      focused: true,
+    });
     const choice = fixtureModel("codex--v0154-notes-multiline.txt");
     const focused = fixtureModel("codex--v0154-notes-multiline-focused.txt");
     expect(pickersSameIdentity(choice, focused)).toBe(true);
@@ -110,7 +117,6 @@ describe("Codex request_user_input question picker", () => {
   });
 
   it("fails closed for torn rows, duplicate pointers, invalid counts, and foreign footers", () => {
-
     const torn = cloneLines(fixtureLines("codex--v0154-question-q1.txt"));
     replaceLineText(lineMatching(torn, (text) => text.includes("2. 只优化")), " ");
     expect(detectAskRegion(torn)).toBeNull();
@@ -165,5 +171,73 @@ describe("Codex request_user_input question picker", () => {
       if (segment.text.trim()) segment.fg = "var(--ansi-6)";
     }
     expect(detectAskRegion(altered)).toBeNull();
+  });
+});
+
+const fruit = readFileSync(join(PANES_DIR, "codex--ask-fruit.txt"), "utf8");
+const linesOf = (text: string) => splitLines(parseAnsi(text));
+
+describe("wrapped Codex questions", () => {
+  it.each(["question", "description", "footer", "all"])("lifts a wrapped %s", (part) => {
+    let screen = fruit;
+    if (part === "question" || part === "all") screen = screen.replaceAll("Pick a fruit?", "Pick a\n  fruit?");
+    if (part === "description" || part === "all") {
+      screen = screen.replace("Choose a soft, juicy pear.", "Choose a soft,\n                                              juicy pear.");
+    }
+    if (part === "footer" || part === "all") screen = screen.replace(" | esc to interrupt", "\n  esc to interrupt");
+    const lines = linesOf(screen);
+    const ask = detectAskRegion(lines);
+    expect(ask?.model.title).toBe("Pick a fruit?");
+    expect(ask?.model.options.map((option) => option.id)).toEqual(["1", "2", "3"]);
+    expect(ask?.model.options[1]?.description).toBe("Choose a soft, juicy pear.");
+    const picker = codexAdapter.buildBlocks(lines).find((block) => block.kind === "picker");
+    expect(picker?.kind).toBe("picker");
+    expect(picker?.lines.map(lineText).join("\n")).toContain("1. Apple");
+    expect(codexAdapter.composerReady!(lines)).toBe(false);
+    expect(detectAskRegion(linesOf(screen + "\nnew output"))).toBeNull();
+    if (part === "all") {
+      const changed = detectAskRegion(linesOf(screen.replace("juicy pear", "green pear")));
+      expect(changed?.model.signature).not.toBe(ask?.model.signature);
+    }
+  });
+
+  it.each([
+    "        unexpected row",
+    "                                              10. Another option",
+    "  › Add notes",
+    "",
+  ])("refuses an invalid option continuation: %j", (row) => {
+    const screen = [
+      "  Question 1/1 (1 unanswered)",
+      "  Pick?",
+      "",
+      "  › 1. A  First description",
+      row,
+      "    2. B  Second description",
+      "",
+      "  tab to add notes | enter to submit answer",
+      "  esc to interrupt",
+    ].join("\n");
+    expect(detectAskRegion(linesOf(screen))).toBeNull();
+  });
+
+  it("refuses continuations without a description", () => {
+    const screen = [
+      "  Question 1/1 (1 unanswered)",
+      "  Pick?",
+      "",
+      "  › 1. A",
+      "              continuation",
+      "    2. B",
+      "",
+      "  tab to add notes | enter to submit answer",
+      "  esc to interrupt",
+    ].join("\n");
+    expect(detectAskRegion(linesOf(screen))).toBeNull();
+  });
+
+  it("keeps notes mode in the card while preserving the upstream wrapped-footer guard", () => {
+    const notes = readFileSync(join(PANES_DIR, "codex--ask-notes-focused.txt"), "utf8");
+    expect(detectAskRegion(linesOf(notes))?.model.questionnaire?.notes).toEqual({ text: "", focused: true });
   });
 });

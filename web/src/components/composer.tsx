@@ -8,7 +8,7 @@ import type { DisplayPrefs } from "@/hooks/use-display-prefs";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { useDirectTyping } from "@/hooks/use-direct-typing";
 import { useLocale } from "@/hooks/use-locale";
-import { t as translate } from "@/lib/i18n";
+import { t as translate, tn as translatePlural } from "@/lib/i18n";
 import { setStatus } from "@/lib/status";
 import { buzz } from "@/lib/haptics";
 import { stampSend } from "@/lib/poll-intent";
@@ -16,11 +16,11 @@ import { useBusyWhile } from "@/lib/busy";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChatInput } from "@/components/ui/chat/chat-input";
-import { DirectKeyboardAccessory } from "@/components/direct-keyboard-accessory";
+import { NavTray } from "@/components/nav-tray";
 import { CommandPalette } from "@/components/command-palette";
 import { QuickActionsContent } from "@/components/quick-actions";
+import { ActionsRow } from "@/components/actions-row";
 import { DisplayPrefsContent } from "@/components/display-prefs";
-import { SectionLabel } from "@/components/ui/section-label";
 import { Collapse } from "@/components/ui/collapse";
 import { ComposerDock } from "@/components/ui/composer-dock";
 import { ActionRow } from "@/components/action-sheet-rows";
@@ -29,10 +29,12 @@ import * as api from "@/lib/api";
 import { describeApiError, describeThrownError } from "@/lib/api-error-message";
 import { commandsFor } from "@/lib/agent-commands";
 import { useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux-capability";
-import { useOperatorCommands, useUploadCapability } from "@/lib/operator-config";
+import { useOperatorCommands, useOperatorKeys, useUploadCapability } from "@/lib/operator-config";
 import { acceptAttribute, limitMb, offersFiles, PHOTO_ACCEPT, rejectAttachment, uploadLimits } from "@/lib/attachments";
+import { ctrlPresetsFor } from "@/lib/operator-keys";
 import { isDestructiveInput } from "@/lib/destructive";
-import { useHostLabel } from "@/components/crew-provider";
+import { HostChip } from "@/components/host-chip";
+import { useAmbientHost, useHostLabel } from "@/components/crew-provider";
 import { clearDraft, fitsDraftStore, loadDraft, saveDraft } from "@/lib/drafts";
 import { useHoldReload } from "@/lib/reload-guard";
 import { isSelfEcho, normalizeDraft } from "@/hooks/use-terminal-draft";
@@ -116,6 +118,21 @@ interface ComposerProps {
   setExpandClippedReply: (expandClippedReply: boolean) => void;
   /** Snap the mirror to the live tail (follow + revalidate + scroll) after a successful send. */
   onSent: () => void;
+
+  /**
+   * The pane switcher, in two pieces: a Switch pill pinned at the actions belt's right end
+   * (`onClick`, the tap) and the belt itself as a drag surface (`ref`, the finger-tracked pull).
+   * Threaded straight through to {@link import("@/components/actions-row").ActionsRow} — this file
+   * decides nothing about either and draws none of it.
+   *
+   * Absent, rather than flagged off: the pane passes nothing here when there is nowhere to switch
+   * to.
+   */
+  pullHandle?: {
+    ref: (node: HTMLElement | null) => void;
+    onClick: () => void;
+    label: string;
+  };
 }
 
 // The composer cluster at the bottom of the pane view — everything a phone keyboard can't do on its
@@ -128,21 +145,12 @@ interface ComposerProps {
 // "display" joined the drawer union when the permanent icon-only View row was retired: wrap / raw
 // terminal / font size are settings you touch once, so they cost a whole row of a phone viewport for
 // nothing, and the raw-terminal toggle in particular was an unlabelled `>_` glyph nobody could
-// decode. They now live behind the ⚙ on the single Controls row, as labelled rows in the same
+// decode. They now live behind the ⚙ on the actions row, as labelled rows in the same
 // in-flow dock (they change how the mirror LOOKS, so the mirror has to stay visible while you flip
 // them). Find moved the other way — to the header, where its find bar already takes over the row.
-type ComposerDrawer = "quick" | "cmd" | "display" | null;
+type ComposerDrawer = "quick" | "cmd" | "keys" | "display" | null;
 
-// The Controls row's "on" look, authored once so an open dock and an armed mode can never drift
-// apart. `hover:` is pinned to the same tint: without it, hovering an already-on control repaints it
-// with the ghost variant's hover background and it reads as switching off under the cursor.
-const CONTROL_ON = "bg-control-on text-control-on-foreground hover:bg-control-on";
-const CONTROL_OFF = "text-muted-foreground";
 
-// Keep the 44px tap floor while giving translated labels room to wrap beside the icon.
-const CONTROL_BUTTON =
-  "min-h-11 h-auto min-w-0 w-full shrink gap-1 px-0 has-[>svg]:px-0 py-1 text-xs font-medium leading-tight [&>svg]:shrink-0";
-const CONTROL_LABEL = "min-w-0 whitespace-normal hyphens-auto [overflow-wrap:anywhere]";
 
 // Pause after clearing a stranded terminal draft so the TUI settles before pane.send_text. Exported
 // so the test can pin the WAIT ITSELF (the reply never overtakes the sweep) against the constant
@@ -164,7 +172,7 @@ const KEY_REVALIDATE_MS = 300;
 const ATTACH_PRESS_MS = 220;
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, onDockOpen, onWritingChange, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent },
+  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, onDockOpen, onWritingChange, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent, pullHandle },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -201,6 +209,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const missingSend = !canType.capable ? canType : !canSendKeys.capable ? canSendKeys : null;
   const locked = gone || readOnly || hostBlock !== undefined || missingSend !== null || externalBusy;
   // Host name for write confirmations; the pane owns the visible target row.
+  const writeHost = useAmbientHost(scope?.host);
   const writeHostLabel = useHostLabel(scope?.host);
   // …and a ref alongside it, for the ONE caller that reads it after an await. `send()` checks
   // `locked` once, up front, but its pre-clear sweep goes out on the far side of the pre-flight's
@@ -288,12 +297,22 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // below).
   const [handledKey, setHandledKey] = useState<string | null>(null);
   const [previewLatched, setPreviewLatched] = useState(false);
-  // At most one auxiliary dock is open (Quick / Agent / Display).
+  // At most one auxiliary dock is open (Keys / Quick / Agent / Display).
   const [drawer, setDrawer] = useState<ComposerDrawer>(null);
+  // Keys are staged in an unmounted-on-close NavTray. Closing it must not silently carry a
+  // composed sequence into a later open.
+  const [queuedKeys, setQueuedKeys] = useState(0);
+  const discardConfirm = usePendingConfirm();
   function requestDrawer(next: ComposerDrawer) {
+    if (drawer === "keys" && next !== "keys" && queuedKeys > 0 && !discardConfirm.confirm("discard")) {
+      setStatus(translatePlural("composer.discard.confirmKeys", queuedKeys, { count: queuedKeys }), "info");
+      return false;
+    }
+    discardConfirm.reset();
     onDockOpen?.();
     if (next !== null && direct.active) direct.deactivateSilently();
     setDrawer(next);
+    return true;
   }
   const closeDrawer = () => requestDrawer(null);
   // Two-tap guard for destructive commands (rm -rf, force-push, …): the first tap arms a "Really
@@ -487,7 +506,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // its text tracks and that the send()-time pre-clear sweeps.
   const effectiveStable = suppressEcho(terminalDraft);
   const effectiveRaw = suppressEcho(rawTerminalDraft);
-  const writing = sending || uploading || direct.active || direct.busy;
+  const writing = sending || uploading || direct.active || direct.busy || queuedKeys > 0;
   useEffect(() => {
     onWritingChange?.(writing);
     return () => onWritingChange?.(false);
@@ -629,6 +648,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   }
   // Empty on every adapter that refuses nothing, and empty for Herdr's six as far as this tray is
   // concerned — it offers none of the paging/edit keys Herdr rejects, so nothing greys out there.
+  const keyPresets = ctrlPresetsFor(agent, useOperatorKeys());
   const unsupportedKeys = useMuxUnsupportedKeys();
 
   function focusInputImmediately() {
@@ -1002,8 +1022,23 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         <input ref={photoRef} data-testid="attach-photos" type="file" accept={PHOTO_ACCEPT} hidden onChange={onPickFile} />
         <input ref={fileRef} data-testid="attach-files" type="file" accept={accept} hidden onChange={onPickFile} />
 
-        {/* Auxiliary docks stay above the controls; the direct-input keyboard lives below them. */}
-        {drawer === "quick" && (
+        {/* Auxiliary docks stay above the actions belt. */}
+      {drawer === "keys" && (
+        <ComposerDock
+          title={translate("composer.controls.keys")}
+          onClose={closeDrawer}
+          actions={<HostChip host={writeHost} variant="target" />}
+        >
+          <NavTray
+            unsupportedKeys={unsupportedKeys}
+            onSend={pressKeys}
+            presets={keyPresets}
+            onQueueChange={setQueuedKeys}
+            disabled={locked}
+          />
+        </ComposerDock>
+      )}
+      {drawer === "quick" && (
           <ComposerDock title={translate("composer.controls.quick")} onClose={closeDrawer}>
             <QuickActionsContent
               onSend={(t) => send(t, false)}
@@ -1011,6 +1046,18 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               agent={agent}
               isShell={isShell}
               disabled={locked || sending}
+            />
+          </ComposerDock>
+        )}
+        {drawer === "cmd" && (
+          <ComposerDock title={translate("composer.controls.agent")} onClose={closeDrawer}>
+            <CommandPalette
+              onClose={closeDrawer}
+              agent={agent}
+              mine={operatorCommands}
+              disabled={locked || sending}
+              onInsert={insertCommand}
+              onSubmit={(value) => send(value, false)}
             />
           </ComposerDock>
         )}
@@ -1026,88 +1073,144 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
-        {drawer === "cmd" && (
-          <ComposerDock title={translate("composer.controls.agent")} onClose={closeDrawer}>
-            <CommandPalette
-              onClose={closeDrawer}
-              agent={agent}
-              mine={operatorCommands}
-              disabled={locked || sending}
-              onInsert={insertCommand}
-              onSubmit={(t) => send(t, false)}
-            />
-          </ComposerDock>
-        )}
-        {/* The pane owns the optional write-target row above this four-control group. */}
-        <div
-          data-slot="composer-controls"
-          role="group"
-          aria-labelledby="composer-controls-label"
-          className="my-1 grid grid-cols-4 items-stretch gap-1"
-        >
-          <SectionLabel id="composer-controls-label" className="sr-only">
-            {translate("composer.controls.label")}
-          </SectionLabel>
-          {/* The named toggle arms direct input and exposes its keyboard without focusing. */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(CONTROL_BUTTON, direct.active ? CONTROL_ON : CONTROL_OFF)}
-            disabled={locked || sending}
-            aria-pressed={direct.active}
-            aria-expanded={direct.active}
-            aria-controls="composer-direct-keys"
-            aria-label={translate("composer.controls.typeAria")}
-            onClick={() => {
-              if (direct.active) {
-                direct.deactivate();
-                return;
-              }
-              requestDrawer(null);
-              direct.activate();
-            }}
-          >
-            <Terminal className="size-5" />
-            <span className={CONTROL_LABEL}>{translate("composer.controls.type")}</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(CONTROL_BUTTON, drawer === "quick" ? CONTROL_ON : CONTROL_OFF)}
-            disabled={locked}
-            aria-expanded={drawer === "quick"}
-            aria-label={translate("composer.controls.quick")}
-            onClick={() => requestDrawer(drawer === "quick" ? null : "quick")}
-          >
-            <Zap className="size-5" />
-            <span className={CONTROL_LABEL}>{translate("composer.controls.quick")}</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(CONTROL_BUTTON, drawer === "cmd" ? CONTROL_ON : CONTROL_OFF)}
-            disabled={locked || commands.length === 0}
-            aria-label={translate("composer.controls.agent")}
-            aria-expanded={drawer === "cmd"}
-            onClick={() => requestDrawer(drawer === "cmd" ? null : "cmd")}
-          >
-            <Slash className="size-5" />
-            <span className={CONTROL_LABEL}>{translate("composer.controls.agent")}</span>
-          </Button>
-          {/* Display prefs. Not gated on `locked`: wrap/font/raw-terminal are local view state, so a
-              read-only device or a gone pane can still make its mirror readable. */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(CONTROL_BUTTON, drawer === "display" ? CONTROL_ON : CONTROL_OFF)}
-            aria-label={translate("composer.controls.displayAria")}
-            aria-expanded={drawer === "display"}
-            onClick={() => requestDrawer(drawer === "display" ? null : "display")}
-          >
-            <Settings2 className="size-5" />
-            <span className={CONTROL_LABEL}>{translate("composer.controls.display")}</span>
-          </Button>
-        </div>
+        {/* The one action row: Keys · Quick · Agent · ⚙ (Agent only when the pane's agent has
+            commands). Display prefs used to sit on a second, permanent icon-only "View" row above
+            this one; folding them behind the ⚙ gives the mirror that row back. The gear is icon-only
+            and NOT flex-1 — it's a settings affordance, not a peer of the three action toggles, and
+            keeping it to one square (44px, its tap target and nothing more) leaves the labelled
+            buttons the rest of a 390px phone. */}
+        {/* THE STATUS BAND IS GONE, AND THIS IS WHERE IT STOOD.
+
+            It was 14px, roomy-only, bounded by a hairline on both edges, and it read as one
+            sentence: the machine every button below writes to, then what that machine's pane was
+            doing. Altan, on the phone, after the belt landed: "we should address the small status
+            line with the server and status, the server is still necessary somewhere, but the status
+            is unnecessary at this place."
+
+            SO THE TWO RUNS WENT DIFFERENT WAYS. The machine moved ONE row down, onto the actions
+            belt — and then UP, into the pane header, under the cache reading, once the belt's right
+            end was needed for the Switch pill (agent-chat.tsx draws it, actions-row.tsx says why).
+            It is a `variant="tag"` either way: the 10px uppercase caption was sized for this band
+            and reads as a word that fell off something anywhere else.
+
+            THE STATUS WORD WAS DELETED, NOT MOVED, AND THAT NEEDED ONE CHECK FIRST. The word was
+            here because a 10px dot encodes this range in HUE ALONE and the range does not survive
+            it: on the app's own `--status-*` tokens a deuteranope reads blocked / working / done as
+            one colour in light theme, and "needs you" against "done" collapses in both
+            (status-badge.tsx holds the measurement). Deleting a coloured word is therefore only
+            safe while the state is still readable without colour SOMEWHERE. It is: the pane
+            header's agent tile badges a StatusDot that is NAMED — `label={statusLabel(...)}`, the
+            one named dot in the app — so a screen reader still gets "needs you" from the header,
+            and a shell pane's tile carries an `sr-only` "shell" for the same reason
+            (agent-chat.tsx says both at the line). The dashboard states it in words as well. No
+            visible word was added anywhere to pay for this one; that was the point of removing it.
+
+            WHAT THE REMOVAL BOUGHT, MEASURED AT 390px: 22px off the stack — the band's own 14px
+            (1 + 12 + 1) plus the 8px `mt-2` that separated it from the buttons. The belt's top
+            margin absorbed that decision: see `mt-1.5` on the roomy ActionsRow below, which is the
+            air between the dock/handle above and the belt now that there is nothing between them.
+
+            The dock still takes NO top padding: its top rule and fill live on the chrome block in
+            `agent-chat.tsx`, because the swipe handle stands on that same ground and the boundary
+            against the terminal is drawn once, above everything the thumb operates. */}
+        {/* ── THE ACTIONS ROW ──────────────────────────────────────────────────────────────────
+            One row, two segments: Collie's own controls, then the running harness's own commands in
+            the harness's own colour. It replaced the Controls row and the separate harness bar,
+            which were two rows of a phone's glass answering one question. The row itself is
+            actions-row.tsx; everything below is only what each action DOES.
+  */}
+        <ActionsRow
+          general={[
+              // Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to
+              // open, tap again to close. `expanded` ties each to the dock; the "on" tint marks
+              // it pressed while open. Both share the single-valued `drawer`, so opening one
+              // closes the other.
+              {
+                id: "keys",
+                icon: Keyboard,
+                label: translate("composer.controls.keys"),
+                on: drawer === "keys",
+                expanded: drawer === "keys",
+                disabled: locked,
+                onSelect: () => requestDrawer(drawer === "keys" ? null : "keys"),
+              },
+              // "Type into terminal" lives HERE, beside Keys, rather than on the Send button.
+              // It is the same problem split in half: Keys exists because the phone keyboard
+              // cannot send Esc/Tab/arrows/chords, this exists because it cannot send bare
+              // printable letters — so someone who wants to press `b` looks in this row first.
+              // It is also used in bursts (a picker, a y/n prompt) and then not for days, which
+              // is the wrong shape for a permanent fixture on the app's most-used control: a
+              // split Send button cost a third of the primary action's width every day to serve
+              // a mode used on a few of them.
+              // Unlike its neighbours this toggles state instead of opening a dock — the armed
+              // strip above the input is what makes that visible. Arming is still an explicit
+              // NAMED choice, which is what keeps an accidental touch from quietly wiring the
+              // keyboard to a live terminal; see use-direct-typing.ts for the rest.
+              {
+                id: "type",
+                icon: Terminal,
+                // Announced in full, drawn short: the pill has one word of room beside its glyph,
+                // and "Type into terminal" is the name a reader must still hear.
+                label: translate("composer.controls.typeAria"),
+                word: translate("composer.controls.type"),
+                on: direct.active,
+                pressed: direct.active,
+                disabled: locked || sending,
+                onSelect: () => {
+                  if (direct.active) {
+                    direct.deactivate();
+                    return;
+                  }
+                  // Discard confirmation must complete before direct typing can be armed.
+                  if (!requestDrawer(null)) return;
+                  direct.activate();
+                },
+              },
+              {
+                id: "quick",
+                icon: Zap,
+                label: translate("composer.controls.quick"),
+                on: drawer === "quick",
+                expanded: drawer === "quick",
+                disabled: locked,
+                onSelect: () => requestDrawer(drawer === "quick" ? null : "quick"),
+              },
+              // Withdrawn rather than greyed when this pane has no commands at all: there is no
+              // palette to open, which is a different thing from one this device may not use.
+              ...(commands.length > 0
+                ? [
+                    {
+                    id: "agent",
+                    icon: Slash,
+                    label: translate("composer.controls.agent"),
+                    on: drawer === "cmd",
+                    expanded: drawer === "cmd",
+                    disabled: locked,
+                    onSelect: () => requestDrawer(drawer === "cmd" ? null : "cmd"),
+                    },
+                  ]
+                : []),
+              // Display prefs. Not gated on `locked`: wrap/font/raw-terminal are local view
+              // state, so a read-only device or a gone pane can still make its mirror readable.
+              {
+                id: "display",
+                icon: Settings2,
+                label: translate("composer.controls.displayAria"),
+                word: translate("composer.controls.display"),
+                on: drawer === "display",
+                expanded: drawer === "display",
+                onSelect: () => requestDrawer(drawer === "display" ? null : "display"),
+              },
+          ]}
+          agent={agent}
+          mine={operatorCommands}
+          onRun={(command) => send(command, false)}
+          disabled={locked}
+          // The pane switcher: a Switch pill pinned at this belt's right end, above Send, and the
+          // belt itself as the drag surface behind it. The pane decides whether there is one
+          // (agent-chat.tsx); this row draws the pill, wires the drag, and costs no height.
+          handle={pullHandle}
+        />
         {/* ── THE FOOTER'S NOTICE STRIPS, SORTED BY KIND (DESIGN.md §1, §2) ─────────────────────
             Every strip below arrives and leaves through `Collapse`, which is the only sanctioned way
             an in-flow surface appears at all. Before this they were bare conditionals, so each one
@@ -1161,7 +1264,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                       // while any draft is present, which would make the offered remedy fail on the
                       // spot.
                       updateInput("");
-                      requestDrawer(null);
+                      if (!requestDrawer(null)) return;
                       direct.activate();
                     }
               }
@@ -1179,19 +1282,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           {/* Armed indicator for direct typing, deliberately NOT only on the button and textarea —
               see the component. */}
           {direct.active && (
-            <div id="composer-direct-keys">
-              <DirectTypingStrip onStop={() => direct.deactivate()} />
-              <DirectKeyboardAccessory
-                key={`${direct.accessorySession}:${direct.row}`}
-                row={direct.row}
-                modifiers={direct.modifiers}
-                disabled={locked}
-                unsupportedKeys={unsupportedKeys}
-                onToggleRow={direct.toggleRow}
-                onToggleModifier={direct.toggleModifier}
-                onSendKeys={direct.sendAccessoryKeys}
-              />
-            </div>
+            <DirectTypingStrip onStop={() => direct.deactivate()} />
           )}
           {/* The microphone's armed strip. Stop and ✕ are different actions: one transcribes the
               clip, the other throws it away. */}
