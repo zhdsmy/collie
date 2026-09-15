@@ -6,6 +6,8 @@
 // and `request_user_input` question cards (`picker` — pointer selection, question navigation and
 // an explicit confirmation). Digits confirm directly on all three (probed;
 // notes files). Question notes stay in the card, with a separately verified paste/Enter flow.
+// The saved-session picker (`resume.ts`) is the fourth: a full-screen `/resume` view whose rows are
+// saved sessions, driven by the arrows + Enter its own footer advertises.
 //
 // The review bar is #99 (agy): exact agent string only, and every emitted keystroke probed on
 // the captured screen. Registered as `agent: "codex"`; variant folding belongs in
@@ -25,6 +27,7 @@ import { detectAskRegion } from "./ask";
 import { detectAsyncAskRegion } from "./async-ask";
 import { detectTrustRegion } from "./trust";
 import { detectPickerRegion } from "./picker";
+import { detectResumeRegion } from "./resume";
 import { detectPlanRegion } from "./plan";
 import { detectReviewRegion } from "./review";
 import { decorateCodexDisplay } from "./display";
@@ -36,7 +39,8 @@ function raw(lines: StyledLine[]): Block {
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
-  const picker = detectPlanRegion(lines) ?? detectReviewRegion(lines) ?? detectPickerRegion(lines);
+  const picker = detectPlanRegion(lines) ?? detectReviewRegion(lines) ?? detectResumeRegion(lines) ??
+    detectPickerRegion(lines);
   if (picker) {
     const before = trimTrailingBlank(lines.slice(0, picker.startLine));
     return [

@@ -2,7 +2,7 @@
 // records the native keyboard recipes; parsing here remains I/O-free.
 import { lineText, type StyledLine } from "../../blocks";
 import type { PickerModel, PickerOption } from "../picker-model";
-import { lastNonBlankIndex, rstrip } from "./markers";
+import { lastNonBlankIndex, painted, rstrip } from "./markers";
 
 const SINGLE_FOOTER = "Press enter to confirm or esc to go back";
 const MULTIPLE_FOOTER = "Press space to toggle; ←/→ to move; enter to confirm and close; esc to close";
@@ -14,11 +14,6 @@ const MAX_ROWS = 100;
 export interface PickerRegion {
   startLine: number;
   model: PickerModel;
-}
-
-function painted(line: StyledLine, flag: "bold" | "dim"): boolean {
-  const text = line.segments.filter((s) => s.text.trim().length > 0);
-  return text.length > 0 && text.every((s) => s[flag] === true);
 }
 
 function columns(text: string) {

@@ -871,7 +871,9 @@ async function sendSearchText(
 }
 
 async function runSearch(args: PickerActionArgs, query: string): Promise<ActionResult> {
-  if (args.picker.kind !== "multiple" || args.picker.query === null) {
+  // The search control is the model's own field: a picker that prints one can be searched, whether
+  // it is the multi-select statusline or the single-select saved-session list.
+  if (args.picker.query === null) {
     return { status: "changed" };
   }
   const nextQuery = sanitizePickerSearchQuery(query);

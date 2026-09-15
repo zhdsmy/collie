@@ -30,6 +30,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Codex's saved-session picker is a card.** `/resume` opens as a list of your recorded sessions —
+  title, age and branch — with the native search field, Up/Down browse and one confirming Enter; the
+  `tab` toolbar, archive, density and transcript keys stay untouched and a row expanded with `ctrl+e`
+  keeps its native rendering.
+
 ## [1.9.1+collie.2] - 2026-09-15
 
 ### Added

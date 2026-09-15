@@ -1,0 +1,41 @@
+ [0m[1m[38;5;6mResume a previous session[0m
+
+ Search: picker                                                                     [0m[2mFilter: [0m[38;5;5m[Cwd][0m[2m All    Status: [0m[Active][0m[2m Archived    Sort: [0m[Updated][0m[2m Created [0m
+
+  [0m[1m[38;5;3m[48;2;57;57;71m❯ [0m[38;5;3m[48;2;57;57;71mRefactor the picker row formatter into three small helpers                                                                                               [0m
+  [0m[38;5;3m[48;2;57;57;71m  [0m[2m[38;5;3m[48;2;57;57;71m4d ago         feat/resume-picker[0m[38;5;3m[48;2;57;57;71m                                                                                                                       [0m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[0m[2m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 1 / 1 · 100% ─[0m
+[0m[2m [0menter[0m[2m resume   [0mctrl+a[0m[2m archive   [0mesc[0m[2m clear search   [0mctrl+c[0m[2m exit   [0mtab[0m[2m focus sort/filter   [0m←/→[0m[2m change option[0m
+[0m[2m [0mctrl+o[0m[2m dense view   [0mctrl+t[0m[2m transcript   [0mctrl+e[0m[2m expand   [0m↑/↓[0m[2m browse[0m

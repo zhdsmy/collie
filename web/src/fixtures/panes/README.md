@@ -70,6 +70,17 @@ after saving disabled, single-item and muted multi-item statuslines, with both
 default and Plan-mode footer variants. They pin continued composer recognition
 after a statusline edit.
 
+## Codex 0.154 saved-session picker (captured 2026-09-16)
+
+`codex--v0154-resume-*.txt` capture the `/resume` screen in an isolated Codex 0.154.0 pane
+whose `CODEX_HOME` held a copied state database with every row removed and four synthetic
+sessions written back. The corpus covers both row densities, a moved pointer, a longer
+window, a filtered and an empty search, and one row expanded with `ctrl+e` (kept as a
+negative: its detail block is not a row grammar). Titles, dates, directories and branches
+are fabricated; no real session, credential or model request is involved. See
+[`RESUME_NOTES.md`](../../lib/harness/codex/RESUME_NOTES.md) for the verified key recipes and
+the recognition limits.
+
 ## Codex 0.154 command completion (captured 2026-09-13)
 
 `codex--v0154-command-status.txt` is the ANSI input/completion region captured from a temporary

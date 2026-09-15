@@ -23,6 +23,13 @@ export function rstrip(text: string): string {
   return text.replace(/\s+$/, "");
 }
 
+/** True when EVERY non-blank segment carries the flag — the renderer's own paint, not a guess from
+ *  the text. Codex marks a live title `bold` and its chrome and footers `dim`. */
+export function painted(line: StyledLine, flag: "bold" | "dim"): boolean {
+  const text = line.segments.filter((segment) => segment.text.trim().length > 0);
+  return text.length > 0 && text.every((segment) => segment[flag] === true);
+}
+
 // The status row under the composer. v0.149.0 put at least two fields before Context:
 // `  <model> · <cwd> · Context N% left[ · weekly N% left]`. v0.150.1 moved Context directly
 // after the model and put branch/change fields after it:
