@@ -18,10 +18,10 @@ import { detectMenuRegion } from "./menu";
 import { detectAutocompleteRegion } from "./autocomplete";
 import { stripChrome, extractStatusLines, extractInputDraft, hasInputBox } from "./chrome";
 import { isPastePlaceholderOnly, pasteCarriesSend } from "./paste";
-import { decorateClaudeDiff } from "./display";
+import { decorateClaudeDiff, decorateClaudeUser } from "./display";
 
 function raw(lines: StyledLine[]): Block {
-  return { kind: "raw", lines: decorateClaudeDiff(lines) };
+  return { kind: "raw", lines: decorateClaudeUser(decorateClaudeDiff(lines)) };
 }
 
 /**
