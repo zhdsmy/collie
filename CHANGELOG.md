@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.0+collie.4] - 2026-09-15
+
 ### Fixed
 
-- **Recognize Hermes's busy-command and password screens.** The prompt's leading icon changes with the state — a spinner during `/compact`, 🔑 at a password prompt, plus approval, sudo and voice — and any unknown icon rejected the whole footer, stranding the statusline (wrapped, with its title on its own row) and the italic instruction in the mirror. The prompt now accepts the source's closed state-icon set with an optional profile prefix, and those states' italic instructions are lifted into the fixed strip instead of vanishing with the composer.
+- **Recognize Hermes's busy-command and password screens.** The prompt's leading icon changes with the state — a spinner during `/compact`, 🔑 at a password prompt, plus approval, sudo and voice — and any unknown icon rejected the whole footer, stranding the statusline (wrapped, with its title on its own row) and the italic instruction in the mirror. The prompt now accepts the source's closed state-icon set with an optional profile prefix, and those states' italic instructions are lifted into the fixed strip instead of vanishing with the composer. ([d447f4d8](https://github.com/zhdsmy/collie/commit/d447f4d8))
 
 ## [1.9.0+collie.3] - 2026-09-15
 
