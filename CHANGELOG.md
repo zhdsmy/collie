@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.0+collie.2] - 2026-09-15
+
 ### Fixed
 
-- **Composer fades preserve labels and empty status controls disappear.** Narrow the pinned pane switcher's fade to 16px so neighbouring action labels remain legible. Show Codex Plan/Fast controls only with an actual statusline, while preserving a standalone multi-host send target.
+- **Composer fades preserve labels and empty status controls disappear.** Narrow the pinned pane switcher's fade to 16px so neighbouring action labels remain legible. Show Codex Plan/Fast controls only with an actual statusline, while preserving a standalone multi-host send target. ([c00c92f9](https://github.com/zhdsmy/collie/commit/c00c92f9))
 
 ## [1.9.0+collie.1] - 2026-09-15
 
