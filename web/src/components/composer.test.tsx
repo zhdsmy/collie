@@ -1554,7 +1554,7 @@ describe("Composer — the machine opens the actions belt, and no band stands ab
     // `--chrome` in light and `--card` IS `--chrome` in dark, so neither token separates in both.
     renderComposerWithStatus({ scope: { host: "workshop" } }, fixtureServers);
     expect(actions().className).toMatch(/(?:^|\s)-mx-3(?=\s|$)/);
-    expect(actions()).toHaveClass("bg-chrome");
+    expect(actions()).toHaveClass("bg-foreground/6");
     expect(actions().className).not.toMatch(/rounded/);
     // The 12px goes back on the SCROLLER, not on the OverflowEdges wrapper between them: that
     // wrapper owns the flex sizing and the edge cues, and deliberately no padding of its own.

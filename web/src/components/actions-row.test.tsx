@@ -86,18 +86,26 @@ describe("ActionsRow", () => {
     expect(onSelect).toHaveBeenCalledOnce();
   });
 
-  it("uses the shared composer ground for the harness section", () => {
+  it("tints the harness section in the harness's own colour, and never with a rule down its side", () => {
     render(<ActionsRow general={[general()]} agent="claude" onRun={took} />);
     const section = document.querySelector<HTMLElement>('[data-slot="harness-bar"]')!;
-    expect(section.style.backgroundColor).toBe("");
+    // Claude's #D97757, at 14% of whatever ground is behind it. jsdom normalises the hex to rgb().
+    expect(section.style.backgroundColor).toBe("color-mix(in srgb, rgb(217, 119, 87) 14%, transparent)");
+    // A tint that reads (1.12:1 light, 1.22:1 dark against the belt) needs no edge, and an edge here
+    // would be the divider the belt exists to do without.
     expect(section.className).not.toMatch(/border-l/);
   });
 
-  it("keeps monochrome harnesses on the same ground too", () => {
+  it("falls back to the app's own ground for a brand whose colour is black, and edges THAT one", () => {
+    // Codex and pi are officially monochrome. A near-black icon is invisible in the dark theme, so
+    // absent is a real answer and the section takes the muted ground instead of a wrong colour.
+    // On the belt that ground measures 1.02:1 in dark — nothing — so this section, and only this
+    // one, colours the left edge BELT_SECTION already reserves.
     render(<ActionsRow general={[general()]} agent="codex" onRun={took} />);
     const section = document.querySelector<HTMLElement>('[data-slot="harness-bar"]')!;
     expect(section.style.backgroundColor).toBe("");
-    expect(section.className).not.toMatch(/bg-muted|border-l-border/);
+    expect(section.className).toMatch(/(?:^|\s)bg-muted(?=\s|$)/);
+    expect(section.className).toMatch(/(?:^|\s)border-l-border(?=\s|$)/);
   });
 
   it("draws the belt itself: one full-bleed band, hairlines on both edges, no rounded ends", () => {
@@ -110,7 +118,7 @@ describe("ActionsRow", () => {
     // top rule is the boundary up there, so a rule here would be the second of two.
     expect(belt.className).toMatch(/(?:^|\s)border-b(?=\s|$)/);
     expect(belt.className).not.toMatch(/(?:^|\s)(?:border-y|border-t|mt-)/);
-    expect(belt).toHaveClass("bg-chrome");
+    expect(belt.className).toMatch(/(?:^|\s)bg-foreground\/6(?=\s|$)/);
     expect(belt.className).not.toMatch(/rounded/);
     // Collie's own controls stand on that ground with no box of their own.
     const controls = document.querySelector<HTMLElement>('[data-slot="composer-controls"]')!;
@@ -164,7 +172,16 @@ describe("ActionsRow", () => {
     expect(screen.queryByRole("button", { name: "Switch pane" })).not.toBeInTheDocument();
   });
 
-  it("keeps Switch in its own flex cell with no overlay or trailing spacer", () => {
+  it("reserves room for the pinned Switch block with a trailing spacer, not padding, and draws no right fade of its own", () => {
+    // jsdom has no ResizeObserver (lib/env.ts's hasResizeObserver), so the scroller falls back to
+    // SWITCH_PILL_INSET's first-paint value — the same number a real browser reports for today's
+    // box before its first observation callback lands. A spacer, not `paddingRight`: measured over
+    // CDP on a Claude pane, `paddingRight` on this scroller did not reliably reach the scrollable
+    // overflow in Chrome — the last pill still sat ~5px under the Switch block's fade at
+    // `scrollLeft` max — because the scroller is a `flex` row and the harness section is itself a
+    // nested `flex` row, so the overflowing pill is two levels down from the padded element. A real
+    // flex child always counts toward `scrollWidth`, at any nesting depth. `OverflowEdges` is told
+    // `edges="left"` so it never paints a second, scroll-dependent fade over the block's own.
     render(
       <ActionsRow
         general={[general()]}
@@ -174,22 +191,27 @@ describe("ActionsRow", () => {
       />,
     );
     const scroller = document.querySelector<HTMLElement>(".overflow-x-auto")!;
-    const cell = screen.getByRole("button", { name: "Switch pane" }).parentElement!;
-    expect(cell).toHaveClass("shrink-0");
-    expect(cell).not.toHaveClass("absolute");
-    expect(scroller.contains(cell)).toBe(false);
-    expect(scroller.lastElementChild).toHaveAttribute("data-slot", "harness-bar");
-    expect(scroller.parentElement!.className).not.toContain("black_calc");
+    expect(scroller.style.paddingRight).toBe("");
+    expect(scroller.className).not.toMatch(/(?:^|\s)pr-3(?=\s|$)/);
+    const spacer = scroller.lastElementChild!;
+    expect(spacer.getAttribute("aria-hidden")).toBe("true");
+    expect(spacer.getAttribute("style")).toBe("width: 117px;");
+    // The masked wrapper one level out never carries a right-hand gradient stop — `edges="left"`
+    // took effect.
+    const masked = scroller.parentElement!;
+    expect(masked.className).not.toContain("black_calc");
   });
 
-  it("stands the belt's scroller at pill height, with no vertical scroll under a thumb", () => {
-    // Option 6 of the belt-shade deck (playground, removed 2026-09-14 once it had served): the
-    // scroller drops STRIP_SCROLLER's own `py-1.5` to `py-0`, and pairs it with `overflow-y-hidden`
-    // so STRIP_TAP_TARGET's 46px `::before` reach — no longer absorbed by 6px of padding on each
-    // side — cannot force a vertical scrollbar the way it did in the playground.
+  it("stands the belt's scroller at py-1 (40px), with no vertical scroll under a thumb", () => {
+    // Option 6 of the belt-shade deck (playground, removed 2026-09-14 once it had served) first
+    // dropped STRIP_SCROLLER's own `py-1.5` to `py-0`, the pill's own 32px. The phone read that as
+    // too thin, so it came back up to `py-1` — 40px, 4px above and below the 32px pills — and
+    // `overflow-y-hidden` stays paired with it so STRIP_TAP_TARGET's 46px `::before` reach, still
+    // wider than the 4px of padding on each side, cannot force a vertical scrollbar the way it did
+    // in the playground.
     render(<ActionsRow general={[general()]} agent="claude" onRun={took} />);
     const scroller = document.querySelector<HTMLElement>(".overflow-x-auto")!;
-    expect(scroller.className).toMatch(/(?:^|\s)py-0(?=\s|$)/);
+    expect(scroller.className).toMatch(/(?:^|\s)py-1(?=\s|$)/);
     expect(scroller.className).toMatch(/(?:^|\s)overflow-y-hidden(?=\s|$)/);
   });
 

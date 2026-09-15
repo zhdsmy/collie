@@ -23,7 +23,28 @@ import { cn } from "@/lib/utils";
 // It exists because Altan drives Claude Code from the phone and wants those four under the thumb
 // rather than three taps down inside the Agent palette.
 //
-// The harness mark and coloured icons identify the command group on the shared composer ground.
+// IT IS THE ONE DRAWN SECTION OF THE BELT. These buttons do not do what their neighbours do: a
+// general action opens one of Collie's own docks, and one of these types into somebody else's
+// program. So this run sits in a SECTION of the band (BELT_SECTION) — square corners, spanning the
+// belt's full inner height, tinted with the harness's brand and drawing its icons in that colour.
+// Collie's own controls stand on the belt's bare ground beside it, so the tint boundary alone is
+// what tells the two apart. No divider, and never a thick left border.
+//
+// THE BLACK-BRANDED FALLBACK IS THE ONE CASE THAT NEEDS A HAIRLINE, AND IT IS MEASURED. A brand
+// with no legible accent (Codex, pi — both officially black) falls back to the app's muted ground;
+// see `accent` in agent-icon-data.ts for why absent is a real answer there. On the belt's own
+// ground that fallback stops separating in dark: `--muted` is rgb 38 there and the belt is rgb 37,
+// which is 1.02:1 — the section would simply vanish. (Light is 1.13:1, which reads.) So the muted
+// section, and only it, colours BELT_SECTION's reserved left edge with `border-l-border`. The
+// tinted sections take no border at all: Claude's 14% wash measures 1.12:1 light and 1.22:1 dark
+// against the belt, which is the boundary doing its own job.
+//
+// IT OPENS WITH THE HARNESS'S OWN MARK. The first thing inside the section is the agent's icon, and
+// it is decoration: no hit box, no name in the accessibility tree, which already names the group.
+// The tint alone said "not Collie's"; the mark says WHOSE, at a glance and before a word is read.
+// Altan asked for exactly that after the two rows were merged into one — the row he tested "lacks
+// some structure", five identical glyphs and then a coloured blob with no owner on it.
+//
 // IT ADDS NO REFUSAL OF ITS OWN. `disabled` (the composer's `locked`) greys every button in place,
 // the way the key rail greys a key the multiplexer refuses rather than removing it. Everything else
 // is refused inside `send()`: a dialog on screen is refused there with the existing status line, and
@@ -119,7 +140,32 @@ export function HarnessBar({ agent, mine, onRun, disabled }: HarnessBarProps) {
       data-slot="harness-bar"
       role="group"
       aria-label={translate("harnessBar.label")}
-      className={BELT_SECTION}
+      // A tinted section of the belt. The geometry is BELT_SECTION's and nothing here changes it;
+      // this adds the paint alone. The `border-l-border` rides with `bg-muted` and only with it —
+      // see the measurement above — and it colours the width BELT_SECTION already reserved, so the
+      // tinted and the muted section are the same box to the pixel (DESIGN.md §2).
+      //
+      // `h-10 -my-1` is the ONE override past BELT_SECTION's own box, and it exists only because the
+      // scroller around this section stands at `py-1` now (actions-row.tsx), not the `py-0` BELT_SECTION's
+      // own comment was written against. BELT_SECTION's `h-8` is a FIXED border-box height — padding
+      // added beside it (`py-*`) cannot grow it, that is the whole point of the fixed-box recipe — so
+      // this overrides the height itself, to `h-10` (40px, the scroller's new total), rather than
+      // reach for padding that would do nothing. `-my-1` then pulls the box's FLOW contribution back
+      // down by 4px on each side (40px border box, 32px margin box) so it still centres and gaps like
+      // every other 32px pill on the belt; the border box itself does not shrink, so the visible paint
+      // stays 40px tall and lands exactly on the scroller's own `py-1` padding box, top rule to bottom
+      // rule, with no untinted band. This is the pre-"Option 6" recipe BELT_SECTION's own comment
+      // describes (`-my-1.5` paired with a padding-grown box, landing on the scroller's old `py-1.5`)
+      // brought back at the belt's new numbers, and it is safe for the same reason that one was: the
+      // scroller has real padding to land on again, so nothing overflows `clientHeight`.
+      className={cn(BELT_SECTION, "h-10 -my-1", accent === undefined && "border-l-border bg-muted")}
+      style={
+        accent === undefined
+          ? undefined
+          : // 14% of the brand on whatever ground is behind it, so the one value reads in both
+            // themes instead of one tint fighting the dark one.
+            { backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)` }
+      }
     >
       {/* The mark, not a button: `aria-hidden` on the wrapper drops AgentIcon's own `role="img"`
           and its label out of the tree, so a reader hears the group's name once and not a logo
