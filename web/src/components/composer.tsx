@@ -8,7 +8,7 @@ import type { DisplayPrefs } from "@/hooks/use-display-prefs";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { useDirectTyping } from "@/hooks/use-direct-typing";
 import { useLocale } from "@/hooks/use-locale";
-import { t as translate, tn as translatePlural } from "@/lib/i18n";
+import { t as translate } from "@/lib/i18n";
 import { setStatus } from "@/lib/status";
 import { buzz } from "@/lib/haptics";
 import { stampSend } from "@/lib/poll-intent";
@@ -16,7 +16,7 @@ import { useBusyWhile } from "@/lib/busy";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChatInput } from "@/components/ui/chat/chat-input";
-import { NavTray } from "@/components/nav-tray";
+import { DirectKeyboardAccessory } from "@/components/direct-keyboard-accessory";
 import { CommandPalette } from "@/components/command-palette";
 import { QuickActionsContent } from "@/components/quick-actions";
 import { ActionsRow } from "@/components/actions-row";
@@ -29,12 +29,10 @@ import * as api from "@/lib/api";
 import { describeApiError, describeThrownError } from "@/lib/api-error-message";
 import { commandsFor } from "@/lib/agent-commands";
 import { useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux-capability";
-import { useOperatorCommands, useOperatorKeys, useUploadCapability } from "@/lib/operator-config";
+import { useOperatorCommands, useUploadCapability } from "@/lib/operator-config";
 import { acceptAttribute, limitMb, offersFiles, PHOTO_ACCEPT, rejectAttachment, uploadLimits } from "@/lib/attachments";
-import { ctrlPresetsFor } from "@/lib/operator-keys";
 import { isDestructiveInput } from "@/lib/destructive";
-import { HostChip } from "@/components/host-chip";
-import { useAmbientHost, useHostLabel } from "@/components/crew-provider";
+import { useHostLabel } from "@/components/crew-provider";
 import { clearDraft, fitsDraftStore, loadDraft, saveDraft } from "@/lib/drafts";
 import { useHoldReload } from "@/lib/reload-guard";
 import { isSelfEcho, normalizeDraft } from "@/hooks/use-terminal-draft";
@@ -148,7 +146,7 @@ interface ComposerProps {
 // decode. They now live behind the ⚙ on the actions row, as labelled rows in the same
 // in-flow dock (they change how the mirror LOOKS, so the mirror has to stay visible while you flip
 // them). Find moved the other way — to the header, where its find bar already takes over the row.
-type ComposerDrawer = "quick" | "cmd" | "keys" | "display" | null;
+type ComposerDrawer = "quick" | "cmd" | "display" | null;
 
 
 
@@ -203,13 +201,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // and half a reply is not a feature. `typeText`'s reason is preferred when both are missing —
   // it is the half that fails first.
   // Asked of the machine this row is on (M22/03) — the ambient scope IS the target here, exactly as
-  // `writeHost` below says of the write itself.
+  // `writeHostLabel` below says of the write itself.
   const canType = useMuxCapability("typeText", scope);
   const canSendKeys = useMuxCapability("sendKeys", scope);
   const missingSend = !canType.capable ? canType : !canSendKeys.capable ? canSendKeys : null;
   const locked = gone || readOnly || hostBlock !== undefined || missingSend !== null || externalBusy;
   // Host name for write confirmations; the pane owns the visible target row.
-  const writeHost = useAmbientHost(scope?.host);
   const writeHostLabel = useHostLabel(scope?.host);
   // …and a ref alongside it, for the ONE caller that reads it after an await. `send()` checks
   // `locked` once, up front, but its pre-clear sweep goes out on the far side of the pre-flight's
@@ -297,22 +294,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // below).
   const [handledKey, setHandledKey] = useState<string | null>(null);
   const [previewLatched, setPreviewLatched] = useState(false);
-  // At most one auxiliary dock is open (Keys / Quick / Agent / Display).
+  // At most one auxiliary dock is open (Quick / Agent / Display).
   const [drawer, setDrawer] = useState<ComposerDrawer>(null);
-  // Keys are staged in an unmounted-on-close NavTray. Closing it must not silently carry a
-  // composed sequence into a later open.
-  const [queuedKeys, setQueuedKeys] = useState(0);
-  const discardConfirm = usePendingConfirm();
   function requestDrawer(next: ComposerDrawer) {
-    if (drawer === "keys" && next !== "keys" && queuedKeys > 0 && !discardConfirm.confirm("discard")) {
-      setStatus(translatePlural("composer.discard.confirmKeys", queuedKeys, { count: queuedKeys }), "info");
-      return false;
-    }
-    discardConfirm.reset();
     onDockOpen?.();
     if (next !== null && direct.active) direct.deactivateSilently();
     setDrawer(next);
-    return true;
   }
   const closeDrawer = () => requestDrawer(null);
   // Two-tap guard for destructive commands (rm -rf, force-push, …): the first tap arms a "Really
@@ -506,7 +493,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // its text tracks and that the send()-time pre-clear sweeps.
   const effectiveStable = suppressEcho(terminalDraft);
   const effectiveRaw = suppressEcho(rawTerminalDraft);
-  const writing = sending || uploading || direct.active || direct.busy || queuedKeys > 0;
+  const writing = sending || uploading || direct.active || direct.busy;
   useEffect(() => {
     onWritingChange?.(writing);
     return () => onWritingChange?.(false);
@@ -646,9 +633,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     if (pressTimer.current !== null) clearTimeout(pressTimer.current);
     pressTimer.current = setTimeout(() => setPressed(false), ATTACH_PRESS_MS);
   }
-  // Empty on every adapter that refuses nothing, and empty for Herdr's six as far as this tray is
-  // concerned — it offers none of the paging/edit keys Herdr rejects, so nothing greys out there.
-  const keyPresets = ctrlPresetsFor(agent, useOperatorKeys());
+  // Keep the direct-input accessory's unavailable keys visible but disabled.
   const unsupportedKeys = useMuxUnsupportedKeys();
 
   function focusInputImmediately() {
@@ -1023,21 +1008,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         <input ref={fileRef} data-testid="attach-files" type="file" accept={accept} hidden onChange={onPickFile} />
 
         {/* Auxiliary docks stay above the actions belt. */}
-      {drawer === "keys" && (
-        <ComposerDock
-          title={translate("composer.controls.keys")}
-          onClose={closeDrawer}
-          actions={<HostChip host={writeHost} variant="target" />}
-        >
-          <NavTray
-            unsupportedKeys={unsupportedKeys}
-            onSend={pressKeys}
-            presets={keyPresets}
-            onQueueChange={setQueuedKeys}
-            disabled={locked}
-          />
-        </ComposerDock>
-      )}
+
       {drawer === "quick" && (
           <ComposerDock title={translate("composer.controls.quick")} onClose={closeDrawer}>
             <QuickActionsContent
@@ -1125,27 +1096,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               // open, tap again to close. `expanded` ties each to the dock; the "on" tint marks
               // it pressed while open. Both share the single-valued `drawer`, so opening one
               // closes the other.
-              {
-                id: "keys",
-                icon: Keyboard,
-                label: translate("composer.controls.keys"),
-                on: drawer === "keys",
-                expanded: drawer === "keys",
-                disabled: locked,
-                onSelect: () => requestDrawer(drawer === "keys" ? null : "keys"),
-              },
-              // "Type into terminal" lives HERE, beside Keys, rather than on the Send button.
-              // It is the same problem split in half: Keys exists because the phone keyboard
-              // cannot send Esc/Tab/arrows/chords, this exists because it cannot send bare
-              // printable letters — so someone who wants to press `b` looks in this row first.
-              // It is also used in bursts (a picker, a y/n prompt) and then not for days, which
-              // is the wrong shape for a permanent fixture on the app's most-used control: a
-              // split Send button cost a third of the primary action's width every day to serve
-              // a mode used on a few of them.
-              // Unlike its neighbours this toggles state instead of opening a dock — the armed
-              // strip above the input is what makes that visible. Arming is still an explicit
-              // NAMED choice, which is what keeps an accidental touch from quietly wiring the
-              // keyboard to a live terminal; see use-direct-typing.ts for the rest.
+              // One explicit mode owns both live text and the special-key accessory.
+              // Opening it exposes the keys without focusing the textarea.
               {
                 id: "type",
                 icon: Terminal,
@@ -1155,14 +1107,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 word: translate("composer.controls.type"),
                 on: direct.active,
                 pressed: direct.active,
+                expanded: direct.active,
                 disabled: locked || sending,
                 onSelect: () => {
                   if (direct.active) {
                     direct.deactivate();
                     return;
                   }
-                  // Discard confirmation must complete before direct typing can be armed.
-                  if (!requestDrawer(null)) return;
+                  requestDrawer(null);
                   direct.activate();
                 },
               },
@@ -1264,7 +1216,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                       // while any draft is present, which would make the offered remedy fail on the
                       // spot.
                       updateInput("");
-                      if (!requestDrawer(null)) return;
+                      requestDrawer(null);
                       direct.activate();
                     }
               }
@@ -1282,7 +1234,19 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           {/* Armed indicator for direct typing, deliberately NOT only on the button and textarea —
               see the component. */}
           {direct.active && (
-            <DirectTypingStrip onStop={() => direct.deactivate()} />
+            <div id="composer-direct-keys">
+              <DirectTypingStrip onStop={() => direct.deactivate()} />
+              <DirectKeyboardAccessory
+                key={`${direct.accessorySession}:${direct.row}`}
+                row={direct.row}
+                modifiers={direct.modifiers}
+                disabled={locked}
+                unsupportedKeys={unsupportedKeys}
+                onToggleRow={direct.toggleRow}
+                onToggleModifier={direct.toggleModifier}
+                onSendKeys={direct.sendAccessoryKeys}
+              />
+            </div>
           )}
           {/* The microphone's armed strip. Stop and ✕ are different actions: one transcribes the
               clip, the other throws it away. */}

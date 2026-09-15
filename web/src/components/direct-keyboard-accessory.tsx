@@ -1,4 +1,4 @@
-import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import { keysSendable } from "@/lib/mux-capability";
@@ -59,7 +59,9 @@ const RESTING_KEY_CLASS =
   "border-border bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground";
 const NO_REFUSED_KEYS: readonly string[] = [];
 
-function preserveTextareaFocus(event: ReactPointerEvent<HTMLButtonElement>) {
+function preserveTextareaFocus(event: ReactMouseEvent<HTMLButtonElement>) {
+  // Cancel the focus-changing mouse default, not pointerdown: WebKit drops a touch's click
+  // when pointerdown is cancelled, making the key appear tappable but send nothing.
   event.preventDefault();
 }
 
@@ -100,7 +102,7 @@ export function DirectKeyboardAccessory({
         variant={mode === "off" ? "outline" : "default"}
         size="sm"
         disabled={disabled}
-        onPointerDown={preserveTextareaFocus}
+        onMouseDown={preserveTextareaFocus}
         onClick={() => onToggleModifier(modifier)}
         aria-label={label}
         title={label}
@@ -136,8 +138,8 @@ export function DirectKeyboardAccessory({
         size="sm"
         disabled={disabled || refused}
         {...(binding ?? { onClick: () => onSendKeys([key]) })}
+        onMouseDown={preserveTextareaFocus}
         onPointerDown={(event) => {
-          preserveTextareaFocus(event);
           if (!refused) binding?.onPointerDown(event);
         }}
         aria-label={ariaLabel}
@@ -171,7 +173,7 @@ export function DirectKeyboardAccessory({
         variant="outline"
         size="icon"
         disabled={disabled}
-        onPointerDown={preserveTextareaFocus}
+        onMouseDown={preserveTextareaFocus}
         onClick={onToggleRow}
         aria-label={
           row === "navigation" ? t("keys.showFunctionKeys") : t("keys.showNavigationKeys")

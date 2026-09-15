@@ -154,7 +154,6 @@ describe("Composer — actions belt", () => {
       const group = screen.getByRole("group", { name: translate("composer.controls.label") });
       const buttons = within(group).getAllByRole("button");
       expect(buttons.map((button) => button.textContent)).toEqual([
-        translate("composer.controls.keys"),
         translate("composer.controls.type"),
         translate("composer.controls.quick"),
         translate("composer.controls.agent"),
@@ -176,34 +175,43 @@ describe("Composer — actions belt", () => {
     renderComposer({ agent: null, isShell: true });
     const group = screen.getByRole("group", { name: "Controls" });
     expect(within(group).queryByRole("button", { name: "Agent" })).toBeNull();
-    expect(within(group).getByRole("button", { name: "Keys" })).toBeEnabled();
+    expect(within(group).getByRole("button", { name: "Type into terminal" })).toBeEnabled();
   });
 
-  it("requires queue discard before arming Type and never restores an old queue", async () => {
+  it("sends accessory chords immediately and resets keys when Input is reopened", async () => {
     const user = userEvent.setup();
     const onWritingChange = vi.fn();
-    const sends = vi.fn();
-    server.use(http.post(/\/api\/pane\/[^/]+\/keys$/, () => {
-      sends();
+    const sent: string[] = [];
+    server.use(http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+      // SAFETY: this route receives the app-owned sendKeys payload under test.
+      const body = await request.json() as { keys: string[] };
+      sent.push(...body.keys);
       return HttpResponse.json({ ok: true });
     }));
     renderComposer({ onWritingChange });
-    await user.click(screen.getByRole("button", { name: "Keys" }));
-    await user.click(screen.getByRole("button", { name: "Ctrl" }));
-    await user.click(screen.getByRole("button", { name: "Tab" }));
-    expect(onWritingChange).toHaveBeenLastCalledWith(true);
     const type = screen.getByRole("button", { name: "Type into terminal" });
+    expect(screen.queryByRole("button", { name: "Keys" })).toBeNull();
     await user.click(type);
-    expect(type).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "Clear queued keys" })).toBeInTheDocument();
-    await user.click(type);
-    expect(type).toHaveAttribute("aria-pressed", "true");
+    const accessory = screen.getByTestId("direct-keyboard-accessory");
+    expect(type).toHaveAttribute("aria-expanded", "true");
+    expect(onWritingChange).toHaveBeenLastCalledWith(true);
     expect(screen.getByPlaceholderText(/type into the terminal/i)).not.toHaveFocus();
-    await user.click(screen.getByRole("button", { name: "Keys" }));
-    expect(type).toHaveAttribute("aria-pressed", "false");
+    await user.click(within(accessory).getByRole("button", { name: "Ctrl" }));
+    await user.click(within(accessory).getByRole("button", { name: "Tab" }));
+    await waitFor(() => expect(sent).toEqual(["ctrl+Tab"]));
+    expect(within(accessory).getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
     expect(screen.queryByRole("button", { name: "Clear queued keys" })).toBeNull();
+    await user.click(within(accessory).getByRole("button", { name: "Ctrl" }));
+    await user.click(within(accessory).getByRole("button", { name: "Ctrl" }));
+    await user.click(within(accessory).getByRole("button", { name: "Show function keys" }));
+    await user.click(type);
+    await waitFor(() => expect(screen.queryByTestId("direct-keyboard-accessory")).toBeNull());
     expect(onWritingChange).toHaveBeenLastCalledWith(false);
-    expect(sends).not.toHaveBeenCalled();
+    await user.click(type);
+    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
+    expect(screen.getByRole("button", { name: "Tab" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "F1" })).toBeNull();
+    expect(sent).toEqual(["ctrl+Tab"]);
   });
 });
 
@@ -1546,7 +1554,7 @@ describe("Composer — the machine opens the actions belt, and no band stands ab
     // `--chrome` in light and `--card` IS `--chrome` in dark, so neither token separates in both.
     renderComposerWithStatus({ scope: { host: "workshop" } }, fixtureServers);
     expect(actions().className).toMatch(/(?:^|\s)-mx-3(?=\s|$)/);
-    expect(actions().className).toMatch(/(?:^|\s)bg-foreground\/6(?=\s|$)/);
+    expect(actions()).toHaveClass("bg-chrome");
     expect(actions().className).not.toMatch(/rounded/);
     // The 12px goes back on the SCROLLER, not on the OverflowEdges wrapper between them: that
     // wrapper owns the flex sizing and the edge cues, and deliberately no padding of its own.
