@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.0+collie.6] - 2026-09-15
+
 ### Changed
 
-- **The Input control includes the direct terminal key rail.** Merge the separate Keys launcher into Input and restore the horizontal navigation/function-key accessory between the action belt and textarea, without autofocus or opening the phone keyboard. Preserve immediate ordered key delivery, one-shot/locked modifiers, hold-repeat, draft protection, and pane/lock cleanup on the current composer surface. Preserve textarea focus on mousedown so cancelling pointerdown does not swallow WebKit touch clicks.
+- **The Input control includes the direct terminal key rail.** Merge the separate Keys launcher into Input and restore the horizontal navigation/function-key accessory between the action belt and textarea, without autofocus or opening the phone keyboard. Preserve immediate ordered key delivery, one-shot/locked modifiers, hold-repeat, draft protection, and pane/lock cleanup on the current composer surface. Preserve textarea focus on mousedown so cancelling pointerdown does not swallow WebKit touch clicks. ([3ad426e7](https://github.com/zhdsmy/collie/commit/3ad426e7))
 
 ## [1.9.0+collie.5] - 2026-09-15
 
