@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.2] - 2026-09-15
+
 ### Added
 
-- **Codex asynchronous questions open directly as touch-friendly answer cards.** Pending questions retain a compact entry while the ordinary composer stays available. Open, browse unanswered questions, choose an option or submit a custom multiline answer through verified native controls; existing blocking questionnaires keep their separate behavior.
+- **Codex asynchronous questions open directly as touch-friendly answer cards.** Pending questions retain a compact entry while the ordinary composer stays available. Open, browse unanswered questions, choose an option or submit a custom multiline answer through verified native controls; existing blocking questionnaires keep their separate behavior. ([7ae8630e](https://github.com/zhdsmy/collie/commit/7ae8630e))
 
 ## [1.9.1+collie.1] - 2026-09-15
 
