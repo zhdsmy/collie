@@ -5,3 +5,4 @@ anything. This file exists so agents that look for `AGENTS.md` find it too; ther
 rules, not two, so nothing is restated here.
 
 @CLAUDE.md
+@AGENTS.local.md
