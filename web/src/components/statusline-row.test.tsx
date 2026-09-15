@@ -311,10 +311,11 @@ it("renders the claude mode field as a tappable control and replaces the hint wi
   expect(button).toBeEnabled();
   expect(container.textContent).not.toContain("shift+tab");
   expect(container.textContent).toContain("\u2190 1 agent");
-  // The two keys the hint named, drawn with the composer keyboard's own icons (no text).
+  // The two keys the hint named, as text glyphs in the row's own font, wrapped in parentheses.
   expect(button.textContent).toContain("\u23f5\u23f5 bypass permissions on");
   expect(within(button).queryAllByText("Shift")).toHaveLength(0);
-  expect(button.querySelectorAll("svg[aria-hidden='true']")).toHaveLength(2);
+  expect(button.textContent).toContain("(\u21e7\u21e5)");
+  expect(button.querySelectorAll("svg[aria-hidden='true']")).toHaveLength(0);
   expect(container.textContent).toContain("\u23f5\u23f5 bypass permissions on"); // own colour survives
   fireEvent.click(button);
   expect(onClick).toHaveBeenCalledOnce();

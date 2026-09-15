@@ -1,6 +1,4 @@
 import {
-  ArrowBigUp,
-  ArrowRightToLine,
   ChevronUp,
   CalendarDays,
   Clock,
@@ -359,10 +357,9 @@ function CodexControlledStatusline({
  * Claude's permission mode, tappable: one tap cycles it the way the terminal's own `shift+tab` does.
  *
  * The row Claude prints is `⏵⏵ bypass permissions on (shift+tab to cycle) · ← 1 agent`. The mode is
- * the button; the parenthetical is REPLACED by the two keys it names, drawn with the same icons the
- * composer's direct keyboard uses for Shift and Tab (`direct-keyboard-accessory.tsx`) — the hint is
- * the same fact as those keys, so it costs two glyphs instead of twenty characters of prose on a
- * statusline that has to scroll on a phone.
+ * the button; the parenthetical is REPLACED by the two keys it names as text glyphs in the row's own
+ * font — `(⇧⇥)`, the same arrows the terminal paints beside it — so the hint costs four characters
+ * instead of twenty of prose on a statusline that has to scroll on a phone.
  *
  * The button is drawn even when the hint is absent (`⏸ manual mode on`): the affordance is OURS, not
  * the terminal's, and a mode with no hint is no less switchable.
@@ -400,11 +397,10 @@ function ClaudeModeButton({
         <span className="whitespace-pre">
           <StyledText segments={field.mode.segments} />
         </span>
-        <span aria-hidden="true" className="inline-flex shrink-0 items-center gap-0.5 opacity-70">
-          <ArrowBigUp className="size-[12px] shrink-0" strokeWidth={2.25} />
-          {busy
-            ? <Loader2 className="size-[12px] shrink-0 animate-spin motion-reduce:animate-none" strokeWidth={2.25} />
-            : <ArrowRightToLine className="size-[12px] shrink-0" strokeWidth={2.25} />}
+        <span aria-hidden="true" className="shrink-0 opacity-70">
+          (⇧{busy
+            ? <Loader2 className="inline-block size-[12px] shrink-0 animate-spin align-[-2px] motion-reduce:animate-none" strokeWidth={2.25} />
+            : "⇥"})
         </span>
       </Button>
     </span>

@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **The mode row's cycle hint reads as terminal text.** Draw Claude's `shift+tab` hint as `(⇧⇥)` in the statusline's own font instead of two keyboard icons, matching the arrows the terminal paints beside it.
+
 ## [1.9.0+collie.2] - 2026-09-15
 
 ### Fixed
