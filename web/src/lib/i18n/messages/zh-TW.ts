@@ -821,6 +821,7 @@ export const zhTW: Dictionary = {
   "dialog.sessions.searchAction": "搜尋",
 
   "dialog.plan.title": "計畫",
+  "dialog.plan.recap": "對話回顧",
   "dialog.plan.body": "計畫內容",
   "dialog.plan.partial": "目前僅顯示終端可見的計畫片段。",
 

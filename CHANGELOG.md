@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex plan cards include the conversation recap after resuming.** Keep the plan and its collapsible recap separate, preserve long-plan recovery and native implementation choices, and reject stale actions when the recap changes.
+
 ## [1.10.0+collie.6] - 2026-09-17
 
 ### Changed

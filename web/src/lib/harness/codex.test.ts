@@ -38,6 +38,7 @@ const PICKERS = [
   "codex--v0154-picker-scope.txt",
   "codex--v0154-picker-statusline-empty.txt",
   "codex--v0154-picker-statusline-focused.txt",
+  "codex--v0154-picker-statusline-leading-rule.txt",
   "codex--v0154-picker-statusline-moved.txt",
   "codex--v0154-picker-statusline-no-preview.txt",
   "codex--v0154-picker-statusline-scrolled.txt",

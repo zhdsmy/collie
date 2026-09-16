@@ -25,6 +25,7 @@ const PANES_DIR = join(import.meta.dirname, "..", "..", "fixtures", "panes");
 // composer chrome, not a dialog, so it must stay raw. The wrapped-draft capture is the same: a
 // (multi-line) input box, stripped as chrome, never lifted.
 const NEUTRAL = new Set([
+  "claude--custom-statusline.txt",
   "claude--working.txt",
   "claude--fresh-idle.txt",
   "claude--done.txt",

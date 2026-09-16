@@ -60,3 +60,24 @@ source matching controls full-plan recovery, not whether Markdown is rendered. I
 a bounded scroll region and can be folded; native decisions remain outside that scroller.
 Changing the selected option does not remount the reading area. Notes and unrelated agent
 output keep their existing rendering and input flows.
+
+## Resumed plans with a conversation recap — 2026-09-17
+
+Codex can insert a dim horizontal rule, a bold `Conversation recap` heading between dim
+rules, and unpainted recap paragraphs between the proposed plan and its implementation menu.
+The earlier adjacency check rejected this whole screen. The parser now recognizes this
+specific interstitial, including an optional `Worked for` completion rule, while retaining
+the native menu labels, pointer paint, footer, painted body and tail anchoring checks.
+Unknown interstitials, missing plan bodies and unstyled lookalikes stay raw.
+
+The recap lives in `plan.recap`, never in `plan.text`: journal recovery must still match only
+the proposed plan. Recap changes invalidate picker identity and pending pointer walks.
+Both reading sections belong to the same card; the recap starts folded, uses the existing
+Markdown renderer, and scrolls independently. Implementation choices stay outside both
+reading areas. No cross-agent detector or native key recipe is broadened.
+
+Parser and browser tests explicitly label their added recap text as structural mutations of
+the existing native captures, rather than claiming these assembled variants are untouched
+terminal recordings. Checks cover preserved blank lines, complete/partial source matching,
+completion rules, stale recap identity, malformed boundaries, 320px English/Chinese layouts,
+light/dark themes, Chromium/WebKit scrolling, folding and guarded option selection.

@@ -28,7 +28,7 @@ export interface PickerModel {
   /** Presentation of a saved-session chooser; native labels and action guards stay untouched. */
   sessionAction?: "resume" | "fork";
   /** Visible plan body, kept exact; a verified journal match may supply its complete source. */
-  plan?: { text: string; complete: boolean };
+  plan?: { text: string; complete: boolean; recap?: string };
   /** A question within one native questionnaire; the footer declares what Enter will do. */
   questionnaire?: {
     index: number;
@@ -90,6 +90,7 @@ export function pickersSameIdentity(a: PickerModel, b: PickerModel): boolean {
     a.questionnaire?.async?.collapsed === b.questionnaire?.async?.collapsed &&
     a.questionnaire?.async?.otherId === b.questionnaire?.async?.otherId &&
     a.plan?.text === b.plan?.text && a.plan?.complete === b.plan?.complete &&
+    a.plan?.recap === b.plan?.recap &&
     a.questionnaire?.index === b.questionnaire?.index &&
     a.questionnaire?.total === b.questionnaire?.total;
 }

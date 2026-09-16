@@ -838,6 +838,7 @@ export const ja: Dictionary = {
   "dialog.sessions.searchAction": "検索",
 
   "dialog.plan.title": "計画",
+  "dialog.plan.recap": "会話の振り返り",
   "dialog.plan.body": "計画の本文",
   "dialog.plan.partial": "現在はターミナルに表示されている計画の一部のみ表示しています。",
 

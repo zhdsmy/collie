@@ -6,6 +6,7 @@ import { lastNonBlankIndex, rstrip } from "./markers";
 
 const TITLE = "Implement this plan?";
 const FOOTER = "Press enter to confirm or esc to go back";
+const RECAP = /^─+ Conversation recap ─+$/;
 const OPTION = /^(› | {2})([1-3])\. (.+)$/;
 const LABELS = ["Yes, implement this plan", "Yes, clear context and implement", "No, stay in Plan mode"];
 const DESCRIPTIONS = [
@@ -56,6 +57,25 @@ export function detectPlanRegion(lines: StyledLine[]): { startLine: number; mode
   let separator = title - 1;
   while (separator >= 0 && !texts[separator]!.trim()) separator--;
   if (separator < 0) return null;
+  let recap: string | undefined;
+  // On resume, Codex inserts a recap between the painted plan and its native menu.
+  // Only cross that exact, styled heading; arbitrary unpainted output is not a plan.
+  if (!ink(lines[separator]!)[0]?.bg) {
+    let heading = separator;
+    while (heading >= 0 && !RECAP.test(texts[heading]!.trim()) && !ink(lines[heading]!)[0]?.bg) heading--;
+    if (heading >= 0 && RECAP.test(texts[heading]!.trim())) {
+      const segments = ink(lines[heading]!);
+      if (!segments.some((segment) => segment.bold && segment.text.trim() === "Conversation recap") ||
+        !segments.every((segment) => segment.text.trim() === "Conversation recap" ? segment.bold : segment.dim)) return null;
+      recap = texts.slice(heading + 1, separator + 1).join("\n").trim();
+      if (!recap) return null;
+      separator = heading - 1;
+      while (separator >= 0 && !texts[separator]!.trim()) separator--;
+      if (separator >= 0 && /^─+$/.test(texts[separator]!.trim()) && ink(lines[separator]!).every((segment) => segment.dim)) separator--;
+      while (separator >= 0 && !texts[separator]!.trim()) separator--;
+      if (separator < 0) return null;
+    }
+  }
   // Codex omits Worked for on fast turns. Both captured layouts keep the painted plan body
   // immediately above the menu (with only this optional completion rule between them).
   let end = /^─+ Worked for .+ ─+$/.test(texts[separator]!.trim()) ? separator - 1 : separator;
@@ -74,9 +94,9 @@ export function detectPlanRegion(lines: StyledLine[]): { startLine: number; mode
   return {
     startLine: regionStart,
     model: {
-      kind: "single", identity: `plan:${body}`, title: TITLE, description: [], options,
+      kind: "single", identity: `plan:${recap ? JSON.stringify([body, recap]) : body}`, title: TITLE, description: [], options,
       query: null, preview: [], footer: FOOTER, signature: region, regionSignature: region,
-      plan: { text: body, complete },
+      plan: { text: body, complete, recap },
     },
   };
 }

@@ -4,6 +4,19 @@ import { t } from "@/lib/i18n";
 import { PlanContent } from "./plan-content";
 
 describe("plan reading area", () => {
+  it("keeps the recap in an independent, initially folded Markdown section", () => {
+    const view = render(<PlanContent text="# Original plan" complete recap={"## Context\n\n- Keep the **scope**."} />);
+    const recap = view.getByText(t("dialog.plan.recap"), { selector: "summary" });
+    const details = recap.closest("details")!;
+    expect(details).not.toHaveAttribute("open");
+    // Native details handles mouse and keyboard activation; browser tests cover its layout.
+    details.open = true;
+    expect(view.getByRole("region", { name: t("dialog.plan.recap") })).toHaveTextContent("Keep the scope.");
+    expect(view.getByRole("region", { name: t("dialog.plan.body") })).not.toHaveTextContent("Keep the scope.");
+    fireEvent.click(view.getByRole("button", { name: t("dialog.plan.title") }));
+    expect(details).toHaveAttribute("open");
+  });
+
   it("retains the whole long body and lets the user fold it without focusing an input", async () => {
     const paragraphs = Array.from({ length: 200 }, (_, index) => `Paragraph ${index}: preserve the complete plan.`);
     const text = paragraphs.join("\n\n");

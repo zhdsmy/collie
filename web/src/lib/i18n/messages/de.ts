@@ -846,6 +846,7 @@ export const de: Dictionary = {
   "dialog.sessions.searchAction": "Suchen",
 
   "dialog.plan.title": "Plan",
+  "dialog.plan.recap": "Gesprächsrückblick",
   "dialog.plan.body": "Planinhalt",
   "dialog.plan.partial": "Nur der sichtbare Teil des Plans ist verfügbar.",
 

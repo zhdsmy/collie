@@ -825,6 +825,7 @@ export const zh: Dictionary = {
   "dialog.sessions.searchAction": "搜索",
 
   "dialog.plan.title": "计划",
+  "dialog.plan.recap": "对话回顾",
   "dialog.plan.body": "计划正文",
   "dialog.plan.partial": "当前仅显示终端可见的计划片段。",
 

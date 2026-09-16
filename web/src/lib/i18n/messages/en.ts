@@ -873,6 +873,7 @@ export const en = {
   "dialog.sessions.searchAction": "Search",
 
   "dialog.plan.title": "Plan",
+  "dialog.plan.recap": "Conversation recap",
   "dialog.plan.body": "Plan content",
   "dialog.plan.partial": "Only the visible part of the plan is available.",
 

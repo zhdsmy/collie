@@ -20,7 +20,70 @@ function model(state: string) {
 // SAFETY: these are the reviewed entries captured through the real Codex journal adapter.
 const transcript = entries as TranscriptEntry[];
 
+// Structural mutation of native plan captures: resume inserts this separately styled recap.
+function withRecap(state = "short") {
+  const capture = lines(state);
+  const title = capture.findIndex((line) => lineText(line).trim() === "Implement this plan?");
+  capture.splice(title, 0, ...splitLines(parseAnsi([
+    "\u001b[2m────────────────────────────────\u001b[0m",
+    "",
+    "\u001b[2m──── \u001b[22;1mConversation recap\u001b[22;2m ────\u001b[0m",
+    "",
+    "Review the **scope** before implementation.",
+    "",
+    "Keep the existing behavior.",
+    "",
+  ].join("\n"))));
+  return capture;
+}
+
 describe("Codex proposed-plan cards", () => {
+  it("keeps a resumed recap separate from the plan and its verified original", () => {
+    for (const state of ["short", "long"]) {
+      const result = detectPlanRegion(withRecap(state))!.model;
+      expect(result.plan).toEqual({ ...model(state).plan, recap: "Review the **scope** before implementation.\n\nKeep the existing behavior." });
+      expect(result.options).toEqual(model(state).options);
+      expect(result.regionSignature).toContain("Conversation recap");
+      expect(completePlanText(result.plan!, transcript[state === "short" ? 0 : 1]!)).not.toBeNull();
+    }
+  });
+
+  it("keeps recap identity across pointer moves but refuses changed context", () => {
+    const first = detectPlanRegion(withRecap())!.model;
+    const second = detectPlanRegion(withRecap("short-second"))!.model;
+    expect(pickersSameIdentity(first, second)).toBe(true);
+    expect(pickersEqual(first, second)).toBe(false);
+    const changed = { ...first, plan: { ...first.plan!, recap: "Different context" } };
+    expect(pickersSameIdentity(first, changed)).toBe(false);
+    expect(pickersEqual(first, changed)).toBe(false);
+    expect(pickersSameIdentity(first, model("short"))).toBe(false);
+  });
+
+  it("accepts the native completion rule with or without a recap", () => {
+    const resumed = withRecap();
+    const separator = resumed.findIndex((line) => /^─+$/.test(lineText(line)));
+    resumed.splice(separator, 1, ...splitLines(parseAnsi("\u001b[2m──── Worked for 12s ────\u001b[0m")));
+    expect(detectPlanRegion(resumed)?.model.plan?.text).toBe(model("short").plan?.text);
+    const plain = lines("short");
+    const title = plain.findIndex((line) => lineText(line).trim() === "Implement this plan?");
+    plain.splice(title, 0, ...splitLines(parseAnsi("\u001b[2m──── Worked for 12s ────\u001b[0m")));
+    expect(detectPlanRegion(plain)?.model.plan).toEqual(model("short").plan);
+  });
+
+  it("refuses unstyled recaps, unrelated interstitials and a recap without a plan", () => {
+    const unstyled = withRecap().map((line) => lineText(line).includes("Conversation recap")
+      ? splitLines(parseAnsi(lineText(line)))[0]! : line);
+    expect(detectPlanRegion(unstyled)).toBeNull();
+    const unrelated = withRecap();
+    const rule = unrelated.findIndex((line) => /^─+$/.test(lineText(line)));
+    unrelated.splice(rule, 0, ...splitLines(parseAnsi("Unrelated output")));
+    expect(detectPlanRegion(unrelated)).toBeNull();
+    const recapOnly = withRecap();
+    expect(detectPlanRegion(recapOnly.slice(recapOnly.findIndex((line) => /^─+$/.test(lineText(line)))))).toBeNull();
+    const extraTail = [...withRecap(), ...splitLines(parseAnsi("New response"))];
+    expect(detectPlanRegion(extraTail)).toBeNull();
+  });
+
   it("lifts the complete short plan and all native decisions without a timing divider", () => {
     const plan = model("short");
     expect(plan.plan?.complete).toBe(true);

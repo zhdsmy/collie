@@ -836,6 +836,7 @@ export const ko: Dictionary = {
   "dialog.sessions.searchAction": "검색",
 
   "dialog.plan.title": "계획",
+  "dialog.plan.recap": "대화 요약",
   "dialog.plan.body": "계획 내용",
   "dialog.plan.partial": "현재 터미널에 보이는 계획의 일부만 표시됩니다.",
 
