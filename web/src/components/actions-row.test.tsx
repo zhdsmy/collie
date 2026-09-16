@@ -118,7 +118,8 @@ describe("ActionsRow", () => {
     // top rule is the boundary up there, so a rule here would be the second of two.
     expect(belt.className).toMatch(/(?:^|\s)border-b(?=\s|$)/);
     expect(belt.className).not.toMatch(/(?:^|\s)(?:border-y|border-t|mt-)/);
-    expect(belt.className).toMatch(/(?:^|\s)bg-foreground\/6(?=\s|$)/);
+    // The downstream belt shares the composer's ground instead of adding a second gray fill.
+    expect(belt.className).not.toMatch(/(?:^|\s)bg-/);
     expect(belt.className).not.toMatch(/rounded/);
     // Collie's own controls stand on that ground with no box of their own.
     const controls = document.querySelector<HTMLElement>('[data-slot="composer-controls"]')!;
@@ -235,5 +236,27 @@ describe("ActionsRow", () => {
     expect(scroller.style.paddingRight).toBe("");
     expect(scroller.className).toMatch(/(?:^|\s)pr-3(?=\s|$)/);
     expect(scroller.lastElementChild?.getAttribute("aria-hidden")).not.toBe("true");
+  });
+});
+
+// ANOTHER PANE NEEDS YOU: the switcher mark wears a red dot, and its name says why. Red only, so the
+// caller passes `alert` only for a blocked pane elsewhere (agent-chat.tsx).
+describe("ActionsRow — the switcher mark's alert", () => {
+  const dotOf = (el: HTMLElement) => el.querySelector(".bg-status-blocked");
+
+  it("draws the red dot only when alerted", () => {
+    const { rerender } = render(
+      <ActionsRow general={[general()]} agent="claude" onRun={took} handle={{ ref: vi.fn(), onClick: vi.fn(), label: "Switch pane" }} />,
+    );
+    expect(dotOf(screen.getByRole("button", { name: "Switch pane" }))).toBeNull();
+    rerender(
+      <ActionsRow
+        general={[general()]}
+        agent="claude"
+        onRun={took}
+        handle={{ ref: vi.fn(), onClick: vi.fn(), label: "Switch pane, another pane needs you", alert: true }}
+      />,
+    );
+    expect(dotOf(screen.getByRole("button", { name: "Switch pane, another pane needs you" }))).not.toBeNull();
   });
 });
