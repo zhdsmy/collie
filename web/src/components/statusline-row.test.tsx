@@ -324,14 +324,39 @@ it("compacts the captured Claude custom statusline without dropping its right-si
   expect(ring).toHaveAttribute("data-used", "66");
   expect(view.getByRole("img")).toHaveAttribute("aria-label", "Context 34% left");
   expect(view.container.textContent).toContain("example-model[1m] xhigh");
-  expect(view.container.textContent).toContain("new task? /clear to save 600.0k tokens");
+  expect(view.container.textContent).not.toContain("new task?");
   expect(view.container.textContent).not.toMatch(/ {2,}|\|/);
   expect(view.container.querySelector(".lucide-git-branch")).not.toBeNull();
   expect(view.container.querySelector(".lucide-tag")).not.toBeNull();
-  expect(view.container.firstElementChild).toHaveClass("overflow-x-auto", "whitespace-nowrap");
-  expect(view.container.firstElementChild?.firstElementChild).toHaveAttribute("data-slot", "statusline-target");
+  const strip = view.container.querySelector('[data-slot="claude-statusline"]')!;
+  expect(strip).toHaveClass("overflow-x-auto", "whitespace-nowrap");
+  expect(strip.firstElementChild).toHaveAttribute("data-slot", "statusline-target");
   expect(view.getByText("example-model[1m] xhigh")).toHaveStyle({ color: "rgb(153,153,153)" });
+  const hint = view.getByRole("button", { name: "Claude hint" });
+  fireEvent.click(hint);
+  const dialog = view.getByRole("dialog", { name: "Claude hint" });
+  expect(dialog).toHaveTextContent("new task? /clear to save 600.0k tokens");
+  expect(strip).not.toContainElement(dialog);
+  fireEvent.keyDown(window, { key: "Escape" });
+  expect(view.queryByRole("dialog")).toBeNull();
+});
+
+it.each(["on", "off"])("shows explicit Claude Fast:%s without adding a mode switch", (state) => {
+  const row = splitLines(parseAnsi(`model | Fast:${state} | ctx 30%`))[0]!;
+  const view = render(<StatuslineRow agent="claude" row={row} />);
+  expect(view.getByRole("img", { name: `Fast:${state}` }).querySelector("svg")).toHaveAttribute("fill", state === "on" ? "currentColor" : "none");
   expect(view.queryAllByRole("button")).toHaveLength(0);
+});
+
+it.each([
+  ["cache warm 85%", "Warm · Cache hit 85%", "Warm 85%"],
+  ["cache cold 0%", "Cold · Cache hit 0%", "Cold 0%"],
+  ["cache warm", "Warm", "Warm"],
+  ["cache unreported", "Unreported", "Unreported"],
+])("shows native Claude %s without inventing missing hit ratios", (field, label, text) => {
+  const row = splitLines(parseAnsi(`model | ${field} | main`))[0]!;
+  const view = render(<StatuslineRow agent="claude" row={row} />);
+  expect(view.getByRole("img", { name: label })).toHaveTextContent(text);
 });
 
 it.each([0, 7, 30, 100])("treats Claude ctx %s%% as remaining across ANSI spans", (remaining) => {
@@ -370,6 +395,7 @@ it("renders the claude mode field as a tappable control and replaces the hint wi
   expect(button).toBeEnabled();
   expect(container.textContent).not.toContain("shift+tab");
   expect(container.textContent).toContain("\u2190 1 agent");
+  expect(container.textContent?.startsWith("\u23f5\u23f5")).toBe(true);
   // The two keys the hint named, as text glyphs in the row's own font, wrapped in parentheses.
   expect(button.textContent).toContain("\u23f5\u23f5 bypass permissions on");
   expect(within(button).queryAllByText("Shift")).toHaveLength(0);

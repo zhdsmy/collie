@@ -4,6 +4,11 @@ import type { Dictionary } from "./en";
 // match.
 
 export const zh: Dictionary = {
+  "statusline.claude.hint": "Claude 提示",
+  "statusline.claude.cache.warm": "暖",
+  "statusline.claude.cache.cold": "冷",
+  "statusline.claude.cache.unreported": "未上报",
+  "statusline.claude.cache.hit": "缓存命中率 {value}",
   "statusline.codex.firstToken": "最近完成轮次的首 token 耗时 {value}",
   "settings.language.title": "语言",
   "settings.language.description": "终端镜像输出不会被翻译。",

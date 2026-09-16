@@ -4,6 +4,11 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const de: Dictionary = {
+  "statusline.claude.hint": "Claude-Hinweis",
+  "statusline.claude.cache.warm": "Warm",
+  "statusline.claude.cache.cold": "Kalt",
+  "statusline.claude.cache.unreported": "Nicht gemeldet",
+  "statusline.claude.cache.hit": "Cache-Trefferquote {value}",
   "statusline.codex.firstToken": "Zuletzt abgeschlossener Durchlauf: erstes Token nach {value}",
   "settings.language.title": "Sprache",
   "settings.language.description": "Der Terminal-Spiegel wird nie übersetzt.",

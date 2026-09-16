@@ -3,7 +3,10 @@ import { expect, test } from "@playwright/test";
 import { fixtureSnapshot } from "@/test/handlers";
 import { installApiStub } from "./fixtures/api";
 
-const pane = readFileSync(new URL("../src/fixtures/panes/claude--custom-statusline.txt", import.meta.url), "utf8");
+// The captured footer, with fields supplied by the new formatter's tested JSON examples.
+const pane = readFileSync(new URL("../src/fixtures/panes/claude--custom-statusline.txt", import.meta.url), "utf8")
+  .replace("xhigh", "xhigh | Fast:off")
+  .replace("34%", "34% | cache warm 85%");
 test.use({ serviceWorkers: "block" });
 
 for (const theme of ["light", "dark"]) {
@@ -25,7 +28,10 @@ for (const theme of ["light", "dark"]) {
     const row = page.locator('[data-slot="claude-statusline"]').filter({ hasText: "example-model[1m]" });
     const ring = row.locator('[data-status-icon="context"]');
     await expect(ring).toHaveAttribute("data-used", "66");
-    await expect(page.getByRole("button", { name: /Claude mode:.*accept edits on/ })).toBeVisible();
+    const mode = page.getByRole("button", { name: /Claude mode:.*accept edits on/ });
+    await expect(mode).toBeVisible();
+    await expect(row.getByRole("img", { name: "Fast:off" })).toBeVisible();
+    await expect(row.getByRole("img", { name: "Warm · Cache hit 85%" })).toBeVisible();
     await expect(row.getByText("example-model[1m] xhigh")).toHaveCount(1);
     await expect(page.getByText("ctx 34%", { exact: true })).toHaveCount(0);
     const layout = await row.evaluate((el) => {
@@ -37,11 +43,21 @@ for (const theme of ["light", "dark"]) {
     expect(layout.total).toBeLessThan(850);
     expect(layout.ringTop).toBeGreaterThanOrEqual(0);
     expect(layout.ringBottom).toBeGreaterThanOrEqual(0);
+    const rowBounds = await row.boundingBox();
+    const modeBounds = await mode.boundingBox();
+    expect(Math.abs(modeBounds!.x - rowBounds!.x)).toBeLessThan(1);
+    await expect(page.getByText("new task? /clear to save 600.0k tokens")).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`claude-statusline-${theme}.png`) });
     await row.evaluate((el) => { el.scrollLeft = el.scrollWidth; });
-    const hint = row.getByText("new task? /clear to save 600.0k tokens");
+    const hint = row.getByRole("button", { name: "Claude hint" });
     await expect(hint).toBeInViewport();
     await expect(row.getByText("v2.1.273")).toBeInViewport();
+    await hint.click();
+    const dialog = page.getByRole("dialog", { name: "Claude hint" });
+    await expect(dialog).toHaveText("new task? /clear to save 600.0k tokens");
+    await expect(dialog).toBeInViewport({ ratio: 1 });
     await page.screenshot({ path: testInfo.outputPath(`claude-statusline-${theme}-scrolled.png`) });
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
   });
 }

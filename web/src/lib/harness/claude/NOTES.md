@@ -70,6 +70,13 @@ native hints, replacing terminal-width padding with app gaps. Keep the existing 
 send gates unchanged. A first sample omitted the lower rule during repaint; a repeat capture had
 the complete box. Do not loosen composer recognition to accommodate a torn display frame.
 
-The configured `Fast` label currently comes from `thinking.enabled == false`; this is not proof of
-Claude Fast mode (`fast_mode` is separate). Render the label as supplied, without inferring a toggle
-or silently editing the operator's command. Missing/invalid `ctx` values get no fabricated ring.
+`scripts/claude-statusline.sh` reads `fast_mode` directly and emits `Fast:on/off`; extended thinking
+is independent. The formatter exposes `prompt_cache.warm` plus the 0–1 `hit_ratio` as a percentage,
+distinguishes unreported caching, and omits absent values. The local settings command points to the
+installed script. Configuration changes require a backup and live output read-back, not a session
+restart. Missing/invalid `ctx` values get no fabricated ring.
+
+The known `new task? /clear to save … tokens` hint lives behind a read-only Info button. Its anchored
+popup is portalled out of both status scrollers and the mirror filter so it cannot be clipped or
+double-inverted. Unknown hints stay literal. The mode row drops its terminal indent only in the
+display; detection, region binding and the existing shift+tab recipe keep the captured text.

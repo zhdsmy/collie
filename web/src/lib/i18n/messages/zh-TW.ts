@@ -4,6 +4,11 @@ import type { Dictionary } from "./en";
 // suffixes match.
 
 export const zhTW: Dictionary = {
+  "statusline.claude.hint": "Claude 提示",
+  "statusline.claude.cache.warm": "暖",
+  "statusline.claude.cache.cold": "冷",
+  "statusline.claude.cache.unreported": "未回報",
+  "statusline.claude.cache.hit": "快取命中率 {value}",
   "statusline.codex.firstToken": "最近完成回合的首 token 耗時 {value}",
   "settings.typeface.note.geist": "幾何無襯線字體，支援可變字重。",
   "keys.showFunctionKeys": "顯示功能鍵",

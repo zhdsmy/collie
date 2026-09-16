@@ -13,6 +13,11 @@
 // Seeded with the language-selector copy only — the full string sweep lands separately.
 
 export const en = {
+  "statusline.claude.hint": "Claude hint",
+  "statusline.claude.cache.warm": "Warm",
+  "statusline.claude.cache.cold": "Cold",
+  "statusline.claude.cache.unreported": "Unreported",
+  "statusline.claude.cache.hit": "Cache hit {value}",
   "statusline.codex.firstToken": "Latest completed turn: first token {value}",
   "settings.language.title": "Language",
   "settings.language.description": "The terminal mirror is never translated.",

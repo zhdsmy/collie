@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Claude statuslines show Fast and cache data more clearly.** A reusable formatter reads the actual Fast flag and native cache warmth and hit ratio, preserving missing-data states. The fixed bar uses hollow/filled lightning icons, compact cache fields, a tappable native hint, and matching left alignment for its mode row.
+
 ## [1.10.0+collie.5] - 2026-09-17
 
 ### Changed

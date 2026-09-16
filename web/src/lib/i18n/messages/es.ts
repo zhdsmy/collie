@@ -3,6 +3,11 @@ import type { Dictionary } from "./en";
 // Spanish. See de.ts for the typing contract.
 
 export const es: Dictionary = {
+  "statusline.claude.hint": "Consejo de Claude",
+  "statusline.claude.cache.warm": "Caliente",
+  "statusline.claude.cache.cold": "Fría",
+  "statusline.claude.cache.unreported": "Sin datos",
+  "statusline.claude.cache.hit": "Aciertos de caché {value}",
   "statusline.codex.firstToken": "Último turno completado: primer token en {value}",
   "settings.language.title": "Idioma",
   "settings.language.description": "La salida del terminal nunca se traduce.",

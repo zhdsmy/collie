@@ -9,6 +9,7 @@ import {
   Gauge,
   GitBranch,
   Hourglass,
+  Info,
   ListChecks,
   Loader2,
   Pause,
@@ -19,7 +20,8 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import type { AnsiSegment } from "@/lib/ansi";
 import type { SessionModel } from "@/lib/types";
@@ -29,6 +31,7 @@ import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { AnchoredMenu } from "@/components/ui/anchored-menu";
 import { CodexModeToggle, type CodexModeToggleProps } from "@/components/codex-mode-toggle";
 import { parseCodexModelField, parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
 import { modeFieldOf, type ClaudeModeField } from "@/lib/harness/claude/mode";
@@ -163,11 +166,36 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
 }
 
 function ClaudeField({ segments, text }: { segments: AnsiSegment[]; text: string }) {
+  useLocale();
   // This configured Claude format names remaining_percentage "ctx". Do not apply that meaning
   // to Codex's ambiguous legacy Ctx field, or to arbitrary Claude status rows without pipe fields.
   const context = /^ctx (\d+(?:\.\d+)?%)$/i.exec(text);
   if (context?.[1] && Number.parseFloat(context[1]) <= 100) {
     return <ContextField value={context[1]} remaining />;
+  }
+  const fast = /^Fast:(on|off)$/.exec(text);
+  if (fast) {
+    return (
+      <span role="img" aria-label={text} title={text} className="inline-flex min-h-3.5 shrink-0 items-center">
+        <Zap aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25}
+          fill={fast[1] === "on" ? "currentColor" : "none"}
+          style={{ color: fast[1] === "on" ? "var(--ansi-12)" : "#a1a1a1" }} />
+      </span>
+    );
+  }
+  const cache = /^cache (warm|cold|unreported)(?: (\d+(?:\.\d+)?%))?$/.exec(text);
+  if (cache && (!cache[2] || Number.parseFloat(cache[2]) <= 100)) {
+    const state = t(cache[1] === "warm" ? "statusline.claude.cache.warm"
+      : cache[1] === "cold" ? "statusline.claude.cache.cold" : "statusline.claude.cache.unreported");
+    const hit = cache[2] ? t("statusline.claude.cache.hit", { value: cache[2] }) : "";
+    return (
+      <span role="img" aria-label={`${state}${hit ? ` · ${hit}` : ""}`} title={`${state}${hit ? ` · ${hit}` : ""}`}
+        className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none">
+        <Database aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25}
+          style={{ color: cache[1] === "warm" ? "var(--ansi-10)" : "#a1a1a1" }} />
+        <span aria-hidden="true">{state}{cache[2] && ` ${cache[2]}`}</span>
+      </span>
+    );
   }
   const Icon = /^(?:main|master|develop|development|trunk|(?:feat|feature|fix|bugfix|hotfix|release|chore|refactor|test|docs)\/\S+)$/.test(text)
     ? GitBranch
@@ -189,6 +217,56 @@ type CodexControlProps = Omit<CodexModeToggleProps, "mode">;
 
 function StatuslineDivider() {
   return <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/25" />;
+}
+
+function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode }) {
+  useLocale();
+  const [hintAnchor, setHintAnchor] = useState<{ top: number; right: number } | null>(null);
+  let offset = 0;
+  let hint: AnsiSegment[] | undefined;
+  const fields: ReactNode[] = [];
+  for (const [index, part] of lineText(row).split(/(\s+\|\s+|(?<=\S)\s{2,}(?=\S))/).entries()) {
+    const text = part.trim();
+    const start = offset + part.indexOf(text);
+    offset += part.length;
+    if (!text || index % 2 === 1) continue;
+    const segments = sliceSegments(row.segments, start, start + text.length);
+    if (/^new task\? \/clear to save \S+ tokens$/.test(text)) {
+      hint = segments;
+      continue;
+    }
+    fields.push(
+      <span key={index} className="inline-flex shrink-0 items-center gap-1.5">
+        {fields.length > 0 && <StatuslineDivider />}
+        <ClaudeField text={text} segments={segments} />
+      </span>,
+    );
+  }
+  const label = t("statusline.claude.hint");
+  return (
+    <div className="relative min-w-0">
+      <div data-slot="claude-statusline" className={ROW_CLASS}>
+        {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
+        {fields}
+        {hint && <Button variant="ghost" aria-label={label} aria-expanded={hintAnchor !== null} aria-haspopup="dialog" onClick={(event) => {
+          const bounds = event.currentTarget.parentElement!.getBoundingClientRect();
+          setHintAnchor(hintAnchor ? null : { top: bounds.top, right: window.innerWidth - bounds.right });
+        }}
+          className="h-auto min-h-3.5 shrink-0 rounded-sm border-0 p-0 has-[>svg]:px-0 leading-none">
+          <Info aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
+        </Button>}
+      </div>
+      {/* Outside both status scrollers and the mirror's filter, so the hint is not clipped. */}
+      {hintAnchor && hint && createPortal(
+        <div className="fixed z-50" style={hintAnchor}>
+          <AnchoredMenu open onClose={() => setHintAnchor(null)} label={label}
+            className="w-72 max-w-[calc(100vw-2rem)] p-3 text-xs leading-relaxed whitespace-normal text-foreground">
+            {hint.map((segment) => segment.text).join("")}
+          </AnchoredMenu>
+        </div>, document.body,
+      )}
+    </div>
+  );
 }
 
 function FirstTokenField({ ms }: { ms?: number }) {
@@ -477,7 +555,7 @@ export function StatuslineRow({
 }) {
   useLocale();
   // Claude's mode row is the one place on that statusline a phone can drive. Only the mode FIELD is
-  // rebuilt; everything the terminal painted around it — the indent, the rest of the row, its own
+  // rebuilt; everything the terminal painted around it — the rest of the row, its own
   // separators — is rendered from the capture, so a row without a mode is untouched.
   const claudeField = agent === "claude" && claudeMode ? modeFieldOf(row) : null;
   if (claudeField && claudeMode) {
@@ -485,7 +563,6 @@ export function StatuslineRow({
       <div data-slot="claude-statusline" className={ROW_CLASS}>
         {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
         <span className="inline-flex min-w-max shrink-0 items-center">
-          <span className="whitespace-pre"><StyledText segments={claudeField.indent.segments} /></span>
           <ClaudeModeButton field={claudeField} {...claudeMode} />
           <span className="whitespace-pre"><StyledText segments={claudeField.rest.segments} /></span>
         </span>
@@ -493,8 +570,8 @@ export function StatuslineRow({
     );
   }
 
-  const claudeCustom = agent === "claude" && /\s\|\s/.test(lineText(row));
-  if (agent !== "codex" && agent !== "hermes" && !claudeCustom) {
+  if (agent === "claude" && /\s\|\s/.test(lineText(row))) return <ClaudeStatusline row={row} leading={leading} />;
+  if (agent !== "codex" && agent !== "hermes") {
     return (
       <div data-slot="statusline-row" className={ROW_CLASS}>
         {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
@@ -526,16 +603,12 @@ export function StatuslineRow({
   let offset = 0;
   let groupedEffortIndex = -1;
   const Field = agent === "hermes" ? HermesField : CodexField;
-  const parts = claudeCustom
-    // Claude right-aligns its native hint with terminal-width padding. Keep the hint's text,
-    // but let the app's field gap replace that empty space on a narrow phone.
-    ? lineText(row).split(/(\s+\|\s+|(?<=\S)\s{2,}(?=\S))/)
-    : agent === "hermes"
+  const parts = agent === "hermes"
     ? lineText(row).split(/(\s*│\s*|\s{2,}─\s*)/)
     : lineText(row).split(/( \u00b7 )/);
   return (
     <div
-      data-slot={claudeCustom ? "claude-statusline" : agent === "hermes" ? "hermes-statusline" : "codex-statusline"}
+      data-slot={agent === "hermes" ? "hermes-statusline" : "codex-statusline"}
       className={ROW_CLASS}
     >
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
@@ -544,14 +617,6 @@ export function StatuslineRow({
         const start = offset + part.indexOf(text);
         offset += part.length;
         if (!text || i % 2 === 1 || i === groupedEffortIndex) return null;
-        if (claudeCustom) {
-          return (
-            <span key={i} className="inline-flex shrink-0 items-center gap-1.5">
-              {i > 0 && <StatuslineDivider />}
-              <ClaudeField text={text} segments={sliceSegments(row.segments, start, start + text.length)} />
-            </span>
-          );
-        }
         const model = agent === "codex" && onModelClick ? parseCodexModelField(text, knownModels) : null;
         if (model && onModelClick) {
           const nextPart = parts[i + 2] ?? "";

@@ -4,6 +4,11 @@ import type { Dictionary } from "./en";
 // `.other` carry the same sentence — the pair still exists because `tn()` asks for it by suffix.
 
 export const ko: Dictionary = {
+  "statusline.claude.hint": "Claude 도움말",
+  "statusline.claude.cache.warm": "웜",
+  "statusline.claude.cache.cold": "콜드",
+  "statusline.claude.cache.unreported": "보고 없음",
+  "statusline.claude.cache.hit": "캐시 적중률 {value}",
   "statusline.codex.firstToken": "최근 완료된 턴: 첫 토큰까지 {value}",
   "settings.language.title": "언어",
   "settings.language.description": "터미널 출력 내용은 번역되지 않습니다.",
