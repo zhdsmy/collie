@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.7] - 2026-09-16
+
 ### Added
 
-- **Give Hermes panes the Agent palette and the harness shortcut bar.** The Agent button had been withdrawn from Hermes panes because no catalog was filed for the agent; it now lists 39 commands curated from the Hermes CLI source's own command registry — including its queue, steer and background-session verbs — with the destructive ones (/clear, /new, /undo, /stop, /quit) confirming first. The shortcut bar above the keys gains Model, Compact and Resume, sending the registry's canonical spellings. The Quick dock already served Hermes the shared localized replies and is unchanged.
+- **Give Hermes panes the Agent palette and the harness shortcut bar.** The Agent button had been withdrawn from Hermes panes because no catalog was filed for the agent; it now lists 39 commands curated from the Hermes CLI source's own command registry — including its queue, steer and background-session verbs — with the destructive ones (/clear, /new, /undo, /stop, /quit) confirming first. The shortcut bar above the keys gains Model, Compact and Resume, sending the registry's canonical spellings. The Quick dock already served Hermes the shared localized replies and is unchanged. ([e306d1fa](https://github.com/zhdsmy/collie/commit/e306d1fa))
 
 ## [1.9.1+collie.6] - 2026-09-16
 
