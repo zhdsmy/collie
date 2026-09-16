@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.0+collie.4] - 2026-09-16
+
 ### Fixed
 
-- **Claude Settings tabs consistently retain their native display.** Status, Config, Usage, and Stats no longer alternate between raw output and generic menu cards. The exclusion is scoped to Claude's detector, preserves composer input protection, and leaves model pickers and other agents' cards unchanged.
+- **Claude Settings tabs consistently retain their native display.** Status, Config, Usage, and Stats no longer alternate between raw output and generic menu cards. The exclusion is scoped to Claude's detector, preserves composer input protection, and leaves model pickers and other agents' cards unchanged. ([45eaa060](https://github.com/zhdsmy/collie/commit/45eaa060))
 
 ## [1.10.0+collie.3] - 2026-09-16
 
