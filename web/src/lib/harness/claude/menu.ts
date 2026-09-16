@@ -72,6 +72,11 @@ export function detectMenuRegion(lines: StyledLine[]): MenuRegion | null {
 
   const footer = texts[fi]!;
   if (classifyFooter(footer) !== null) return null;
+  // Claude's tabbed Settings pages stay native. These footer hints identify Config/Stats even
+  // when the tab bar has scrolled away; a generic menu cannot model their nested navigation.
+  const hints = footer.trim().split(/\s+·\s+/);
+  if (hints.includes("←/→/tab to switch") ||
+      (hints.includes("↓ stats") && hints.includes("r to cycle dates"))) return null;
   const actions = parseKeyHintFooter(footer);
   if (actions.length === 0) return null;
   if (hasInputBox(lines)) return null;
@@ -97,6 +102,8 @@ export function detectMenuRegion(lines: StyledLine[]): MenuRegion | null {
     }
   }
   if (title === "") return null;
+  // Inspect the active region's heading, never a Settings page in earlier scrollback.
+  if (/^Settings\s+Status\s+Config\s+Usage\s+Stats$/.test(title)) return null;
 
   // Affordances advertised INSIDE the region (never assumed): a highlighted row means Up/Down do
   // something; an "←/→ to adjust" row means Left/Right do, and names what.

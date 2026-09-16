@@ -43,3 +43,15 @@ Where each half lives: detection in `harness/claude/mode.ts` (pure, fixture-pinn
 in `lib/claude-mode-switch.ts` (the Codex toggle's choreography, one key instead of a command), the
 button in `components/statusline-row.tsx` (icons borrowed from the composer keyboard's own Shift and
 Tab). This file is the record of WHY; the tests pin the shapes.
+# Tabbed Settings stay native — 2026-09-16
+
+Claude Code 2.1.273's Status/Config/Usage/Stats tabs are not generic pickers. The generic detector
+only understands footer keys: Config's search-box border becomes a false region boundary, while
+Stats' tab labels become a false title. Single-hint Status/Usage pages already stay raw.
+
+`menu.ts` declines the active Settings tab heading and the distinctive Config/Stats footer hints,
+including scrolled views without the heading. Keep this exclusion in Claude's detector, not in
+shared `MenuBlock`, `PromptPanel`, or key-hint parsing. `composerReady: hasInputBox` still protects
+normal replies; operators use direct keys for native tab navigation. Earlier Settings scrollback
+must not suppress a later `/model` picker. `fixtures/claude-settings.ts` contains explicitly
+synthetic, screenshot-derived structural regressions; it is not a live capture corpus.

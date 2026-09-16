@@ -3,8 +3,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { parseAnsi } from "../../ansi";
-import { splitLines, type StyledLine } from "../../blocks";
-import { claudeBuildBlocks } from "./index";
+import { lineText, splitLines, type StyledLine } from "../../blocks";
+import { claudeSettingsScreens } from "../../../fixtures/claude-settings";
+import { claudeAdapter, claudeBuildBlocks } from "./index";
 import { detectMenu, detectMenuRegion } from "./menu";
 
 // Claude's menu DETECTOR — its own conventions only (tail anchoring, the rule-bounded region, the
@@ -71,6 +72,29 @@ describe("detectMenuRegion — the /model picker", () => {
 });
 
 describe("detectMenuRegion — what it must decline", () => {
+  it.each(claudeSettingsScreens)("keeps $name native without allowing composer replies", ({ text }) => {
+    const screen = lines(text);
+    expect(detectMenu(screen)).toBeNull();
+    const blocks = claudeBuildBlocks(screen);
+    expect(blocks.map((block) => block.kind)).toEqual(["raw"]);
+    expect(blocks.flatMap((block) => block.lines).map(lineText).join("\n")).toBe(text);
+    expect(claudeAdapter.composerReady?.(screen)).toBe(false);
+  });
+
+  it("keeps the tabbed Settings heading native even with a different footer", () => {
+    const text = `${BOX_RULE}\nSettings  Status  Config  Usage  Stats\nOverview\nEnter to view · Esc to close`;
+    expect(detectMenu(lines(text))).toBeNull();
+  });
+
+  it("still lifts a model picker after historical Settings pages", () => {
+    const screen = [
+      ...lines(claudeSettingsScreens.map((page) => page.text).join("\n")),
+      ...load("claude--menu-model-picker.txt"),
+    ];
+    expect(detectMenu(screen)?.title).toBe("Select model");
+    expect(claudeBuildBlocks(screen).at(-1)?.kind).toBe("menu");
+  });
+
   it("declines a normal prompt screen whose statusline reads like key hints", () => {
     // The negative control: identical footer text, but an input box at the tail. Without the
     // input-box gate this would render fake buttons under a live composer.
