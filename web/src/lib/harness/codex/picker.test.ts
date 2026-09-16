@@ -12,6 +12,24 @@ const fixture = (state: string) => parse(text(state));
 const model = (state: string) => detectPickerRegion(fixture(state))!.model;
 
 describe("Codex native picker parsing", () => {
+  it("keeps the card when scrolling the theme row out and pointing at model", () => {
+    // Derived from the captured native picker: only the viewport's first option and pointer move.
+    const lines = fixture("statusline-leading-rule");
+    const picker = detectPickerRegion(lines)!.model;
+    expect(picker.options[0]!.id).toBe("model-with-reasoning");
+    expect(picker.options.find((option) => option.pointed)?.id).toBe("model");
+    expect(picker.options.some((option) => option.id === "Use theme colors")).toBe(false);
+    expect(picker.preview).toHaveLength(1);
+    const separator = lines.find((line) => /^ {2}─+$/.test(lineText(line).trimEnd()))!;
+    const first = lines.findIndex((line) => lineText(line).includes("[x] model-with-reasoning"));
+    const repeated = [...lines.slice(0, first), separator, ...lines.slice(first)];
+    expect(detectPickerRegion(repeated)).toBeNull();
+    const inside = [...lines.slice(0, first + 1), separator, ...lines.slice(first + 1)];
+    expect(detectPickerRegion(inside)).toBeNull();
+    const footer = lines.findLastIndex((line) => lineText(line).trim());
+    expect(detectPickerRegion(lines.slice(0, footer))).toBeNull();
+  });
+
   it("reads visible model labels and descriptions without baking in a model catalogue", () => {
     const picker = model("model");
     expect(picker.title).toBe("Select Model and Effort");

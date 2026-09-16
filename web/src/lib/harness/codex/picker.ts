@@ -37,7 +37,12 @@ function readOptions(
     const text = texts[i]!;
     if (!text.trim()) continue;
     if (multiple && /^ {2}─+$/.test(text)) {
-      if (options.at(-1)?.id !== "Use theme colors") return null;
+      // The fixed theme row can scroll above the viewport while its separator
+      // remains visible. Accept that separator only before any visible option;
+      // a later unknown separator still invalidates the picker region.
+      const leadingScrolledSeparator =
+        options.length === 0 && texts.slice(start, i).every((row) => !row.trim());
+      if (options.at(-1)?.id !== "Use theme colors" && !leadingScrolledSeparator) return null;
       continue;
     }
     const match = (multiple ? CHECKBOX : NUMBERED).exec(text);

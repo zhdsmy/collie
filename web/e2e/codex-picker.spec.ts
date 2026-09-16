@@ -26,6 +26,16 @@ const fixture = (name: string): string =>
 
 const scenarios: readonly PickerScenario[] = [
   {
+    name: "statusline leading rule",
+    file: "statusline-leading-rule",
+    title: "Configure Status Line",
+    kind: "multiple",
+    labels: ["model-with-reasoning", "project-name", "context-remaining"],
+    optionCount: 6,
+    preview: true,
+    search: true,
+  },
+  {
     name: "model",
     file: "model",
     title: "Select Model and Effort",
