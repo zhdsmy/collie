@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.12] - 2026-09-16
+
 ### Changed
 
-- **Reformat Hermes session cards around their meaningful content.** Startup cards extract model, provider, directory, build and session details into labeled facts, with readable tool, MCP and skill groups. Restored history separates speakers and renders assistant Markdown; decorative terminal art, frames and welcome boilerplate leave the reading view, while useful tips, source-row accounting and search are preserved.
+- **Reformat Hermes session cards around their meaningful content.** Startup cards extract model, provider, directory, build and session details into labeled facts, with readable tool, MCP and skill groups. Restored history separates speakers and renders assistant Markdown; decorative terminal art, frames and welcome boilerplate leave the reading view, while useful tips, source-row accounting and search are preserved. ([284bbca0](https://github.com/zhdsmy/collie/commit/284bbca0))
 
 ## [1.9.1+collie.11] - 2026-09-16
 
