@@ -30,8 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.13] - 2026-09-16
+
 ### Fixed
-- **Keep Hermes session cards consistent with the chosen typeface.** Startup and history card headings and summaries follow the interface font setting instead of forcing Aldrich; agent-authored body text keeps its existing content font.
+- **Keep Hermes session cards consistent with the chosen typeface.** Startup and history card headings and summaries follow the interface font setting instead of forcing Aldrich; agent-authored body text keeps its existing content font. ([e6970f2a](https://github.com/zhdsmy/collie/commit/e6970f2a))
 
 ## [1.9.1+collie.12] - 2026-09-16
 
