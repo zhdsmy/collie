@@ -13,6 +13,7 @@ export const AGENT_FAMILIES = [
   "opencode",
   "omp",
   "grok",
+  "hermes",
   "agy",
   "antigravity",
 ] as const;
@@ -49,6 +50,7 @@ export function canonicalAgent(key: string): string {
   // Catalog-only. Must not be copied into adapterFor — #99: prefix-matching there
   // would attach Grok's chrome strip (and, later, any dialog grammars) to any `grok*` agent string.
   if (key.startsWith("grok")) return "grok";
+  if (key.startsWith("hermes")) return "hermes";
   if (key.startsWith("agy")) return "agy";
   if (key.startsWith("antigravity")) return "antigravity";
   return key;

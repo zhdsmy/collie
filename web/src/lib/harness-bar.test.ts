@@ -36,8 +36,8 @@ describe("the shipped bar", () => {
     }
   });
 
-  it("names a bar for exactly the four harnesses this milestone drove from a phone", () => {
-    expect(BAR_AGENTS.toSorted()).toEqual(["claude", "codex", "omp", "pi"]);
+  it("names a bar for exactly the harnesses this milestone drove from a phone", () => {
+    expect(BAR_AGENTS.toSorted()).toEqual(["claude", "codex", "hermes", "omp", "pi"]);
   });
 
   it("gives Claude Model, Effort, Compact and Resume, in that order", () => {
@@ -56,6 +56,14 @@ describe("the shipped bar", () => {
 
   it("gives omp Tree, in pi's order, now that a capture vouches for it", () => {
     expect(barFor("omp").map((i) => i.id)).toEqual(["model", "compact", "tree", "resume"]);
+  });
+
+  it("gives Hermes Model, Compact (its /compress) and Resume, and no Effort button", () => {
+    // Hermes has no effort command — reasoning lives inside /reasoning, a plain argument command,
+    // so there is nothing a second button reaches that Model does not. Compact sends the registry's
+    // canonical /compress, not its /compact alias.
+    expect(barFor("hermes").map((i) => i.id)).toEqual(["model", "compact", "resume"]);
+    expect(barFor("hermes").find((i) => i.id === "compact")?.command).toBe("/compress");
   });
 
   it("renders nothing for an agent with no bar, and for no agent at all", () => {

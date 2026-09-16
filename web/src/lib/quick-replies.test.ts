@@ -5,7 +5,7 @@ import { quickRepliesFor } from "./quick-replies";
 describe("quickRepliesFor", () => {
   it("gives every LLM harness the same agent set", () => {
     const claude = quickRepliesFor("claude", false);
-    for (const agent of ["codex", "pi", "opencode"]) {
+    for (const agent of ["codex", "pi", "opencode", "hermes"]) {
       expect(quickRepliesFor(agent, false)).toEqual(claude);
     }
     expect(claude.flatMap((g) => g.items)).toContain("continue");

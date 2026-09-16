@@ -134,6 +134,18 @@ const OMP: readonly HarnessBarItem[] = [
   },
 ];
 
+// ── Hermes ───────────────────────────────────────────────────────────────────
+// Source-sourced (COMMAND_REGISTRY, same as its catalog — see agent-commands.ts for the exclusion
+// rules), so no evidence is required. The compact row sends `/compress` — Hermes's canonical name;
+// `/compact` is its alias and the registry's spelling is what the CLI resolves. `/resume` takes an
+// optional name, so like Claude's it is a takesArg catalog row: the bar runs it bare, which opens
+// the session browser.
+const HERMES: readonly HarnessBarItem[] = [
+  { id: "model", label: "harnessBar.model", command: "/model" },
+  { id: "compact", label: "harnessBar.compact", command: "/compress" },
+  { id: "resume", label: "harnessBar.resume", command: "/resume" },
+];
+
 // A Map for the same reason the command catalog uses one: the key tested against it is Herdr's
 // agent string, so an object lookup would answer for inherited names that ship no bar at all.
 const BARS = new Map<string, readonly HarnessBarItem[]>([
@@ -141,6 +153,7 @@ const BARS = new Map<string, readonly HarnessBarItem[]>([
   ["codex", CODEX],
   ["pi", PI],
   ["omp", OMP],
+  ["hermes", HERMES],
 ]);
 
 /** The agent names a shipped bar is filed under — pinned in the tests. */

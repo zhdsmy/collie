@@ -52,6 +52,28 @@ describe("commandsFor", () => {
     expect(cmds.find((c) => c.command === "/always-approve")?.dangerous).toBe(true);
   });
 
+  it("returns the Hermes catalog for 'hermes'", () => {
+    const cmds = commandsFor("hermes");
+    expect(cmds.length).toBeGreaterThan(0);
+    // The registry's canonical spelling — /compact is an alias the CLI resolves, but the catalog
+    // ships the name the CLI help prints.
+    expect(cmds.some((c) => c.command === "/compress")).toBe(true);
+    // Hermes's own control verbs, unlike any other harness's palette.
+    expect(cmds.some((c) => c.command === "/queue")).toBe(true);
+    expect(cmds.some((c) => c.command === "/steer")).toBe(true);
+    expect(cmds.some((c) => c.command === "/bg")).toBe(true);
+    // Destructive per the source: _confirm_destructive_slash modal-gates exactly these three, and
+    // /stop / /quit are flagged here too.
+    for (const d of ["/clear", "/new", "/undo", "/stop", "/quit"]) {
+      expect(cmds.find((c) => c.command === d)?.dangerous).toBe(true);
+    }
+    // A Herdr pane runs the CLI TUI: the 9 gateway_only rows never reach it, and neither do the
+    // machine-local hardware/billing commands the curation excludes.
+    for (const absent of ["/start", "/approve", "/pause", "/battery", "/voice", "/update"]) {
+      expect(cmds.some((c) => c.command === absent)).toBe(false);
+    }
+  });
+
   it("returns the omp catalog for 'omp'", () => {
     const cmds = commandsFor("omp");
     expect(cmds.length).toBeGreaterThan(0);
@@ -135,7 +157,7 @@ describe("commandsFor", () => {
     }
   });
 
-  it.each(["claude", "codex", "pi", "opencode", "omp", "grok"])(
+  it.each(["claude", "codex", "pi", "opencode", "omp", "grok", "hermes"])(
     "exposes for '%s' a 'common' subset that is a proper, non-empty subset of all commands",
     (agent) => {
       const all = commandsFor(agent);
@@ -147,7 +169,7 @@ describe("commandsFor", () => {
     },
   );
 
-  it.each(["claude", "codex", "pi", "opencode", "omp", "grok"])(
+  it.each(["claude", "codex", "pi", "opencode", "omp", "grok", "hermes"])(
     "'%s' entries are well-formed (slash-prefixed, unique, arg hints only when takesArg)",
     (agent) => {
       const all = commandsFor(agent);

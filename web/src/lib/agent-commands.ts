@@ -276,6 +276,60 @@ const GROK: readonly AgentCommand[] = [
   { command: "/quit", description: "Quit the application", takesArg: false, argHint: "", common: false, dangerous: true },
 ];
 
+// ── Hermes ───────────────────────────────────────────────────────────────────
+// Sourced from the Hermes CLI source, v0.21.2 (COMMAND_REGISTRY in hermes_cli/commands.py — the
+// registry the CLI help, autocomplete and palette all derive from), not from pane captures. Curated
+// for one-tap phone use: the 9 gateway_only rows (/start /topic /pause /approve /deny /sethome
+// /platform /commands /restart) are excluded because a Herdr pane runs the CLI TUI, and so are the
+// machine-local hardware/billing rows (/battery /wake /indicator /voice /login /topup /subscription
+// /copy /paste /image /debug /update /insights /pet /hatch /egress /profile /whoami /moa /cron
+// /heartbeat /loop /journey /snapshot /export /import /refine /subgoal /skin /statusbar /timestamps
+// /verbose /footer /codex-runtime /handoff /config /tools /toolsets /bundles /plugins /blueprint
+// /curator /kanban /suggestions /reload*). `/compress` is the canonical name — `/compact` is its
+// alias, and the registry's canonical spelling is what the CLI resolves. Destructive per the
+// source: _confirm_destructive_slash modal-gates exactly /clear, /new(/reset) and /undo; /stop
+// kills background processes and /quit exits the CLI, both flagged here too.
+const HERMES: readonly AgentCommand[] = [
+  { command: "/compress", description: "Compress conversation context; 'here N' keeps recent turns", takesArg: true, argHint: "[here N | focus]", common: true, dangerous: false }, // harness-bar
+  { command: "/queue", description: "Queue a prompt for the next turn without interrupting", takesArg: true, argHint: "<prompt>", common: true, dangerous: false },
+  { command: "/steer", description: "Inject guidance after the next tool call", takesArg: true, argHint: "<prompt>", common: true, dangerous: false },
+  { command: "/bg", description: "Run a prompt in a separate background session", takesArg: true, argHint: "<prompt>", common: true, dangerous: false },
+  { command: "/status", description: "Show session, model, token, and context info", takesArg: false, argHint: "", common: true, dangerous: false },
+  { command: "/model", description: "Switch model (session-scoped; --global to persist)", takesArg: true, argHint: "<model>", common: true, dangerous: false }, // harness-bar
+  { command: "/resume", description: "Resume a previously-named session", takesArg: true, argHint: "[name]", common: true, dangerous: false }, // harness-bar
+  { command: "/context", description: "Show the context window with usage gauge and breakdown", takesArg: false, argHint: "", common: true, dangerous: false },
+  { command: "/new", description: "Start a new session (fresh session ID + history)", takesArg: true, argHint: "[name]", common: false, dangerous: true },
+  { command: "/clear", description: "Clear screen and start a new session", takesArg: false, argHint: "", common: false, dangerous: true },
+  { command: "/sessions", description: "Browse and resume previous sessions", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/history", description: "Show conversation history", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/retry", description: "Retry the last message (resend to agent)", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/undo", description: "Back up N user turns and re-prompt", takesArg: true, argHint: "[N]", common: false, dangerous: true },
+  { command: "/branch", description: "Branch the current session (explore a different path)", takesArg: true, argHint: "[name]", common: false, dangerous: false },
+  { command: "/title", description: "Set a title for the current session", takesArg: true, argHint: "[name]", common: false, dangerous: false },
+  { command: "/save", description: "Export the current conversation (json, md or html)", takesArg: true, argHint: "<json|md|html>", common: false, dangerous: false },
+  { command: "/stop", description: "Kill all running background processes", takesArg: false, argHint: "", common: false, dangerous: true },
+  { command: "/agents", description: "Show active agents and running tasks", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/btw", description: "Ask a side question without interrupting the run", takesArg: true, argHint: "<question>", common: false, dangerous: false },
+  { command: "/busy", description: "Choose what Enter does while Hermes is working", takesArg: true, argHint: "[queue|steer|interrupt]", common: false, dangerous: false },
+  { command: "/goal", description: "Set a standing goal Hermes works toward across turns", takesArg: true, argHint: "[text]", common: false, dangerous: false },
+  { command: "/plan", description: "Write a markdown implementation plan without executing it", takesArg: true, argHint: "[task]", common: false, dangerous: false },
+  { command: "/review", description: "Spawn an independent subagent to review the work", takesArg: true, argHint: "[instructions]", common: false, dangerous: false },
+  { command: "/diff", description: "Show git changes in the working directory", takesArg: true, argHint: "[staged|all|session]", common: false, dangerous: false },
+  { command: "/reasoning", description: "Manage reasoning effort and its display", takesArg: true, argHint: "[level]", common: false, dangerous: false },
+  { command: "/fast", description: "Fast mode — priority processing where the provider offers it", takesArg: true, argHint: "[normal|fast|auto]", common: false, dangerous: false },
+  { command: "/personality", description: "Set a predefined personality", takesArg: true, argHint: "[name]", common: false, dangerous: false },
+  { command: "/focus", description: "Show only your prompt and the final response", takesArg: true, argHint: "[on|off]", common: false, dangerous: false },
+  { command: "/skills", description: "Search, install, inspect, or manage skills", takesArg: true, argHint: "[subcommand]", common: false, dangerous: false },
+  { command: "/memory", description: "Review pending memory writes or toggle the gate", takesArg: true, argHint: "[pending]", common: false, dangerous: false },
+  { command: "/learn", description: "Learn a reusable skill from anything you describe", takesArg: true, argHint: "<what>", common: false, dangerous: false },
+  { command: "/init", description: "Generate AGENTS.md project instructions from a repo scan", takesArg: true, argHint: "[notes]", common: false, dangerous: false },
+  { command: "/worktree", description: "Show, list, create, or prune git worktrees", takesArg: true, argHint: "[new|list|prune]", common: false, dangerous: false },
+  { command: "/help", description: "Show available commands, or filter them", takesArg: true, argHint: "[filter]", common: false, dangerous: false },
+  { command: "/usage", description: "Show token usage and rate limits", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/redraw", description: "Force a full UI repaint (recovers from terminal drift)", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/quit", description: "Exit the CLI", takesArg: false, argHint: "", common: false, dangerous: true },
+];
+
 // A Map, not an object literal: the keys tested against it come from Herdr's agent string and from
 // what the operator typed in `commands.toml`, so an object lookup would answer for inherited names
 // ("constructor", "toString") that ship no catalog at all.
@@ -286,6 +340,7 @@ const CATALOG = new Map<string, readonly AgentCommand[]>([
   ["opencode", OPENCODE],
   ["omp", OMP],
   ["grok", GROK],
+  ["hermes", HERMES],
   // Herdr reports this agent under both names, and canonicalAgent() folds neither onto the other,
   // so both keys are filed — one catalog, two spellings.
   ["agy", AGY],
