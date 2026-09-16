@@ -81,3 +81,9 @@ the existing native captures, rather than claiming these assembled variants are 
 terminal recordings. Checks cover preserved blank lines, complete/partial source matching,
 completion rules, stale recap identity, malformed boundaries, 320px English/Chinese layouts,
 light/dark themes, Chromium/WebKit scrolling, folding and guarded option selection.
+
+The read-only follow-up found the user's native session had already advanced beyond the
+implementation menu. Its recap heading still confirmed the native bold/dim styling.
+This round did not replay a resumed native confirmation; the three native decision outcomes
+above are the existing isolated evidence, while the new recap variant is covered through
+the actual client action layer with simulated API snapshots. No user-session input was sent.
