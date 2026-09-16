@@ -226,14 +226,29 @@ function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
       const text = lineText(lines[bottom]!);
       if (/^╰─+╯$/u.test(text)) {
         if (!hasMessage || text.length !== header.length) break;
-        if (top > start) blocks.push({ kind: "raw", lines: lines.slice(start, top) });
-        const body = lines.slice(top, bottom + 1).map((line, index) => {
-          if (index === 0 || index === bottom - top) return Object.assign({}, line, { segments: [] });
+        let first = top;
+        let session: Extract<NonNullable<RawBlock["sessionInfo"]>, { kind: "history" }>["session"];
+        // Rich can wrap the resume announcement. Only the immediately preceding, styled message
+        // belongs here; warnings and other output between it and the panel remain visible.
+        for (let candidate = Math.max(start, top - 3); candidate < top; candidate++) {
+          const rows = lines.slice(candidate, top);
+          const match = rows.map(lineText).map((s) => s.trim()).join(" ").match(/^↻ Resumed session ([\w-]+)(?: "(.*)")? \((\d+) user messages?, \d+ total messages\)$/u);
+          if (!match || !rows.some((row) => row.segments.some((s) => s.bold && s.text.includes(match[1]!)))) continue;
+          session = { id: match[1]!, title: match[2], userMessages: Number(match[3]) };
+          first = candidate;
+          break;
+        }
+        while (first > start && !lineText(lines[first - 1]!).trim()) first--;
+        if (first > start) blocks.push({ kind: "raw", lines: lines.slice(start, first) });
+        const body = lines.slice(first, bottom + 1).map((line, index) => {
+          const row = first + index;
+          if (row < top) return line;
+          if (row === top || row === bottom) return Object.assign({}, line, { segments: [] });
           const value = lineText(line);
           const end = value.slice(0, -1).trimEnd().length;
           return Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) });
         });
-        blocks.push({ kind: "raw", lines: body, historyPreview: true });
+        blocks.push({ kind: "raw", lines: body, sessionInfo: { kind: "history", ...(session && { session }) } });
         start = bottom + 1;
         top = bottom;
         break;
@@ -247,13 +262,91 @@ function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
   return blocks;
 }
 
+const STARTUP_HEADER = /^╭─+ Hermes Agent (v[\w.+-]+)(?: .*?)? ─+╮$/u;
+const LOGO_ROW = /^[ █╔╗╚╝║═]+$/u;
+const WELCOME = "Welcome to Hermes Agent! Type your message or /help for commands.";
+
+/** Fold only a complete branded startup panel. Never absorb intervening warnings or replies. */
+function foldStartupInfo(blocks: RawBlock[]): RawBlock[] {
+  const result: RawBlock[] = [];
+  let hasStartup = false;
+  let afterHistory = false;
+  for (const block of blocks) {
+    if (block.sessionInfo) {
+      result.push(block);
+      afterHistory = block.sessionInfo.kind === "history";
+      continue;
+    }
+    const { lines } = block;
+    const texts = lines.map(lineText);
+    let start = 0;
+    for (let top = 0; top < lines.length; top++) {
+      const heading = texts[top]!.match(STARTUP_HEADER);
+      if (!heading || !lines[top]!.segments.some((s) => s.bold && s.text.includes("Hermes Agent"))) continue;
+      let counts: RegExpMatchArray | null = null;
+      let hasTools = false;
+      for (let bottom = top + 1; bottom < lines.length; bottom++) {
+        const text = texts[bottom]!;
+        if (/^╰─+╯$/u.test(text)) {
+          if (!counts || !hasTools || text.length !== texts[top]!.length) break;
+          let first = top;
+          // The standard six-row logo is all painted box glyphs. Unknown branding stays raw.
+          let logoEnd = top;
+          while (logoEnd > start && !texts[logoEnd - 1]!.trim()) logoEnd--;
+          const logo = lines.slice(Math.max(start, logoEnd - 6), logoEnd);
+          if (logo.length === 6 && logo.every((row) => LOGO_ROW.test(lineText(row)) && row.segments.some((s) => s.fg))) {
+            first = logoEnd - 6;
+            while (first > start && !texts[first - 1]!.trim()) first--;
+            const sessionId = texts.slice(top, bottom).join("\n").match(/\bSession: ([\w-]+)/u)?.[1];
+            const command = texts[first - 1]?.trim();
+            if (sessionId && command && /^(?:➜|❯|\$)\s/u.test(command)
+              && command.endsWith(`hermes --resume ${sessionId}`) && !/[;&|<>]/u.test(command)) first--;
+          }
+          if (first > start) result.push({ kind: "raw", lines: lines.slice(start, first) });
+          result.push({ kind: "raw", lines: lines.slice(first, bottom + 1), sessionInfo: {
+            kind: "startup", version: heading[1]!, tools: Number(counts[1]), skills: Number(counts[2]),
+          } });
+          start = bottom + 1;
+          top = bottom;
+          hasStartup = true;
+          break;
+        }
+        if (!text.startsWith("│") || !text.endsWith("│")) break;
+        hasTools ||= /\bAvailable Tools\s*│$/u.test(text);
+        counts ||= text.match(/\b(\d+) tools · (\d+) skills · \/help for commands\s*│$/u);
+      }
+    }
+    // Welcome lives after replay in Hermes. Keep these rows in place and let the renderer append
+    // them to the startup card, so latest-reply subtraction still uses the original coordinates.
+    if (hasStartup && (afterHistory || start > 0)) {
+      let first = start;
+      while (first < lines.length && !texts[first]!.trim()) first++;
+      let welcome = "";
+      let end = first;
+      while (end < Math.min(first + 4, lines.length) && WELCOME.startsWith(welcome)) {
+        welcome += (welcome ? " " : "") + texts[end++]!.trim();
+        if (welcome === WELCOME) break;
+      }
+      if (welcome === WELCOME && lines[first]!.segments.some((s) => s.fg)) {
+        while (end < lines.length && !texts[end]!.trim()) end++;
+        if (texts[end]?.startsWith("✦ Tip: ") && lines[end]!.segments.every((s) => !s.text.trim() || s.dim)) end++;
+        result.push({ kind: "raw", lines: lines.slice(start, end), sessionInfo: { kind: "startup-tail" } });
+        start = end;
+      }
+    }
+    if (start < lines.length || !lines.length) result.push({ kind: "raw", lines: lines.slice(start) });
+    afterHistory = false;
+  }
+  return result;
+}
+
 export function hermesBuildBlocks(lines: StyledLine[]): Block[] {
   const footer = locateFooter(lines);
   const clarify = footer?.clarify && footer.empty ? detectClarify(lines, footer.statusStart) : null;
   if (clarify) {
     const before = trimTrailingBlank(lines.slice(0, clarify.start));
     return [
-      ...foldResumedHistory([...decorateHermesDiff(inputChrome(responseChrome(before, 0))), ...clarify.questionLines]),
+      ...foldStartupInfo(foldResumedHistory([...decorateHermesDiff(inputChrome(responseChrome(before, 0))), ...clarify.questionLines])),
       { kind: "prompt-select", prompt: clarify.model, lines: lines.slice(clarify.start) },
     ];
   }
@@ -261,7 +354,7 @@ export function hermesBuildBlocks(lines: StyledLine[]): Block[] {
     ? [...lines.slice(0, footer.statusStart), ...(footer.empty ? [] : lines.slice(footer.top))]
     : lines;
   const closingWidth = footer?.empty ? lineText(lines[footer.top]!).trim().length : 0;
-  return foldResumedHistory(decorateHermesDiff(inputChrome(responseChrome(trimTrailingBlank(content), closingWidth))));
+  return foldStartupInfo(foldResumedHistory(decorateHermesDiff(inputChrome(responseChrome(trimTrailingBlank(content), closingWidth)))));
 }
 
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {

@@ -360,6 +360,9 @@ export const ja: Dictionary = {
   "chat.scrollback.noSessionReported":
     "{agent} のセッションが Herdr に報告されていません。Herdr 連携をインストールまたは更新し、このペインでエージェントを再起動してください。",
   "chat.historyPreview.title": "以前の会話",
+  "chat.historyPreview.messages": "ユーザーメッセージ {count} 件",
+  "chat.startupPreview.title": "起動情報",
+  "chat.startupPreview.summary": "Hermes {version} · ツール {tools} · スキル {skills}",
   "chat.fullReply.title": "返答の全文",
   "chat.fullReply.fromTranscript": "ログより",
   "chat.fullReply.showingTerminal": "ターミナルを表示中",

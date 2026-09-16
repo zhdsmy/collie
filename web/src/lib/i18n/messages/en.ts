@@ -385,6 +385,9 @@ export const en = {
   "chat.scrollback.noSessionReported":
     "{agent} has not reported a session to Herdr. Install or update the Herdr integration for it, then restart the agent in this pane.",
   "chat.historyPreview.title": "Previous conversation",
+  "chat.historyPreview.messages": "{count} user messages",
+  "chat.startupPreview.title": "Startup information",
+  "chat.startupPreview.summary": "Hermes {version} · {tools} tools · {skills} skills",
   "chat.fullReply.title": "Full reply",
   "chat.fullReply.fromTranscript": "from transcript",
   "chat.fullReply.showingTerminal": "showing the terminal",

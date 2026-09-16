@@ -358,6 +358,9 @@ export const ko: Dictionary = {
   "chat.scrollback.noSessionReported":
     "{agent}가 Herdr에 세션을 보고하지 않았습니다. 에이전트용 Herdr 연동 패키지를 설치하거나 업데이트한 후 이 창에서 에이전트를 재시작하십시오.",
   "chat.historyPreview.title": "이전 대화",
+  "chat.historyPreview.messages": "사용자 메시지 {count}개",
+  "chat.startupPreview.title": "시작 정보",
+  "chat.startupPreview.summary": "Hermes {version} · 도구 {tools}개 · 스킬 {skills}개",
   "chat.fullReply.title": "답변 전체",
   "chat.fullReply.fromTranscript": "로그에서",
   "chat.fullReply.showingTerminal": "터미널 표시 중",

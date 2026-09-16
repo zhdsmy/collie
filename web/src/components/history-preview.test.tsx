@@ -2,9 +2,35 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import capture from "@/fixtures/panes/hermes--resume-history.txt?raw";
+import startup from "@/fixtures/panes/hermes--startup-resume.txt?raw";
 import { AnsiOutput } from "./ansi-output";
 
 describe("Hermes history preview", () => {
+  it("shows two summaries, keeps their folds independent, and finds welcome text inside startup", async () => {
+    const user = userEvent.setup();
+    const text = `${startup}\nVisible reply`;
+    const { container, rerender } = render(<AnsiOutput text={text} agent="hermes" />);
+    const start = screen.getByRole("button", { name: "Startup information" });
+    const history = screen.getByRole("button", { name: "Previous conversation" });
+    expect(start).toHaveAccessibleDescription("Hermes v0.21.2 · 25 tools · 86 skills");
+    expect(history).toHaveAccessibleDescription("General · 24 user messages");
+    expect(screen.queryByText(/Welcome to Hermes/)).toBeNull();
+    expect(screen.queryByText(/Resumed session/)).toBeNull();
+    await user.click(start);
+    const body = await screen.findByRole("region", { name: "Startup information" });
+    expect(body.textContent).toContain("Available Tools");
+    expect(body.textContent).toContain("Welcome to Hermes");
+    expect(body.textContent).toContain("✦ Tip:");
+    expect(body.textContent).not.toContain("Resumed session");
+    expect(history).toHaveAttribute("aria-expanded", "false");
+    await user.click(start);
+    await waitFor(() => expect(screen.queryByRole("region")).toBeNull());
+    rerender(<AnsiOutput text={text} agent="hermes" query="/model --global" currentMatch={0} />);
+    const searched = await screen.findByRole("region", { name: "Startup information" });
+    expect(searched.querySelector('[data-find-match="current"]')?.textContent).toBe("/model --global");
+    rerender(<AnsiOutput text={text} agent="hermes" query="Visible reply" currentMatch={0} />);
+    expect(container.querySelector('[data-find-match="current"]')?.textContent).toBe("Visible reply");
+  });
   it("starts folded, opens without sending keys, and keeps the fold open across polling", async () => {
     const user = userEvent.setup();
     const onPromptAction = vi.fn();

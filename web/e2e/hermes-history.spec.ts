@@ -6,7 +6,7 @@ import { en } from "../src/lib/i18n/messages/en";
 import { zh } from "../src/lib/i18n/messages/zh";
 import { de } from "../src/lib/i18n/messages/de";
 
-const capture = readFileSync(new URL("../src/fixtures/panes/hermes--resume-history.txt", import.meta.url), "utf8");
+const capture = readFileSync(new URL("../src/fixtures/panes/hermes--startup-resume.txt", import.meta.url), "utf8");
 const done = readFileSync(new URL("../src/fixtures/panes/hermes--done.txt", import.meta.url), "utf8");
 const dictionaries = { en, zh, de };
 test.use({ serviceWorkers: "block" });
@@ -14,6 +14,7 @@ test.use({ serviceWorkers: "block" });
 for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"], [320, "de", "dark"]] as const) {
   test(`Hermes resumed history: ${width} ${locale} ${theme}`, async ({ page }, testInfo) => {
     const title = dictionaries[locale]["chat.historyPreview.title"];
+    const startupTitle = dictionaries[locale]["chat.startupPreview.title"];
     const writes: string[] = [];
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript((preferences) => {
@@ -35,7 +36,13 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     });
     await page.goto("/pane/w1:p1");
     const toggle = page.getByRole("button", { name: title, exact: true });
+    const startupToggle = page.getByRole("button", { name: startupTitle, exact: true });
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(startupToggle).toHaveAttribute("aria-expanded", "false");
+    await expect(startupToggle).toHaveAccessibleDescription(/v0\.21\.2.*25.*86/);
+    await expect(toggle).toHaveAccessibleDescription(/General.*24/);
+    await expect(page.getByText(/Welcome to Hermes Agent/)).toHaveCount(0);
+    await expect(page.getByText(/Resumed session/)).toHaveCount(0);
     await expect(page.getByRole("region", { name: title })).toHaveCount(0);
     await expect(page.getByRole("textbox").first()).toBeEnabled();
     await page.screenshot({ path: testInfo.outputPath("history-folded.png") });
@@ -62,6 +69,34 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     await page.screenshot({ path: testInfo.outputPath("history-expanded.png"), animations: "disabled" });
     await toggle.click();
     await expect(body).toHaveCount(0);
+    await startupToggle.click();
+    const startupBody = page.getByRole("region", { name: startupTitle, exact: true });
+    await expect(startupBody.locator("..")).toHaveCSS("overflow", "visible");
+    await expect(startupBody).toContainText("Available Tools");
+    await expect(startupBody).toContainText("Welcome to Hermes Agent");
+    await expect(startupBody).toContainText("✦ Tip:");
+    const banner = startupBody.locator("pre").first();
+    expect(await banner.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+    expect(await startupBody.evaluate((element) => element.clientHeight)).toBeLessThanOrEqual(844 * 0.45 + 1);
+    await banner.evaluate((element) => { element.scrollLeft = 40; });
+    await startupBody.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+    expect(await banner.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+    await expect(page.getByRole("textbox").first()).not.toBeFocused();
+    await page.screenshot({ path: testInfo.outputPath("startup-expanded.png"), animations: "disabled" });
+    await startupToggle.click();
+    await expect(startupBody).toHaveCount(0);
+    if (locale === "en") {
+      await page.getByRole("button", { name: en["chat.paneMenu.aria"], exact: true }).click();
+      await page.getByRole("button", { name: en["chat.find.label"], exact: true }).click();
+      await page.getByRole("textbox", { name: "Find in output", exact: true }).fill("/model --global");
+      const current = startupBody.locator('[data-find-match="current"]');
+      await expect(current).toHaveText("/model --global");
+      await expect.poll(async () => {
+        const region = await startupBody.boundingBox();
+        const match = await current.boundingBox();
+        return !!region && !!match && match.y >= region.y && match.y + match.height <= region.y + region.height;
+      }).toBe(true);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     await page.evaluate(() => localStorage.setItem("collie:display-prefs:v4", JSON.stringify({ rawTerminal: true })));
     await page.reload();

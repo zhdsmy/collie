@@ -363,6 +363,9 @@ export const es: Dictionary = {
   "chat.scrollback.noSessionReported":
     "{agent} no ha registrado ninguna sesión en Herdr. Instala o actualiza la integración de Herdr correspondiente y reinicia el agente en este panel.",
   "chat.historyPreview.title": "Conversación anterior",
+  "chat.historyPreview.messages": "{count} mensajes del usuario",
+  "chat.startupPreview.title": "Información de inicio",
+  "chat.startupPreview.summary": "Hermes {version} · {tools} herramientas · {skills} habilidades",
   "chat.fullReply.title": "Respuesta completa",
   "chat.fullReply.fromTranscript": "desde el registro",
   "chat.fullReply.showingTerminal": "mostrando la terminal",

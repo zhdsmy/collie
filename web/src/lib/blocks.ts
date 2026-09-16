@@ -68,12 +68,18 @@ export interface StyledLine {
   surface?: { kind: "diff" | "user"; background: string };
 }
 
+/** Read-only terminal information. The continuation keeps its original source-row position. */
+export type SessionInfo =
+  | { kind: "startup"; version: string; tools: number; skills: number }
+  | { kind: "history"; session?: { id: string; title?: string; userMessages: number } }
+  | { kind: "startup-tail" };
+
 /** A run of raw terminal output. Renders as verbatim styled text (the T1 mirror). */
 export interface RawBlock {
   kind: "raw";
   lines: StyledLine[];
-  /** Verified resume history: a read-only fold, still searchable and counted in source rows. */
-  historyPreview?: true;
+  /** Verified read-only fold, still searchable and counted in source rows. */
+  sessionInfo?: SessionInfo;
 }
 
 /**

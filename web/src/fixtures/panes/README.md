@@ -101,6 +101,14 @@ recognition and send-binding boundaries.
 
 ## Hermes CLI display chrome (captured 2026-09-10)
 
+`hermes--startup-resume.txt` is a sanitized structural fixture assembled on 2026-09-16:
+the logo, startup panel, tool/skill inventory, version/count styles and Welcome/Tip come from
+a read-only ANSI capture of the installed Hermes v0.21.2 (2026.9.11, `1021a032`). The personal
+path and session ID are replaced, the preceding session-exit statistics are omitted, and the
+private history is replaced with the synthetic native-renderer history below. It intentionally
+combines a 211-column startup with a 120-column history to cover terminal resizing. It is not
+an untouched conversation capture, and gathering it sends no input to the user's session.
+
 `hermes--resume-history.txt` is generated on 2026-09-16 by Hermes CLI v0.21.2
 (2026.9.11, `1021a032`), using the installed `_display_resumed_history()` and Rich renderer
 at 120 columns with synthetic in-memory history. It preserves native ANSI and frame geometry,

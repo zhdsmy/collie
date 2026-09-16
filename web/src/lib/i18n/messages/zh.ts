@@ -347,6 +347,9 @@ export const zh: Dictionary = {
   "chat.scrollback.noSessionReported":
     "{agent} 尚未向 Herdr 上报会话。请安装或更新对应的 Herdr 集成，并在当前窗格重启该 Agent。",
   "chat.historyPreview.title": "历史对话",
+  "chat.historyPreview.messages": "{count} 条用户消息",
+  "chat.startupPreview.title": "启动信息",
+  "chat.startupPreview.summary": "Hermes {version} · {tools} 工具 · {skills} 技能",
   "chat.fullReply.title": "完整回复",
   "chat.fullReply.fromTranscript": "来自日志",
   "chat.fullReply.showingTerminal": "正在显示终端",

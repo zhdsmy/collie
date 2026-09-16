@@ -45,7 +45,7 @@ import { MultiSelectBlock } from "@/components/multi-select-block";
 import { MenuBlock, type MenuBlockAction } from "@/components/menu-block";
 import { AutocompleteBlock } from "@/components/autocomplete-block";
 import { PickerBlock } from "@/components/picker-block";
-import { HistoryPreview } from "@/components/history-preview";
+import { SessionInfoCard } from "@/components/session-info-card";
 import type { MultiSelectIntent } from "@/lib/multi-select-action";
 import type { TranscriptEntry } from "@/lib/types";
 import { completePlanText } from "@/lib/plan-content";
@@ -648,7 +648,9 @@ export const AnsiOutput = memo(function AnsiOutput({
   let clusterIndex = 0;
   const renderBlock = (block: RawBlock, bi: number) => {
     if (bi > 0) offset += 1; // the "\n" separating this block from the previous
-    const runs = runsByBlock[bi] ?? NO_RUNS;
+    // Startup panels pan as one complete pre, so their rows must bypass structural clipping too.
+    const columnFaithful = block.sessionInfo?.kind === "startup";
+    const runs = columnFaithful ? NO_RUNS : runsByBlock[bi] ?? NO_RUNS;
     const clusters = clustersByBlock[bi] ?? NO_CLUSTERS;
     const nodes: ReactNode[] = [];
     let ri = 0;
@@ -671,7 +673,7 @@ export const AnsiOutput = memo(function AnsiOutput({
           }
           // A row carrying an image AND text keeps its text. The placeholder cells are blanked to
           // spaces of the same character count, so the row reads as written and no offset moves.
-          nodes.push(renderLine(blankPlaceholders(line), k, true, false));
+          nodes.push(renderLine(blankPlaceholders(line), k, true, columnFaithful));
         }
         nodes.push(renderImageCluster(url, `image:${bi}:${cluster.start}`, onImageError));
         li = cluster.end + 1;
@@ -679,7 +681,7 @@ export const AnsiOutput = memo(function AnsiOutput({
       }
       const run: TableRun | undefined = runs[ri];
       if (!run || run.start !== li) {
-        nodes.push(renderLine(block.lines[li]!, li, true, false));
+        nodes.push(renderLine(block.lines[li]!, li, true, columnFaithful));
         li++;
         continue;
       }
@@ -709,20 +711,35 @@ export const AnsiOutput = memo(function AnsiOutput({
     );
   };
 
-  let historyIndex = 0;
+  const hasSessionInfo = rawBlocks.some((block) => block.sessionInfo && block.sessionInfo.kind !== "startup-tail");
+  // Render in source order for find/link offsets, then move verified welcome text into its card.
+  const rawContent = hasSessionInfo ? rawBlocks.map((block, bi) => (
+    <pre key={bi} className={preClass(wrap && block.sessionInfo?.kind !== "startup", className, agent)} style={{ fontSize: `${fontSize}px` }}>
+      {renderBlock(block, bi)}
+    </pre>
+  )) : [];
+  const tails = new Map<number, number[]>();
+  const appended = new Set<number>();
+  let startupIndex = -1;
+  rawBlocks.forEach((block, bi) => {
+    if (block.sessionInfo?.kind === "startup") startupIndex = bi;
+    if (block.sessionInfo?.kind === "startup-tail" && startupIndex >= 0) {
+      tails.set(startupIndex, [...(tails.get(startupIndex) ?? []), bi]);
+      appended.add(bi);
+    }
+  });
+  let infoIndex = 0;
   return (
     <>
-      {rawBlocks.some((block) => block.historyPreview) ? rawBlocks.map((block, bi) => {
-        const content = (
-          <pre className={preClass(wrap, className, agent)} style={{ fontSize: `${fontSize}px` }}>
-            {renderBlock(block, bi)}
-          </pre>
-        );
-        return block.historyPreview ? (
-          <HistoryPreview key={`history:${historyIndex++}:${lineText(block.lines[1]!)}`} query={query} currentMatch={currentMatch}>
-            {content}
-          </HistoryPreview>
-        ) : <Fragment key={bi}>{content}</Fragment>;
+      {hasSessionInfo ? rawBlocks.map((block, bi) => {
+        if (appended.has(bi)) return null;
+        const info = block.sessionInfo;
+        return info && info.kind !== "startup-tail" ? (
+          <SessionInfoCard key={`${info.kind}:${infoIndex++}:${lineText(block.lines[1]!)}`} info={info} query={query} currentMatch={currentMatch}>
+            {rawContent[bi]}
+            {tails.get(bi)?.map((index) => rawContent[index])}
+          </SessionInfoCard>
+        ) : <Fragment key={bi}>{rawContent[bi]}</Fragment>;
       }) : rawBlocks.length > 0 && (
         <pre className={preClass(wrap, className, agent)} style={{ fontSize: `${fontSize}px` }}>
           {rawBlocks.map(renderBlock)}

@@ -1,5 +1,31 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## Startup and resume announcements share read-only cards — 2026-09-16
+
+The native startup panel has a bold `Hermes Agent v…` heading, a rounded full frame,
+`Available Tools`, and the `N tools · M skills · /help for commands` count row. Only a
+complete matching frame folds. The standard six-row painted logo and a simple adjacent shell
+launch command join it when the command's resume ID matches the panel's Session field.
+Unknown branding, cropped frames, earlier session-exit statistics and unframed warnings stay raw.
+The expanded banner keeps its terminal columns and can pan horizontally inside the card.
+
+`cli_agent_setup_mixin.py` prints the resume announcement with a bold session ID; its prefix
+is not always bold. Only a styled, immediately adjacent announcement belongs to the verified
+history panel. Up to three Rich-wrapped rows are accepted. The card summary uses the title and
+user-message count; the full ID and total count remain in the body, without changing the text.
+
+`cli.py` prints the standard Welcome after replay, then startup prewarm warnings and a random
+tip. The exact welcome and adjacent dim `✦ Tip:` row can append visually to the startup card.
+Intervening warnings or unknown text stop that tail. This is an intentional visual regrouping;
+the raw blocks and all their source rows retain native order for latest-reply subtraction.
+`AnsiOutput` renders find/link offsets in that order before nesting the tail under its card.
+If subtraction removes the startup card, an orphaned tail renders as ordinary text.
+
+Tests cover source-row mapping, refusal, metadata wrapping, independent folds and search into
+the relocated tip. The browser spec uses the sanitized startup/replay fixture in Chinese,
+English and German at 320/390px on Chromium and WebKit; it checks card summaries, bounded
+scrolling, no native writes or composer focus, and actual search scrolling into the startup tail.
+
 ## Resume history folds without taking keyboard ownership — 2026-09-16
 
 Hermes v0.21.2 (2026.9.11, `1021a032`) replays recent exchanges through

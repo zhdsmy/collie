@@ -353,6 +353,9 @@ export const zhTW: Dictionary = {
   "chat.scrollback.noSessionReported":
     "{agent} 尚未向 Herdr 回報工作階段。請安裝或更新對應的 Herdr 整合，並在目前窗格重新啟動該 Agent。",
   "chat.historyPreview.title": "歷史對話",
+  "chat.historyPreview.messages": "{count} 則使用者訊息",
+  "chat.startupPreview.title": "啟動資訊",
+  "chat.startupPreview.summary": "Hermes {version} · {tools} 工具 · {skills} 技能",
   "chat.fullReply.title": "完整回覆",
   "chat.fullReply.fromTranscript": "來自記錄",
   "chat.fullReply.showingTerminal": "正在顯示終端機",
