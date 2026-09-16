@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.8] - 2026-09-16
+
 ### Fixed
 
-- **Claude diff rows paint one stable rectangle.** Every changed row's own fill is promoted to the full-row surface, whatever character follows the `+`/`-` sign and across Claude's own wrapped continuations, so a diff no longer renders as a ragged mix of raw and surfaced rows on the phone.
+- **Claude diff rows paint one stable rectangle.** Every changed row's own fill is promoted to the full-row surface, whatever character follows the `+`/`-` sign and across Claude's own wrapped continuations, so a diff no longer renders as a ragged mix of raw and surfaced rows on the phone. ([97a4b36](https://github.com/zhdsmy/collie/commit/97a4b36))
 
 ## [1.9.1+collie.7] - 2026-09-16
 
