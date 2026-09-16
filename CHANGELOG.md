@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.10] - 2026-09-16
+
 ### Added
 
-- **Fold Hermes resume history into a readable conversation card.** Complete native Previous Conversation panels start collapsed and expand into a bounded scrolling region, preserving role colors, blank lines and searchable text without sending input. Incomplete panels and raw terminal mode keep their original display.
+- **Fold Hermes resume history into a readable conversation card.** Complete native Previous Conversation panels start collapsed and expand into a bounded scrolling region, preserving role colors, blank lines and searchable text without sending input. Incomplete panels and raw terminal mode keep their original display. ([316da253](https://github.com/zhdsmy/collie/commit/316da253))
 
 ## [1.9.1+collie.9] - 2026-09-16
 

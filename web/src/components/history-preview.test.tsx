@@ -31,7 +31,7 @@ describe("Hermes history preview", () => {
     rerender(<AnsiOutput text={`${capture}\nSearch after history`} agent="hermes" query="Hermes" currentMatch={0} />);
     const body = await screen.findByRole("region", { name: "Previous conversation" });
     expect(within(body).getAllByText("Hermes").length).toBeGreaterThan(0);
-    await waitFor(() => expect(scroll.mock.instances.some((element) => body.contains(element))).toBe(true));
+    await waitFor(() => expect(scroll.mock.instances.some((element) => element instanceof Node && body.contains(element))).toBe(true));
     rerender(<AnsiOutput text={`${capture}\nSearch after history`} agent="hermes" query="Search after history" currentMatch={0} />);
     expect(container.querySelector('[data-find-match="current"]')?.textContent).toBe("Search after history");
     scroll.mockRestore();
