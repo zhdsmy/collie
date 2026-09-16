@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowUp,
   Check,
   ChevronLeft,
   ChevronRight,
+  Keyboard,
   Loader2,
   Search,
   X,
@@ -18,6 +19,7 @@ import {
   type PickerOption,
 } from "@/lib/harness/picker-model";
 import { t, tn } from "@/lib/i18n";
+import { timeAgo } from "@/lib/format";
 import { useLocale } from "@/hooks/use-locale";
 import { MIRROR_INVERT, MIRROR_SPACE, styleFor } from "@/components/mirror-space";
 import { Button } from "@/components/ui/button";
@@ -253,12 +255,14 @@ function SearchField({
   onChange,
   onSubmit,
   onClear,
+  sessions = false,
 }: {
   query: string;
   disabled: boolean;
   onChange: (query: string) => void;
   onSubmit: () => void;
   onClear: () => void;
+  sessions?: boolean;
 }) {
   return (
     <form
@@ -285,8 +289,8 @@ function SearchField({
           value={query}
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={t("dialog.picker.searchPlaceholder")}
-          aria-label={t("dialog.picker.searchAria")}
+          placeholder={t(sessions ? "dialog.sessions.search" : "dialog.picker.searchPlaceholder")}
+          aria-label={t(sessions ? "dialog.sessions.search" : "dialog.picker.searchAria")}
           className={cn(
             "h-10 w-full rounded-md border border-input bg-transparent pl-9 text-base placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
             query ? "pr-10" : "pr-3",
@@ -312,12 +316,12 @@ function SearchField({
         variant="outline"
         size="sm"
         disabled={disabled}
-        aria-label={t("dialog.picker.apply")}
-        title={t("dialog.picker.apply")}
-        className="h-10 shrink-0 gap-1.5 whitespace-nowrap px-3"
+        aria-label={t(sessions ? "dialog.sessions.searchAction" : "dialog.picker.apply")}
+        title={t(sessions ? "dialog.sessions.searchAction" : "dialog.picker.apply")}
+        className={cn("h-10 shrink-0 gap-1.5 whitespace-nowrap", sessions ? "w-10 px-0" : "px-3")}
       >
         <Search aria-hidden className="size-4" />
-        {t("dialog.picker.apply")}
+        {sessions ? null : t("dialog.picker.apply")}
       </Button>
     </form>
   );
@@ -460,6 +464,104 @@ function SingleOption({
   );
 }
 
+/** Localize only the display copy; the guard still sees the exact native row and date. */
+function sessionMeta(description: string) {
+  const [age = "", ...details] = description.split(" · ");
+  const match = /^(\d+)([smhd]) ago$/.exec(age);
+  const unit = match?.[2];
+  const seconds = unit === "d" ? 86400 : unit === "h" ? 3600 : unit === "m" ? 60 : 1;
+  return {
+    age: match ? timeAgo(-Number(match[1]) * seconds * 1000, 0)
+      : age === "now" ? t("time.justNow") : age,
+    detail: details.join(" · "),
+  };
+}
+
+function SessionPicker({ picker, locked, sending, search, onPress }: {
+  picker: PickerModel;
+  locked: boolean;
+  sending: string | null;
+  search: ReactNode;
+  onPress: (id: string, intent: PickerIntent) => void;
+}) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const pointedId = picker.options.find((option) => option.pointed)?.id;
+  useEffect(() => {
+    const list = listRef.current;
+    const row = list?.querySelector<HTMLElement>('[aria-current="true"]');
+    if (!list || !row) return;
+    // Browse the terminal's list without scrolling the page or taking input focus.
+    const frame = list.getBoundingClientRect();
+    const item = row.getBoundingClientRect();
+    if (item.top < frame.top) list.scrollTop += item.top - frame.top;
+    else if (item.bottom > frame.bottom) list.scrollTop += item.bottom - frame.bottom;
+  }, [pointedId, picker.query]);
+  const title = t(picker.sessionAction === "fork" ? "dialog.sessions.forkTitle" : "dialog.sessions.title");
+  return (
+    <PromptPanel ariaLabel={title}>
+      <div className="px-0.5 py-1">
+        <QuestionHeading>{title}</QuestionHeading>
+        <p className="font-content mt-1 text-xs leading-snug text-muted-foreground">
+          {t(picker.sessionAction === "fork" ? "dialog.sessions.forkHint" : "dialog.sessions.hint")}
+        </p>
+      </div>
+      {picker.options.length ? (
+        <div ref={listRef} data-slot="session-options" className="max-h-72 min-w-0 overflow-y-auto overscroll-y-contain rounded-md border border-border divide-y divide-border">
+          {picker.options.map((option) => {
+            const meta = sessionMeta(option.description);
+            const busy = sending === `option:${option.id}`;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-current={option.pointed ? "true" : undefined}
+                aria-label={option.label}
+                title={option.label}
+                disabled={locked}
+                onClick={() => onPress(`option:${option.id}`, { kind: "choose", id: option.id })}
+                className={cn(
+                  "flex min-h-14 w-full min-w-0 items-center gap-2 border-l-2 py-2 pl-2.5 pr-2 text-left focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring active:bg-primary/10 disabled:opacity-60",
+                  option.pointed || busy ? "border-l-primary bg-primary/5" : "border-l-transparent bg-card hover:bg-secondary/50",
+                )}
+              >
+                <span className="min-w-0 flex-1">
+                  <span data-slot="session-title" className="font-content line-clamp-2 text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
+                    {option.label}
+                  </span>
+                  {meta.detail ? <span className="font-content mt-0.5 block truncate text-xs text-muted-foreground" title={meta.detail}>{meta.detail}</span> : null}
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  <span className="font-content text-[11px] font-normal text-muted-foreground tabular-nums">{meta.age}</span>
+                  {busy ? <Spinner /> : <ChevronRight aria-hidden className="size-3.5 text-muted-foreground" />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="py-5 text-center text-sm text-muted-foreground">{t("dialog.picker.noResults")}</p>
+      )}
+      <div className="flex items-center justify-between gap-2">
+        <Button type="button" variant="ghost" size="sm" disabled={locked} onClick={() => onPress("cancel", { kind: "cancel" })}>
+          {t("dialog.cancel")}
+        </Button>
+        <BrowseControls locked={locked || picker.options.length === 0} onPress={(direction) => onPress(`navigate:${direction}`, { kind: "navigate", direction })} />
+      </div>
+      {search}
+      {picker.footer ? (
+        <details className="group min-w-0 border-t border-border pt-1.5">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-1 py-1 text-xs text-muted-foreground marker:hidden [&::-webkit-details-marker]:hidden">
+            <Keyboard aria-hidden className="size-3.5" />
+            {t("dialog.picker.footerAria")}
+            <ChevronRight aria-hidden className="ml-auto size-3.5 group-open:rotate-90" />
+          </summary>
+          <Footer footer={picker.footer} />
+        </details>
+      ) : null}
+    </PromptPanel>
+  );
+}
+
 export function PickerBlock({ picker, onAction, disabled, planText }: PickerBlockProps) {
   useLocale();
   const [sending, setSending] = useState<string | null>(null);
@@ -542,6 +644,7 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
 
   const search = picker.query !== null ? (
     <SearchField
+      sessions={picker.sessionAction !== undefined}
       query={queryDraft}
       disabled={locked}
       onChange={setQueryDraft}
@@ -552,6 +655,10 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
       }}
     />
   ) : null;
+
+  if (picker.sessionAction) {
+    return <SessionPicker picker={picker} locked={locked} sending={sending} search={search} onPress={(id, intent) => void press(id, intent)} />;
+  }
 
   if (asyncCollapsed) {
     return (

@@ -25,6 +25,8 @@ export interface PickerModel {
   footer: string;
   signature: string;
   regionSignature: string;
+  /** Presentation of a saved-session chooser; native labels and action guards stay untouched. */
+  sessionAction?: "resume" | "fork";
   /** Visible plan body, kept exact; a verified journal match may supply its complete source. */
   plan?: { text: string; complete: boolean };
   /** A question within one native questionnaire; the footer declares what Enter will do. */
@@ -84,6 +86,7 @@ export function pickersEqual(a: PickerModel, b: PickerModel): boolean {
 
 export function pickersSameIdentity(a: PickerModel, b: PickerModel): boolean {
   return a.kind === b.kind && a.identity === b.identity &&
+    a.sessionAction === b.sessionAction &&
     a.questionnaire?.async?.collapsed === b.questionnaire?.async?.collapsed &&
     a.questionnaire?.async?.otherId === b.questionnaire?.async?.otherId &&
     a.plan?.text === b.plan?.text && a.plan?.complete === b.plan?.complete &&

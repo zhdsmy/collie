@@ -789,6 +789,13 @@ export const zhTW: Dictionary = {
   "dialog.picker.async.customAnswerPlaceholder": "輸入自訂回答",
   "dialog.picker.async.backToInput": "返回輸入",
 
+  "dialog.sessions.title": "恢復對話",
+  "dialog.sessions.forkTitle": "建立對話分支",
+  "dialog.sessions.hint": "點選對話，繼續交談。",
+  "dialog.sessions.forkHint": "點選對話，從現有記錄開始新分支。",
+  "dialog.sessions.search": "搜尋對話",
+  "dialog.sessions.searchAction": "搜尋",
+
   "dialog.plan.title": "計畫",
   "dialog.plan.body": "計畫內容",
   "dialog.plan.partial": "目前僅顯示終端可見的計畫片段。",

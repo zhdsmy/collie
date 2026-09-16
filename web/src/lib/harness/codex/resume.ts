@@ -198,6 +198,7 @@ export function detectResumeRegion(lines: StyledLine[]): ResumeRegion | null {
     model: {
       kind: "single",
       identity: `resume:${title}`,
+      sessionAction: title.startsWith("Fork") ? "fork" : "resume",
       title,
       description: [],
       options: rows.options,

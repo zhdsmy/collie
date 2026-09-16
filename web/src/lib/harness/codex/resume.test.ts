@@ -17,6 +17,7 @@ describe("Codex saved-session picker parsing", () => {
     const picker = model("dense");
     expect(picker.title).toBe("Resume a previous session");
     expect(picker.kind).toBe("single");
+    expect(picker.sessionAction).toBe("resume");
     expect(picker.query).toBe("");
     expect(picker.options).toEqual([
       {
@@ -45,6 +46,14 @@ describe("Codex saved-session picker parsing", () => {
   it("follows the pointer without inventing a second one", () => {
     expect(model("dense-moved").options.map((option) => option.pointed)).toEqual([false, true]);
     expect(model("dense-moved").signature).not.toBe(model("dense").signature);
+  });
+
+  it("distinguishes fork presentation without translating the native guard identity", () => {
+    const source = text("dense").replace("Resume a previous session", "Fork a previous session");
+    const picker = detectResumeRegion(parse(source))!.model;
+    expect(picker.sessionAction).toBe("fork");
+    expect(picker.identity).toBe("resume:Fork a previous session");
+    expect(picker.regionSignature).toContain("Fork a previous session");
   });
 
   it("keeps every visible row of a longer window, in native order", () => {

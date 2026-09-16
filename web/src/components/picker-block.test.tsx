@@ -122,6 +122,52 @@ const asyncExpandedPicker: PickerModel = {
 };
 
 describe("PickerBlock", () => {
+  const sessions: PickerModel = {
+    ...singlePicker,
+    identity: "resume:Resume a previous session",
+    sessionAction: "resume",
+    title: "Resume a previous session",
+    query: "",
+    preview: [],
+    options: singlePicker.options.map((option, index) => ({
+      ...option, id: `session-${index}`, label: index ? "/uploads/very-long-image-filename.jpg Another conversation" : "Collie adapt",
+      description: index ? "5d ago · main" : "now", current: false, orderable: false,
+    })),
+    footer: "enter resume   ctrl+a archive   esc exit",
+  };
+
+  it("keeps complete session identities while displaying compact rows and collapsed native help", async () => {
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+    render(<PickerBlock picker={sessions} onAction={onAction} />);
+    expect(screen.getByRole("group", { name: "Resume session" })).toBeVisible();
+    expect(screen.getByRole("searchbox", { name: "Search sessions" })).not.toHaveFocus();
+    expect(screen.getByRole("button", { name: "Collie adapt" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByText("main")).toBeVisible();
+    expect(screen.getByRole("note", { name: "Keyboard help", hidden: true })).not.toBeVisible();
+    await user.click(screen.getByText("Keyboard help"));
+    expect(screen.getByRole("note", { name: "Keyboard help" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: sessions.options[1]!.label }));
+    expect(onAction).toHaveBeenCalledExactlyOnceWith({ kind: "choose", id: "session-1" });
+  });
+
+  it("searches and browses sessions without confirming them, and distinguishes fork", async () => {
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(<PickerBlock picker={{ ...sessions, sessionAction: "fork" }} onAction={onAction} />);
+    expect(screen.getByRole("group", { name: "Fork session" })).toBeVisible();
+    await user.type(screen.getByRole("searchbox", { name: "Search sessions" }), "collie");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    expect(onAction).toHaveBeenLastCalledWith({ kind: "search", query: "collie" });
+    await user.click(screen.getByRole("button", { name: "Browse options below" }));
+    expect(onAction).toHaveBeenLastCalledWith({ kind: "navigate", direction: "down" });
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(onAction).toHaveBeenLastCalledWith({ kind: "cancel" });
+    expect(onAction).not.toHaveBeenCalledWith({ kind: "confirm" });
+    rerender(<PickerBlock picker={sessions} onAction={onAction} disabled />);
+    for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
+  });
+
   it("formats terminal plan Markdown without a matching journal entry", () => {
     const picker: PickerModel = {
       ...singlePicker,

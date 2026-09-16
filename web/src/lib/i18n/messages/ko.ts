@@ -804,6 +804,13 @@ export const ko: Dictionary = {
   "dialog.picker.async.customAnswerPlaceholder": "직접 답변을 입력하세요",
   "dialog.picker.async.backToInput": "입력으로 돌아가기",
 
+  "dialog.sessions.title": "세션 재개",
+  "dialog.sessions.forkTitle": "세션 분기",
+  "dialog.sessions.hint": "세션을 선택해 대화를 이어가세요.",
+  "dialog.sessions.forkHint": "기존 세션에서 새 분기를 시작하세요.",
+  "dialog.sessions.search": "세션 검색",
+  "dialog.sessions.searchAction": "검색",
+
   "dialog.plan.title": "계획",
   "dialog.plan.body": "계획 내용",
   "dialog.plan.partial": "현재 터미널에 보이는 계획의 일부만 표시됩니다.",

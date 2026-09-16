@@ -841,6 +841,13 @@ export const en = {
   "dialog.picker.async.customAnswerPlaceholder": "Write a custom answer",
   "dialog.picker.async.backToInput": "Back to input",
 
+  "dialog.sessions.title": "Resume session",
+  "dialog.sessions.forkTitle": "Fork session",
+  "dialog.sessions.hint": "Choose a session to continue.",
+  "dialog.sessions.forkHint": "Choose a session to start a new branch.",
+  "dialog.sessions.search": "Search sessions",
+  "dialog.sessions.searchAction": "Search",
+
   "dialog.plan.title": "Plan",
   "dialog.plan.body": "Plan content",
   "dialog.plan.partial": "Only the visible part of the plan is available.",

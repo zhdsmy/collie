@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Saved sessions use a compact, localized picker card.** Keep native session titles and guarded actions intact while presenting a bounded list with two-line titles, inline selection, localized ages, bottom search, and collapsible keyboard help. Resume and fork retain distinct labels and all existing native controls.
+
 ## [1.9.1+collie.3] - 2026-09-16
 
 ### Added

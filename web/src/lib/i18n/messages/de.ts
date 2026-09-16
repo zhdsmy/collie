@@ -814,6 +814,13 @@ export const de: Dictionary = {
   "dialog.picker.async.customAnswerPlaceholder": "Eigene Antwort eingeben",
   "dialog.picker.async.backToInput": "Zur Eingabe",
 
+  "dialog.sessions.title": "Sitzung fortsetzen",
+  "dialog.sessions.forkTitle": "Sitzung verzweigen",
+  "dialog.sessions.hint": "Sitzung antippen, um fortzufahren.",
+  "dialog.sessions.forkHint": "Sitzung für einen neuen Zweig auswählen.",
+  "dialog.sessions.search": "Sitzungen suchen",
+  "dialog.sessions.searchAction": "Suchen",
+
   "dialog.plan.title": "Plan",
   "dialog.plan.body": "Planinhalt",
   "dialog.plan.partial": "Nur der sichtbare Teil des Plans ist verfügbar.",

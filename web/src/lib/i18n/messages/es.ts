@@ -813,6 +813,13 @@ export const es: Dictionary = {
   "dialog.picker.async.customAnswerPlaceholder": "Escribe una respuesta personalizada",
   "dialog.picker.async.backToInput": "Volver a la entrada",
 
+  "dialog.sessions.title": "Reanudar sesión",
+  "dialog.sessions.forkTitle": "Bifurcar sesión",
+  "dialog.sessions.hint": "Elige una sesión para continuar.",
+  "dialog.sessions.forkHint": "Elige una sesión para iniciar una rama nueva.",
+  "dialog.sessions.search": "Buscar sesiones",
+  "dialog.sessions.searchAction": "Buscar",
+
   "dialog.plan.title": "Plan",
   "dialog.plan.body": "Contenido del plan",
   "dialog.plan.partial": "Solo está disponible la parte visible del plan.",

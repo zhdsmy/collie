@@ -793,6 +793,13 @@ export const zh: Dictionary = {
   "dialog.picker.async.customAnswerPlaceholder": "输入自定义回答",
   "dialog.picker.async.backToInput": "返回输入",
 
+  "dialog.sessions.title": "恢复会话",
+  "dialog.sessions.forkTitle": "创建会话分支",
+  "dialog.sessions.hint": "点按会话，继续对话。",
+  "dialog.sessions.forkHint": "点按会话，从已有记录开始新分支。",
+  "dialog.sessions.search": "搜索会话",
+  "dialog.sessions.searchAction": "搜索",
+
   "dialog.plan.title": "计划",
   "dialog.plan.body": "计划正文",
   "dialog.plan.partial": "当前仅显示终端可见的计划片段。",

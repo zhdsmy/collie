@@ -806,6 +806,13 @@ export const ja: Dictionary = {
   "dialog.picker.async.customAnswerPlaceholder": "カスタム回答を入力",
   "dialog.picker.async.backToInput": "入力に戻る",
 
+  "dialog.sessions.title": "セッションを再開",
+  "dialog.sessions.forkTitle": "セッションを分岐",
+  "dialog.sessions.hint": "セッションを選んで会話を続けます。",
+  "dialog.sessions.forkHint": "既存のセッションから新しい分岐を作成します。",
+  "dialog.sessions.search": "セッションを検索",
+  "dialog.sessions.searchAction": "検索",
+
   "dialog.plan.title": "計画",
   "dialog.plan.body": "計画の本文",
   "dialog.plan.partial": "現在はターミナルに表示されている計画の一部のみ表示しています。",
