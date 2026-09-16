@@ -4,10 +4,12 @@ import { tmpdir } from "node:os";
 
 import {
   codexCursor,
+  codexJournal,
   codexToolOutput,
   CodexTranscriptSource,
   isCodexSessionId,
   parseCodexTranscript,
+  parseCodexFirstTokenMs,
 } from "./codex.ts";
 
 /**
@@ -30,7 +32,7 @@ const message = (role: "user" | "assistant", text: string) =>
     content: [{ type: role === "user" ? "input_text" : "output_text", text }],
   });
 
-const event = (payload: Record<string, JsonValue>) =>
+const event = (payload: Record<string, JsonValue | undefined>) =>
   JSON.stringify({ timestamp: "2026-07-29T10:00:00.000Z", type: "event_msg", payload });
 
 const meta = () =>
@@ -48,6 +50,33 @@ describe("isCodexSessionId", () => {
     ["empty", "", false],
   ])("%s → %s", (_label, value, expected) => {
     expect(isCodexSessionId(value)).toBe(expected);
+  });
+});
+
+describe("Codex first-token timing", () => {
+  const completed = (ms: JsonValue | undefined, extra: Record<string, JsonValue> = {}) =>
+    event({ type: "task_complete", turn_id: "turn-a", time_to_first_token_ms: ms, ...extra });
+
+  test("uses the latest completed turn, even while the next turn is streaming", () => {
+    expect(parseCodexFirstTokenMs([
+      completed(11136), completed(4166, { duration_ms: 5641 }),
+      event({ type: "task_started", turn_id: "turn-b" }),
+      event({ type: "token_count", time_to_first_token_ms: 99 }),
+      item({ type: "task_complete", time_to_first_token_ms: 88 }),
+      '{"type":"event_msg","payload":',
+    ])).toBe(4166);
+    expect(parseCodexFirstTokenMs([completed(0)])).toBe(0);
+  });
+
+  test.each([undefined, null, -1, 1.2, "123", Number.MAX_SAFE_INTEGER + 1])(
+    "does not borrow an older turn when the latest timing is invalid: %s", (ms) => {
+      expect(parseCodexFirstTokenMs([completed(123), completed(ms)])).toBeNull();
+    },
+  );
+
+  test("ignores missing completions and impossible timing", () => {
+    expect(parseCodexFirstTokenMs([])).toBeNull();
+    expect(parseCodexFirstTokenMs([completed(1234, { duration_ms: 100 })])).toBeNull();
   });
 });
 
@@ -274,6 +303,22 @@ describe("CodexTranscriptSource — several sessions roots", () => {
     expect(await src.resolve({ kind: "id", value: A })).toEndWith(`${A}.jsonl`);
     expect(await src.resolve({ kind: "id", value: B })).toEndWith(`${B}.jsonl`);
     await rm(base, { recursive: true, force: true });
+  });
+
+  test("the timing probe follows the exact session and fresh file contents", async () => {
+    const { base, a, b } = await fixture();
+    try {
+      const journal = codexJournal([a, b]);
+      const file = `${a}/2026/08/11/rollout-2026-08-11T09-00-00-${A}.jsonl`;
+      await Bun.write(file, event({ type: "task_complete", time_to_first_token_ms: 4166 }));
+      expect(await journal.lastTurnFirstTokenMs?.({ kind: "id", value: A })).toBe(4166);
+      expect(await journal.lastTurnFirstTokenMs?.({ kind: "id", value: B })).toBeNull();
+      expect(await journal.lastTurnFirstTokenMs?.({ kind: "path", value: file })).toBeNull();
+      await Bun.write(file, event({ type: "task_complete", time_to_first_token_ms: 6200 }));
+      expect(await journal.lastTurnFirstTokenMs?.({ kind: "id", value: A })).toBe(6200);
+    } finally {
+      await rm(base, { recursive: true, force: true });
+    }
   });
 
   test("a rollout symlinked out of its root is refused, and the next root still answers", async () => {

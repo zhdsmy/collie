@@ -4,6 +4,7 @@ import type { Dictionary } from "./en";
 // suffixes match.
 
 export const zhTW: Dictionary = {
+  "statusline.codex.firstToken": "最近完成回合的首 token 耗時 {value}",
   "settings.typeface.note.geist": "幾何無襯線字體，支援可變字重。",
   "keys.showFunctionKeys": "顯示功能鍵",
   "keys.showNavigationKeys": "顯示導覽鍵",

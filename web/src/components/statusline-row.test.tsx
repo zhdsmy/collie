@@ -8,6 +8,24 @@ import { StatuslineRow } from "./statusline-row";
 
 beforeEach(() => __resetLocale());
 
+it.each([false, true])("shows native last-turn TTFT with mode controls: %s", (controlled) => {
+  const row = splitLines(parseAnsi("gpt-6-astra xhigh · Ready · main"))[0]!;
+  const props = { agent: "codex", row, codexControls: controlled ? {
+    plan: { enabled: false, busy: false, onClick: vi.fn() },
+    fast: { enabled: false, busy: false, onClick: vi.fn() },
+  } : undefined };
+  const view = render(<StatuslineRow {...props} lastTurnFirstTokenMs={4166} />);
+  expect(view.getByRole("img", { name: "Latest completed turn: first token 4.2s" })).toHaveTextContent("4.2s");
+  for (const ms of [undefined, NaN, -1, Infinity]) {
+    view.rerender(<StatuslineRow {...props} lastTurnFirstTokenMs={ms} />);
+    expect(view.queryByRole("img", { name: /first token/ })).toBeNull();
+  }
+  view.rerender(<StatuslineRow {...props} lastTurnFirstTokenMs={0} />);
+  expect(view.getByRole("img", { name: "Latest completed turn: first token 0.0s" })).toBeVisible();
+  view.rerender(<StatuslineRow {...props} agent="hermes" lastTurnFirstTokenMs={4166} />);
+  expect(view.queryByRole("img", { name: /first token/ })).toBeNull();
+});
+
 it("opens the model menu only from a recognized Codex model field", () => {
   const open = vi.fn();
   const row = splitLines(parseAnsi("gpt-6-astra xhigh · Context 85% left · main"))[0]!;

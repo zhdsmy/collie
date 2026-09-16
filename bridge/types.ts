@@ -618,6 +618,8 @@ export interface PaneReadResponse {
   codexSessionKey?: string;
   /** Optional, persisted model/effort of this pane's exact active journal session. */
   sessionModel?: SessionModel;
+  /** Native TTFT for the latest completed turn in this pane's current journal session. */
+  lastTurnFirstTokenMs?: number;
   paneId: string;
   text: string;
   truncated: boolean;

@@ -112,6 +112,8 @@ export interface TranscriptSource {
 export interface JournalAdapter {
   /** Optional display metadata from this exact session's persisted record, never global config. */
   sessionModel?(ref: AgentSessionRef): Promise<SessionModel | null>;
+  /** Native first-token timing of this session's latest completed turn; absent when unreported. */
+  lastTurnFirstTokenMs?(ref: AgentSessionRef): Promise<number | null>;
   readonly agent: string;
   readonly source: TranscriptSource;
   parse(text: string): TranscriptEntry[];

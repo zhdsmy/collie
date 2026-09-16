@@ -92,6 +92,7 @@ import {
   type SnapshotResponse,
 } from "./types.ts";
 import type { StateEngine } from "./state-engine.ts";
+import type { JournalAdapter } from "./journal/types.ts";
 
 // checkAccess is the API security gate (same-origin/CSRF + optional Tailscale identity). A
 // regression here silently opens remote shell access, so it gets the most direct coverage.
@@ -3099,6 +3100,43 @@ describe("readPane — the logical read is asked for only when it can repair som
   const get = (paneId: string) =>
     new Request(`http://x/api/pane/${encodeURIComponent(paneId)}`);
   const url = new URL("http://x/api/pane/w1:p1");
+
+  test("native TTFT refreshes an unchanged grid and stays scoped to its session", async () => {
+    const agent: AgentView = {
+      paneId: "w1:p1", workspaceId: "w1", workspaceLabel: "test", workspaceNumber: 1,
+      tabId: "w1:t1", agent: "codex", status: "done", cwd: "/tmp", focused: false,
+      agentSession: { kind: "id", value: "11111111-aaaa-bbbb-cccc-222222222222" },
+    };
+    const stub: Partial<StateEngine> = {
+      current: () => ({ agents: [agent], shellPanes: [], workspaces: [], tabs: [], bridge: "connected" }),
+    };
+    // SAFETY: readPane only reaches current() for the active pane/session lookup.
+    const scopedEngine = stub as StateEngine;
+    const { adapter } = paneStub("Ready", "unused");
+    let ms: number | null = 4166;
+    const journal: JournalAdapter = {
+      agent: "codex", parse: () => [],
+      source: { resolve: async () => null, stat: async () => null,
+        load: async () => ({ text: "", complete: true, size: 0, mtimeMs: 0 }) },
+      lastTurnFirstTokenMs: async (ref) => ref.value === "11111111-aaaa-bbbb-cccc-222222222222" ? ms : null,
+    };
+    const read = (etag?: string, enabled = true) => readPane(adapter, cfg(), "w1:p1", url,
+      new Request(url, { headers: etag ? { "if-none-match": etag } : {} }),
+      enabled ? { codex: journal } : null, scopedEngine);
+    const first = await read();
+    expect(await first.json()).toMatchObject({ text: "Ready", lastTurnFirstTokenMs: 4166 });
+    const etag = first.headers.get("etag")!;
+    expect((await read(etag)).status).toBe(304);
+    ms = 6200;
+    const changed = await read(etag);
+    expect(changed.status).toBe(200);
+    expect(await changed.json()).toMatchObject({ lastTurnFirstTokenMs: 6200 });
+    expect(await (await read(undefined, false)).json()).not.toHaveProperty("lastTurnFirstTokenMs");
+    agent.agentSession = { kind: "id", value: "33333333-dddd-eeee-ffff-444444444444" };
+    expect(await (await read()).json()).not.toHaveProperty("lastTurnFirstTokenMs");
+    delete agent.agentSession;
+    expect(await (await read()).json()).not.toHaveProperty("lastTurnFirstTokenMs");
+  });
 
   test("a grid with no split URL is served from the grid alone", async () => {
     const { adapter, reads } = paneStub("$ echo hi\nhi", "unused");

@@ -761,6 +761,8 @@ export interface PaneReadResponse {
   codexSessionKey?: string;
   /** The matching session's saved display metadata; not an assertion of live provider settings. */
   sessionModel?: SessionModel;
+  /** Native TTFT for the latest completed turn of this pane's current session. */
+  lastTurnFirstTokenMs?: number;
   paneId: string;
   text: string;
   truncated: boolean;

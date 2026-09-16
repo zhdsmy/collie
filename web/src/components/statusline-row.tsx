@@ -173,6 +173,22 @@ function StatuslineDivider() {
   return <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/25" />;
 }
 
+function FirstTokenField({ ms }: { ms?: number }) {
+  useLocale();
+  if (ms === undefined || !Number.isSafeInteger(ms) || ms < 0) return null;
+  const value = `${(ms / 1000).toFixed(1)}s`;
+  const label = t("statusline.codex.firstToken", { value });
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1.5">
+      <StatuslineDivider />
+      <span role="img" aria-label={label} title={label} className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none">
+        <Timer aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
+        <span aria-hidden="true">{value}</span>
+      </span>
+    </span>
+  );
+}
+
 function CodexModelButton({ label, onClick, disabledReason, expanded, switchable, children }: {
   label: string;
   onClick: () => void;
@@ -259,6 +275,7 @@ function isNativeCodexControlField(text: string): boolean {
 function CodexControlledStatusline({
   row,
   leading,
+  lastTurnFirstTokenMs,
   onModelClick,
   knownModels,
   modelSwitchable,
@@ -268,6 +285,7 @@ function CodexControlledStatusline({
 }: {
   row: StyledLine;
   leading?: ReactNode;
+  lastTurnFirstTokenMs?: number;
   onModelClick?: () => void;
   knownModels?: readonly string[];
   modelSwitchable: boolean;
@@ -351,6 +369,7 @@ function CodexControlledStatusline({
     <div data-slot="codex-statusline" className={ROW_CLASS}>
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
       {content}
+      <FirstTokenField ms={lastTurnFirstTokenMs} />
     </div>
   );
 }
@@ -414,6 +433,7 @@ export function StatuslineRow({
   row,
   leading,
   sessionModel,
+  lastTurnFirstTokenMs,
   onModelClick,
   knownModels,
   modelSwitchable = false,
@@ -426,6 +446,7 @@ export function StatuslineRow({
   row: StyledLine;
   leading?: ReactNode;
   sessionModel?: SessionModel;
+  lastTurnFirstTokenMs?: number;
   onModelClick?: () => void;
   knownModels?: readonly string[];
   /** Is there anything to switch TO — a used pair other than the one on screen? */
@@ -470,6 +491,7 @@ export function StatuslineRow({
       <CodexControlledStatusline
         row={row}
         leading={leading}
+        lastTurnFirstTokenMs={lastTurnFirstTokenMs}
         onModelClick={onModelClick}
         knownModels={knownModels}
         modelSwitchable={modelSwitchable}
@@ -535,6 +557,7 @@ export function StatuslineRow({
           />
         );
       })}
+      {agent === "codex" && <FirstTokenField ms={lastTurnFirstTokenMs} />}
     </div>
   );
 }

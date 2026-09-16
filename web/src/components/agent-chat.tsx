@@ -116,6 +116,7 @@ interface AgentChatProps {
   /** Pane output from the route loader (refreshed by polling/revalidation). */
   text: string;
   sessionModel?: SessionModel;
+  lastTurnFirstTokenMs?: number;
   codexSessionKey?: string;
   /** The same rows with soft wraps undone, present only when {@link text} splits a URL — frozen
    * alongside it so the autolinker never pairs a stale mirror with a fresh logical read. */
@@ -205,6 +206,7 @@ export function AgentChat({
   logicalText,
   requestedLines = 0,
   sessionModel,
+  lastTurnFirstTokenMs,
   codexSessionKey,
   revision = 0,
   device,
@@ -2315,6 +2317,7 @@ export function AgentChat({
                       agent={agent?.agent}
                       row={row}
                       sessionModel={sessionModel}
+                      lastTurnFirstTokenMs={i === 0 ? lastTurnFirstTokenMs : undefined}
                       knownModels={knownModels}
                       modelSwitchable={modelSwitchable}
                       modelExpanded={drawer === "models"}

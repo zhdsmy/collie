@@ -30,6 +30,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+- **Codex shows its native first-token time in the statusline.** A compact timer displays the latest completed turn's reported timing from the active session journal. It refreshes even when terminal text is unchanged, remains absent when timing is unavailable, and leaves other agents untouched.
+
 ## [1.10.0+collie.1] - 2026-09-16
 
 ### Changed

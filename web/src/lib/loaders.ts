@@ -152,6 +152,7 @@ export interface HomeData {
 export interface PaneData {
   codexSessionKey?: PaneReadResponse["codexSessionKey"];
   sessionModel?: PaneReadResponse["sessionModel"];
+  lastTurnFirstTokenMs?: PaneReadResponse["lastTurnFirstTokenMs"];
   paneId: string;
   /** The scope this pane was fetched in (host + session) — threaded into every read and write, so
    * a reply can never land on the right pane name on the wrong machine. */
@@ -510,6 +511,7 @@ export async function paneLoader({
       revision: read.revision,
       codexSessionKey: read.codexSessionKey,
       sessionModel: read.sessionModel,
+      lastTurnFirstTokenMs: read.lastTurnFirstTokenMs,
       error: false,
       authError: false,
     };

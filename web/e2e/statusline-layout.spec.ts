@@ -8,6 +8,41 @@ const pane = readFileSync(new URL("../src/fixtures/panes/codex--v0154-statusline
 
 test.use({ serviceWorkers: "block" });
 
+for (const theme of ["light", "dark"]) {
+  test(`first-token timing updates in the Codex statusline: ${theme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript((chosenTheme) => {
+      localStorage.setItem("collie:locale:v1", "zh");
+      localStorage.setItem("collie:theme:v1", chosenTheme);
+    }, theme);
+    await installApiStub(page);
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, i) => i === 0 ? { ...agent, agent: "codex", status: "idle" } : agent),
+    } }));
+    let ms: number | undefined = 4166;
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({
+      json: { paneId: "w1:p1", text: pane, truncated: false, revision: 1, lastTurnFirstTokenMs: ms },
+    }));
+    await page.goto("/pane/w1:p1");
+    const timing = page.getByRole("img", { name: "最近完成轮次的首 token 耗时 4.2s" });
+    await expect(timing).toBeVisible();
+    await timing.scrollIntoViewIfNeeded();
+    const fits = await timing.evaluate((el) => {
+      const row = el.closest('[data-slot="codex-statusline"]')!;
+      const box = el.getBoundingClientRect();
+      const clip = row.getBoundingClientRect();
+      return box.top >= clip.top && box.bottom <= clip.bottom;
+    });
+    expect(fits).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath("first-token.png") });
+    ms = 6200;
+    await expect(page.getByRole("img", { name: "最近完成轮次的首 token 耗时 6.2s" })).toBeVisible({ timeout: 15_000 });
+    ms = undefined;
+    await expect(page.getByRole("img", { name: /最近完成轮次的首 token 耗时/ })).toHaveCount(0, { timeout: 15_000 });
+  });
+}
+
 for (const theme of ["light", "dark"]) for (const font of ["system", "menlo", "geist"]) {
   test(`statusline glyphs fit with recent models open: ${theme} ${font}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: theme === "light" ? 430 : 320, height: 932 });

@@ -91,6 +91,7 @@ export function DetailRoute() {
       text={pane.text}
       codexSessionKey={pane.codexSessionKey}
       sessionModel={pane.sessionModel}
+      lastTurnFirstTokenMs={pane.lastTurnFirstTokenMs}
       logicalText={pane.logicalText}
       requestedLines={pane.requestedLines}
       revision={pane.revision}

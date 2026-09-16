@@ -2262,6 +2262,8 @@ export async function readPane(
       const adapter = adapterFor(journals, pane.agent);
       const model = await adapter?.sessionModel?.(pane.agentSession).catch(() => null);
       if (model) data.sessionModel = model;
+      const firstTokenMs = await adapter?.lastTurnFirstTokenMs?.(pane.agentSession).catch(() => null);
+      if (firstTokenMs !== undefined && firstTokenMs !== null) data.lastTurnFirstTokenMs = firstTokenMs;
     }
     // ETag is derived from the serialised body — if content hasn't changed the client gets a 304
     // and skips the whole transfer (the big win on a cellular link).

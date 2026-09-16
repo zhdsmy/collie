@@ -334,7 +334,26 @@ export function codexJournal(roots: string | readonly string[]): JournalAdapter 
     source,
     parse: parseCodexTranscript,
     cacheProbe: (ref) => codexCacheProbe(source, ref),
+    lastTurnFirstTokenMs: async (ref) => {
+      const tail = await probeTail(source, ref);
+      return tail === null ? null : parseCodexFirstTokenMs(tail.lines);
+    },
   };
+}
+
+/** Codex 0.154 records TTFT on task_complete, not on token_count or every streamed chunk. */
+export function parseCodexFirstTokenMs(lines: readonly string[]): number | null {
+  return walkBack(lines, (raw): number | null | undefined => {
+    const row = asRecord(raw);
+    if (row?.type !== "event_msg") return undefined;
+    const payload = asRecord(row.payload);
+    if (payload?.type !== "task_complete") return undefined;
+    const ms = tokenCount(payload.time_to_first_token_ms);
+    const duration = tokenCount(payload.duration_ms);
+    // Stop at the newest completion even if it lacks timing; never borrow an older turn's value.
+    return ms !== undefined && Number.isSafeInteger(ms) && ms >= 0 &&
+      (duration === undefined || ms <= duration) ? ms : null;
+  }) ?? null;
 }
 
 // ── The prompt-cache probe ───────────────────────────────────────────────────
