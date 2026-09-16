@@ -30,11 +30,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.0+collie.2] - 2026-09-16
+
 ### Added
-- **Codex shows its native first-token time in the statusline.** A compact timer displays the latest completed turn's reported timing from the active session journal. It refreshes even when terminal text is unchanged, remains absent when timing is unavailable, and leaves other agents untouched.
+- **Codex shows its native first-token time in the statusline.** A compact timer displays the latest completed turn's reported timing from the active session journal. It refreshes even when terminal text is unchanged, remains absent when timing is unavailable, and leaves other agents untouched. ([49987a6d](https://github.com/zhdsmy/collie/commit/49987a6d))
 
 ### Fixed
-- **Codex keeps its statusline picker card when the list scrolls.** Selecting model can scroll the theme option away while its separator remains visible. Recognize that leading separator without relaxing the complete-dialog, painted-selection, or unknown-row guards.
+- **Codex keeps its statusline picker card when the list scrolls.** Selecting model can scroll the theme option away while its separator remains visible. Recognize that leading separator without relaxing the complete-dialog, painted-selection, or unknown-row guards. ([2860e360](https://github.com/zhdsmy/collie/commit/2860e360))
 
 ## [1.10.0+collie.1] - 2026-09-16
 
