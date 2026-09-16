@@ -6,7 +6,7 @@ import startup from "@/fixtures/panes/hermes--startup-resume.txt?raw";
 import { AnsiOutput } from "./ansi-output";
 
 describe("Hermes history preview", () => {
-  it("shows two summaries, keeps their folds independent, and finds welcome text inside startup", async () => {
+  it("shows two summaries, keeps their folds independent, and finds the useful tip inside startup", async () => {
     const user = userEvent.setup();
     const text = `${startup}\nVisible reply`;
     const { container, rerender } = render(<AnsiOutput text={text} agent="hermes" />);
@@ -18,9 +18,13 @@ describe("Hermes history preview", () => {
     expect(screen.queryByText(/Resumed session/)).toBeNull();
     await user.click(start);
     const body = await screen.findByRole("region", { name: "Startup information" });
-    expect(body.textContent).toContain("Available Tools");
-    expect(body.textContent).toContain("Welcome to Hermes");
-    expect(body.textContent).toContain("✦ Tip:");
+    expect(within(body).getByRole("heading", { name: "Tools" })).toBeInTheDocument();
+    expect(within(body).getByRole("heading", { name: "MCP servers" })).toBeInTheDocument();
+    expect(body.textContent).toContain("deepseek-flash");
+    expect(body.textContent).toContain("/model --global");
+    expect(body.querySelector("pre")).toBeNull();
+    expect(body.textContent).not.toMatch(/[█╭╰╔]/u);
+    expect(body.textContent).not.toContain("Welcome to Hermes");
     expect(body.textContent).not.toContain("Resumed session");
     expect(history).toHaveAttribute("aria-expanded", "false");
     await user.click(start);
@@ -41,7 +45,7 @@ describe("Hermes history preview", () => {
     expect(screen.queryByRole("region")).toBeNull();
     await user.click(toggle);
     const body = await screen.findByRole("region", { name: "Previous conversation" });
-    expect(body.textContent).toContain("◆ Hermes:");
+    expect(within(body).getAllByRole("heading", { name: "Hermes" }).length).toBeGreaterThan(0);
     expect(onPromptAction).not.toHaveBeenCalled();
     body.scrollTop = 80;
     rerender(<AnsiOutput text={`Older output\n${capture}\nNew output`} agent="hermes" onPromptAction={onPromptAction} />);
@@ -54,9 +58,9 @@ describe("Hermes history preview", () => {
   it("opens history for find and keeps highlight offsets correct after the card", async () => {
     const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
     const { container, rerender } = render(<AnsiOutput text={`${capture}\nSearch after history`} agent="hermes" />);
-    rerender(<AnsiOutput text={`${capture}\nSearch after history`} agent="hermes" query="Hermes" currentMatch={0} />);
+    rerender(<AnsiOutput text={`${capture}\nSearch after history`} agent="hermes" query="intentionally long" currentMatch={0} />);
     const body = await screen.findByRole("region", { name: "Previous conversation" });
-    expect(within(body).getAllByText("Hermes").length).toBeGreaterThan(0);
+    expect(body.querySelector('[data-find-match="current"]')?.textContent).toBe("intentionally long");
     await waitFor(() => expect(scroll.mock.instances.some((element) => element instanceof Node && body.contains(element))).toBe(true));
     rerender(<AnsiOutput text={`${capture}\nSearch after history`} agent="hermes" query="Search after history" currentMatch={0} />);
     expect(container.querySelector('[data-find-match="current"]')?.textContent).toBe("Search after history");

@@ -69,10 +69,22 @@ export interface StyledLine {
 }
 
 /** Read-only terminal information. The continuation keeps its original source-row position. */
+export interface SessionInfoText {
+  /** Character offset within this raw block's searchable text. */
+  start: number;
+  text: string;
+}
+
+export interface StartupDetails {
+  fields: { label: "model" | "provider" | "directory" | "session" | "build"; value: SessionInfoText }[];
+  groups: { kind: "tools" | "mcp" | "skills"; items: { name: SessionInfoText; detail?: SessionInfoText }[]; notes: SessionInfoText[] }[];
+  notes: SessionInfoText[];
+}
+
 export type SessionInfo =
-  | { kind: "startup"; version: string; tools: number; skills: number }
-  | { kind: "history"; session?: { id: string; title?: string; userMessages: number } }
-  | { kind: "startup-tail" };
+  | { kind: "startup"; version: string; tools: number; skills: number; details: StartupDetails }
+  | { kind: "history"; session?: { id: string; title?: string; userMessages: number; totalMessages?: number }; messages?: { role: "user" | "assistant" | "event" | "tools"; content: SessionInfoText }[] }
+  | { kind: "startup-tail"; tips?: SessionInfoText[] };
 
 /** A run of raw terminal output. Renders as verbatim styled text (the T1 mirror). */
 export interface RawBlock {

@@ -7,18 +7,25 @@ The native startup panel has a bold `Hermes Agent v…` heading, a rounded full 
 complete matching frame folds. The standard six-row painted logo and a simple adjacent shell
 launch command join it when the command's resume ID matches the panel's Session field.
 Unknown branding, cropped frames, earlier session-exit statistics and unframed warnings stay raw.
-The expanded banner keeps its terminal columns and can pan horizontally inside the card.
+The expanded banner extracts model/provider, directory, session ID and build into labelled
+fields. Toolsets, MCP servers and skills become wrapping single-column groups. The painted
+logo, frame, launch command and redundant welcome are omitted; useful notes and update
+warnings remain. The right-column boundary comes from the native Tools heading, measured in
+terminal cells so a CJK directory cannot shift the split.
 
 `cli_agent_setup_mixin.py` prints the resume announcement with a bold session ID; its prefix
 is not always bold. Only a styled, immediately adjacent announcement belongs to the verified
 history panel. Up to three Rich-wrapped rows are accepted. The card summary uses the title and
-user-message count; the full ID and total count remain in the body, without changing the text.
+user-message count; the full ID and total count become compact body metadata.
 
 `cli.py` prints the standard Welcome after replay, then startup prewarm warnings and a random
-tip. The exact welcome and adjacent dim `✦ Tip:` row can append visually to the startup card.
+tip. The exact welcome is omitted; the adjacent dim `✦ Tip:` payload joins the startup card.
 Intervening warnings or unknown text stop that tail. This is an intentional visual regrouping;
 the raw blocks and all their source rows retain native order for latest-reply subtraction.
-`AnsiOutput` renders find/link offsets in that order before nesting the tail under its card.
+Semantic values reference offsets in normalized searchable lines. Removed decoration becomes
+blank rows; retained text keeps the original row count and ordering. `AnsiOutput` uses those
+offsets for find/link rendering before nesting the tail under its card. Decorative text is
+excluded from find; the history ID/count metadata is display-only.
 If subtraction removes the startup card, an orphaned tail renders as ordinary text.
 
 Tests cover source-row mapping, refusal, metadata wrapping, independent folds and search into
@@ -41,8 +48,11 @@ framed interior and a native role/event marker. Unknown or incomplete panels rem
 The checked-in fixture comes from the installed renderer with synthetic history; the private
 live capture is not committed. See the fixture README for provenance.
 
-The card starts collapsed and scrolls internally when expanded. It retains ANSI role colors,
-literal text and blank lines; it does not guess Markdown or reverse terminal hard wrapping.
+The card starts collapsed and scrolls internally when expanded. It separates native user,
+Hermes, event and tool-activity entries, removes role-label continuation padding, and preserves
+real blank lines. Hermes bodies use the existing Markdown renderer; user/event/tool content
+stays literal. During find, bodies use plain highlighted text to retain exact match offsets.
+It does not try to reverse arbitrary terminal hard wrapping.
 This is metadata on a raw block, not a dialog: search still includes the body and opens it,
 and no keys, input focus or composer-ready claims are added. Removed border rows become
 blank rows so latest-reply subtraction keeps its source coordinates; a partially subtracted

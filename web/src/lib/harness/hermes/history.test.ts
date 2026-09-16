@@ -6,30 +6,78 @@ import { dropLeadingLines, lineText, splitLines, type RawBlock } from "../../blo
 import { buildBlocks } from "..";
 import { blockOwnsKeyboard } from "../dialog-contract";
 import { hermesAdapter } from ".";
+import { extractHistoryMessages } from "./session-info";
+import { displayWidth } from "../../text-width";
 
 const lines = (text: string) => splitLines(parseAnsi(text.trimEnd()));
 const blocks = (text: string) => hermesAdapter.buildBlocks(lines(text));
 const histories = (text: string) => blocks(text).filter((b): b is RawBlock => b.kind === "raw" && b.sessionInfo?.kind === "history");
 
 describe("Hermes resumed history", () => {
+  it("extracts complete startup values and maps every displayed value to searchable text", () => {
+    for (const block of blocks(startup)) {
+      if (block.kind !== "raw" || !block.sessionInfo) continue;
+      const info = block.sessionInfo;
+      const text = block.lines.map(lineText).join("\n");
+      const values = info.kind === "startup" ? [
+        ...info.details.fields.map((field) => field.value),
+        ...info.details.groups.flatMap((group) => [
+          ...group.items.flatMap((item) => item.detail ? [item.name, item.detail] : [item.name]), ...group.notes,
+        ]), ...info.details.notes,
+      ] : info.kind === "history" ? info.messages?.map((message) => message.content) ?? [] : info.tips ?? [];
+      for (const value of values) expect(text.slice(value.start, value.start + value.text.length)).toBe(value.text);
+      if (info.kind !== "startup") continue;
+      expect(Object.fromEntries(info.details.fields.map((field) => [field.label, field.value.text]))).toEqual({
+        model: "deepseek-flash", provider: "Nous Research", directory: "/Users/example/.hermes",
+        session: "20260916_123456_abcdef", build: "v0.21.2 (2026.9.11) · upstream 1021a032",
+      });
+      expect(info.details.groups.find((group) => group.kind === "mcp")?.items.map((item) => item.name.text)).toEqual(["codegraph", "nezha"]);
+      expect(info.details.groups.find((group) => group.kind === "skills")?.items.map((item) => item.name.text)).toContain("data-science");
+    }
+  });
+
+  it("preserves paragraphs and code indentation while separating native roles and tool activity", () => {
+    const input = lines([
+      "", "  ● You: 第一段", "         ", "         ", "         第二段",
+      "  ◆ Hermes: ## Summary", "            ", "                indented code",
+      "            Hermes: this is body text", "            Finished. [2 tool calls: read, search]", "",
+    ].join("\n"));
+    const result = extractHistoryMessages(input);
+    expect(result.lines).toHaveLength(input.length);
+    expect(result.messages.map((message) => [message.role, message.content.text])).toEqual([
+      ["user", "第一段\n\n\n第二段"],
+      ["assistant", "## Summary\n\n    indented code\nHermes: this is body text\nFinished."],
+      ["tools", "[2 tool calls: read, search]"],
+    ]);
+    const text = result.lines.map(lineText).join("\n");
+    for (const { content } of result.messages) expect(text.slice(content.start, content.start + content.text.length)).toBe(content.text);
+  });
+
+  it("keeps a CJK directory separate from the right-hand skill column", () => {
+    const original = "/Users/example/.hermes";
+    const directory = "/Users/示例/.hermes";
+    const text = startup.replace(original, directory + " ".repeat(displayWidth(original) - displayWidth(directory)));
+    const info = blocks(text).find((block) => block.kind === "raw" && block.sessionInfo?.kind === "startup");
+    if (info?.kind !== "raw" || info.sessionInfo?.kind !== "startup") throw new Error("Missing startup card");
+    expect(info.sessionInfo.details.fields.find((field) => field.label === "directory")?.value.text).toBe(directory);
+    expect(info.sessionInfo.details.groups.find((group) => group.kind === "skills")?.items.map((item) => item.name.text)).toContain("creative");
+  });
+
   it("folds startup and welcome without moving their source rows or owning the keyboard", () => {
     const output = blocks(startup);
     const raw = output.filter((b) => b.kind === "raw");
     expect(raw.map((b) => b.sessionInfo?.kind)).toEqual(["startup", "history", "startup-tail"]);
-    expect(raw[0]!.sessionInfo).toEqual({ kind: "startup", version: "v0.21.2", tools: 25, skills: 86 });
-    expect(raw[1]!.sessionInfo).toEqual({ kind: "history", session: {
-      id: "20260916_123456_abcdef1234567890", title: "General", userMessages: 24,
+    expect(raw[0]!.sessionInfo).toMatchObject({ kind: "startup", version: "v0.21.2", tools: 25, skills: 86 });
+    expect(raw[1]!.sessionInfo).toMatchObject({ kind: "history", session: {
+      id: "20260916_123456_abcdef", title: "General", userMessages: 24, totalMessages: 579,
     } });
     expect(output.some(blockOwnsKeyboard)).toBe(false);
     expect(output.flatMap((b) => b.lines)).toHaveLength(lines(startup).length);
-    const sourceRows = lines(startup);
-    let offset = 0;
-    for (const block of raw) {
-      if (block.sessionInfo?.kind !== "history") expect(block.lines.map(lineText)).toEqual(sourceRows.slice(offset, offset + block.lines.length).map(lineText));
-      offset += block.lines.length;
-    }
-    expect(lineText(raw[0]!.lines[0]!)).toContain("hermes --resume");
-    expect(raw[2]!.lines.map(lineText).join("\n")).toContain("✦ Tip:");
+    const core = raw[0]!.lines.map(lineText).join("\n");
+    expect(core).toContain("deepseek-flash");
+    expect(core).not.toMatch(/[█╭╰╔]/u);
+    expect(raw[2]!.lines.map(lineText).join("\n")).toContain("/model --global");
+    expect(raw[2]!.lines.map(lineText).join("\n")).not.toContain("Welcome to Hermes");
     const withoutStartup = dropLeadingLines(raw, raw[0]!.lines.length);
     expect(withoutStartup[0]!.sessionInfo?.kind).toBe("history");
   });
@@ -59,8 +107,12 @@ describe("Hermes resumed history", () => {
     expect(output.some(blockOwnsKeyboard)).toBe(false);
     expect(hermesAdapter.displayOnly).toBe(true);
     const body = output.flatMap((b) => b.lines.map(lineText)).join("\n");
-    expect(body).toContain("● You:");
-    expect(body).toContain("◆ Hermes:");
+    const info = histories(capture)[0]!.sessionInfo;
+    if (info?.kind !== "history") throw new Error("Missing history");
+    expect(info.messages?.map((message) => message.role)).toContain("user");
+    expect(info.messages?.map((message) => message.role)).toContain("assistant");
+    expect(body).not.toContain("● You:");
+    expect(body).not.toContain("◆ Hermes:");
     expect(body).not.toContain("Previous Conversation");
     expect(body).not.toMatch(/[╭╮╰╯]/u);
     expect(body).toContain("\n\n");
@@ -94,10 +146,10 @@ describe("Hermes resumed history", () => {
     const announcement = '\x1b[33m↻ Resumed session \x1b[1m20260916_120000_example\x1b[22m "General\ntasks" (24 user messages, 579 total messages)\x1b[0m';
     const text = `Earlier output\n${announcement}\n${capture}`;
     const history = histories(text)[0]!;
-    expect(history.kind === "raw" && history.sessionInfo).toEqual({
-      kind: "history", session: { id: "20260916_120000_example", title: "General tasks", userMessages: 24 },
+    expect(history.kind === "raw" && history.sessionInfo).toMatchObject({
+      kind: "history", session: { id: "20260916_120000_example", title: "General tasks", userMessages: 24, totalMessages: 579 },
     });
-    expect(lineText(history.lines[0]!)).toContain("Resumed session");
+    expect(history.lines.map(lineText).join("\n")).not.toContain("Resumed session");
     expect(blocks(text).flatMap((b) => b.lines)).toHaveLength(lines(text).length);
     for (const prefix of [
       lines(announcement).map(lineText).join("\n"),
@@ -106,7 +158,8 @@ describe("Hermes resumed history", () => {
     ]) {
       const output = blocks(`${prefix}\n${capture}`);
       expect(output[0]?.kind === "raw" && output[0].sessionInfo).toBeUndefined();
-      expect(histories(`${prefix}\n${capture}`)[0]?.sessionInfo).toEqual({ kind: "history" });
+      expect(histories(`${prefix}\n${capture}`)[0]?.sessionInfo).toMatchObject({ kind: "history" });
+      expect(histories(`${prefix}\n${capture}`)[0]?.sessionInfo).not.toHaveProperty("session");
     }
   });
 

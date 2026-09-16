@@ -3,6 +3,7 @@ import { lineText, trimTrailingBlank, type Block, type RawBlock, type StyledLine
 import type { HarnessAdapter } from "../types";
 import { decorateHermesDiff } from "./display";
 import { detectClarify } from "./clarify";
+import { extractHistoryMessages, extractStartupDetails } from "./session-info";
 
 // Hermes chrome and verified clarify cards. Ordinary text replies retain their existing
 // transport; clarify option digits use the shared fresh-dialog guard.
@@ -232,9 +233,9 @@ function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
         // belongs here; warnings and other output between it and the panel remain visible.
         for (let candidate = Math.max(start, top - 3); candidate < top; candidate++) {
           const rows = lines.slice(candidate, top);
-          const match = rows.map(lineText).map((s) => s.trim()).join(" ").match(/^↻ Resumed session ([\w-]+)(?: "(.*)")? \((\d+) user messages?, \d+ total messages\)$/u);
+          const match = rows.map(lineText).map((s) => s.trim()).join(" ").match(/^↻ Resumed session ([\w-]+)(?: "(.*)")? \((\d+) user messages?, (\d+) total messages\)$/u);
           if (!match || !rows.some((row) => row.segments.some((s) => s.bold && s.text.includes(match[1]!)))) continue;
-          session = { id: match[1]!, title: match[2], userMessages: Number(match[3]) };
+          session = { id: match[1]!, title: match[2], userMessages: Number(match[3]), totalMessages: Number(match[4]) };
           first = candidate;
           break;
         }
@@ -248,7 +249,8 @@ function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
           const end = value.slice(0, -1).trimEnd().length;
           return Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) });
         });
-        blocks.push({ kind: "raw", lines: body, sessionInfo: { kind: "history", ...(session && { session }) } });
+        const extracted = extractHistoryMessages(body);
+        blocks.push({ kind: "raw", lines: extracted.lines, sessionInfo: { kind: "history", messages: extracted.messages, ...(session && { session }) } });
         start = bottom + 1;
         top = bottom;
         break;
@@ -302,9 +304,11 @@ function foldStartupInfo(blocks: RawBlock[]): RawBlock[] {
             if (sessionId && command && /^(?:➜|❯|\$)\s/u.test(command)
               && command.endsWith(`hermes --resume ${sessionId}`) && !/[;&|<>]/u.test(command)) first--;
           }
+          const extracted = extractStartupDetails(lines.slice(first, bottom + 1));
+          if (!extracted) break;
           if (first > start) result.push({ kind: "raw", lines: lines.slice(start, first) });
-          result.push({ kind: "raw", lines: lines.slice(first, bottom + 1), sessionInfo: {
-            kind: "startup", version: heading[1]!, tools: Number(counts[1]), skills: Number(counts[2]),
+          result.push({ kind: "raw", lines: extracted.lines, sessionInfo: {
+            kind: "startup", version: heading[1]!, tools: Number(counts[1]), skills: Number(counts[2]), details: extracted.details,
           } });
           start = bottom + 1;
           top = bottom;
@@ -330,7 +334,19 @@ function foldStartupInfo(blocks: RawBlock[]): RawBlock[] {
       if (welcome === WELCOME && lines[first]!.segments.some((s) => s.fg)) {
         while (end < lines.length && !texts[end]!.trim()) end++;
         if (texts[end]?.startsWith("✦ Tip: ") && lines[end]!.segments.every((s) => !s.text.trim() || s.dim)) end++;
-        result.push({ kind: "raw", lines: lines.slice(start, end), sessionInfo: { kind: "startup-tail" } });
+        const tipLines = lines.slice(start, end).map((line) => {
+          const text = lineText(line);
+          const tip = text.indexOf("✦ Tip: ");
+          return Object.assign({}, line, { segments: tip < 0 ? [] : sliceSegments(line.segments, tip + 7, text.trimEnd().length) });
+        });
+        let offset = 0;
+        const tips = tipLines.flatMap((line) => {
+          const text = lineText(line);
+          const value = { start: offset, text };
+          offset += text.length + 1;
+          return text.trim() ? [value] : [];
+        });
+        result.push({ kind: "raw", lines: tipLines, sessionInfo: { kind: "startup-tail", tips } });
         start = end;
       }
     }

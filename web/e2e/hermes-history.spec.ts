@@ -50,7 +50,8 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     const body = page.getByRole("region", { name: title, exact: true });
     await expect(body).toBeVisible();
     await expect(body.locator("..")).toHaveCSS("overflow", "visible");
-    await expect(body).toContainText("◆ Hermes:");
+    await expect(body.getByRole("heading", { name: "Hermes", exact: true }).first()).toBeVisible();
+    await expect(body.locator("ul").first()).toBeVisible();
     const geometry = await body.evaluate((element) => {
       const box = element.getBoundingClientRect();
       return { height: box.height, left: box.left, right: box.right,
@@ -72,15 +73,16 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     await startupToggle.click();
     const startupBody = page.getByRole("region", { name: startupTitle, exact: true });
     await expect(startupBody.locator("..")).toHaveCSS("overflow", "visible");
-    await expect(startupBody).toContainText("Available Tools");
-    await expect(startupBody).toContainText("Welcome to Hermes Agent");
-    await expect(startupBody).toContainText("✦ Tip:");
-    const banner = startupBody.locator("pre").first();
-    expect(await banner.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+    await expect(startupBody.getByRole("heading", { name: dictionaries[locale]["chat.sessionInfo.tools"], exact: true })).toBeVisible();
+    await expect(startupBody).toContainText("deepseek-flash");
+    await expect(startupBody).toContainText("/model --global");
+    await expect(startupBody).not.toContainText("Welcome to Hermes Agent");
+    await expect(startupBody).not.toContainText("████");
+    await expect(startupBody.locator("pre")).toHaveCount(0);
+    expect(await startupBody.evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(await startupBody.evaluate((element) => element.clientWidth));
     expect(await startupBody.evaluate((element) => element.clientHeight)).toBeLessThanOrEqual(844 * 0.45 + 1);
-    await banner.evaluate((element) => { element.scrollLeft = 40; });
+    await page.screenshot({ path: testInfo.outputPath("startup-fields.png"), animations: "disabled" });
     await startupBody.evaluate((element) => { element.scrollTop = element.scrollHeight; });
-    expect(await banner.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
     await expect(page.getByRole("textbox").first()).not.toBeFocused();
     await page.screenshot({ path: testInfo.outputPath("startup-expanded.png"), animations: "disabled" });
     await startupToggle.click();

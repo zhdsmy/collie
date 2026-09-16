@@ -420,12 +420,16 @@ export const AnsiOutput = memo(function AnsiOutput({
     [clusterCount, images, failedImages],
   );
 
-  // Find offsets live over the *raw* mirror text (raw blocks joined by "\n", lines joined by "\n").
-  // The join only runs while actually searching, so the idle polling path pays nothing.
-  const haystack = useMemo(
-    () => rawBlocks.map((b) => b.lines.map(lineText).join("\n")).join("\n"),
-    [rawBlocks],
-  );
+  // Find and structured-card offsets share the normalized raw blocks, joined by newlines.
+  const { haystack, blockOffsets } = useMemo(() => {
+    const parts = rawBlocks.map((b) => b.lines.map(lineText).join("\n"));
+    let at = 0;
+    return { haystack: parts.join("\n"), blockOffsets: parts.map((part) => {
+      const start = at;
+      at += part.length + 1;
+      return start;
+    }) };
+  }, [rawBlocks]);
   const matches = useMemo(() => {
     if (!query) return NO_MATCHES;
     return findMatches(haystack, query);
@@ -513,7 +517,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   // A run of plain text at global offset `start` → nodes, with find matches split out and
   // highlighted. `currentAssigned` refs only the first slice of the focused match (a match can span
   // segments on a colour change) so scrollIntoView targets one stable node.
-  const renderFind = (run: string, start: number): ReactNode => {
+  const renderFind = (run: string, start: number, mirror = true): ReactNode => {
     if (matches.length === 0) return run;
     return splitSegment(run, start, matches).map((p, j) => {
       if (p.matchIndex === null) return p.text;
@@ -545,7 +549,7 @@ export const AnsiOutput = memo(function AnsiOutput({
             // fully-specified yellow as-is: re-applying the filter there would blue-shift it in
             // light and no-op in dark. Correct in both themes without a theme branch.
             isCurrent
-              ? cn(rendersNativeMirror(agent) ? null : MIRROR_INVERT, "bg-yellow-400 text-black")
+              ? cn(!mirror || rendersNativeMirror(agent) ? null : MIRROR_INVERT, "bg-yellow-400 text-black")
               : "bg-yellow-400/30",
           )}
         >
@@ -558,16 +562,16 @@ export const AnsiOutput = memo(function AnsiOutput({
   // A segment's text → nodes: autolinked URLs as anchors, wrapping find-highlighted runs. Two
   // splits over one coordinate space, links outermost, so a find hit *inside* a URL still lights up.
   // A URL that straddles a colour change yields one <a> per segment slice, each with the same href.
-  const renderSegment = (run: string, start: number): ReactNode => {
-    if (links.length === 0) return renderFind(run, start);
+  const renderSegment = (run: string, start: number, mirror = true): ReactNode => {
+    if (links.length === 0) return renderFind(run, start, mirror);
     let at = start;
     return splitSegment(run, start, links).map((p, i) => {
       const pieceStart = at;
       at += p.text.length;
-      if (p.matchIndex === null) return <Fragment key={i}>{renderFind(p.text, pieceStart)}</Fragment>;
+      if (p.matchIndex === null) return <Fragment key={i}>{renderFind(p.text, pieceStart, mirror)}</Fragment>;
       return (
-        <a key={i} href={links[p.matchIndex]!.href} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
-          {renderFind(p.text, pieceStart)}
+        <a key={i} href={links[p.matchIndex]!.href} target="_blank" rel="noopener noreferrer" className={mirror ? LINK_CLASS : "text-primary underline underline-offset-2 break-all"}>
+          {renderFind(p.text, pieceStart, mirror)}
         </a>
       );
     });
@@ -648,9 +652,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   let clusterIndex = 0;
   const renderBlock = (block: RawBlock, bi: number) => {
     if (bi > 0) offset += 1; // the "\n" separating this block from the previous
-    // Startup panels pan as one complete pre, so their rows must bypass structural clipping too.
-    const columnFaithful = block.sessionInfo?.kind === "startup";
-    const runs = columnFaithful ? NO_RUNS : runsByBlock[bi] ?? NO_RUNS;
+    const runs = runsByBlock[bi] ?? NO_RUNS;
     const clusters = clustersByBlock[bi] ?? NO_CLUSTERS;
     const nodes: ReactNode[] = [];
     let ri = 0;
@@ -673,7 +675,7 @@ export const AnsiOutput = memo(function AnsiOutput({
           }
           // A row carrying an image AND text keeps its text. The placeholder cells are blanked to
           // spaces of the same character count, so the row reads as written and no offset moves.
-          nodes.push(renderLine(blankPlaceholders(line), k, true, columnFaithful));
+          nodes.push(renderLine(blankPlaceholders(line), k, true, false));
         }
         nodes.push(renderImageCluster(url, `image:${bi}:${cluster.start}`, onImageError));
         li = cluster.end + 1;
@@ -681,7 +683,7 @@ export const AnsiOutput = memo(function AnsiOutput({
       }
       const run: TableRun | undefined = runs[ri];
       if (!run || run.start !== li) {
-        nodes.push(renderLine(block.lines[li]!, li, true, columnFaithful));
+        nodes.push(renderLine(block.lines[li]!, li, true, false));
         li++;
         continue;
       }
@@ -713,11 +715,19 @@ export const AnsiOutput = memo(function AnsiOutput({
 
   const hasSessionInfo = rawBlocks.some((block) => block.sessionInfo && block.sessionInfo.kind !== "startup-tail");
   // Render in source order for find/link offsets, then move verified welcome text into its card.
-  const rawContent = hasSessionInfo ? rawBlocks.map((block, bi) => (
-    <pre key={bi} className={preClass(wrap && block.sessionInfo?.kind !== "startup", className, agent)} style={{ fontSize: `${fontSize}px` }}>
+  const rawContent = hasSessionInfo ? rawBlocks.map((block, bi) => {
+    const info = block.sessionInfo;
+    if (info?.kind === "startup" || (info?.kind === "history" && info.messages) || (info?.kind === "startup-tail" && info.tips)) {
+      offset = bi + 1 < rawBlocks.length ? blockOffsets[bi + 1]! - 1 : haystack.length;
+      clusterIndex += clustersByBlock[bi]?.length ?? 0;
+      return info.kind === "startup-tail" ? <div key={bi} className="space-y-2 border-t border-border pt-3 font-content text-xs text-muted-foreground wrap-anywhere">
+        {info.tips?.map((tip) => <p key={tip.start}>{renderSegment(tip.text, blockOffsets[bi]! + tip.start, false)}</p>)}
+      </div> : null;
+    }
+    return <pre key={bi} className={preClass(wrap, className, agent)} style={{ fontSize: `${fontSize}px` }}>
       {renderBlock(block, bi)}
-    </pre>
-  )) : [];
+    </pre>;
+  }) : [];
   const tails = new Map<number, number[]>();
   const appended = new Set<number>();
   let startupIndex = -1;
@@ -735,7 +745,8 @@ export const AnsiOutput = memo(function AnsiOutput({
         if (appended.has(bi)) return null;
         const info = block.sessionInfo;
         return info && info.kind !== "startup-tail" ? (
-          <SessionInfoCard key={`${info.kind}:${infoIndex++}:${lineText(block.lines[1]!)}`} info={info} query={query} currentMatch={currentMatch}>
+          <SessionInfoCard key={`${info.kind}:${infoIndex++}:${lineText(block.lines[1]!)}`} info={info} query={query} currentMatch={currentMatch}
+            renderText={(value) => renderSegment(value.text, blockOffsets[bi]! + value.start, false)}>
             {rawContent[bi]}
             {tails.get(bi)?.map((index) => rawContent[index])}
           </SessionInfoCard>

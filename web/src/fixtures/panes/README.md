@@ -108,6 +108,9 @@ path and session ID are replaced, the preceding session-exit statistics are omit
 private history is replaced with the synthetic native-renderer history below. It intentionally
 combines a 211-column startup with a 120-column history to cover terminal resizing. It is not
 an untouched conversation capture, and gathering it sends no input to the user's session.
+It exercises semantic startup fields/groups, decoration removal, relocated useful tips and
+role-separated history with Markdown. Normalized searchable rows retain the source-row count;
+the startup grid is not reproduced as a horizontally scrolling terminal frame.
 
 `hermes--resume-history.txt` is generated on 2026-09-16 by Hermes CLI v0.21.2
 (2026.9.11, `1021a032`), using the installed `_display_resumed_history()` and Rich renderer
