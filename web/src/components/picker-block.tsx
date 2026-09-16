@@ -542,10 +542,10 @@ function SessionPicker({ picker, locked, sending, search, onPress }: {
         <p className="py-5 text-center text-sm text-muted-foreground">{t("dialog.picker.noResults")}</p>
       )}
       <div className="flex items-center justify-between gap-2">
-        <Button type="button" variant="ghost" size="sm" disabled={locked} onClick={() => onPress("cancel", { kind: "cancel" })}>
+        <BrowseControls locked={locked || picker.options.length === 0} onPress={(direction) => onPress(`navigate:${direction}`, { kind: "navigate", direction })} />
+        <Button type="button" variant="outline" size="default" disabled={locked} onClick={() => onPress("cancel", { kind: "cancel" })}>
           {t("dialog.cancel")}
         </Button>
-        <BrowseControls locked={locked || picker.options.length === 0} onPress={(direction) => onPress(`navigate:${direction}`, { kind: "navigate", direction })} />
       </div>
       {search}
       {picker.footer ? (

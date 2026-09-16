@@ -30,6 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **The session card's Cancel moves right and becomes visible.** Browse arrows sit on the row's left
+  and Cancel takes the right as a bordered, full-size button instead of a small ghost one.
+
 ## [1.9.1+collie.4] - 2026-09-16
 
 ### Changed
