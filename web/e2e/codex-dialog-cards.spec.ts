@@ -32,8 +32,14 @@ for (const theme of ["light", "dark"]) {
     await expect(approval.getByText(zh["prompt.approval.environment"], { exact: true })).toBeVisible();
     await approval.getByRole("button", { name: zh["prompt.approval.showCommand"], exact: true }).click();
     await expect(approval.getByRole("button", { name: zh["prompt.approval.hideCommand"], exact: true })).toHaveAttribute("aria-expanded", "true");
+    const command = approval.getByRole("region", { name: zh["prompt.approval.command"], exact: true });
+    await expect(command).toContainText("long-command-value-".repeat(12));
+    await expect.poll(() => command.evaluate((element) => {
+      const clip = element.closest('[data-slot="collapse"]')?.getBoundingClientRect();
+      return clip !== undefined && clip.height >= element.getBoundingClientRect().height;
+    })).toBe(true);
     await expect(approval.getByRole("button", { name: /Yes, proceed/ })).toBeVisible();
-    await page.screenshot({ path: testInfo.outputPath(`approval-${theme}.png`), fullPage: true });
+    await page.screenshot({ path: testInfo.outputPath(`approval-${theme}.png`), fullPage: true, animations: "disabled" });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
     buffer = fixture("codex--v0154-notes-multiline-focused.txt");

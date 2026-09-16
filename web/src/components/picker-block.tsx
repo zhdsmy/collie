@@ -23,8 +23,10 @@ import { timeAgo } from "@/lib/format";
 import { useLocale } from "@/hooks/use-locale";
 import { MIRROR_INVERT, MIRROR_SPACE, styleFor } from "@/components/mirror-space";
 import { Button } from "@/components/ui/button";
+import { Collapse } from "@/components/ui/collapse";
+import { ListGroup } from "@/components/ui/list-group";
 import { PlanContent } from "@/components/plan-content";
-import { OptionButton, optionSurface, PromptPanel, QuestionHeading } from "@/components/option-button";
+import { OptionButton, PromptPanel, QuestionHeading } from "@/components/option-button";
 
 export interface PickerBlockProps {
   /** Parsed Codex picker; the terminal remains the source of all staged state. */
@@ -75,7 +77,7 @@ function CurrentMark() {
 function OptionCopy({ option }: { option: PickerOption }) {
   return (
     <span className="min-w-0 flex-1">
-      <span className="font-content block break-words text-sm font-medium leading-snug text-foreground">
+      <span className="font-content block text-sm font-medium leading-snug text-foreground [overflow-wrap:anywhere]">
         {option.label}
       </span>
       {option.description ? (
@@ -134,6 +136,20 @@ function Footer({ footer }: { footer: string }) {
   );
 }
 
+function KeyboardHelp({ footer }: { footer: string }) {
+  if (!footer) return null;
+  return (
+    <details className="group min-w-0 border-t border-border">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 px-1 text-xs text-muted-foreground marker:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+        <Keyboard aria-hidden className="size-3.5" />
+        {t("dialog.picker.footerAria")}
+        <ChevronRight aria-hidden className="ml-auto size-3.5 group-open:rotate-90" />
+      </summary>
+      <Footer footer={footer} />
+    </details>
+  );
+}
+
 function BrowseControls({ locked, onPress }: { locked: boolean; onPress: (direction: "up" | "down") => void }) {
   return (
     <div data-slot="picker-browse" className="flex items-center justify-end gap-1">
@@ -145,7 +161,7 @@ function BrowseControls({ locked, onPress }: { locked: boolean; onPress: (direct
         aria-label={t("dialog.picker.browseUp")}
         title={t("dialog.picker.browseUp")}
         onClick={() => onPress("up")}
-        className="size-8"
+        className="size-11"
       >
         <ArrowUp className="size-4" />
       </Button>
@@ -157,7 +173,7 @@ function BrowseControls({ locked, onPress }: { locked: boolean; onPress: (direct
         aria-label={t("dialog.picker.browseDown")}
         title={t("dialog.picker.browseDown")}
         onClick={() => onPress("down")}
-        className="size-8"
+        className="size-11"
       >
         <ArrowDown className="size-4" />
       </Button>
@@ -345,7 +361,7 @@ function ReorderControls({
   if (!option.orderable) return null;
   const disabled = locked;
   return (
-    <div data-slot="picker-reorder" className="flex shrink-0 flex-col justify-center gap-0.5">
+    <div data-slot="picker-reorder" className="flex items-center justify-end gap-0.5 px-1">
       <Button
         type="button"
         variant="ghost"
@@ -354,7 +370,7 @@ function ReorderControls({
         aria-label={t("dialog.picker.moveUpAria", { label: option.label })}
         title={t("dialog.picker.moveUpAria", { label: option.label })}
         onClick={() => onMove("up")}
-        className="size-7"
+        className="size-11 text-muted-foreground"
       >
         {busy ? <Spinner /> : <ArrowUp className="size-3.5" />}
       </Button>
@@ -366,7 +382,7 @@ function ReorderControls({
         aria-label={t("dialog.picker.moveDownAria", { label: option.label })}
         title={t("dialog.picker.moveDownAria", { label: option.label })}
         onClick={() => onMove("down")}
-        className="size-7"
+        className="size-11 text-muted-foreground"
       >
         {busy ? <Spinner /> : <ArrowDown className="size-3.5" />}
       </Button>
@@ -391,23 +407,25 @@ function MultipleOption({
   onToggle: () => void;
   onMove: (direction: "up" | "down") => void;
 }) {
-  const tone = busy ? "busy" : option.checked ? "selected" : "default";
   return (
-    <div className="grid min-w-0 grid-cols-[1rem_minmax(0,1fr)_auto] items-stretch gap-1">
-      <PointerMark pointed={option.pointed} />
+    <div className={cn(
+      "min-w-0 border-l-2 transition-colors",
+      option.pointed || busy ? "border-l-primary/60 bg-primary/5" : "border-l-transparent",
+    )}>
       <button
         type="button"
         role="checkbox"
         aria-checked={option.checked}
+        aria-current={option.pointed ? "true" : undefined}
         disabled={locked}
         onClick={onToggle}
-        className={optionSurface(tone)}
+        className="flex min-h-11 w-full min-w-0 items-start gap-2 px-2.5 py-1.5 text-left active:bg-primary/10 disabled:opacity-60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
       >
         <span
           aria-hidden
           className={cn(
             "mt-px flex size-4 shrink-0 items-center justify-center rounded border",
-            option.checked ? "border-primary bg-primary/20 text-primary" : "border-border bg-background",
+            option.checked ? "border-primary bg-primary/20 text-primary" : "border-muted-foreground bg-background",
           )}
         >
           {option.checked ? <Check className="size-3" /> : null}
@@ -415,14 +433,18 @@ function MultipleOption({
         <OptionCopy option={option} />
         {busy ? <Spinner size="md" /> : option.current ? <CurrentMark /> : null}
       </button>
-      <ReorderControls
-        option={option}
-        canMoveUp={canMoveUp}
-        canMoveDown={canMoveDown}
-        locked={locked}
-        busy={busy}
-        onMove={onMove}
-      />
+      <div inert={!option.pointed} aria-hidden={!option.pointed}>
+        <Collapse open={option.pointed && option.orderable}>
+          <ReorderControls
+            option={option}
+            canMoveUp={canMoveUp}
+            canMoveDown={canMoveDown}
+            locked={locked}
+            busy={busy}
+            onMove={onMove}
+          />
+        </Collapse>
+      </div>
     </div>
   );
 }
@@ -498,13 +520,24 @@ function SessionPicker({ picker, locked, sending, search, onPress }: {
   }, [pointedId, picker.query]);
   const title = t(picker.sessionAction === "fork" ? "dialog.sessions.forkTitle" : "dialog.sessions.title");
   return (
-    <PromptPanel ariaLabel={title}>
-      <div className="px-0.5 py-1">
+    <PromptPanel
+      ariaLabel={title}
+      header={<>
         <QuestionHeading>{title}</QuestionHeading>
-        <p className="font-content mt-1 text-xs leading-snug text-muted-foreground">
+        <p className="font-content text-xs leading-snug text-muted-foreground">
           {t(picker.sessionAction === "fork" ? "dialog.sessions.forkHint" : "dialog.sessions.hint")}
         </p>
-      </div>
+      </>}
+      actions={<>
+        <div className="mr-auto">
+          <BrowseControls locked={locked || picker.options.length === 0} onPress={(direction) => onPress(`navigate:${direction}`, { kind: "navigate", direction })} />
+        </div>
+        <Button type="button" variant="outline" className="min-h-11" disabled={locked} onClick={() => onPress("cancel", { kind: "cancel" })}>
+          {t("dialog.cancel")}
+        </Button>
+      </>}
+      footer={<>{search}<KeyboardHelp footer={picker.footer} /></>}
+    >
       {picker.options.length ? (
         <div ref={listRef} data-slot="session-options" className="max-h-72 min-w-0 overflow-y-auto overscroll-y-contain rounded-md border border-border divide-y divide-border">
           {picker.options.map((option) => {
@@ -541,23 +574,6 @@ function SessionPicker({ picker, locked, sending, search, onPress }: {
       ) : (
         <p className="py-5 text-center text-sm text-muted-foreground">{t("dialog.picker.noResults")}</p>
       )}
-      <div className="flex items-center justify-between gap-2">
-        <BrowseControls locked={locked || picker.options.length === 0} onPress={(direction) => onPress(`navigate:${direction}`, { kind: "navigate", direction })} />
-        <Button type="button" variant="outline" size="default" disabled={locked} onClick={() => onPress("cancel", { kind: "cancel" })}>
-          {t("dialog.cancel")}
-        </Button>
-      </div>
-      {search}
-      {picker.footer ? (
-        <details className="group min-w-0 border-t border-border pt-1.5">
-          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-1 py-1 text-xs text-muted-foreground marker:hidden [&::-webkit-details-marker]:hidden">
-            <Keyboard aria-hidden className="size-3.5" />
-            {t("dialog.picker.footerAria")}
-            <ChevronRight aria-hidden className="ml-auto size-3.5 group-open:rotate-90" />
-          </summary>
-          <Footer footer={picker.footer} />
-        </details>
-      ) : null}
     </PromptPanel>
   );
 }
@@ -672,8 +688,84 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
     );
   }
 
+  const OptionsGroup = picker.kind === "multiple" ? ListGroup : "div";
+  const heading = <>
+    {questionnaire ? (
+      <QuestionnaireHeader
+        questionnaire={questionnaire}
+        locked={locked}
+        onPress={(direction) => void press(`question:${direction}`, { kind: "question", direction })}
+      />
+    ) : null}
+    <QuestionHeading>{picker.title}</QuestionHeading>
+    {picker.description.map((line, index) => (
+      <p key={index} className="font-content break-words text-xs font-normal leading-snug text-muted-foreground">
+        {line}
+      </p>
+    ))}
+  </>;
+  const actions = !picker.plan ? <>
+    {!isQuestionnaire ? (
+      <div className="mr-auto">
+        <BrowseControls
+          locked={locked || picker.options.length === 0}
+          onPress={(direction) => void press(`navigate:${direction}`, { kind: "navigate", direction })}
+        />
+      </div>
+    ) : null}
+    {isAsync || !isQuestionnaire ? (
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="min-h-11 whitespace-normal"
+        disabled={locked}
+        onClick={() => void press("cancel", { kind: "cancel" })}
+      >
+        {t(isAsync ? "dialog.picker.async.backToInput" : "dialog.cancel")}
+      </Button>
+    ) : null}
+    {isQuestionnaire ? (
+      <>
+        {remainingOtherQuestions > 0 ? (
+          <p className="mr-auto min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
+            {t("dialog.picker.answerRemaining")}
+          </p>
+        ) : null}
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          className="min-h-11 whitespace-normal"
+          disabled={questionnaireSubmitLocked}
+          onClick={() => void press("confirm", { kind: "answer", notes: noteDraft })}
+        >
+          {sending === "confirm" ? <Spinner /> : null}
+          {t(questionnaire.submit === "answer" ? "dialog.picker.submitAnswer" : "dialog.picker.submitAll")}
+        </Button>
+      </>
+    ) : picker.kind === "multiple" ? (
+      <Button
+        type="button"
+        variant="default"
+        size="sm"
+        className="min-h-11 whitespace-normal"
+        disabled={locked}
+        onClick={() => void press("confirm", { kind: "confirm" })}
+      >
+        {sending === "confirm" ? <Spinner /> : null}
+        {t("dialog.picker.confirm")}
+      </Button>
+    ) : null}
+  </> : null;
+
   return (
-    <PromptPanel ariaLabel={picker.title}>
+    <PromptPanel
+      ariaLabel={picker.title}
+      header={picker.plan ? null : heading}
+      actions={actions}
+      footer={isQuestionnaire || picker.plan ? null : <KeyboardHelp footer={picker.footer} />}
+    >
       {picker.plan ? (
         <PlanContent
           key={picker.identity}
@@ -681,24 +773,12 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
           complete={Boolean(planText) || picker.plan.complete}
         />
       ) : null}
-      {questionnaire ? (
-        <QuestionnaireHeader
-          questionnaire={questionnaire}
-          locked={locked}
-          onPress={(direction) => void press(`question:${direction}`, { kind: "question", direction })}
-        />
-      ) : null}
-      <QuestionHeading>{picker.title}</QuestionHeading>
-      {picker.description.map((line, index) => (
-        <p key={index} className="font-content break-words text-xs font-normal leading-snug text-muted-foreground">
-          {line}
-        </p>
-      ))}
+      {picker.plan ? heading : null}
 
       {search}
 
       {picker.options.length > 0 ? (
-        <div data-slot="picker-options" className="flex min-w-0 flex-col gap-1">
+        <OptionsGroup data-slot="picker-options" className={cn("flex min-w-0 flex-col", picker.kind === "single" && "gap-1")}>
           {picker.options.map((option, index) => {
             const busy = sending === `option:${option.id}` || sending === `move:${option.id}`;
             if (picker.kind === "single") {
@@ -726,18 +806,11 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
               />
             );
           })}
-        </div>
+        </OptionsGroup>
       ) : asyncQuestionnaire ? null : (
         <p data-slot="picker-empty" className="py-4 text-center text-sm text-muted-foreground">
           {t("dialog.picker.noResults")}
         </p>
-      )}
-
-      {isQuestionnaire || picker.plan ? null : (
-        <BrowseControls
-          locked={locked || picker.options.length === 0}
-          onPress={(direction) => void press(`navigate:${direction}`, { kind: "navigate", direction })}
-        />
       )}
 
       <Preview lines={picker.preview} />
@@ -760,66 +833,6 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
           />
         </label>
       ) : null}
-
-      {!picker.plan ? <div className="flex items-center justify-end gap-1.5 border-t border-border/70 pt-1.5">
-        {isAsync ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={locked}
-            onClick={() => void press("cancel", { kind: "cancel" })}
-          >
-            {t("dialog.picker.async.backToInput")}
-          </Button>
-        ) : !isQuestionnaire ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={locked}
-            onClick={() => void press("cancel", { kind: "cancel" })}
-          >
-            {t("dialog.cancel")}
-          </Button>
-        ) : null}
-        {isQuestionnaire ? (
-          <>
-            {remainingOtherQuestions > 0 ? (
-              <p className="mr-auto min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
-                {t("dialog.picker.answerRemaining")}
-              </p>
-            ) : null}
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              disabled={questionnaireSubmitLocked}
-              onClick={() => void press("confirm", { kind: "answer", notes: noteDraft })}
-            >
-              {sending === "confirm" ? <Spinner /> : null}
-              {t(
-                questionnaire.submit === "answer"
-                  ? "dialog.picker.submitAnswer"
-                  : "dialog.picker.submitAll",
-              )}
-            </Button>
-          </>
-        ) : picker.kind === "multiple" ? (
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            disabled={locked}
-            onClick={() => void press("confirm", { kind: "confirm" })}
-          >
-            {sending === "confirm" ? <Spinner /> : null}
-            {t("dialog.picker.confirm")}
-          </Button>
-        ) : null}
-      </div> : null}
-
-      {isQuestionnaire || picker.plan ? null : <Footer footer={picker.footer} />}
     </PromptPanel>
   );
 }

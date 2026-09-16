@@ -192,6 +192,8 @@ describe("PickerBlock", () => {
     expect(screen.getByText("Choose the model and reasoning level.")).toBeInTheDocument();
     expect(screen.getByText("model preview")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Picker preview" })).toBeInTheDocument();
+    expect(screen.getByRole("note", { name: "Keyboard help", hidden: true })).not.toBeVisible();
+    await user.click(screen.getByText("Keyboard help"));
     expect(screen.getByRole("note", { name: "Keyboard help" })).toHaveTextContent(
       "Press enter to confirm",
     );
@@ -220,15 +222,34 @@ describe("PickerBlock", () => {
 
     const project = screen.getByRole("checkbox", { name: /project-name/ });
     expect(project.querySelector("button")).toBeNull();
+    expect(within(project).getByLabelText("Current selection")).toBeVisible();
     expect(screen.getByRole("button", { name: "Move project-name down" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Move project-name up" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Move Use theme colors up" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Move Use theme colors down" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Move git-branch up" })).toBeNull();
 
     await user.click(project);
     expect(onAction).toHaveBeenCalledWith({ kind: "toggle", id: "project-name" });
     await user.click(screen.getByRole("button", { name: "Move project-name down" }));
     expect(onAction).toHaveBeenCalledWith({ kind: "move", id: "project-name", direction: "down" });
+  });
+
+  it("follows the native pointer without toggling an item or leaving old reorder controls interactive", async () => {
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(<PickerBlock picker={multiplePicker} onAction={onAction} />);
+    const moved = {
+      ...multiplePicker,
+      options: multiplePicker.options.map((option) => ({ ...option, pointed: option.id === "git-branch" })),
+    };
+    rerender(<PickerBlock picker={moved} onAction={onAction} />);
+    expect(screen.queryByRole("button", { name: "Move project-name down" })).toBeNull();
+    expect(screen.getByRole("checkbox", { name: /project-name/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /git-branch/ })).not.toBeChecked();
+    expect(onAction).not.toHaveBeenCalled();
+    await user.click(await screen.findByRole("button", { name: "Move git-branch up" }));
+    expect(onAction).toHaveBeenCalledExactlyOnceWith({ kind: "move", id: "git-branch", direction: "up" });
   });
 
   it("applies statusline search through the visible control without confirming the terminal", async () => {
@@ -279,7 +300,11 @@ describe("PickerBlock", () => {
   });
 
   it("disables reordering while search is active and exposes browse navigation", () => {
-    const filtered = { ...multiplePicker, query: "branch" };
+    const filtered = {
+      ...multiplePicker,
+      query: "branch",
+      options: multiplePicker.options.map((option) => ({ ...option, pointed: option.id === "git-branch" })),
+    };
     render(<PickerBlock picker={filtered} onAction={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: "Browse options above" })).toBeEnabled();

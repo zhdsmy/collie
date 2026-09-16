@@ -164,7 +164,11 @@ for (const width of [320, 390]) {
             const reorderButtons = panel.getByRole("button", {
               name: /Move .* (?:up|down)|(?:上移|下移)/i,
             });
-            if (scenario.optionCount > 0) await expect(reorderButtons.first()).toBeVisible();
+            if (scenario.optionCount > 0) {
+              const pointed = panel.locator('[role="checkbox"][aria-current="true"]');
+              const themeFocused = (await pointed.textContent())?.includes("Use theme colors");
+              await expect(reorderButtons).toHaveCount(themeFocused ? 0 : 2);
+            }
             for (const label of scenario.labels) {
               await expect(panel.getByRole("checkbox", { name: new RegExp(label) })).toBeVisible();
             }
@@ -189,7 +193,21 @@ for (const width of [320, 390]) {
           const footer = panel.getByRole("note", {
             name: dictionary(locale)["dialog.picker.footerAria"],
           });
+          await expect(footer).not.toBeVisible();
+          await panel.getByText(dictionary(locale)["dialog.picker.footerAria"], { exact: true }).click();
           await expect(footer).toBeVisible();
+          await panel.getByText(dictionary(locale)["dialog.picker.footerAria"], { exact: true }).click();
+
+          const overflow = await panel.evaluate((element) => {
+            const frame = element.getBoundingClientRect();
+            return [...element.querySelectorAll<HTMLElement>('button, [role="checkbox"], input')]
+              .filter((control) => control.checkVisibility())
+              .some((control) => {
+                const box = control.getBoundingClientRect();
+                return box.left < frame.left - 1 || box.right > frame.right + 1;
+              });
+          });
+          expect(overflow).toBe(false);
 
           if (scenario.name === "statusline empty") {
             await expect(panel.getByText(dictionary(locale)["dialog.picker.noResults"], { exact: true })).toBeVisible();
@@ -209,6 +227,9 @@ for (const width of [320, 390]) {
             await expect(page.getByText(messages["chat.status.selectionChanged"], { exact: true })).not.toBeVisible();
           }
 
+          if (scenario.name === "statusline leading rule") {
+            await panel.screenshot({ path: testInfo.outputPath("codex-statusline-card.png") });
+          }
           if (width === 320 && theme === "dark" && locale === "zh" && scenario.name === "statusline") {
             await page.screenshot({ path: testInfo.outputPath("codex-picker.png"), fullPage: true });
           }

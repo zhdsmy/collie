@@ -20,7 +20,7 @@ export function PromptPanel({
       aria-label={ariaLabel}
       className="my-1.5 flex flex-col gap-1.5 rounded-xl border border-border bg-card p-1.5 shadow-sm"
     >
-      {header ? <div data-slot="prompt-header" className="min-w-0 space-y-1 px-0.5 py-1">{header}</div> : null}
+      {header ? <div data-slot="prompt-header" className="min-w-0 space-y-1 py-1">{header}</div> : null}
       {children}
       {actions ? (
         <div data-slot="prompt-actions" className="flex min-w-0 flex-wrap items-center justify-end gap-1.5 border-t border-border pt-1.5">

@@ -3,7 +3,7 @@ import { ChevronDown, Loader2, MessageSquarePlus } from "lucide-react";
 
 import type { PromptFamily, PromptFeedbackPurpose, PromptModel, PromptOption } from "@/lib/blocks";
 import { FEEDBACK_MAX_LENGTH } from "@/lib/prompt-action";
-import { OptionButton, OptionGroupCaption, PromptPanel } from "@/components/option-button";
+import { OptionButton, OptionGroupCaption, PromptPanel, QuestionHeading } from "@/components/option-button";
 import { Button } from "@/components/ui/button";
 import { Collapse } from "@/components/ui/collapse";
 import { useLocale } from "@/hooks/use-locale";
@@ -231,35 +231,44 @@ export function PromptSelectBlock({ prompt, onAction, disabled }: PromptSelectBl
     <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" aria-label={t("prompt.sendingAria")} />
   );
 
+  const options = (
+    <div className="flex w-full min-w-0 flex-col gap-1">
+      {prompt.options.map((option, index) => {
+        const id = `opt-${index}`;
+        const busy = sending === id;
+        return (
+          <OptionButton
+            key={index}
+            tone={busy ? "busy" : "default"}
+            keyLabel={option.keyLabel ?? option.keys[0]}
+            label={option.label}
+            description={option.description}
+            disabled={locked}
+            onClick={() => press(id, { kind: "option", option })}
+            trailing={
+              busy ? (
+                <Loader2
+                  className="mt-0.5 size-4 shrink-0 animate-spin text-muted-foreground"
+                  aria-label={t("prompt.sendingAria")}
+                />
+              ) : null
+            }
+          />
+        );
+      })}
+    </div>
+  );
+
   return (
-    <PromptPanel ariaLabel={prompt.question}>
-      {prompt.approval ? <ApprovalContext approval={prompt.approval} /> : null}
-      <OptionGroupCaption>{familyCaption(prompt.family)}</OptionGroupCaption>
-      <div className="flex flex-col gap-1">
-        {prompt.options.map((option, index) => {
-          const id = `opt-${index}`;
-          const busy = sending === id;
-          return (
-            <OptionButton
-              key={index}
-              tone={busy ? "busy" : "default"}
-              keyLabel={option.keyLabel ?? option.keys[0]}
-              label={option.label}
-              description={option.description}
-              disabled={locked}
-              onClick={() => press(id, { kind: "option", option })}
-              trailing={
-                busy ? (
-                  <Loader2
-                    className="mt-0.5 size-4 shrink-0 animate-spin text-muted-foreground"
-                    aria-label={t("prompt.sendingAria")}
-                  />
-                ) : null
-              }
-            />
-          );
-        })}
-      </div>
+    <PromptPanel
+      ariaLabel={prompt.question}
+      header={prompt.approval ? <QuestionHeading>{prompt.question}</QuestionHeading> : null}
+      actions={prompt.approval ? options : null}
+    >
+      {prompt.approval ? <ApprovalContext approval={prompt.approval} /> : <>
+        <OptionGroupCaption>{familyCaption(prompt.family)}</OptionGroupCaption>
+        {options}
+      </>}
 
       {/* The inline text input, in whichever of its states this screen is in. OUR OWN send comes
           first: the choreography focuses the row and fills it, so from the moment Send is pressed the

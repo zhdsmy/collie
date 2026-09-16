@@ -33,6 +33,7 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 ### Changed
 
 - **Agent cards share a frame with optional content slots.** The existing prompt panel now owns reusable header, action, and footer layout while each card retains its native content and interaction rules.
+- **Codex status-line settings use a quieter, compact list.** Thin separators replace repeated selected borders, only the focused item exposes reorder controls, and keyboard help folds away. Codex model, question, review, session, and command-approval cards share header and action layout while preserving their specialized content and native submission behavior.
 
 ## [1.10.0+collie.2] - 2026-09-16
 
