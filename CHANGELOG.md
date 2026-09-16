@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.0+collie.5] - 2026-09-17
+
 ### Changed
 
-- **Claude custom statuslines use compact fields in the fixed bar.** Pipe-separated model, effort, branch, and version fields retain their text and gain compact spacing and icons; ctx uses the remaining-context ring and capacity colors shared with Codex. Native right-side hints no longer carry terminal-width blank padding, and the existing Claude mode row and other agents keep their behavior.
+- **Claude custom statuslines use compact fields in the fixed bar.** Pipe-separated model, effort, branch, and version fields retain their text and gain compact spacing and icons; ctx uses the remaining-context ring and capacity colors shared with Codex. Native right-side hints no longer carry terminal-width blank padding, and the existing Claude mode row and other agents keep their behavior. ([f6931162](https://github.com/zhdsmy/collie/commit/f6931162))
 
 ## [1.10.0+collie.4] - 2026-09-16
 
