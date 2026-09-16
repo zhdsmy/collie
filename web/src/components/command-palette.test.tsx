@@ -27,6 +27,19 @@ describe("CommandPalette", () => {
     expect(screen.queryByText("/doctor")).toBeNull();
   });
 
+  it.each(["codex", "codex-cli"])("shows all %s presets without searching", async (agent) => {
+    const user = userEvent.setup();
+    const props = setup({ agent });
+    for (const command of ["/model", "/resume", "/plan", "/fast", "/goal", "/skills"]) {
+      expect(screen.getByText(command)).toBeInTheDocument();
+    }
+    expect(screen.getByRole("textbox")).not.toHaveFocus();
+    await user.click(screen.getByText("/fast"));
+    expect(props.onSubmit).toHaveBeenCalledExactlyOnceWith("/fast");
+    expect(props.onInsert).not.toHaveBeenCalled();
+    expect(props.onClose).toHaveBeenCalledOnce();
+  });
+
   it("filters across the full catalog as you type", async () => {
     const user = userEvent.setup();
     setup();

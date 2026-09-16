@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { commandsFor, type AgentCommand } from "@/lib/agent-commands";
+import { canonicalAgent } from "@/lib/operator-scope";
 import type { OperatorCommand } from "@/lib/types";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
@@ -35,13 +36,14 @@ export function CommandPalette({
   const listRef = useRef<HTMLUListElement>(null);
   const { pending, confirm, reset } = usePendingConfirm();
 
+  const showAllPresets = canonicalAgent(agent?.toLowerCase().trim() ?? "") === "codex";
   const q = query.trim().toLowerCase();
   const list = q
     ? all.filter(
         (c) =>
           c.command.toLowerCase().includes(q) || c.description.toLowerCase().includes(q),
       )
-    : all.filter((c) => c.common);
+    : all.filter((c) => showAllPresets || c.common);
 
   function pick(c: AgentCommand) {
     if (disabled) return;
