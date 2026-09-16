@@ -101,6 +101,15 @@ recognition and send-binding boundaries.
 
 ## Hermes CLI display chrome (captured 2026-09-10)
 
+`hermes--resume-history.txt` is generated on 2026-09-16 by Hermes CLI v0.21.2
+(2026.9.11, `1021a032`), using the installed `_display_resumed_history()` and Rich renderer
+at 120 columns with synthetic in-memory history. It preserves native ANSI and frame geometry,
+role labels, blank lines, CJK, tool summaries, literal Markdown and a long final context-summary
+message. No model, session database, user input or service restart is involved. A separate
+read-only capture of the operator's resumed Herdr pane verified real repaint boundaries; that
+private capture is not checked in. The fixture is renderer-generated evidence, not a live TUI
+capture. See the adapter's `NOTES.md` for detection and display-only boundaries.
+
 `hermes--clarify-{single,q0,q1,other}.txt` capture an isolated Herdr pane running the
 installed HermesCLI's real clarify renderer and digit/Enter handlers over harmless sample
 questions. The prompt_toolkit host supplies a sample status/composer footer; no model call or

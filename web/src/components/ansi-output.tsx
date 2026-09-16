@@ -45,6 +45,7 @@ import { MultiSelectBlock } from "@/components/multi-select-block";
 import { MenuBlock, type MenuBlockAction } from "@/components/menu-block";
 import { AutocompleteBlock } from "@/components/autocomplete-block";
 import { PickerBlock } from "@/components/picker-block";
+import { HistoryPreview } from "@/components/history-preview";
 import type { MultiSelectIntent } from "@/lib/multi-select-action";
 import type { TranscriptEntry } from "@/lib/types";
 import { completePlanText } from "@/lib/plan-content";
@@ -708,9 +709,21 @@ export const AnsiOutput = memo(function AnsiOutput({
     );
   };
 
+  let historyIndex = 0;
   return (
     <>
-      {rawBlocks.length > 0 && (
+      {rawBlocks.some((block) => block.historyPreview) ? rawBlocks.map((block, bi) => {
+        const content = (
+          <pre className={preClass(wrap, className, agent)} style={{ fontSize: `${fontSize}px` }}>
+            {renderBlock(block, bi)}
+          </pre>
+        );
+        return block.historyPreview ? (
+          <HistoryPreview key={`history:${historyIndex++}:${lineText(block.lines[1]!)}`} query={query} currentMatch={currentMatch}>
+            {content}
+          </HistoryPreview>
+        ) : <Fragment key={bi}>{content}</Fragment>;
+      }) : rawBlocks.length > 0 && (
         <pre className={preClass(wrap, className, agent)} style={{ fontSize: `${fontSize}px` }}>
           {rawBlocks.map(renderBlock)}
         </pre>

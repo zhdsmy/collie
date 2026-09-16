@@ -1,5 +1,5 @@
 import type { AnsiSegment } from "../../ansi";
-import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
+import { lineText, trimTrailingBlank, type Block, type RawBlock, type StyledLine } from "../../blocks";
 import type { HarnessAdapter } from "../types";
 import { decorateHermesDiff } from "./display";
 import { detectClarify } from "./clarify";
@@ -213,13 +213,47 @@ function inputChrome(lines: StyledLine[]): StyledLine[] {
   return result;
 }
 
+/** Only a complete native resume panel folds. Keep its row count for latest-reply subtraction. */
+function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
+  const blocks: RawBlock[] = [];
+  let start = 0;
+  for (let top = 0; top < lines.length; top++) {
+    const header = lineText(lines[top]!);
+    if (!/^╭─+ Previous Conversation ─+╮$/u.test(header)
+      || !lines[top]!.segments.some((s) => s.dim && s.text.includes("Previous Conversation"))) continue;
+    let hasMessage = false;
+    for (let bottom = top + 1; bottom < lines.length; bottom++) {
+      const text = lineText(lines[bottom]!);
+      if (/^╰─+╯$/u.test(text)) {
+        if (!hasMessage || text.length !== header.length) break;
+        if (top > start) blocks.push({ kind: "raw", lines: lines.slice(start, top) });
+        const body = lines.slice(top, bottom + 1).map((line, index) => {
+          if (index === 0 || index === bottom - top) return Object.assign({}, line, { segments: [] });
+          const value = lineText(line);
+          const end = value.slice(0, -1).trimEnd().length;
+          return Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) });
+        });
+        blocks.push({ kind: "raw", lines: body, historyPreview: true });
+        start = bottom + 1;
+        top = bottom;
+        break;
+      }
+      // A repaint can open another panel before the previous one closes. Leave the old fragment raw.
+      if (!text.startsWith("│ ") || !text.endsWith(" │")) break;
+      hasMessage ||= /^│\s+(?:● You:|◆ Hermes:|◈ )/u.test(text);
+    }
+  }
+  if (start < lines.length || blocks.length === 0) blocks.push({ kind: "raw", lines: lines.slice(start) });
+  return blocks;
+}
+
 export function hermesBuildBlocks(lines: StyledLine[]): Block[] {
   const footer = locateFooter(lines);
   const clarify = footer?.clarify && footer.empty ? detectClarify(lines, footer.statusStart) : null;
   if (clarify) {
     const before = trimTrailingBlank(lines.slice(0, clarify.start));
     return [
-      { kind: "raw", lines: [...decorateHermesDiff(inputChrome(responseChrome(before, 0))), ...clarify.questionLines] },
+      ...foldResumedHistory([...decorateHermesDiff(inputChrome(responseChrome(before, 0))), ...clarify.questionLines]),
       { kind: "prompt-select", prompt: clarify.model, lines: lines.slice(clarify.start) },
     ];
   }
@@ -227,7 +261,7 @@ export function hermesBuildBlocks(lines: StyledLine[]): Block[] {
     ? [...lines.slice(0, footer.statusStart), ...(footer.empty ? [] : lines.slice(footer.top))]
     : lines;
   const closingWidth = footer?.empty ? lineText(lines[footer.top]!).trim().length : 0;
-  return [{ kind: "raw", lines: decorateHermesDiff(inputChrome(responseChrome(trimTrailingBlank(content), closingWidth))) }];
+  return foldResumedHistory(decorateHermesDiff(inputChrome(responseChrome(trimTrailingBlank(content), closingWidth))));
 }
 
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {

@@ -364,6 +364,7 @@ export const de: Dictionary = {
     "Hermes hat diese Sitzung noch nicht gemeldet. Sende bei einer neuen Unterhaltung die erste Nachricht. Falls bereits gesendet, prüfe oder aktualisiere die Herdr-Integration und starte Hermes neu.",
   "chat.scrollback.noSessionReported":
     "{agent} hat keine Sitzung an Herdr gemeldet. Herdr-Integration installieren oder aktualisieren und den Agenten in diesem Pane neu starten.",
+  "chat.historyPreview.title": "Bisheriger Gesprächsverlauf",
   "chat.fullReply.title": "Vollständige Antwort",
   "chat.fullReply.fromTranscript": "aus dem Protokoll",
   "chat.fullReply.showingTerminal": "Terminal wird gezeigt",

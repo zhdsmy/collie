@@ -384,6 +384,7 @@ export const en = {
     "Hermes has not reported this session yet. For a new conversation, send the first message. If you already have, check or update the Herdr integration and restart Hermes.",
   "chat.scrollback.noSessionReported":
     "{agent} has not reported a session to Herdr. Install or update the Herdr integration for it, then restart the agent in this pane.",
+  "chat.historyPreview.title": "Previous conversation",
   "chat.fullReply.title": "Full reply",
   "chat.fullReply.fromTranscript": "from transcript",
   "chat.fullReply.showingTerminal": "showing the terminal",

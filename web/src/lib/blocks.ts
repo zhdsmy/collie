@@ -72,6 +72,8 @@ export interface StyledLine {
 export interface RawBlock {
   kind: "raw";
   lines: StyledLine[];
+  /** Verified resume history: a read-only fold, still searchable and counted in source rows. */
+  historyPreview?: true;
 }
 
 /**
@@ -368,7 +370,7 @@ export function dropLeadingLines(blocks: RawBlock[], count: number): RawBlock[] 
       left -= block.lines.length;
       continue;
     }
-    kept.push(left > 0 ? { ...block, lines: block.lines.slice(left) } : block);
+    kept.push(left > 0 ? { kind: "raw", lines: block.lines.slice(left) } : block);
     left = 0;
   }
   return kept;

@@ -357,6 +357,7 @@ export const ko: Dictionary = {
     "Hermes가 아직 이 세션을 보고하지 않았습니다. 새 대화라면 첫 메시지를 보내세요. 이미 보냈다면 Herdr 연동을 확인하거나 업데이트한 후 Hermes를 다시 시작하세요.",
   "chat.scrollback.noSessionReported":
     "{agent}가 Herdr에 세션을 보고하지 않았습니다. 에이전트용 Herdr 연동 패키지를 설치하거나 업데이트한 후 이 창에서 에이전트를 재시작하십시오.",
+  "chat.historyPreview.title": "이전 대화",
   "chat.fullReply.title": "답변 전체",
   "chat.fullReply.fromTranscript": "로그에서",
   "chat.fullReply.showingTerminal": "터미널 표시 중",

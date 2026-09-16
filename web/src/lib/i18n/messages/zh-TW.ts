@@ -352,6 +352,7 @@ export const zhTW: Dictionary = {
     "Hermes 尚未回報此工作階段。新對話請先傳送第一則訊息；若已傳送，請檢查或更新 Herdr 整合並重新啟動 Hermes。",
   "chat.scrollback.noSessionReported":
     "{agent} 尚未向 Herdr 回報工作階段。請安裝或更新對應的 Herdr 整合，並在目前窗格重新啟動該 Agent。",
+  "chat.historyPreview.title": "歷史對話",
   "chat.fullReply.title": "完整回覆",
   "chat.fullReply.fromTranscript": "來自記錄",
   "chat.fullReply.showingTerminal": "正在顯示終端機",

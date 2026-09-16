@@ -359,6 +359,7 @@ export const ja: Dictionary = {
     "Hermes はまだこのセッションを報告していません。新しい会話では最初のメッセージを送信してください。送信済みの場合は Herdr 連携を確認または更新し、Hermes を再起動してください。",
   "chat.scrollback.noSessionReported":
     "{agent} のセッションが Herdr に報告されていません。Herdr 連携をインストールまたは更新し、このペインでエージェントを再起動してください。",
+  "chat.historyPreview.title": "以前の会話",
   "chat.fullReply.title": "返答の全文",
   "chat.fullReply.fromTranscript": "ログより",
   "chat.fullReply.showingTerminal": "ターミナルを表示中",

@@ -1,5 +1,31 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## Resume history folds without taking keyboard ownership — 2026-09-16
+
+Hermes v0.21.2 (2026.9.11, `1021a032`) replays recent exchanges through
+`cli_agent_setup_mixin.py`'s `_display_resumed_history()`: a Rich panel titled
+`Previous Conversation`. This is history, not necessarily a generated summary. It includes
+user/assistant messages, tool summaries and context events; its final assistant message is
+restored in full even when earlier entries are truncated, explaining the unusually long panel.
+
+Read-only inspection of the operator's resumed `w7:p9` pane found an incomplete 174-column
+panel followed by a complete 211-column repaint. Only the complete 59-row panel folds.
+Recognition requires the native dim title, rounded frame, equal-width top/bottom rules,
+framed interior and a native role/event marker. Unknown or incomplete panels remain raw.
+The checked-in fixture comes from the installed renderer with synthetic history; the private
+live capture is not committed. See the fixture README for provenance.
+
+The card starts collapsed and scrolls internally when expanded. It retains ANSI role colors,
+literal text and blank lines; it does not guess Markdown or reverse terminal hard wrapping.
+This is metadata on a raw block, not a dialog: search still includes the body and opens it,
+and no keys, input focus or composer-ready claims are added. Removed border rows become
+blank rows so latest-reply subtraction keeps its source coordinates; a partially subtracted
+panel loses its folding metadata. Raw terminal mode bypasses the transformation.
+
+Parser/component tests cover refusal, row mapping, search and stable expansion across polling.
+The browser spec checks narrow Chinese/English/German layouts in Chromium and WebKit with
+mocked APIs, internal scrolling and zero reply/key requests. It does not drive the user's session.
+
 ## The prompt icon is a closed state set — 2026-09-15
 
 The footer walk kept failing on whole classes of screen, and the reason was in the Hermes source,

@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Fold Hermes resume history into a readable conversation card.** Complete native Previous Conversation panels start collapsed and expand into a bounded scrolling region, preserving role colors, blank lines and searchable text without sending input. Incomplete panels and raw terminal mode keep their original display.
+
 ## [1.9.1+collie.9] - 2026-09-16
 
 ### Fixed
