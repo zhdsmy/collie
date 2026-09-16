@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.9] - 2026-09-16
+
 ### Fixed
 
-- **Show every Codex preset in the Agent command panel.** Plan, Fast, and the remaining built-in commands are available by scrolling without a search, while preserving the three-row panel, argument entry, and confirmation for destructive commands. Other agents keep their existing default lists.
+- **Show every Codex preset in the Agent command panel.** Plan, Fast, and the remaining built-in commands are available by scrolling without a search, while preserving the three-row panel, argument entry, and confirmation for destructive commands. Other agents keep their existing default lists. ([c9ea9e6a](https://github.com/zhdsmy/collie/commit/c9ea9e6a))
 
 ## [1.9.1+collie.8] - 2026-09-16
 
