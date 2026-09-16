@@ -38,8 +38,9 @@ export function SessionInfoCard({ info, children, renderText, query, currentMatc
     }, COLLAPSE_MS + 32);
     return () => window.clearTimeout(timer);
   }, [open, query, currentMatch]);
+  // Resolve the live UI token: font-sans is inlined by Tailwind, and the parent can use a terminal font.
   return (
-    <Card className="my-1.5 min-w-0 gap-0 overflow-hidden p-0 font-sans shadow-none">
+    <Card className="my-1.5 min-w-0 gap-0 overflow-hidden p-0 [font-family:var(--font-sans)] shadow-none">
       <Button type="button" variant="ghost" aria-expanded={open} aria-controls={bodyId}
         aria-label={title} aria-describedby={summary ? `${bodyId}-summary` : undefined}
         onClick={() => setOpen(!open)} className="h-auto min-h-11 w-full justify-start gap-2 px-3 py-2 text-sm">

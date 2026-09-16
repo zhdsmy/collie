@@ -20,6 +20,10 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     await page.addInitScript((preferences) => {
       localStorage.setItem("collie:theme:v1", preferences.theme);
       localStorage.setItem("collie:locale:v1", preferences.locale);
+      localStorage.setItem("collie:design:v1", JSON.stringify({ font: preferences.locale === "zh" ? "system" : preferences.locale === "en" ? "geist" : "grotesk" }));
+      if (!localStorage.getItem("collie:display-prefs:v4")) {
+        localStorage.setItem("collie:display-prefs:v4", JSON.stringify({ fontFamily: "menlo" }));
+      }
     }, { theme, locale });
     await installApiStub(page);
     await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
@@ -41,6 +45,11 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     await expect(startupToggle).toHaveAttribute("aria-expanded", "false");
     await expect(startupToggle).toHaveAccessibleDescription(/v0\.21\.2.*25.*86/);
     await expect(toggle).toHaveAccessibleDescription(/General.*24/);
+    const uiFont = await page.locator("body").evaluate((element) => getComputedStyle(element).fontFamily);
+    await expect(startupToggle).toHaveCSS("font-family", uiFont);
+    await expect(toggle).toHaveCSS("font-family", uiFont);
+    await expect(startupToggle.locator("[id$='-summary']")).toHaveCSS("font-family", uiFont);
+    await expect(toggle.locator("[id$='-summary']")).toHaveCSS("font-family", uiFont);
     await expect(page.getByText(/Welcome to Hermes Agent/)).toHaveCount(0);
     await expect(page.getByText(/Resumed session/)).toHaveCount(0);
     await expect(page.getByRole("region", { name: title })).toHaveCount(0);
