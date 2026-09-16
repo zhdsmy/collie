@@ -743,6 +743,7 @@ describe("real corpus — pinned so any change to the walk shows up as a diff", 
   // in this corpus is 2 rows (statusline + hint), and pinning the count is what would have caught the
   // first-row-only truncation this table used to tolerate.
   const PINNED: { fixture: string; statusRows: number; draft: string | null; stripped: number }[] = [
+    { fixture: "custom-statusline", statusRows: 2, draft: null, stripped: 6 },
     // `done` was pinned as a draft ("cat hello.txt to verify") until the ghost rule landed. Its "❯"
     // line is FAINT on the wire, exactly like the ghost-suggestion capture — so the capture was always
     // a generated suggestion after the hello.txt turn, read as a stranded draft. It is a NULL draft

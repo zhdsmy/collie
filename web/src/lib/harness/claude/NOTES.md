@@ -55,3 +55,21 @@ shared `MenuBlock`, `PromptPanel`, or key-hint parsing. `composerReady: hasInput
 normal replies; operators use direct keys for native tab navigation. Earlier Settings scrollback
 must not suppress a later `/model` picker. `fixtures/claude-settings.ts` contains explicitly
 synthetic, screenshot-derived structural regressions; it is not a live capture corpus.
+
+# Configured statusline fields — 2026-09-17
+
+The local command prints `model effort | ctx N% | branch | vVERSION`, where `ctx` comes from
+`context_window.remaining_percentage`. Claude Code 2.1.273 may append a right-aligned native
+`new task? /clear to save … tokens` hint; the mode/agent hint occupies the next row. The sanitized
+`claude--custom-statusline.txt` preserves the captured input/footer ANSI and padding, replacing the
+session label, model and token count; preceding conversation content is omitted.
+
+Existing positional extraction already finds both rows. Only Claude pipe-separated display rows
+get compact fields; the shared context ring takes `remaining=true`. Preserve unknown fields and
+native hints, replacing terminal-width padding with app gaps. Keep the existing mode control and
+send gates unchanged. A first sample omitted the lower rule during repaint; a repeat capture had
+the complete box. Do not loosen composer recognition to accommodate a torn display frame.
+
+The configured `Fast` label currently comes from `thinking.enabled == false`; this is not proof of
+Claude Fast mode (`fast_mode` is separate). Render the label as supplied, without inferring a toggle
+or silently editing the operator's command. Missing/invalid `ctx` values get no fabricated ring.

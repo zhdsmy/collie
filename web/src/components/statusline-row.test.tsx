@@ -1,8 +1,11 @@
 import { act, fireEvent, render, within } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { parseAnsi } from "@/lib/ansi";
 import { lineText, splitLines } from "@/lib/blocks";
+import { extractStatusLines } from "@/lib/harness/claude/chrome";
 import { __resetLocale, setLocale, whenLocaleReady, type Locale } from "@/lib/i18n";
 import { StatuslineRow } from "./statusline-row";
 
@@ -309,6 +312,44 @@ it.each(["pi", "opencode", "unknown"])("leaves %s status rows verbatim", (agent)
     expect(container.firstElementChild).toHaveClass("overflow-x-auto", "whitespace-nowrap");
   expect(within(container).queryAllByRole("img")).toHaveLength(0);
   expect(within(container).getByText("Context 73% left").style.color).toBe("var(--ansi-6)");
+});
+
+it("compacts the captured Claude custom statusline without dropping its right-side hint", () => {
+  const capture = readFileSync(join(import.meta.dirname, "..", "fixtures", "panes", "claude--custom-statusline.txt"), "utf8");
+  const rows = extractStatusLines(splitLines(parseAnsi(capture)));
+  expect(rows).toHaveLength(2);
+  const view = render(<StatuslineRow agent="claude" row={rows[0]!} leading={<span>workshop</span>} />);
+  const ring = view.container.querySelector('[data-status-icon="context"]')!;
+  expect(ring).toHaveAttribute("data-value", "34");
+  expect(ring).toHaveAttribute("data-used", "66");
+  expect(view.getByRole("img")).toHaveAttribute("aria-label", "Context 34% left");
+  expect(view.container.textContent).toContain("example-model[1m] xhigh");
+  expect(view.container.textContent).toContain("new task? /clear to save 600.0k tokens");
+  expect(view.container.textContent).not.toMatch(/ {2,}|\|/);
+  expect(view.container.querySelector(".lucide-git-branch")).not.toBeNull();
+  expect(view.container.querySelector(".lucide-tag")).not.toBeNull();
+  expect(view.container.firstElementChild).toHaveClass("overflow-x-auto", "whitespace-nowrap");
+  expect(view.container.firstElementChild?.firstElementChild).toHaveAttribute("data-slot", "statusline-target");
+  expect(view.getByText("example-model[1m] xhigh")).toHaveStyle({ color: "rgb(153,153,153)" });
+  expect(view.queryAllByRole("button")).toHaveLength(0);
+});
+
+it.each([0, 7, 30, 100])("treats Claude ctx %s%% as remaining across ANSI spans", (remaining) => {
+  const row = splitLines(parseAnsi(`model | ctx \x1b[36m${remaining}\x1b[0m% | main`))[0]!;
+  const view = render(<StatuslineRow agent="claude" row={row} />);
+  expect(view.container.querySelector('[data-status-icon="context"]')).toHaveAttribute("data-used", String(100 - remaining));
+  view.rerender(<StatuslineRow agent="codex" row={row} />);
+  expect(view.container.querySelector('[data-status-icon="context"]')).toBeNull();
+  view.rerender(<StatuslineRow agent="hermes" row={row} />);
+  expect(view.container.querySelector('[data-status-icon="context"]')).toBeNull();
+});
+
+it.each(["ctx --", "ctx -1%", "ctx 101%", "cache 75%", "Fast"])("keeps untyped or invalid Claude field %s literal", (field) => {
+  const row = splitLines(parseAnsi(`model | ${field} | custom-branch`))[0]!;
+  const view = render(<StatuslineRow agent="claude" row={row} />);
+  expect(view.container.querySelector('[data-status-icon="context"]')).toBeNull();
+  expect(view.container.textContent).toContain(field);
+  expect(view.container.textContent).toContain("custom-branch");
 });
 
 it("leaves a claude status row verbatim when no mode control is wired", () => {

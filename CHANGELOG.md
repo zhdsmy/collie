@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Claude custom statuslines use compact fields in the fixed bar.** Pipe-separated model, effort, branch, and version fields retain their text and gain compact spacing and icons; ctx uses the remaining-context ring and capacity colors shared with Codex. Native right-side hints no longer carry terminal-width blank padding, and the existing Claude mode row and other agents keep their behavior.
+
 ## [1.10.0+collie.4] - 2026-09-16
 
 ### Fixed

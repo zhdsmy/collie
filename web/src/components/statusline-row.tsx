@@ -162,6 +162,24 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
   );
 }
 
+function ClaudeField({ segments, text }: { segments: AnsiSegment[]; text: string }) {
+  // This configured Claude format names remaining_percentage "ctx". Do not apply that meaning
+  // to Codex's ambiguous legacy Ctx field, or to arbitrary Claude status rows without pipe fields.
+  const context = /^ctx (\d+(?:\.\d+)?%)$/i.exec(text);
+  if (context?.[1] && Number.parseFloat(context[1]) <= 100) {
+    return <ContextField value={context[1]} remaining />;
+  }
+  const Icon = /^(?:main|master|develop|development|trunk|(?:feat|feature|fix|bugfix|hotfix|release|chore|refactor|test|docs)\/\S+)$/.test(text)
+    ? GitBranch
+    : /^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(text) ? Tag : null;
+  return (
+    <span className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none" title={text}>
+      {Icon && <Icon aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />}
+      <span><StyledText segments={segments} /></span>
+    </span>
+  );
+}
+
 // Horizontal overflow also clips vertically. Keep glyph breathing room INSIDE the scroller;
 // padding on the outer status strip cannot protect a font's ascenders or descenders here.
 const ROW_CLASS =
@@ -475,7 +493,8 @@ export function StatuslineRow({
     );
   }
 
-  if (agent !== "codex" && agent !== "hermes") {
+  const claudeCustom = agent === "claude" && /\s\|\s/.test(lineText(row));
+  if (agent !== "codex" && agent !== "hermes" && !claudeCustom) {
     return (
       <div data-slot="statusline-row" className={ROW_CLASS}>
         {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
@@ -507,12 +526,16 @@ export function StatuslineRow({
   let offset = 0;
   let groupedEffortIndex = -1;
   const Field = agent === "hermes" ? HermesField : CodexField;
-  const parts = agent === "hermes"
+  const parts = claudeCustom
+    // Claude right-aligns its native hint with terminal-width padding. Keep the hint's text,
+    // but let the app's field gap replace that empty space on a narrow phone.
+    ? lineText(row).split(/(\s+\|\s+|(?<=\S)\s{2,}(?=\S))/)
+    : agent === "hermes"
     ? lineText(row).split(/(\s*│\s*|\s{2,}─\s*)/)
     : lineText(row).split(/( \u00b7 )/);
   return (
     <div
-      data-slot={agent === "hermes" ? "hermes-statusline" : "codex-statusline"}
+      data-slot={claudeCustom ? "claude-statusline" : agent === "hermes" ? "hermes-statusline" : "codex-statusline"}
       className={ROW_CLASS}
     >
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
@@ -521,6 +544,14 @@ export function StatuslineRow({
         const start = offset + part.indexOf(text);
         offset += part.length;
         if (!text || i % 2 === 1 || i === groupedEffortIndex) return null;
+        if (claudeCustom) {
+          return (
+            <span key={i} className="inline-flex shrink-0 items-center gap-1.5">
+              {i > 0 && <StatuslineDivider />}
+              <ClaudeField text={text} segments={sliceSegments(row.segments, start, start + text.length)} />
+            </span>
+          );
+        }
         const model = agent === "codex" && onModelClick ? parseCodexModelField(text, knownModels) : null;
         if (model && onModelClick) {
           const nextPart = parts[i + 2] ?? "";
