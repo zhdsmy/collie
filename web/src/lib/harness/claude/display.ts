@@ -46,13 +46,16 @@ export function decorateClaudeUser(lines: StyledLine[]): StyledLine[] {
   return changed ? decorated : lines;
 }
 
-// Claude's changed rows have a painted line-number/sign gutter after unpainted indentation.
-// Promote that existing fill to the shared full-row surface; keep syntax and token highlights.
+// Claude's changed rows have a painted line-number/sign gutter after unpainted indentation, and a
+// row Claude itself wrapped repeats the sign without the number (`     +`). Promote that existing
+// fill to the shared full-row surface; keep syntax and token highlights. The sign may be followed
+// by ANY character (`+//`, `+const`, `+}`) — requiring whitespace after it left those rows raw, and
+// a diff whose raw and surfaced rows mixed painted a ragged, half-stable rectangle on the phone.
 // This runs only on transcript blocks, after interactive dialogs have been recognized.
 export function decorateClaudeDiff(lines: StyledLine[]): StyledLine[] {
   let changed = false;
   const decorated = lines.map((line) => {
-    const prefix = /^(\s*)\d+\s+[+-](?:\s|$)/u.exec(lineText(line));
+    const prefix = /^(\s*)(?:\d+\s+|\s+)[+-]/u.exec(lineText(line));
     if (!prefix) return line;
     const start = prefix[1]!.length;
     let offset = 0;

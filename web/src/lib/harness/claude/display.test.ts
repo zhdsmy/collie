@@ -25,6 +25,29 @@ it("uses ANSI paint rather than a fixed theme palette or a single segment", () =
   ]);
 });
 
+it("surfaces every painted changed row, whatever the code after the sign, continuations included", () => {
+  // Live shapes (2026-09-15, harness-bar capture): rows whose code begins with a non-space
+  // (`+//`, `+const`, `+];`), and Claude's own wrapped continuations, which repeat the sign
+  // without a number. Requiring whitespace after the sign left these raw, and a diff mixing
+  // raw and surfaced rows painted a ragged, half-stable rectangle on the phone.
+  const bg = "\x1b[48;2;2;40;0m";
+  const reset = "\x1b[0m";
+  const gutter = `\x1b[38;2;80;200;80m${bg}`;
+  const code = `\x1b[38;2;117;113;94m${bg}`;
+  const row = (g: string, c = "") => `     ${gutter}${g}${reset}${code}${c}${reset}`;
+  const text = [
+    row(" 137 +", "// ── Hermes ───────────────────────────────"),
+    row("     +", "──────────"), // Claude's own wrap of the same source line
+    row(" 138 +", "const HERMES: readonly AgentCommand[] = ["),
+    row(" 139 +", "];"),
+    row(" 140 +"),
+  ].join("\n");
+  const lines = parse(text);
+  const result = decorateClaudeDiff(lines);
+  expect(result.map((line) => line.surface?.background)).toEqual(Array(5).fill("rgb(2,40,0)"));
+  expect(result.map(lineText)).toEqual(lines.map(lineText));
+});
+
 it.each([
   "     12 - ordinary unpainted output",
   "\x1b[41m- unnumbered colored log\x1b[0m",
