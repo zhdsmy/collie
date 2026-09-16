@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.11] - 2026-09-16
+
 ### Added
 
-- **Keep Hermes startup details in a compact information card.** The native banner, launch command and welcome tips fold into a separate startup card with version and tool/skill counts. Restored-session names and user-message counts move into the history card, while full details remain expandable and searchable. Unknown or incomplete output stays visible.
+- **Keep Hermes startup details in a compact information card.** The native banner, launch command and welcome tips fold into a separate startup card with version and tool/skill counts. Restored-session names and user-message counts move into the history card, while full details remain expandable and searchable. Unknown or incomplete output stays visible. ([3e58dcd9](https://github.com/zhdsmy/collie/commit/3e58dcd9))
 
 ## [1.9.1+collie.10] - 2026-09-16
 
