@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
+export { PromptPanel } from "@/components/ui/prompt-panel";
+
 // The one shared visual language for an up-levelled dialog option, used by all three block
 // renderers (prompt-select / wizard / preview-select) so they can't drift into three different flat
 // styles again. The rows must read as OBVIOUSLY tappable controls sitting apart from the raw
@@ -50,27 +52,6 @@ export function KeyBadge({ children, tone = "default" }: { children: ReactNode; 
     >
       {children}
     </span>
-  );
-}
-
-/**
- * The enclosing surface for an up-levelled dialog: a bordered, filled panel that lifts the WHOLE
- * prompt off the raw terminal mirror behind it — the primary "these are controls, not output"
- * signal, shared by all three block renderers so the separation can't drift. `bg-card` sits one
- * layer above the page background in dark (the terminal is on `--background`, the option rows on the
- * lighter `--secondary`, so the panel reads as a distinct middle layer); in light, where card ==
- * background, the border + shadow carry the separation. Owns `role="group"` + its aria label, so a
- * block's outermost element IS this panel.
- */
-export function PromptPanel({ ariaLabel, children }: { ariaLabel: string; children: ReactNode }) {
-  return (
-    <div
-      role="group"
-      aria-label={ariaLabel}
-      className="my-1.5 flex flex-col gap-1.5 rounded-xl border border-border bg-card p-1.5 shadow-sm"
-    >
-      {children}
-    </div>
   );
 }
 
