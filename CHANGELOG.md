@@ -30,11 +30,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.9.1+collie.6] - 2026-09-16
+
 ### Changed
 
 - **The composer keys sit on plain chrome and the reply field reads a frame.** The keys belt drops
   its gray fill and brand tint, matching the rest of the composer, and the reply box's border takes
-  the one-step-deeper rule colour.
+  the one-step-deeper rule colour. ([bb254844](https://github.com/zhdsmy/collie/commit/bb254844))
 
 ## [1.9.1+collie.5] - 2026-09-16
 
