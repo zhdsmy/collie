@@ -30,41 +30,13 @@ import { cn } from "@/lib/utils";
 // reads as one strip with two parts, which is what the row actually is. Nothing about the behaviour
 // changed — only how the row is drawn.
 //
-// THE GROUND IS AN OPERATOR'S CALL THAT OVERRIDES DESIGN.md §4, AND IT SAYS SO HERE ON PURPOSE.
-// §4 is "chrome separates with a rule, not a fill", and the status band one row above used to carry
-// the measurement that argued a fill down. A belt IS a fill, Altan asked for one by name, and this
-// row alone takes it — §4 still governs every other strip of chrome in the app.
-//
-// WHICH fill was measured, not chosen. The belt sits on the composer's chrome block (`--chrome`:
-// rgb 235 light, rgb 23 dark) and BOTH its neighbours are that same ground — the chrome above it
-// and the input below, which is `bg-transparent` over it. So the ground had to separate from
-// `--chrome` in both themes, and no single token does: `--muted` IS `--chrome` in light (1.00:1,
-// invisible) and `--card` IS `--chrome` in dark (1.00:1, invisible). `bg-muted/40`, the first thing
-// tried, therefore measured 1.00:1 light / 1.06:1 dark — nothing at all in light. An alpha wash of
-// the FOREGROUND is the one recipe that is symmetric by construction, because the foreground flips
-// with the theme: black at 6% darkens the light ground, white at 6% lightens the dark one. Measured
-// against `--chrome`:
-//
-//    bg-foreground/6   1.13:1 light (rgb 221)  ·  1.16:1 dark (rgb 37)
-//    bg-accent         1.06:1 light            ·  1.19:1 dark   (asymmetric, near-nothing in light)
-//    bg-background     1.09:1 light            ·  1.11:1 dark   (but rgb 10 in dark IS the terminal
-//                                                                mirror's fill — a hole, not a band)
-//
-// The belt draws no chevron of its own any more (see `cue="none"` below) — the tint and the fade
-// carry the scroll cue by themselves, so there is no glyph contrast left to measure here.
-//
-// THE SCROLLER, WITHIN THAT BAND, NOW CARRIES ITS OWN FAINT BRAND TINT (`bg-primary/10`), and the
-// fixed Switch cell takes the composer's own ground, `bg-chrome` — the operator's call from the
-// phone, on top of playground round four, option 6 (the `belt-ground` deck, removed from the
-// playground on 2026-09-14 once it had served; see git history). The
-// band's own ground and its hairline are unchanged; only these two grounds move. The tint marks the
-// part of the belt that PANS: it is the one thing on this row that moves under a thumb, so it earns
-// the one wash that says "brand" rather than "chrome". The Switch cell sits on the composer's
-// chrome for the opposite reason — it never scrolls, it is the one control that LEAVES the pane
-// rather than acting on it, and reading as ONE surface with the composer row under the belt is the
-// point (see the Switch branch below). In light, `bg-primary/10` over the band is closer to black
-// than the other tints tried here, so the wash reads darker than the round's other options
-// measured — shipped as picked regardless; see the playground round's own notes.
+// THE GROUND IS PLAIN CHROME AGAIN — DESIGN.md §4 RESTORED (operator's call, 2026-09-16). For a
+// day the belt carried its own fill (`bg-foreground/6`, the one symmetric wash against `--chrome` —
+// `--muted` IS `--chrome` in light, `--card` in dark) and the scroller a brand tint
+// (`bg-primary/10`); both were measured picks of 2026-09-14, recorded in git history. The operator
+// read the band against the composer row under it and asked for the keys' ground "same as the
+// others", so the belt sits on the composer's own chrome and the HAIRLINE below is the only
+// separation — which is what §4 says chrome does. The rules did not move: `border-b border-border`.
 //
 // THE HAIRLINE IS `--border`, NOT `--rule`. The belt's lower neighbour is the same chrome surface it
 // stands on, so that is a component edge inside one surface, which is what `--border` is for — the
@@ -325,7 +297,7 @@ export function ActionsRow({ general, agent, mine, onRun, disabled, handle }: Ac
       // with no listener behind it would forbid a vertical page gesture and give nothing back.
       ref={handle?.ref}
       className={cn(
-        "relative -mx-3 mb-1 flex items-center border-b border-border bg-foreground/6",
+        "relative -mx-3 mb-1 flex items-center border-b border-border",
         handle && "touch-pan-x",
       )}
     >
@@ -370,7 +342,7 @@ export function ActionsRow({ general, agent, mine, onRun, disabled, handle }: Ac
         {(scrollerRef) => (
           <div
             ref={scrollerRef}
-            className={cn(STRIP_SCROLLER, "bg-primary/10 pl-3 py-1 overflow-y-hidden", !handle && "pr-3")}
+            className={cn(STRIP_SCROLLER, "pl-3 py-1 overflow-y-hidden", !handle && "pr-3")}
           >
             {general.length > 0 && (
               // The word "Controls" is `sr-only` and load-bearing: sighted it labelled a run of
@@ -433,18 +405,15 @@ export function ActionsRow({ general, agent, mine, onRun, disabled, handle }: Ac
           inside the wrapper would fade out with the scrolling pills exactly where the belt
           overflows — which is always, once a pill is pinned. `z-10` puts it over the scroller, so a
           pill that pans under the fade cannot take the tap.
-          THE FADE IS TWO STACKED LAYERS UNDER ONE MASK, and it has to be two: the scroller it fades
-          into carries its own brand tint now (`bg-primary/10`, see the header above), so a single
-          `bg-chrome` patch would read as a hole punched in a tinted band. The second layer is the
-          Switch cell's OWN ground, `bg-chrome` — the composer's own chrome ground, the same fill the
-          reply row and its round Send button sit on below — so the cell reads as ONE surface with the
-          composer rather than as a patch cut into the belt (operator's call, from the phone: the
-          Switch cell must match the composer row under the belt). The mask fades both layers in over
-          the first 64px — twice the drawn box's own old lead-in — which is what lets a scrolling
-          pill disappear UNDER this one instead of stopping dead against it. The 64px is the
+          THE FADE IS ONE `bg-chrome` LAYER UNDER THE MASK. It is the Switch cell's OWN ground — the
+          composer's chrome the belt now shares (see the header above) — and it exists so a scrolling
+          pill disappears UNDER this cell instead of stopping dead against it, fading in over the
+          first 64px — twice the drawn box's own old lead-in. The 64px is the
           operator's pick, "Option 6" of the belt-shade deck (playground, removed 2026-09-14 once it
           had served; see git history): the longest fade offered, taken because the belt reads as a
-          strip that keeps going rather than one that stops.
+          strip that keeps going rather than one that stops. While the band carried its own tint the
+          fade was two stacked layers (chrome over the tint) so the patch would not read as a hole;
+          with the belt on plain chrome one layer is the whole recipe.
           THIS OUTER SPAN IS `pointer-events-none`, AND NOT JUST THE FADE LAYERS INSIDE IT. A plain
           `<span>` sized by flex still hits-tests over its whole box, padding included — so the 64px
           `pl-16` lead-in, drawn only as a fade, was silently eating taps meant for whatever scrolled
@@ -465,9 +434,7 @@ export function ActionsRow({ general, agent, mine, onRun, disabled, handle }: Ac
           <span
             aria-hidden
             className="pointer-events-none absolute inset-0 bg-chrome [mask-image:linear-gradient(to_right,transparent,black_4rem)]"
-          >
-            <span className="absolute inset-0 bg-chrome" />
-          </span>
+          />
           {/* THE MARK ALONE, BEHIND A HAIRLINE. It was a pill for a day: the word "Switch" beside
               the mark, inside a 30% accent border on a 10% accent ground, because this is the one
               control on the belt that does not operate the composer — Keys, Type, Quick, Agent and

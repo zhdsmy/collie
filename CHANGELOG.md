@@ -30,6 +30,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **The composer keys sit on plain chrome and the reply field reads a frame.** The keys belt drops
+  its gray fill and brand tint, matching the rest of the composer, and the reply box's border takes
+  the one-step-deeper rule colour.
+
 ## [1.9.1+collie.5] - 2026-09-16
 
 ### Changed

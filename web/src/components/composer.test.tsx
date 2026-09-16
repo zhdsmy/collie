@@ -1546,15 +1546,17 @@ describe("Composer — the machine opens the actions belt, and no band stands ab
     // stopped being — so the ground and the rules belong to the element carrying that margin and
     // never to the scroller one level in.
     //
-    // THE GROUND IS A FILL, AND THAT OVERRIDES DESIGN.md §4 FOR THIS ROW ALONE. §4 says chrome
-    // separates with a rule and never a fill, and the status band that used to stand here carried
-    // the measurement that argued one down. Altan asked for a belt, which is a fill, so this is the
-    // operator's call. WHICH fill is measured: against the composer's `--chrome`, `bg-foreground/6`
-    // is 1.13:1 light and 1.16:1 dark, and it is the only symmetric recipe available — `--muted` IS
-    // `--chrome` in light and `--card` IS `--chrome` in dark, so neither token separates in both.
+    // THE GROUND IS THE COMPOSER'S OWN CHROME, AND THAT RESTORES DESIGN.md §4 FOR THIS ROW. For a
+    // day the belt carried a measured fill (`bg-foreground/6`) and the scroller a brand tint
+    // (`bg-primary/10`) — the operator's 2026-09-14 belt pick, recorded here then and in the
+    // component header. The operator read the band against the composer row under it and asked for
+    // the keys' ground "same as the others", so the row now draws NO fill of its own: the hairline
+    // below is the only separation, which is what §4 says chrome does. This test pins the ABSENCE —
+    // a fill class returning here must fail.
     renderComposerWithStatus({ scope: { host: "workshop" } }, fixtureServers);
     expect(actions().className).toMatch(/(?:^|\s)-mx-3(?=\s|$)/);
-    expect(actions()).toHaveClass("bg-foreground/6");
+    expect(actions()).not.toHaveClass("bg-foreground/6");
+    expect(actions().className).not.toMatch(/(?:^|\s)bg-/);
     expect(actions().className).not.toMatch(/rounded/);
     // The 12px goes back on the SCROLLER, not on the OverflowEdges wrapper between them: that
     // wrapper owns the flex sizing and the edge cues, and deliberately no padding of its own.
@@ -1564,6 +1566,8 @@ describe("Composer — the machine opens the actions belt, and no band stands ab
     const scrollerClass = actions().querySelector(".overflow-x-auto")!.className;
     expect(scrollerClass).toMatch(/(?:^|\s)pl-3(?=\s|$)/);
     expect(scrollerClass).toMatch(/(?:^|\s)pr-3(?=\s|$)/);
+    // The scroller carries no tint either — the ground is one chrome surface across the whole belt.
+    expect(scrollerClass).not.toMatch(/(?:^|\s)bg-/);
     // The group's GUTTER is the scroller's and nothing else: with the capsule gone, Collie's
     // controls stand on the belt's own ground and own no padding at all.
     expect(row().className).not.toMatch(/(?:^|\s)px-/);

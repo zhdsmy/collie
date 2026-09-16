@@ -14,6 +14,13 @@ function ChatInput({ className, ref, ...props }: React.ComponentProps<"textarea"
       autoComplete="off"
       autoCapitalize="none"
       className={cn(
+        // ── THE BORDER IS `--rule`, ONE STEP DEEPER THAN A COMPONENT EDGE ────────────────
+        // `--input` measured the same as `--border` in light (oklch 0.922), and against the
+        // composer's own `--chrome` ground (0.94) the field's frame all but vanished — the
+        // operator's call from the phone, 2026-09-16: the composer's frame should read "slightly
+        // deeper". `--rule` is the design system's existing one-step-deeper neutral (1.34:1 light
+        // on the page ground); focus still takes over the colour via `focus-visible:border-ring`.
+        //
         // The border is unconditional and only its colour moves on focus, so the textarea never
         // resizes under the caret. Focus adds a second, separate mark OUTSIDE the box — `outline-2
         // outline-offset-2` — rather than the old `ring-[3px]`, which sat flush against the border
@@ -85,7 +92,7 @@ function ChatInput({ className, ref, ...props }: React.ComponentProps<"textarea"
         // It does NOT touch the placeholder: `::placeholder` above still says `whitespace-nowrap`,
         // and `white-space` beats any `overflow-wrap` there is — nothing may wrap what may not have
         // a line break. The one-line, clipped placeholder contract above stands unchanged.
-        "field-sizing-content wrap-anywhere max-h-[min(10rem,30dvh)] min-h-11 w-full resize-none rounded-md border border-input bg-transparent px-3 py-2.5 text-base shadow-xs transition-[color,box-shadow] placeholder:overflow-hidden placeholder:whitespace-nowrap placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50",
+        "field-sizing-content wrap-anywhere max-h-[min(10rem,30dvh)] min-h-11 w-full resize-none rounded-md border border-rule bg-transparent px-3 py-2.5 text-base shadow-xs transition-[color,box-shadow] placeholder:overflow-hidden placeholder:whitespace-nowrap placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}
