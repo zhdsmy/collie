@@ -80,6 +80,14 @@ recognition and send-binding boundaries.
 
 ## Hermes CLI display chrome (captured 2026-09-10)
 
+`hermes--v0213-done.txt` is a sanitized excerpt of the operator's Hermes v0.21.3
+(2026.9.14, `140d1254`) pane, captured read-only on 2026-09-17. Response borders,
+status metrics, SGR styling and the idle composer are retained byte-for-byte; the
+private response body is replaced with harmless paragraphs and the seven-character
+session title is replaced with `Example`. The new emblem is `☤`; older captures use
+`⚕`. Startup tests separately transform the existing sanitized banner's counts
+to include `2 MCP servers`, retaining its width; that variant is synthetic.
+
 `hermes--startup-resume.txt` is a sanitized structural fixture assembled on 2026-09-16:
 the logo, startup panel, tool/skill inventory, version/count styles and Welcome/Tip come from
 a read-only ANSI capture of the installed Hermes v0.21.2 (2026.9.11, `1021a032`). The personal

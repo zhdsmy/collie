@@ -344,7 +344,7 @@ function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]
       </span>
     );
   }
-  const model = /^⚕\s+/.exec(text);
+  const model = /^[⚕☤]\s+/.exec(text);
   if (model && sessionModel) {
     const visible = text.slice(model[0].length);
     const names = [sessionModel.model, (sessionModel.model.split("/").at(-1) ?? sessionModel.model).replace(/\.gguf$/, "")];

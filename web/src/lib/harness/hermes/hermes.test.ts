@@ -8,6 +8,7 @@ import { hermesAdapter } from ".";
 
 const PANES = join(import.meta.dirname, "../../../fixtures/panes");
 const capture = readFileSync(join(PANES, "hermes--done.txt"), "utf8");
+const upgraded = readFileSync(join(PANES, "hermes--v0213-done.txt"), "utf8");
 const working = readFileSync(join(PANES, "hermes--working.txt"), "utf8");
 const submitted = readFileSync(join(PANES, "hermes--submitted-input.txt"), "utf8");
 const hint = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
@@ -47,6 +48,31 @@ function recut(text: string, frame: number, pane: number): string {
 }
 
 describe("Hermes display chrome", () => {
+  it("recognizes v0.21.3 caduceus borders and fixed status without losing paragraphs", () => {
+    const source = lines(upgraded);
+    const status = hermesAdapter.extractStatusLines(source);
+    expect(status).toHaveLength(1);
+    expect(lineText(status[0]!)).toContain("☤ deepseek-flash");
+    expect(lineText(status[0]!)).toContain("◎ 50.4%");
+    expect(status[0]!.segments.every((s) => !s.bg && !s.style.backgroundColor)).toBe(true);
+    for (const screen of [upgraded, recut(upgraded, 211, 159)]) {
+      const output = hermesAdapter.buildBlocks(lines(screen)).flatMap((block) => block.lines);
+      const borders = output.filter((row) => row.fitRule);
+      expect(borders).toHaveLength(2);
+      expect(lineText(borders[0]!)).toMatch(/^╭─ ☤ Hermes .*╮$/u);
+      expect(lineText(borders[1]!)).toMatch(/^╰─+╯$/u);
+      expect(borders.every((row) => row.segments.every((s) => !s.muted))).toBe(true);
+      expect(output.map(lineText).join("\n")).toContain("response.\n\nA second paragraph");
+      expect(output.map(lineText).join("\n")).not.toContain("Turn these notes");
+    }
+    const currentWorking = working.replaceAll("⚕", "☤");
+    expect(hermesAdapter.extractStatusLines(lines(currentWorking))).toHaveLength(2);
+    expect(mirror(currentWorking)).not.toContain(hint);
+    const drafted = currentWorking.split("\n").map((row) =>
+      row.includes("❯") ? "☤ ❯ A real draft" : row).join("\n");
+    expect(mirror(drafted)).toContain("A real draft");
+  });
+
   it("extends only a captured submitted-input border pair and preserves source text", () => {
     const output = hermesAdapter.buildBlocks(lines(submitted))[0]!.lines;
     expect(output.map((line) => !!line.fullWidthRule)).toEqual([true, false, true]);

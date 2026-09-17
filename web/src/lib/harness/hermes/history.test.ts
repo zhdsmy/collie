@@ -14,6 +14,23 @@ const blocks = (text: string) => hermesAdapter.buildBlocks(lines(text));
 const histories = (text: string) => blocks(text).filter((b): b is RawBlock => b.kind === "raw" && b.sessionInfo?.kind === "history");
 
 describe("Hermes resumed history", () => {
+  it("folds the v0.21.3 startup count with MCP servers and preserves semantic fields", () => {
+    const newer = startup.replace("v0.21.2", "v0.21.3")
+      .replace("86 skills · /help for commands\x1b[0m" + " ".repeat(16),
+        "86 skills · 2 MCP servers · /help for commands\x1b[0m");
+    expect(newer).toContain("2 MCP servers · /help");
+    const output = blocks(newer);
+    const card = output.find((block) => block.kind === "raw" && block.sessionInfo?.kind === "startup");
+    if (card?.kind !== "raw" || card.sessionInfo?.kind !== "startup") throw new Error("Missing startup");
+    expect(card.sessionInfo).toMatchObject({ version: "v0.21.3", tools: 25, skills: 86 });
+    expect(card.sessionInfo.details.fields.find((field) => field.label === "model")?.value.text).toBe("deepseek-flash");
+    expect(card.sessionInfo.details.groups.find((group) => group.kind === "mcp")?.items).toHaveLength(2);
+    expect(output.flatMap((block) => block.lines)).toHaveLength(lines(newer).length);
+    expect(card.lines.map(lineText).join("\n")).not.toMatch(/[█╭╰╔]/u);
+    const plain = lines(newer).map(lineText).join("\n");
+    expect(blocks(plain).some((block) => block.kind === "raw" && block.sessionInfo?.kind === "startup")).toBe(false);
+  });
+
   it("extracts complete startup values and maps every displayed value to searchable text", () => {
     for (const block of blocks(startup)) {
       if (block.kind !== "raw" || !block.sessionInfo) continue;

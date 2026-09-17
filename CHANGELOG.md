@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hermes startup cards and fixed status survive the latest CLI.** Recognize both Hermes emblems and the new MCP server count, preserve rounded response borders as single full-width lines, and keep the complete model and reasoning level in the fixed status bar.
+
 ## [1.10.0+collie.10] - 2026-09-17
 
 ### Fixed

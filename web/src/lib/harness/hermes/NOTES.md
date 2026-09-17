@@ -1,5 +1,20 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## v0.21.3 emblem and startup counts — 2026-09-17
+
+Read-only inspection of the existing General pane (v0.21.3, `140d1254`) confirmed
+two format changes: the response/status/working emblem is now `☤`, and the startup
+count row includes `N MCP servers` before `/help`. Both `⚕` and `☤` are recognized
+at the same Hermes-only boundaries. Unknown prompt symbols still fail closed.
+The startup count accepts the optional MCP quantity; existing detail groups already
+retain each server's name and description, so no new card structure is needed.
+
+The live frame now yields startup/history cards, fitted rounded response borders,
+and one fixed status row. Full model/effort enrichment also accepts the new emblem.
+Regression checks retain older fixtures, cover new idle and wrapped response frames,
+synthetic working/draft states and startup counts, and preserve source-row mapping.
+No input was sent to the user's Hermes conversation.
+
 ## Startup and resume announcements share read-only cards — 2026-09-16
 
 The native startup panel has a bold `Hermes Agent v…` heading, a rounded full frame,

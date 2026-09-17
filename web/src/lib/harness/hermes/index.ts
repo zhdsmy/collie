@@ -8,27 +8,27 @@ import { extractHistoryMessages, extractStartupDetails } from "./session-info";
 // Hermes chrome and verified clarify cards. Ordinary text replies retain their existing
 // transport; clarify option digits use the shared fresh-dialog guard.
 const RULE = /^─{8,}$/u;
-const RESPONSE_TOP = /^╭─\s*(⚕\s*Hermes(?:\s+\d{2}:\d{2}(?::\d{2})?)?)\s*─{8,}╮$/u;
+const RESPONSE_TOP = /^╭─\s*([⚕☤]\s*Hermes(?:\s+\d{2}:\d{2}(?::\d{2})?)?)\s*─{8,}╮$/u;
 const RESPONSE_BOTTOM = /^╰─{8,}╯$/u;
-const STATUS_HEAD = /^\s*⚕\s+\S/u;
+const STATUS_HEAD = /^\s*[⚕☤]\s+\S/u;
 const CONTEXT = /(?:ctx\s+--|~?[\d.]+[KMB]?\/[\d.]+[KMB]?|\[[█░]+\]\s*(?:~?\d+(?:\.\d+)?%|--))/u;
 const WORKING_HINT = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
 /**
  * The prompt row's LEADING ICON is state-dependent, and the set is closed — `cli_tui_mixin.py`'s
- * `_get_tui_prompt_fragments` paints exactly: ⚕ working · ? clarify · ✎ clarify-freetext · ⚠
+ * `_get_tui_prompt_fragments` paints exactly: ⚕/☤ working · ? clarify · ✎ clarify-freetext · ⚠
  * approval · 🔐 sudo · 🔑 secret · ● ◉ 🎤 voice · a busy-command spinner frame (`⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`,
  * cli.py `_COMMAND_SPINNER_FRAMES`, advancing ten times a second) — optionally preceded by a
  * non-default profile name (`coder ❯`), and optionally followed by `❯` (minimal chrome omits it).
  * Every glyph outside `[⚕?✎❯]` once rejected its whole footer: the /compact screen (spinner) and
  * every password prompt (🔑) left the statusline, wrapped across rows, stranded in the mirror.
  */
-const STATE_ICON = "[⚕⚠?✎🔐🔑●◉🎤]|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]";
+const STATE_ICON = "[⚕☤⚠?✎🔐🔑●◉🎤]|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]";
 /** A profile name is a WORD (cli profiles): letters, digits, `_`/`-` — never an emoji, so an
  * unknown icon followed by `❯` still reads as unknown rather than as somebody's profile. */
 const PROFILE = "[\\p{L}\\p{N}_-]+";
 const PROMPT = new RegExp(`^(?:(?:${PROFILE} )?(?:❯(?: |$)|(?:${STATE_ICON}) (?:❯(?: |$))?))`, "u");
 /** A frame border whose row cannot carry its closing corner: the pane cut it. See {@link rejoinWrappedBorders}. */
-const BORDER_OPEN = /^(?:╭─\s*⚕\s*Hermes|╰─{8,})/u;
+const BORDER_OPEN = /^(?:╭─\s*[⚕☤]\s*Hermes|╰─{8,})/u;
 /** What such a border continues onto — the rest of the dashes, corner last. */
 const BORDER_TAIL = /^─{8,}[╮╯]?$/u;
 /** Rows one border may be spread over before it stops looking like a border. */
@@ -77,7 +77,7 @@ function locateFooter(lines: StyledLine[]): Footer | null {
     // states whose prompt REPLACES the composer with an instruction (⚠ approval · 🔐 sudo · 🔑
     // secret · ● ◉ 🎤 voice · a busy command's spinner — "type password…", "⠋ Compressing
     // context…") it is lifted, so the composer block can leave the mirror without taking the words
-    // with it. On ⚕ the only lifted placeholder is the verified working hint (canonical one-line
+    // with it. On ⚕/☤ the only lifted placeholder is the verified working hint (canonical one-line
     // spelling — physical wrapping mangles the join); an UNKNOWN italic there, and every idle ❯
     // suggestion, keep the composer visible exactly as before (clarify's own card carries ?/✎).
     // Typed copies are never italic, so a draft is never lifted.
@@ -96,7 +96,7 @@ function locateFooter(lines: StyledLine[]): Footer | null {
       if (!status.includes("│") || !CONTEXT.test(status)) return null;
       // Suggestions are italic. Real drafts remain visible until their editing/submit contract
       // is verified; hiding someone else's typed text would lose it.
-      const empty = !!hint || (text.startsWith("⚕ ")
+      const empty = !!hint || (/^[⚕☤] /u.test(text)
         ? input.every((s) => !s.text.trim())
         : draft.every((s) => !s.text.trim() || s.italic) && continuation.every((s) => !s.text.trim()));
       return { statusStart, top, empty, hint, clarify: text.startsWith("? ") };
@@ -317,7 +317,7 @@ function foldStartupInfo(blocks: RawBlock[]): RawBlock[] {
         }
         if (!text.startsWith("│") || !text.endsWith("│")) break;
         hasTools ||= /\bAvailable Tools\s*│$/u.test(text);
-        counts ||= text.match(/\b(\d+) tools · (\d+) skills · \/help for commands\s*│$/u);
+        counts ||= text.match(/\b(\d+) tools · (\d+) skills · (?:\d+ MCP servers? · )?\/help for commands\s*│$/u);
       }
     }
     // Welcome lives after replay in Hermes. Keep these rows in place and let the renderer append

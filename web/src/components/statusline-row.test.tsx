@@ -424,10 +424,10 @@ it("leaves a claude mode row without a wired control verbatim", () => {
   expect(within(container).queryAllByRole("button")).toHaveLength(0);
 });
 
-it("shows a matched Hermes session's full model and saved effort without truncation", () => {
+it.each(["⚕", "☤"])("shows a matched Hermes %s session model and saved effort without truncation", (glyph) => {
   const model = "provider/example-model-with-a-very-long-name";
   const terminalName = "example-model-with-a-very-long-name".slice(0, 23) + "...";
-  const row = splitLines(parseAnsi(`⚕ \x1b[33m${terminalName}\x1b[0m │ [░░░░░░░░░░] ~2% │ ◷ 1.4s`))[0]!;
+  const row = splitLines(parseAnsi(`${glyph} \x1b[33m${terminalName}\x1b[0m │ [░░░░░░░░░░] ~2% │ ◷ 1.4s`))[0]!;
   const { container, rerender } = render(<StatuslineRow agent="hermes" row={row} sessionModel={{ model, reasoningEffort: "high" }} />);
   expect(within(container).getByText(`${model} high`).style.color).toBe("var(--ansi-3)");
   expect(container.textContent).not.toContain("...");

@@ -48,7 +48,8 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
       } });
     });
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
-      paneId: "w1:p1", text: history + submitted + text.replace("example-model", model.slice(0, 23) + "..."),
+      paneId: "w1:p1", text: (history + submitted + text.replace("example-model", model.slice(0, 23) + "..."))
+        .replaceAll("⚕", theme === "dark" ? "☤" : "⚕"),
       truncated: false, revision: 1, sessionModel: { model, reasoningEffort: "high" },
     } }));
     await page.goto("/pane/w1:p1");
@@ -98,9 +99,10 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await expect.poll(async () => (await operations.boundingBox())!.y).toBe(hintBox!.y);
     await expect.poll(async () => (await metrics.boundingBox())!.y).toBe(statusBox!.y);
     await operations.evaluate((el) => { el.parentElement!.parentElement!.scrollLeft = 10000; });
-    const hintEndVisible = await operations.evaluate((el) =>
-      el.getBoundingClientRect().right <= el.parentElement!.parentElement!.getBoundingClientRect().right);
-    expect(hintEndVisible).toBe(true);
+    const hintOverflow = await operations.evaluate((el) =>
+      el.getBoundingClientRect().right - el.parentElement!.parentElement!.getBoundingClientRect().right);
+    // WebKit rounds scroll extents to whole pixels while element bounds stay fractional.
+    expect(hintOverflow).toBeLessThanOrEqual(1);
     if (width === 320) expect(await operations.evaluate((el) => el.parentElement!.parentElement!.scrollLeft)).toBeGreaterThan(0);
 
     // A deliberate pan to other tabs survives an ordinary snapshot refresh.

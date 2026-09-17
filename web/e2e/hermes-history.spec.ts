@@ -14,6 +14,9 @@ test.use({ serviceWorkers: "block" });
 for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"], [320, "de", "dark"]] as const) {
   test(`Hermes resumed history: ${width} ${locale} ${theme}`, async ({ page }, testInfo) => {
     const title = dictionaries[locale]["chat.historyPreview.title"];
+    const banner = locale === "zh" ? capture.replace("v0.21.2", "v0.21.3")
+      .replace("86 skills · /help for commands\x1b[0m" + " ".repeat(16),
+        "86 skills · 2 MCP servers · /help for commands\x1b[0m") : capture;
     const startupTitle = dictionaries[locale]["chat.startupPreview.title"];
     const writes: string[] = [];
     await page.setViewportSize({ width, height: 844 });
@@ -32,7 +35,7 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
         ? Object.assign({}, agent, { agent: "hermes", status: "idle", hasSession: true }) : agent),
     } }));
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
-      paneId: "w1:p1", text: `${capture}\n${done}`, truncated: false, revision: 1,
+      paneId: "w1:p1", text: `${banner}\n${done}`, truncated: false, revision: 1,
     } }));
     await page.route((url) => /\/api\/pane\/[^/]+\/(keys|reply)$/.test(url.pathname), (route) => {
       writes.push(route.request().url());
@@ -43,7 +46,7 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     const startupToggle = page.getByRole("button", { name: startupTitle, exact: true });
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await expect(startupToggle).toHaveAttribute("aria-expanded", "false");
-    await expect(startupToggle).toHaveAccessibleDescription(/v0\.21\.2.*25.*86/);
+    await expect(startupToggle).toHaveAccessibleDescription(locale === "zh" ? /v0\.21\.3.*25.*86/ : /v0\.21\.2.*25.*86/);
     await expect(toggle).toHaveAccessibleDescription(/General.*24/);
     const uiFont = await page.locator("body").evaluate((element) => getComputedStyle(element).fontFamily);
     await expect(startupToggle).toHaveCSS("font-family", uiFont);
