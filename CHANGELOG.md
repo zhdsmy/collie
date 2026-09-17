@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex resume cards handle identical and truncated session titles.** Bind each visible session to its native list position, keep row identities stable while browsing, and accept native search hint changes without weakening write guards or affecting other agents.
+
 ## [1.10.0+collie.9] - 2026-09-17
 
 ### Changed

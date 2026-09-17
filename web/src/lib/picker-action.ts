@@ -271,10 +271,20 @@ function expectedSharedOrder(
   return sameStrings(actual, expected);
 }
 
+/** Only search read-back may change these native session hints; write guards stay exact. */
+function searchFooter(model: PickerModel): string {
+  if (!model.sessionAction) return model.footer;
+  const escape = model.query ? /\besc (?:clear search|clear)(?=\s|$)/ : /\besc (?:start new|new|exit)(?=\s|$)/;
+  const footer = model.footer.replace(escape, "esc");
+  // Codex hides archive when the search has no results.
+  return (model.options.length ? footer.replace(/\s+ctrl\+a archive(?=\s|$)/, "") : footer)
+    .replace(/\s+/g, " ").trim();
+}
+
 /** Compare option facts shared by two search results while allowing filtering to add/remove rows. */
 function sameSearchFacts(a: PickerModel, b: PickerModel): boolean {
   if (!samePickerStage(a, b)) return false;
-  if (a.footer !== b.footer || !samePreview(a, b)) return false;
+  if (searchFooter(a) !== searchFooter(b) || !samePreview(a, b)) return false;
   const before = optionFacts(a);
   const afterById = new Map(optionFacts(b).map((option) => [option.id, option]));
   const shared = before.filter((option) => afterById.has(option.id));

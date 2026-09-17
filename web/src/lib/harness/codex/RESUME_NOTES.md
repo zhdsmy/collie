@@ -21,11 +21,17 @@ itself, so the header must own the top: anything but blank lines above it refuse
 region, and the parse also requires the exact row geometry, a painted (bold) pointer
 marker, and `ctrl+o`'s label agreeing with the density the geometry implies.
 
-Nothing is inferred: only the rows the viewport shows become options. Two rows that
-produce the same label, a second pointer, an unpainted pointer, a row expanded with
-`ctrl+e` (its `Session:` / `Created:` / `Conversation:` block is not a row grammar), or a
-footer that is not the hint rows refuse the whole screen, and the mirror keeps rendering
-what the terminal drew.
+Only rows the viewport shows become options. A second pointer, an unpainted pointer,
+a row expanded with `ctrl+e` (its `Session:` / `Created:` / `Conversation:` block
+is not a row grammar), or a footer that is not hint rows refuses the whole screen,
+so the mirror keeps rendering what the terminal drew.
+
+The footer's selected position minus the visible pointer index gives the first
+visible row's absolute position. IDs combine that position and the native title:
+identical/truncated titles remain distinct, and scrolling does not renumber shared
+rows. Position and total must agree with the visible rows; loading or narrow
+footers without numeric positions fall back to native rendering. Full-region
+guards still check every action against the current frame.
 
 ## Verified recipes
 
@@ -53,8 +59,8 @@ not model, and none is needed to resume a session.
 
 ## Limits
 
-- The row carries no id on screen, so the label IS the identity. Two sessions whose
-  previews are identical refuse the region rather than guess which row a tap meant.
+- Positions identify rows in the current native list, not persistent Codex session
+  UUIDs. Never retain these IDs across picker instances or bypass the frame guard.
 - Comfortable rows whose meta line Codex wrapped across two terminal rows refuse the
   region; the card returns as soon as the row fits on one line again.
 - Relative dates (`4d ago`) are part of the region the bridge binds to. A tick between the
@@ -70,3 +76,23 @@ Native behavior was checked against `openai/codex` tag `rust-v0.154.0`:
 `pack_footer_parts`, `footer_hint_lines`, `render_empty_state_line`) and the
 `thread/list` mapping in `row_from_app_server_thread`. Source descriptions are supporting
 evidence; the ANSI corpus and the live round trips are the interactive capability gate.
+
+## Duplicate-title regression (2026-09-17)
+
+A real `codex resume` list contained two equal, truncated titles and the old
+label-uniqueness check rejected all ten rows. The private frame parses after the
+position-based fix; no real session titles or paths are committed. Regression
+cases deliberately duplicate titles in existing fixtures and cover pointer moves,
+scrolling, inconsistent positions, and selecting the second identical title.
+
+Search changes the native Esc hint (start new/exit → clear search) and hides the
+archive hint when there are no results. Only search read-back normalizes those
+specific hints; all writes still bind to the full, unmodified current frame.
+
+Live verification used the actual client action runner against the user's General
+pane: Down/Up, no-result search, and clearing the query all settled successfully.
+In the same pane, a temporary credential-free Codex home with two synthetic,
+identically titled sessions verified Down + Enter restored the second session's
+unique marker. The temporary Codex process was exited and the original resume
+list restored. Chromium/WebKit checks cover Chinese, English and German at
+320/390 px; they use synthetic API responses, not a real iPhone PWA.

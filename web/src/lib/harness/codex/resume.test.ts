@@ -21,7 +21,7 @@ describe("Codex saved-session picker parsing", () => {
     expect(picker.query).toBe("");
     expect(picker.options).toEqual([
       {
-        id: "Refactor the picker row formatter into three small helpers",
+        id: "1:Refactor the picker row formatter into three small helpers",
         label: "Refactor the picker row formatter into three small helpers",
         description: "4d ago",
         pointed: true,
@@ -30,7 +30,7 @@ describe("Codex saved-session picker parsing", () => {
         orderable: false,
       },
       {
-        id: "Explain how the fixture grammar decides a picked row",
+        id: "2:Explain how the fixture grammar decides a picked row",
         label: "Explain how the fixture grammar decides a picked row",
         description: "5d ago",
         pointed: false,
@@ -47,6 +47,30 @@ describe("Codex saved-session picker parsing", () => {
     expect(model("dense-moved").options.map((option) => option.pointed)).toEqual([false, true]);
     expect(model("dense-moved").signature).not.toBe(model("dense").signature);
   });
+
+  it("distinguishes identical truncated titles and keeps IDs stable while browsing", () => {
+    const duplicate = (state: string) => text(state).replaceAll(
+      "Explain how the fixture grammar decides a picked row",
+      "Refactor the picker row formatter into three small helpers",
+    );
+    const initial = detectResumeRegion(parse(duplicate("dense")))!.model;
+    const moved = detectResumeRegion(parse(duplicate("dense-moved")))!.model;
+    expect(initial.options[0]!.label).toBe(initial.options[1]!.label);
+    expect(new Set(initial.options.map((option) => option.id)).size).toBe(2);
+    expect(moved.options.map((option) => option.id)).toEqual(initial.options.map((option) => option.id));
+    expect(moved.options.find((option) => option.pointed)?.id).toBe(initial.options[1]!.id);
+
+    // Simulate a viewport that scrolls the first row out, retaining the native progress.
+    const scrolled = parse(duplicate("dense-moved"));
+    scrolled.splice(4, 1);
+    expect(detectResumeRegion(scrolled)!.model.options[0]!.id).toBe(initial.options[1]!.id);
+  });
+
+  it.each(["0 / 2", "3 / 2", "1 / 1", "9007199254740992 / 9007199254740993"])(
+    "refuses inconsistent native row positions: %s", (progress) => {
+      expect(detectResumeRegion(parse(text("dense").replace("1 / 2", progress)))).toBeNull();
+    },
+  );
 
   it("distinguishes fork presentation without translating the native guard identity", () => {
     const source = text("dense").replace("Resume a previous session", "Fork a previous session");

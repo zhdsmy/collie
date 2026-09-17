@@ -29,7 +29,9 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
         ? Object.assign({}, agent, { agent: "codex", status: "idle", hasSession: true }) : agent),
     } }));
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
-      (route) => route.fulfill({ json: { paneId: "w1:p1", text: state === "done" ? paneTextWithDraft() : fixture(state), truncated: false, revision: 1 } }));
+      (route) => route.fulfill({ json: { paneId: "w1:p1", text: state === "done" ? paneTextWithDraft() : state === "list"
+        ? fixture(state).replace("Explain how the fixture grammar decides a picked row", "Refactor the picker row formatter into three small helpers")
+        : fixture(state), truncated: false, revision: 1 } }));
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/reply", (route) => {
       // SAFETY: this is the app's search payload; assert the native text and binding before advancing.
       const body = route.request().postDataJSON() as { text: string; submit: boolean; expected_prompt?: string };
@@ -55,6 +57,9 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     const search = panel.getByRole("searchbox", { name: messages["dialog.sessions.search"] });
     await expect(search).not.toBeFocused();
     await expect(panel.locator('[data-slot="session-options"] button')).toHaveCount(4);
+    await expect(panel.getByRole("button", {
+      name: "Refactor the picker row formatter into three small helpers", exact: true,
+    })).toHaveCount(2);
     await expect(panel.locator("details")).not.toHaveAttribute("open", "");
     await expect(panel.locator('[data-slot="picker-footer"]')).not.toBeVisible();
     expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);

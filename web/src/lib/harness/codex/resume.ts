@@ -19,7 +19,7 @@ const TITLE = /^(?:Resume|Fork) a previous session$/;
  *  prefix is read, and Codex's own search keeps its text free of spaces. */
 const SEARCH = /^ (?:Type to search|Search: (\S*))/;
 /** The footer's progress rule: a full-width `─` rail with its label painted over the right end. */
-const PROGRESS = /^─+ .*% ?─$/;
+const PROGRESS = /^─+ (\d+) ?\/ ?(\d+) · \d+% ?─$/;
 /** `format_relative_time` — everything the 12-column date cell can hold. */
 const RELATIVE_TIME = /^(?:now|\d+s ago|\d+m ago|\d+h ago|\d+d ago|-)$/;
 /** `selection_marker` inside the 4-column list inset: `❯ ` selected, `⌄ ` expanded, `  ` plain. */
@@ -120,7 +120,7 @@ function readRows(
     const pointed = glyph !== "  ";
     // Codex paints the marker it just drew; an unpainted one is a stale or torn frame, not a row.
     if (pointed && marker(lines[rowLine]!, glyph) !== true) return null;
-    if (!label || options.some((option) => option.label === label)) return null;
+    if (!label) return null;
     options.push({
       id: label,
       label,
@@ -185,6 +185,19 @@ export function detectResumeRegion(lines: StyledLine[]): ResumeRegion | null {
   if (rows.options.filter((option) => option.pointed).length !== (rows.options.length > 0 ? 1 : 0)) {
     return null;
   }
+
+  // Titles can be identical (including native truncation). The footer gives the selected
+  // row's absolute position, so IDs stay distinct and stable when the visible window scrolls.
+  const progress = PROGRESS.exec(texts[rule]!.trim())!;
+  const selected = Number(progress[1]);
+  const total = Number(progress[2]);
+  const first = selected - rows.options.findIndex((option) => option.pointed);
+  if (!Number.isSafeInteger(selected) || !Number.isSafeInteger(total)) return null;
+  if (rows.options.length === 0 ? selected !== 0 || total !== 0
+    : first < 1 || first + rows.options.length - 1 > total) return null;
+  rows.options.forEach((option, index) => {
+    option.id = `${first + index}:${option.label}`;
+  });
 
   // The footer names the other density; when it is legible it must agree with the geometry.
   const hint = footer.join(" ").match(DENSITY_HINT)?.[1];

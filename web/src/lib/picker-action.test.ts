@@ -255,6 +255,28 @@ describe("submitPickerIntent", () => {
     expect(mockSendKeys.mock.calls.every((call) => call[3] !== undefined)).toBe(true);
   });
 
+  it("resumes the second identical title by its native row position", async () => {
+    const duplicate = (state: string) => {
+      const source = fixtureText(`codex--v0154-resume-${state}.txt`).replaceAll(
+        "Explain how the fixture grammar decides a picked row",
+        "Refactor the picker row formatter into three small helpers",
+      );
+      const block = codexAdapter.buildBlocks(splitLines(parseAnsi(source)))
+        .find((candidate) => candidate.kind === "picker");
+      if (!block || block.kind !== "picker") throw new Error("missing duplicate resume picker");
+      return block.picker;
+    };
+    const first = duplicate("dense");
+    const second = duplicate("dense-moved");
+    scriptWithClosedPicker(first, first, first, second, second, null);
+    const result = await submitPickerIntent(args(first, {
+      kind: "choose", id: first.options[1]!.id,
+    }));
+    expect(result).toEqual({ status: "sent" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Down"], ["Enter"]]);
+    expect(mockSendKeys.mock.calls.every((call) => call[3] !== undefined)).toBe(true);
+  });
+
   it("toggles a pointed multiple option with Space and never a numeric shortcut", async () => {
     const model = pickerModel({ pointer: "bravo", checked: ["alpha"] });
     const toggled = checkedFlip(model, "bravo");
@@ -340,6 +362,29 @@ describe("submitPickerIntent", () => {
     expect(res).toEqual({ status: "changed" });
     expect(mockSendKeys).not.toHaveBeenCalled();
     expect(mockFetchPane).not.toHaveBeenCalled();
+  });
+
+  it("accepts only the session search hint changes, including an empty result", async () => {
+    const original = fixturePicker("codex--v0154-resume-dense.txt");
+    const empty = fixturePicker("codex--v0154-resume-search-none.txt");
+    original.footer = " enter resume   ctrl+a archive   esc start new   ctrl+c quit";
+    empty.footer = " enter resume   esc clear search   ctrl+c quit";
+    script(original, original, empty);
+    expect(await submitPickerIntent(args(original, { kind: "search", query: "zzz" })))
+      .toEqual({ status: "sent" });
+    script(empty, empty, empty, original);
+    expect(await submitPickerIntent(args(empty, { kind: "search", query: "" })))
+      .toEqual({ status: "sent" });
+
+    // A different action or agent's footer must still stop search read-back.
+    for (const [before, after] of [
+      [original, { ...empty, footer: empty.footer.replace("resume", "fork") }],
+      [{ ...original, sessionAction: undefined }, { ...empty, sessionAction: undefined }],
+    ]) {
+      script(before!, before!, after!);
+      expect(await submitPickerIntent(args(before!, { kind: "search", query: "zzz" })))
+        .toEqual({ status: "changed" });
+    }
   });
 
   it("replaces search with Backspace and raw submit=false text, then reads the query", async () => {
