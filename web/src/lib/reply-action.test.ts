@@ -272,6 +272,38 @@ describe("sendGuardedReply", () => {
     ]);
   });
 
+  // The 82-column stall: Claude's slash popup clipped a command name to "…ugin:…", the box went
+  // undetected, and the guard typed the text and withheld Enter. The same screen now verifies.
+  it("verifies a slash command under a popup with a clipped command name, then submits", async () => {
+    const calls = harness(() => fixtureText("claude--autocomplete-slash-clipped.txt"));
+
+    const out = await sendGuardedReply({ paneId: "w1:p1", text: "/model", agent: "claude", ...instant });
+
+    expect(out).toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: "/model", submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
+  // A stale box echoed above a live dialog must never read as the composer: nothing is typed, and no
+  // submit key can answer the dialog.
+  it("refuses a dialog screen with a stale box triple above it, and never sends Enter", async () => {
+    const dialog = fixtureText("claude--permission-bash.txt");
+    const calls = harness(() => `● earlier\n${BOX_RULE}\n❯ please run the migration\n${BOX_RULE}\n\n${dialog}`);
+
+    const out = await sendGuardedReply({
+      paneId: "w1:p1",
+      text: "please run the migration",
+      agent: "claude",
+      ...instant,
+    });
+
+    expect(out.status).toBe("blocked");
+    expect(calls.some((c) => c.submit)).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
   it("types, verifies the text on the input line, then submits", async () => {
     const calls = harness(() => paneWithDraft("ship it please"));
 
@@ -287,6 +319,16 @@ describe("sendGuardedReply", () => {
     // sends nothing but its configured submitKeys.
     expect(calls).toEqual([
       { text: "ship it please", submit: false },
+      { text: "", submit: true },
+    ]);
+  });
+
+  it("verifies and submits while Claude displays its native interrupt hint", async () => {
+    const calls = harness(() => `${paneWithDraft("continue")}\n⏵⏵ auto mode on · esc to interrupt · ← for agents`);
+    expect(await sendGuardedReply({ paneId: "w1:p1", text: "continue", agent: "claude", ...instant }))
+      .toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text: "continue", submit: false },
       { text: "", submit: true },
     ]);
   });

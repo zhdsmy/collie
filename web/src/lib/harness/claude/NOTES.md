@@ -43,6 +43,12 @@ Where each half lives: detection in `harness/claude/mode.ts` (pure, fixture-pinn
 in `lib/claude-mode-switch.ts` (the Codex toggle's choreography, one key instead of a command), the
 button in `components/statusline-row.tsx` (icons borrowed from the composer keyboard's own Shift and
 Tab). This file is the record of WHY; the tests pin the shapes.
+Upstream 1.10.1 locates the composer by its frame and rejects modal key hints. Keep the
+native working segment `esc to interrupt` exempt only inside the confirmed statusline
+run, never an unknown tail or the background-agent footer. Other hints on that same
+row still block typing. The shared menu-key parser stays unchanged, so the exception
+cannot leak to other agents. Frame, send and mode-switch tests cover this boundary.
+
 # Tabbed Settings stay native — 2026-09-16
 
 Claude Code 2.1.273's Status/Config/Usage/Stats tabs are not generic pickers. The generic detector

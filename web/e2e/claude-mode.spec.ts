@@ -6,12 +6,14 @@ import { installApiStub } from "./fixtures/api";
 // The mode row as the captures paint it: the mode run pink, the hint grey, both behind the input box.
 const pane = readFileSync(new URL("../src/fixtures/panes/claude--draft-footer-single.txt", import.meta.url), "utf8");
 const dialog = readFileSync(new URL("../src/fixtures/panes/claude--permission-edit.txt", import.meta.url), "utf8");
-const cycled = pane.replace("bypass permissions on", "accept edits on");
 
 test.use({ serviceWorkers: "block" });
 
 for (const width of [320, 390]) test(`claude mode tap: ${width}`, async ({ page }, testInfo) => {
-  let current = pane;
+  const agentHint = width === 320 ? "esc to interrupt · ← for agents" : "← 1 agent";
+  const screen = pane.replace("← 1 agent", agentHint);
+  const cycled = screen.replace("bypass permissions on", "accept edits on");
+  let current = screen;
   await page.setViewportSize({ width, height: 844 });
   await page.addInitScript(() => localStorage.setItem("collie:locale:v1", "en"));
   await installApiStub(page);
@@ -41,7 +43,7 @@ for (const width of [320, 390]) test(`claude mode tap: ${width}`, async ({ page 
   // The terminal's own hint text is gone, replaced by the two keys it named (drawn as icons).
   await expect(page.getByText("shift+tab to cycle")).toHaveCount(0);
   // The rest of the row survives verbatim.
-  await expect(page.getByText("← 1 agent")).toBeVisible();
+  await expect(page.getByText(agentHint, { exact: false })).toBeVisible();
   await expect(button).toBeEnabled(); // working is NOT a refusal for this control
   await button.click();
 
@@ -50,7 +52,7 @@ for (const width of [320, 390]) test(`claude mode tap: ${width}`, async ({ page 
   expect(sentKeys[0]![0]).toEqual(["shift+tab"]);
   // The binding is the composer through the buffer's tail — the bridge's six-row window.
   expect(String(sentKeys[0]![1])).toContain("⏵⏵ bypass permissions on");
-  expect(String(sentKeys[0]![1])).toContain("← 1 agent");
+  expect(String(sentKeys[0]![1])).toContain(agentHint);
   // The read-back confirms, and the success line names the new mode.
   await expect(page.getByText("Claude mode: ⏵⏵ accept edits on")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("claude-mode.png") });
