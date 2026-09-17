@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.0+collie.10] - 2026-09-17
+
 ### Fixed
 
-- **Codex resume cards handle identical and truncated session titles.** Bind each visible session to its native list position, keep row identities stable while browsing, and accept native search hint changes without weakening write guards or affecting other agents.
+- **Codex resume cards handle identical and truncated session titles.** Bind each visible session to its native list position, keep row identities stable while browsing, and accept native search hint changes without weakening write guards or affecting other agents. ([0c6aeb14](https://github.com/zhdsmy/collie/commit/0c6aeb14))
 
 ## [1.10.0+collie.9] - 2026-09-17
 
