@@ -1,182 +1,16 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-
 import { describe, expect, it } from "vitest";
-
 import { parseAnsi } from "../../ansi";
-import { splitLines, lineText, type StyledLine } from "../../blocks";
-import { pickersEqual, pickersSameIdentity } from "../picker-model";
+import { splitLines } from "../../blocks";
 import { codexAdapter } from "./index";
 import { detectAskRegion } from "./ask";
+import { lineText } from "./markers";
 
-const PANES_DIR = join(import.meta.dirname, "..", "..", "..", "fixtures", "panes");
-
-function fixtureLines(name: string): StyledLine[] {
-  return splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8")));
-}
-
-function fixtureModel(name: string) {
-  const region = detectAskRegion(fixtureLines(name));
-  if (!region) throw new Error(`fixture did not detect: ${name}`);
-  return region.model;
-}
-
-function cloneLines(lines: StyledLine[]): StyledLine[] {
-  return lines.map((line) => ({
-    ...line,
-    segments: line.segments.map((segment) => ({ ...segment })),
-  }));
-}
-
-function lineMatching(lines: StyledLine[], predicate: (text: string) => boolean): StyledLine {
-  const line = lines.find((candidate) => predicate(lineText(candidate)));
-  if (!line) throw new Error("expected fixture line");
-  return line;
-}
-
-function replaceLineText(line: StyledLine, replacement: string): void {
-  const first = line.segments[0];
-  if (!first) throw new Error("expected styled fixture line");
-  line.segments = [{ ...first, text: replacement }];
-}
-
-function nonBlank(line: StyledLine) {
-  return line.segments.filter((segment) => segment.text.trim() !== "");
-}
-
-describe("Codex request_user_input question picker", () => {
-  it("lifts the full multiline question and preserves native questionnaire metadata", () => {
-    const lines = fixtureLines("codex--v0154-question-q1.txt");
-    const model = fixtureModel("codex--v0154-question-q1.txt");
-    const questionLines = lines.filter((line) => {
-      const text = lineText(line);
-      return text.includes("模型选择和状态栏") || text.includes("说明？");
-    });
-
-    expect(questionLines).toHaveLength(2);
-    expect(model.title).toBe(questionLines.map((line) => lineText(line).trim()).join(" "));
-    expect(model.options.map((option) => option.id)).toEqual(["1", "2", "3"]);
-    expect(model.options[0]?.label).toContain("同步优化入口");
-    expect(model.options[0]?.description).toContain("保持原生选项和说明");
-    expect(model.questionnaire).toEqual({
-      index: 1,
-      total: 2,
-      unanswered: 2,
-      answered: false,
-      submit: "answer",
-    });
-  });
-
-  it("distinguishes pointer paint from committed-answer paint", () => {
-    const pendingLines = fixtureLines("codex--v0154-question-q1.txt");
-    const answeredLines = fixtureLines("codex--v0154-question-q1-answered.txt");
-    const pending = fixtureModel("codex--v0154-question-q1.txt");
-    const answered = fixtureModel("codex--v0154-question-q1-answered.txt");
-
-    const pointed = lineMatching(pendingLines, (text) => text.includes("› 1."));
-    expect(nonBlank(pointed).every((segment) => segment.bold && !segment.dim && segment.fg === "var(--ansi-6)")).toBe(
-      true,
-    );
-
-    const pendingQuestion = lineMatching(pendingLines, (text) => text.includes("模型选择和状态栏"));
-    const answeredQuestion = lineMatching(answeredLines, (text) => text.includes("模型选择和状态栏"));
-    expect(nonBlank(pendingQuestion).every((segment) => segment.fg === "var(--ansi-6)")).toBe(true);
-    expect(nonBlank(answeredQuestion).every((segment) => segment.fg === undefined)).toBe(true);
-    expect(pending.questionnaire?.answered).toBe(false);
-    expect(answered.questionnaire).toMatchObject({ answered: true, unanswered: 1 });
-    expect(answered.options.find((option) => option.pointed)?.id).toBe("2");
-  });
-
-  it("keeps metadata in the dialog comparator even when visible question text is unchanged", () => {
-    const initial = fixtureModel("codex--v0154-question-q1.txt");
-    const selected = fixtureModel("codex--v0154-question-q1-selected.txt");
-    const returned = fixtureModel("codex--v0154-question-q1-return.txt");
-
-    expect(initial.title).toBe(selected.title);
-    expect(pickersSameIdentity(initial, selected)).toBe(true);
-    expect(pickersEqual(initial, selected)).toBe(false);
-    expect(pickersEqual(selected, returned)).toBe(true);
-    expect(selected.questionnaire).toEqual(returned.questionnaire);
-  });
-
-  it("keeps empty, filled and multiline native notes in the question card", () => {
-    expect(fixtureModel("codex--v0154-notes-empty.txt").questionnaire?.notes).toEqual({ text: "", focused: true });
-    expect(fixtureModel("codex--v0154-notes-text.txt").questionnaire?.notes).toEqual({
-      text: "Additional 中文 notes: keep option 1.",
-      focused: true,
-    });
-    expect(fixtureModel("codex--v0154-notes-returned.txt").questionnaire?.notes?.focused).toBe(false);
-    expect(fixtureModel("codex--v0154-notes-multiline-focused.txt").questionnaire?.notes).toEqual({
-      text: "Card note 中文 first line\n\nSecond line with 1, 2, 3.",
-      focused: true,
-    });
-    const choice = fixtureModel("codex--v0154-notes-multiline.txt");
-    const focused = fixtureModel("codex--v0154-notes-multiline-focused.txt");
-    expect(pickersSameIdentity(choice, focused)).toBe(true);
-    expect(pickersEqual(choice, focused)).toBe(false);
-  });
-
-  it("fails closed for torn rows, duplicate pointers, invalid counts, and foreign footers", () => {
-    const torn = cloneLines(fixtureLines("codex--v0154-question-q1.txt"));
-    replaceLineText(lineMatching(torn, (text) => text.includes("2. 只优化")), " ");
-    expect(detectAskRegion(torn)).toBeNull();
-
-    const duplicate = cloneLines(fixtureLines("codex--v0154-question-q1.txt"));
-    const selected = lineMatching(duplicate, (text) => text.includes("› 1."));
-    const second = lineMatching(duplicate, (text) => text.includes("2. 只优化"));
-    replaceLineText(second, lineText(second).replace(" 2.", " › 2."));
-    for (const segment of second.segments) {
-      if (segment.text.trim()) Object.assign(segment, { bold: true, dim: false, fg: "var(--ansi-6)" });
-    }
-    expect(nonBlank(selected).every((segment) => segment.bold && segment.fg === "var(--ansi-6)")).toBe(true);
-    expect(detectAskRegion(duplicate)).toBeNull();
-
-    const invalidCount = cloneLines(fixtureLines("codex--v0154-question-q1.txt"));
-    replaceLineText(
-      lineMatching(invalidCount, (text) => text.includes("Question 1/2")),
-      "  Question 1/2 (0 unanswered) ",
-    );
-    expect(detectAskRegion(invalidCount)).toBeNull();
-
-    const countdown = cloneLines(fixtureLines("codex--v0154-question-q1.txt"));
-    replaceLineText(
-      lineMatching(countdown, (text) => text.includes("Question 1/2")),
-      "  Question 1/2 (2 unanswered) · auto-resolves in 16s",
-    );
-    expect(detectAskRegion(countdown)).toBeNull();
-
-    const wrongFooter = cloneLines(fixtureLines("codex--v0154-question-q1.txt"));
-    replaceLineText(
-      lineMatching(wrongFooter, (text) => text.includes("tab to add notes")),
-      " tab add notes | enter to submit answer | ←/→ to navigate questions | esc to interrupt ",
-    );
-    expect(detectAskRegion(wrongFooter)).toBeNull();
-  });
-
-  it("does not mistake a numbered note or literal placeholder text for native controls", () => {
-    for (const text of ["1. A custom numbered answer", "Add notes", "[image #1] is only text"]) {
-      const lines = cloneLines(fixtureLines("codex--v0154-notes-text.txt"));
-      const note = lineMatching(lines, (line) => line.includes("Additional 中文 notes:"));
-      note.segments = note.segments.map((segment) => Object.assign({}, segment, {
-        text: segment.text.replace("Additional 中文 notes: keep option 1.", text),
-      }));
-      expect(detectAskRegion(lines)?.model.questionnaire?.notes?.text).toBe(text);
-    }
-  });
-
-  it("rejects an answered-paint mismatch instead of trusting the header count", () => {
-    const altered = cloneLines(fixtureLines("codex--v0154-question-q1-answered.txt"));
-    const question = lineMatching(altered, (text) => text.includes("模型选择和状态栏"));
-    for (const segment of question.segments) {
-      if (segment.text.trim()) segment.fg = "var(--ansi-6)";
-    }
-    expect(detectAskRegion(altered)).toBeNull();
-  });
-});
-
-const fruit = readFileSync(join(PANES_DIR, "codex--ask-fruit.txt"), "utf8");
+const fruit = readFileSync(join(import.meta.dirname, "../../../fixtures/panes/codex--ask-fruit.txt"), "utf8");
 const linesOf = (text: string) => splitLines(parseAnsi(text));
 
+// Layout-only variants of the public capture, not new live captures.
 describe("wrapped Codex questions", () => {
   it.each(["question", "description", "footer", "all"])("lifts a wrapped %s", (part) => {
     let screen = fruit;
@@ -187,12 +21,12 @@ describe("wrapped Codex questions", () => {
     if (part === "footer" || part === "all") screen = screen.replace(" | esc to interrupt", "\n  esc to interrupt");
     const lines = linesOf(screen);
     const ask = detectAskRegion(lines);
-    expect(ask?.model.title).toBe("Pick a fruit?");
-    expect(ask?.model.options.map((option) => option.id)).toEqual(["1", "2", "3"]);
+    expect(ask?.model.question).toBe("Pick a fruit?");
+    expect(ask?.model.options.map((o) => o.keys)).toEqual([["1"], ["2"], ["3"]]);
     expect(ask?.model.options[1]?.description).toBe("Choose a soft, juicy pear.");
-    const picker = codexAdapter.buildBlocks(lines).find((block) => block.kind === "picker");
-    expect(picker?.kind).toBe("picker");
-    expect(picker?.lines.map(lineText).join("\n")).toContain("1. Apple");
+    const blocks = codexAdapter.buildBlocks(lines);
+    expect(blocks.every((block) => block.kind === "raw")).toBe(true);
+    expect(blocks.flatMap((block) => block.lines).map(lineText)).toEqual(lines.map(lineText));
     expect(codexAdapter.composerReady!(lines)).toBe(false);
     expect(detectAskRegion(linesOf(screen + "\nnew output"))).toBeNull();
     if (part === "all") {
@@ -201,43 +35,29 @@ describe("wrapped Codex questions", () => {
     }
   });
 
-  it.each([
-    "        unexpected row",
-    "                                              10. Another option",
-    "  › Add notes",
-    "",
-  ])("refuses an invalid option continuation: %j", (row) => {
-    const screen = [
-      "  Question 1/1 (1 unanswered)",
-      "  Pick?",
-      "",
-      "  › 1. A  First description",
-      row,
-      "    2. B  Second description",
-      "",
-      "  tab to add notes | enter to submit answer",
-      "  esc to interrupt",
-    ].join("\n");
-    expect(detectAskRegion(linesOf(screen))).toBeNull();
-  });
+  it.each(["        unexpected row", "                                              10. Another option", "  › Add notes", ""])(
+    "refuses an invalid option continuation: %j", (row) => {
+      const screen = [
+        "  Question 1/1 (1 unanswered)", "  Pick?", "",
+        "  › 1. A  First description", row, "    2. B  Second description", "",
+        "  tab to add notes | enter to submit answer", "  esc to interrupt",
+      ].join("\n");
+      expect(detectAskRegion(linesOf(screen))).toBeNull();
+    },
+  );
 
   it("refuses continuations without a description", () => {
     const screen = [
-      "  Question 1/1 (1 unanswered)",
-      "  Pick?",
-      "",
-      "  › 1. A",
-      "              continuation",
-      "    2. B",
-      "",
-      "  tab to add notes | enter to submit answer",
-      "  esc to interrupt",
+      "  Question 1/1 (1 unanswered)", "  Pick?", "",
+      "  › 1. A", "              continuation", "    2. B", "",
+      "  tab to add notes | enter to submit answer", "  esc to interrupt",
     ].join("\n");
     expect(detectAskRegion(linesOf(screen))).toBeNull();
   });
 
-  it("keeps notes mode in the card while preserving the upstream wrapped-footer guard", () => {
-    const notes = readFileSync(join(PANES_DIR, "codex--ask-notes-focused.txt"), "utf8");
-    expect(detectAskRegion(linesOf(notes))?.model.questionnaire?.notes).toEqual({ text: "", focused: true });
+  it("refuses notes mode with a wrapped footer", () => {
+    const notes = readFileSync(join(import.meta.dirname, "../../../fixtures/panes/codex--ask-notes-focused.txt"), "utf8")
+      .replace(" | esc to interrupt", "\n  esc to interrupt");
+    expect(detectAskRegion(linesOf(notes))).toBeNull();
   });
 });

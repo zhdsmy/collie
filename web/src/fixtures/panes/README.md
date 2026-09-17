@@ -16,45 +16,24 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
-## Codex 0.154 asynchronous question cards (captured 2026-09-15)
+## Codex native QA and plan dialogs (captured 2026-09-13 through 2026-09-15)
 
-`codex--async-qa-*.txt` capture the installed native Codex TUI in an isolated Herdr
-test pane. A loopback app-server proxy supplied synthetic asynchronous question
-events; the real TUI handled all focus, editing and answer delivery. The corpus
-covers collapsed one/multiple-question entries, choices, Other with empty/stored/
-multiline text, freeform answers, the remaining final question, cleared replacement
-draft and completed composer. No external model or production conversation is in
-the captures. See [`ASYNC_ASK_NOTES.md`](../../lib/harness/codex/ASYNC_ASK_NOTES.md)
-for the verified native key flow, client/bridge read-back and conservative limits.
+`codex--async-qa-*.txt`, `codex--v0154-question-*.txt`, and
+`codex--v0154-notes-*.txt` are byte-faithful captures of isolated Codex 0.154.0
+panes. Local synthetic events supplied the questions; the real TUI handled
+selection, question navigation, notes, and answer delivery. No production
+conversation, external model, or daily credentials were used.
 
-## Codex 0.154 plan cards (captured 2026-09-13)
+`codex--v0154-plan-*.txt` were captured with temporary configuration and a
+deterministic local Responses provider. The short variants preserve the entire
+plan and native pointer states; `long` contains only the tail of a 24-section
+plan. The remaining captures show the native decision outcomes.
 
-`codex--v0154-plan-*.txt` are byte-faithful captures from an isolated Codex 0.154.0 session
-using a temporary configuration and deterministic local Responses provider. `short` and its
-`second`/`third` variants preserve the complete plan and all native pointer states; `long`
-contains only the tail of a 24-section plan. `stayed`, `implemented` and `cleared` capture
-the three decision outcomes. The matching original plan entries, parsed through Collie's
-Codex journal adapter, are in `../codex-plan-transcript.json`.
-
-The current client guard and API code drove each native decision. No real work session,
-external model or daily credentials were involved. See `lib/harness/codex/PLAN_NOTES.md`
-for the verified choreography, source-matching requirements and long-body behavior.
-
-## Codex 0.154 question cards (captured 2026-09-13)
-
-The additional `codex--v0154-notes-*.txt` corpus was captured 2026-09-14 in an isolated
-Codex 0.154.0 pane with a deterministic local provider. It covers empty/filled notes,
-returning to a previous question, multiline notes with both focus states, and the completed
-answer map. All paths identify a disposable test directory; text is synthetic. The native
-ANSI and line endings are unchanged. See `ASK_NOTES.md` for the verified paste/submit flow.
-
-`codex--v0154-question-*.txt` are byte-faithful captures of the installed Codex TUI
-using a disposable configuration and deterministic local Responses provider. The
-corpus covers a wrapped Chinese question, changing an option without confirming,
-both directions of question navigation, returning to an answered question, revising
-it, the final question before submission, native notes focus, and the final corrected
-answer map. No external model or daily credentials were used.
-See [`ASK_NOTES.md`](../../lib/harness/codex/ASK_NOTES.md) for the verified key recipes.
+These screens now remain native, along with review and folder-trust dialogs.
+The captures guard against accidental cardification, missing native text, and
+ordinary chat submissions into modal input. Collapsed async questions retain
+their native Alt+Up hint and ordinary composer. See
+[`PICKER_NOTES.md`](../../lib/harness/codex/PICKER_NOTES.md) for the supported card scope.
 
 ## Codex 0.154 model and statusline pickers (captured 2026-09-13)
 

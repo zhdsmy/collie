@@ -3,8 +3,8 @@
 // so it keeps the universal raw mirror (the T1 fallback). Both gates route through here — the render
 // pipeline (harness/index buildBlocks) and agent-chat's status strip — so the policy can't drift, and
 // adding a further verified agent is a one-line change to ADAPTERS. The list holds three today:
-// claude, which lifts every block kind; codex, which is Tier 1 chrome plus Tier-2 probed trust /
-// approval / question lifts; grok, which is Tier 1 chrome plus Tier-2 probed permission / ask /
+// claude, which lifts every block kind; codex, which keeps simple dialogs native and lifts
+// model/statusline/resume pickers and command approvals; grok, which is Tier 1 chrome plus permission / ask /
 // plan lifts; and omp, which is Tier 1 and lifts none — it contributes chrome
 // stripping and the composer gate only. Adapters register by their EXACT agent string only —
 // prefix-matching here was the AltanS/collie#99 reject: it would hand a harness's live keystroke

@@ -803,8 +803,6 @@ export const ja: Dictionary = {
   "prompt.approval.hideCommand": "コマンドを折りたたむ",
   "prompt.approval.showCommand": "完全なコマンドを表示",
   "prompt.approval.persistentOptions": "永続的な許可（ターミナルのみ）",
-  "dialog.picker.notes": "補足または自由回答（任意）",
-  "dialog.picker.notesPlaceholder": "詳細を追加するか「該当なし」を選び、回答を入力してください。",
   "dialog.picker.searchAria": "選択項目を検索",
   "dialog.picker.apply": "適用",
   "dialog.picker.clearSearch": "検索をクリア",
@@ -814,21 +812,6 @@ export const ja: Dictionary = {
   "dialog.picker.moveDownAria": "{label} を下へ移動",
   "dialog.picker.noResults": "一致する項目がありません",
   "dialog.picker.confirm": "確定して閉じる",
-  "dialog.picker.questionProgress": "質問 {index}/{total}",
-  "dialog.picker.unanswered.one": "未回答 {count} 件",
-  "dialog.picker.unanswered.other": "未回答 {count} 件",
-  "dialog.picker.previousQuestion": "前の質問",
-  "dialog.picker.nextQuestion": "次の質問",
-  "dialog.picker.submitAnswer": "回答を送信",
-  "dialog.picker.submitAll": "すべての回答を送信",
-  "dialog.picker.answerRemaining": "送信する前に残りの質問に回答してください。",
-  "dialog.picker.async.title": "質問",
-  "dialog.picker.async.waiting.one": "未回答の質問 {count} 件",
-  "dialog.picker.async.waiting.other": "未回答の質問 {count} 件",
-  "dialog.picker.async.answer": "回答する",
-  "dialog.picker.async.customAnswer": "カスタム回答",
-  "dialog.picker.async.customAnswerPlaceholder": "カスタム回答を入力",
-  "dialog.picker.async.backToInput": "入力に戻る",
 
   "dialog.sessions.title": "セッションを再開",
   "dialog.sessions.forkTitle": "セッションを分岐",
@@ -837,10 +820,6 @@ export const ja: Dictionary = {
   "dialog.sessions.search": "セッションを検索",
   "dialog.sessions.searchAction": "検索",
 
-  "dialog.plan.title": "計画",
-  "dialog.plan.recap": "会話の振り返り",
-  "dialog.plan.body": "計画の本文",
-  "dialog.plan.partial": "現在はターミナルに表示されている計画の一部のみ表示しています。",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

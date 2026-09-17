@@ -801,8 +801,6 @@ export const ko: Dictionary = {
   "prompt.approval.hideCommand": "명령 접기",
   "prompt.approval.showCommand": "전체 명령 보기",
   "prompt.approval.persistentOptions": "영구 권한 (터미널에서만)",
-  "dialog.picker.notes": "추가 설명 또는 직접 답변 (선택)",
-  "dialog.picker.notesPlaceholder": "설명을 추가하거나 ‘해당 없음’을 선택하고 직접 답변하세요.",
   "dialog.picker.searchAria": "선택기 옵션 검색",
   "dialog.picker.apply": "적용",
   "dialog.picker.clearSearch": "검색 지우기",
@@ -812,21 +810,6 @@ export const ko: Dictionary = {
   "dialog.picker.moveDownAria": "{label} 아래로 이동",
   "dialog.picker.noResults": "일치하는 옵션이 없습니다",
   "dialog.picker.confirm": "확인하고 닫기",
-  "dialog.picker.questionProgress": "질문 {index}/{total}",
-  "dialog.picker.unanswered.one": "미답변 {count}개",
-  "dialog.picker.unanswered.other": "미답변 {count}개",
-  "dialog.picker.previousQuestion": "이전 질문",
-  "dialog.picker.nextQuestion": "다음 질문",
-  "dialog.picker.submitAnswer": "답변 제출",
-  "dialog.picker.submitAll": "모든 답변 제출",
-  "dialog.picker.answerRemaining": "제출하기 전에 남은 질문에 답변하세요.",
-  "dialog.picker.async.title": "질문",
-  "dialog.picker.async.waiting.one": "답변 대기 중인 질문 {count}개",
-  "dialog.picker.async.waiting.other": "답변 대기 중인 질문 {count}개",
-  "dialog.picker.async.answer": "답변하기",
-  "dialog.picker.async.customAnswer": "직접 답변",
-  "dialog.picker.async.customAnswerPlaceholder": "직접 답변을 입력하세요",
-  "dialog.picker.async.backToInput": "입력으로 돌아가기",
 
   "dialog.sessions.title": "세션 재개",
   "dialog.sessions.forkTitle": "세션 분기",
@@ -835,10 +818,6 @@ export const ko: Dictionary = {
   "dialog.sessions.search": "세션 검색",
   "dialog.sessions.searchAction": "검색",
 
-  "dialog.plan.title": "계획",
-  "dialog.plan.recap": "대화 요약",
-  "dialog.plan.body": "계획 내용",
-  "dialog.plan.partial": "현재 터미널에 보이는 계획의 일부만 표시됩니다.",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

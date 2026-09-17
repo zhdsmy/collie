@@ -810,8 +810,6 @@ export const es: Dictionary = {
   "prompt.approval.hideCommand": "Contraer comando",
   "prompt.approval.showCommand": "Ver comando completo",
   "prompt.approval.persistentOptions": "Permisos persistentes (solo en terminal)",
-  "dialog.picker.notes": "Notas o respuesta personalizada (opcional)",
-  "dialog.picker.notesPlaceholder": "Añade detalles o selecciona «Ninguna de las anteriores» y escribe tu respuesta.",
   "dialog.picker.searchAria": "Buscar opciones del selector",
   "dialog.picker.apply": "Aplicar",
   "dialog.picker.clearSearch": "Borrar búsqueda",
@@ -821,21 +819,6 @@ export const es: Dictionary = {
   "dialog.picker.moveDownAria": "Mover {label} abajo",
   "dialog.picker.noResults": "No hay opciones coincidentes",
   "dialog.picker.confirm": "Confirmar y cerrar",
-  "dialog.picker.questionProgress": "Pregunta {index}/{total}",
-  "dialog.picker.unanswered.one": "{count} sin responder",
-  "dialog.picker.unanswered.other": "{count} sin responder",
-  "dialog.picker.previousQuestion": "Pregunta anterior",
-  "dialog.picker.nextQuestion": "Siguiente pregunta",
-  "dialog.picker.submitAnswer": "Enviar respuesta",
-  "dialog.picker.submitAll": "Enviar todas las respuestas",
-  "dialog.picker.answerRemaining": "Responde las preguntas restantes antes de enviar.",
-  "dialog.picker.async.title": "Preguntas",
-  "dialog.picker.async.waiting.one": "{count} pregunta pendiente",
-  "dialog.picker.async.waiting.other": "{count} preguntas pendientes",
-  "dialog.picker.async.answer": "Responder",
-  "dialog.picker.async.customAnswer": "Respuesta personalizada",
-  "dialog.picker.async.customAnswerPlaceholder": "Escribe una respuesta personalizada",
-  "dialog.picker.async.backToInput": "Volver a la entrada",
 
   "dialog.sessions.title": "Reanudar sesión",
   "dialog.sessions.forkTitle": "Bifurcar sesión",
@@ -844,10 +827,6 @@ export const es: Dictionary = {
   "dialog.sessions.search": "Buscar sesiones",
   "dialog.sessions.searchAction": "Buscar",
 
-  "dialog.plan.title": "Plan",
-  "dialog.plan.recap": "Resumen de la conversación",
-  "dialog.plan.body": "Contenido del plan",
-  "dialog.plan.partial": "Solo está disponible la parte visible del plan.",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

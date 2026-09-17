@@ -3,7 +3,6 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
-  ChevronLeft,
   ChevronRight,
   Keyboard,
   Loader2,
@@ -18,14 +17,13 @@ import {
   type PickerModel,
   type PickerOption,
 } from "@/lib/harness/picker-model";
-import { t, tn } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { timeAgo } from "@/lib/format";
 import { useLocale } from "@/hooks/use-locale";
 import { MIRROR_INVERT, MIRROR_SPACE, styleFor } from "@/components/mirror-space";
 import { Button } from "@/components/ui/button";
 import { Collapse } from "@/components/ui/collapse";
 import { ListGroup } from "@/components/ui/list-group";
-import { PlanContent } from "@/components/plan-content";
 import { OptionButton, PromptPanel, QuestionHeading } from "@/components/option-button";
 
 export interface PickerBlockProps {
@@ -35,8 +33,6 @@ export interface PickerBlockProps {
   onAction: (intent: PickerIntent) => void | Promise<void>;
   /** Read-only device or gone pane: preserve the picker, but disable every control. */
   disabled?: boolean;
-  /** Original Markdown, supplied only after matching this plan's visible text to the journal. */
-  planText?: string | null;
 }
 
 function Spinner({ size = "sm" }: { size?: "sm" | "md" }) {
@@ -176,90 +172,6 @@ function BrowseControls({ locked, onPress }: { locked: boolean; onPress: (direct
         className="size-11"
       >
         <ArrowDown className="size-4" />
-      </Button>
-    </div>
-  );
-}
-
-type Questionnaire = NonNullable<PickerModel["questionnaire"]>;
-
-function QuestionnaireHeader({
-  questionnaire,
-  locked,
-  onPress,
-}: {
-  questionnaire: Questionnaire;
-  locked: boolean;
-  onPress: (direction: "previous" | "next") => void;
-}) {
-  const hasNavigation = questionnaire.total > 1;
-  const atFirstQuestion = questionnaire.index <= 1;
-  const atLastQuestion = questionnaire.index >= questionnaire.total;
-
-  return (
-    <div data-slot="picker-questionnaire-header" className="flex min-w-0 items-center gap-1">
-      {hasNavigation ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          disabled={locked || atFirstQuestion}
-          aria-label={t("dialog.picker.previousQuestion")}
-          title={t("dialog.picker.previousQuestion")}
-          onClick={() => onPress("previous")}
-          className="size-8 shrink-0"
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-      ) : null}
-      <div className="min-w-0 flex-1 text-center">
-        <div className="font-content text-xs font-semibold leading-tight text-foreground">
-          {t("dialog.picker.questionProgress", {
-            index: questionnaire.index,
-            total: questionnaire.total,
-          })}
-        </div>
-        <div className="font-content text-[10px] leading-tight text-muted-foreground">
-          {tn("dialog.picker.unanswered", questionnaire.unanswered)}
-        </div>
-      </div>
-      {hasNavigation ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          disabled={locked || atLastQuestion}
-          aria-label={t("dialog.picker.nextQuestion")}
-          title={t("dialog.picker.nextQuestion")}
-          onClick={() => onPress("next")}
-          className="size-8 shrink-0"
-        >
-          <ChevronRight className="size-4" />
-        </Button>
-      ) : null}
-    </div>
-  );
-}
-
-function AsyncCollapsed({
-  total,
-  locked,
-  onExpand,
-}: {
-  total: number;
-  locked: boolean;
-  onExpand: () => void;
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-3">
-      <div className="min-w-0 flex-1">
-        <QuestionHeading>{t("dialog.picker.async.title")}</QuestionHeading>
-        <p className="font-content break-words text-xs leading-snug text-muted-foreground">
-          {tn("dialog.picker.async.waiting", total)}
-        </p>
-      </div>
-      <Button type="button" variant="default" size="sm" disabled={locked} onClick={onExpand}>
-        {t("dialog.picker.async.answer")}
       </Button>
     </div>
   );
@@ -453,24 +365,14 @@ function SingleOption({
   option,
   locked,
   busy,
-  questionnaire,
   onChoose,
 }: {
   option: PickerOption;
   locked: boolean;
   busy: boolean;
-  questionnaire: boolean;
   onChoose: () => void;
 }) {
-  const tone = busy
-    ? "busy"
-    : questionnaire
-      ? option.pointed
-        ? "selected"
-        : "default"
-      : option.current
-        ? "selected"
-        : "default";
+  const tone = busy ? "busy" : option.current ? "selected" : "default";
   return (
     <div className="grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] items-stretch gap-1">
       <PointerMark pointed={option.pointed} />
@@ -480,7 +382,7 @@ function SingleOption({
         description={option.description}
         disabled={locked}
         onClick={onChoose}
-        trailing={busy ? <Spinner size="md" /> : !questionnaire && option.current ? <CurrentMark /> : null}
+        trailing={busy ? <Spinner size="md" /> : option.current ? <CurrentMark /> : null}
       />
     </div>
   );
@@ -578,11 +480,10 @@ function SessionPicker({ picker, locked, sending, search, onPress }: {
   );
 }
 
-export function PickerBlock({ picker, onAction, disabled, planText }: PickerBlockProps) {
+export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
   useLocale();
   const [sending, setSending] = useState<string | null>(null);
   const [queryDraft, setQueryDraft] = useState(picker.query ?? "");
-  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
   // A draft belongs to this picker stage. Polls that keep the same terminal query must not erase
   // characters typed locally before the operator submits the search form.
@@ -592,29 +493,6 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
 
   const locked = Boolean(disabled) || sending !== null;
   const filtered = picker.query !== null && picker.query.length > 0;
-  const questionnaire = picker.questionnaire;
-  const asyncQuestionnaire = questionnaire?.async;
-  const isAsync = asyncQuestionnaire !== undefined;
-  const asyncCollapsed = asyncQuestionnaire?.collapsed === true;
-  const noteDraft =
-    noteDrafts[picker.identity] ??
-    (isAsync
-      ? questionnaire?.notes?.focused === true
-        ? questionnaire.notes.text
-        : ""
-      : questionnaire?.notes?.text ?? "");
-  const isQuestionnaire = questionnaire !== undefined;
-  const remainingOtherQuestions =
-    questionnaire?.submit === "all"
-      ? Math.max(0, questionnaire.unanswered - (questionnaire.answered ? 0 : 1))
-      : 0;
-  const questionnaireSubmitLocked =
-    locked ||
-    (questionnaire?.submit === "all" && remainingOtherQuestions > 0) ||
-    (asyncQuestionnaire !== undefined &&
-      (asyncQuestionnaire.otherId === null ||
-        picker.options.find((option) => option.pointed)?.id === asyncQuestionnaire.otherId) &&
-      noteDraft.trim().length === 0);
 
   async function press(id: string, intent: PickerIntent): Promise<void> {
     if (locked) return;
@@ -641,21 +519,7 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
   }
 
   function chooseOption(option: PickerOption): void {
-    // Codex keeps the Other draft in the native prompt. A named choice replaces it, so clear the
-    // local copy before the next submit can accidentally turn the choice back into free text.
-    if (isAsync && asyncQuestionnaire.otherId !== null && option.id !== asyncQuestionnaire.otherId) {
-      setNoteDrafts((drafts) => ({ ...drafts, [picker.identity]: "" }));
-    } else if (isAsync && noteDrafts[picker.identity] === "") {
-      setNoteDrafts((drafts) => {
-        const next = { ...drafts };
-        delete next[picker.identity];
-        return next;
-      });
-    }
-    void press(
-      `option:${option.id}`,
-      questionnaire ? { kind: "focus", id: option.id } : { kind: "choose", id: option.id },
-    );
+    void press(`option:${option.id}`, { kind: "choose", id: option.id });
   }
 
   const search = picker.query !== null ? (
@@ -676,27 +540,8 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
     return <SessionPicker picker={picker} locked={locked} sending={sending} search={search} onPress={(id, intent) => void press(id, intent)} />;
   }
 
-  if (asyncCollapsed) {
-    return (
-      <PromptPanel ariaLabel={t("dialog.picker.async.title")}>
-        <AsyncCollapsed
-          total={questionnaire?.total ?? 0}
-          locked={locked}
-          onExpand={() => void press("expand", { kind: "expand" })}
-        />
-      </PromptPanel>
-    );
-  }
-
   const OptionsGroup = picker.kind === "multiple" ? ListGroup : "div";
   const heading = <>
-    {questionnaire ? (
-      <QuestionnaireHeader
-        questionnaire={questionnaire}
-        locked={locked}
-        onPress={(direction) => void press(`question:${direction}`, { kind: "question", direction })}
-      />
-    ) : null}
     <QuestionHeading>{picker.title}</QuestionHeading>
     {picker.description.map((line, index) => (
       <p key={index} className="font-content break-words text-xs font-normal leading-snug text-muted-foreground">
@@ -704,47 +549,24 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
       </p>
     ))}
   </>;
-  const actions = !picker.plan ? <>
-    {!isQuestionnaire ? (
-      <div className="mr-auto">
-        <BrowseControls
-          locked={locked || picker.options.length === 0}
-          onPress={(direction) => void press(`navigate:${direction}`, { kind: "navigate", direction })}
-        />
-      </div>
-    ) : null}
-    {isAsync || !isQuestionnaire ? (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="min-h-11 whitespace-normal"
-        disabled={locked}
-        onClick={() => void press("cancel", { kind: "cancel" })}
-      >
-        {t(isAsync ? "dialog.picker.async.backToInput" : "dialog.cancel")}
-      </Button>
-    ) : null}
-    {isQuestionnaire ? (
-      <>
-        {remainingOtherQuestions > 0 ? (
-          <p className="mr-auto min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
-            {t("dialog.picker.answerRemaining")}
-          </p>
-        ) : null}
-        <Button
-          type="button"
-          variant="default"
-          size="sm"
-          className="min-h-11 whitespace-normal"
-          disabled={questionnaireSubmitLocked}
-          onClick={() => void press("confirm", { kind: "answer", notes: noteDraft })}
-        >
-          {sending === "confirm" ? <Spinner /> : null}
-          {t(questionnaire.submit === "answer" ? "dialog.picker.submitAnswer" : "dialog.picker.submitAll")}
-        </Button>
-      </>
-    ) : picker.kind === "multiple" ? (
+  const actions = <>
+    <div className="mr-auto">
+      <BrowseControls
+        locked={locked || picker.options.length === 0}
+        onPress={(direction) => void press(`navigate:${direction}`, { kind: "navigate", direction })}
+      />
+    </div>
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="min-h-11 whitespace-normal"
+      disabled={locked}
+      onClick={() => void press("cancel", { kind: "cancel" })}
+    >
+      {t("dialog.cancel")}
+    </Button>
+    {picker.kind === "multiple" ? (
       <Button
         type="button"
         variant="default"
@@ -757,25 +579,15 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
         {t("dialog.picker.confirm")}
       </Button>
     ) : null}
-  </> : null;
+  </>;
 
   return (
     <PromptPanel
       ariaLabel={picker.title}
-      header={picker.plan ? null : heading}
+      header={heading}
       actions={actions}
-      footer={isQuestionnaire || picker.plan ? null : <KeyboardHelp footer={picker.footer} />}
+      footer={<KeyboardHelp footer={picker.footer} />}
     >
-      {picker.plan ? (
-        <PlanContent
-          key={picker.identity}
-          text={planText ?? picker.plan.text}
-          complete={Boolean(planText) || picker.plan.complete}
-          recap={picker.plan.recap}
-        />
-      ) : null}
-      {picker.plan ? heading : null}
-
       {search}
 
       {picker.options.length > 0 ? (
@@ -789,7 +601,6 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
                   option={option}
                   locked={locked}
                   busy={busy}
-                  questionnaire={isQuestionnaire}
                   onChoose={() => chooseOption(option)}
                 />
               );
@@ -808,32 +619,13 @@ export function PickerBlock({ picker, onAction, disabled, planText }: PickerBloc
             );
           })}
         </OptionsGroup>
-      ) : asyncQuestionnaire ? null : (
+      ) : (
         <p data-slot="picker-empty" className="py-4 text-center text-sm text-muted-foreground">
           {t("dialog.picker.noResults")}
         </p>
       )}
 
       <Preview lines={picker.preview} />
-      {questionnaire ? (
-        <label className="flex min-w-0 flex-col gap-1.5 text-xs text-muted-foreground">
-          {asyncQuestionnaire
-            ? t("dialog.picker.async.customAnswer")
-            : t("dialog.picker.notes")}
-          <textarea
-            value={noteDraft}
-            onChange={(event) => setNoteDrafts((drafts) => ({ ...drafts, [picker.identity]: event.target.value }))}
-            disabled={locked}
-            rows={3}
-            placeholder={
-              asyncQuestionnaire
-                ? t("dialog.picker.async.customAnswerPlaceholder")
-                : t("dialog.picker.notesPlaceholder")
-            }
-            className="font-content min-h-20 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-base leading-snug text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          />
-        </label>
-      ) : null}
     </PromptPanel>
   );
 }

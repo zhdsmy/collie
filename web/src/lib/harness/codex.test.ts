@@ -28,10 +28,13 @@ const allGrokFixtures = readdirSync(PANES_DIR)
   .filter((f) => f.startsWith("grok--") && f.endsWith(".txt"))
   .toSorted();
 
-const PICKERS = [
+const REVIEWS = [
   "codex--review-scope.txt",
   "codex--review-base-branch.txt",
   "codex--review-commit.txt",
+];
+
+const PICKERS = [
   "codex--v0154-picker-advanced.txt",
   "codex--v0154-picker-effort.txt",
   "codex--v0154-picker-model.txt",
@@ -113,6 +116,7 @@ const PINNED = [
   "codex--v0154-particles-draft.txt",
   "codex--v0154-particles-working.txt",
   ...PICKERS,
+  ...REVIEWS,
   "codex--v0154-plan-cleared.txt",
   "codex--v0154-plan-implemented.txt",
   ...PLANS,
@@ -135,6 +139,7 @@ const PINNED = [
 
 // Dialog captures include both option focus and the native notes composer.
 const DIALOG = [
+  ...REVIEWS,
   ...ASYNC_QUESTIONS,
   ...PICKERS,
   ...PLANS,
@@ -147,7 +152,7 @@ const DIALOG = [
   "codex--trust-prompt.txt",
 ];
 
-const ownFixtures = [...DIALOG, ...ASYNC_PREVIEWS];
+const ownFixtures = [...PICKERS, ...RESUME, "codex--approval-exec.txt"];
 const neutralFixtures = allCodexFixtures.filter((f) => !ownFixtures.includes(f));
 
 describeAdapterConformance(codexAdapter, {
@@ -668,22 +673,30 @@ describe("the styled status-row acceptor fails closed", () => {
 });
 
 describe("codexBuildBlocks", () => {
+  it.each(ASYNC_PREVIEWS)("%s: keeps the native answer hint and the ordinary composer", (name) => {
+    const lines = fixtureLines(name);
+    const blocks = codexAdapter.buildBlocks(lines);
+    expect(blocks.every((block) => block.kind === "raw")).toBe(true);
+    expect(blocks.flatMap((block) => block.lines).map(lineText).join("\n")).toContain("⌥ + ↑ to answer");
+    expect(codexAdapter.composerReady!(lines)).toBe(true);
+    expect(codexAdapter.extractStatusLines(lines)).not.toHaveLength(0);
+  });
+
+  it.each(DIALOG.filter((name) => !ownFixtures.includes(name)))(
+    "%s: native dialogs keep all text and receive no card actions",
+    (name) => {
+      const lines = fixtureLines(name);
+      const blocks = codexAdapter.buildBlocks(lines);
+      expect(blocks.every((block) => block.kind === "raw")).toBe(true);
+      expect(blocks.flatMap((block) => block.lines).map(lineText)).toEqual(lines.map(lineText));
+    },
+  );
+
   it("stays raw on every neutral capture", () => {
     for (const name of neutralFixtures) {
       const blocks = codexAdapter.buildBlocks(fixtureLines(name));
       expect(blocks.every((b) => b.kind === "raw"), name).toBe(true);
     }
-  });
-
-  it("lifts the trust prompt with digit keys — both probed on the captured widget", () => {
-    const prompt = codexAdapter.buildBlocks(fixtureLines("codex--trust-prompt.txt")).find(
-      (b) => b.kind === "prompt-select",
-    );
-    expect(prompt?.kind).toBe("prompt-select");
-    if (prompt?.kind !== "prompt-select") return;
-    expect(prompt.prompt.family).toBe("trust");
-    expect(prompt.prompt.options.map((o) => o.label)).toEqual(["Yes, continue", "No, quit"]);
-    expect(prompt.prompt.options.map((o) => o.keys)).toEqual([["1"], ["2"]]);
   });
 
   it("lifts the exec approval from its one-shot Yes / reject pair only", () => {
@@ -778,44 +791,6 @@ describe("codexBuildBlocks", () => {
       command: "cat <<'EOF'\n  first line\n\n  second line\nEOF",
       persistentOptions: ["Yes, and don't ask again for commands that start with `cat`"],
     });
-  });
-
-  it("lifts a question card with per-row digits; the question stays in the mirror", () => {
-    const blocks = codexAdapter.buildBlocks(fixtureLines("codex--ask-fruit.txt"));
-    const prompt = blocks.find((b) => b.kind === "picker");
-    expect(prompt?.kind).toBe("picker");
-    if (prompt?.kind !== "picker") return;
-    expect(prompt.picker.questionnaire).toMatchObject({ index: 1, total: 1, submit: "all" });
-    expect(prompt.picker.title).toBe("Pick a fruit?");
-    expect(prompt.picker.options.map((o) => o.label)).toEqual([
-      "Apple (Recommended)",
-      "Pear",
-      "None of the above",
-    ]);
-    expect(prompt.picker.options.map((o) => o.id)).toEqual(["1", "2", "3"]);
-    expect(prompt.picker.options[1]!.description).toBe("Choose a soft, juicy pear.");
-    const raw = blocks[0];
-    if (raw?.kind !== "raw") return;
-    expect(raw.lines.some((line) => lineText(line).trim() === "Pick a fruit?")).toBe(false);
-    expect(raw.lines.some((line) => /^\s*Question 1\/1 \(/.test(lineText(line)))).toBe(false);
-  });
-
-  it("steps a multi-question set as consecutive lifted cards", () => {
-    for (const [name, question] of [
-      ["codex--ask-wizard-q1.txt", "Tabs or spaces?"],
-      ["codex--ask-wizard-q2.txt", "Semicolons?"],
-    ] as const) {
-      const prompt = codexAdapter.buildBlocks(fixtureLines(name)).find((b) => b.kind === "picker");
-      expect(prompt?.kind, name).toBe("picker");
-      if (prompt?.kind !== "picker") return;
-      expect(prompt.picker.title, name).toBe(question);
-    }
-  });
-
-  it("keeps native notes in the question card with explicit editor state", () => {
-    const lines = fixtureLines("codex--ask-notes-focused.txt");
-    expect(detectAskRegion(lines)?.model.questionnaire?.notes).toEqual({ text: "", focused: true });
-    expect(codexAdapter.buildBlocks(lines).some((b) => b.kind === "picker")).toBe(true);
   });
 
   it("approval refuses an unclassified middle row — no partial lift", () => {

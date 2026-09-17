@@ -1,17 +1,7 @@
-// The Codex adapter. Chrome/status/draft are Tier 1: the boxless `› ` composer plus its
-// dot-separated status row are stripped from the mirror and re-surfaced natively. Interactive
-// kinds with dated captures and notes (all under this directory): the folder-trust prompt
-// (`prompt-select`, family trust), exec approvals (`prompt-select`, family permission —
-// classified by row: the one-shot Yes and the reject become buttons, persistent rows never do),
-// and `request_user_input` question cards (`picker` — pointer selection, question navigation and
-// an explicit confirmation). Digits confirm directly on all three (probed;
-// notes files). Question notes stay in the card, with a separately verified paste/Enter flow.
-// The saved-session picker (`resume.ts`) is the fourth: a full-screen `/resume` view whose rows are
-// saved sessions, driven by the arrows + Enter its own footer advertises.
-//
-// The review bar is #99 (agy): exact agent string only, and every emitted keystroke probed on
-// the captured screen. Registered as `agent: "codex"`; variant folding belongs in
-// `canonicalAgent`, never here.
+// Codex keeps its native QA, plan, review, and folder-trust screens.
+// The upstream raw/chrome path handles those; only model/statusline/resume pickers
+// and command approvals are lifted. Keep composerReady/composerPrompt independent
+// of card rendering so native dialogs still reject ordinary chat submissions.
 
 import { trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { HarnessAdapter } from "../types";
@@ -23,13 +13,8 @@ import {
   stripChrome,
 } from "./chrome";
 import { detectApprovalRegion } from "./approval";
-import { detectAskRegion } from "./ask";
-import { detectAsyncAskRegion } from "./async-ask";
-import { detectTrustRegion } from "./trust";
 import { detectPickerRegion } from "./picker";
 import { detectResumeRegion } from "./resume";
-import { detectPlanRegion } from "./plan";
-import { detectReviewRegion } from "./review";
 import { decorateCodexDisplay } from "./display";
 import { codexDraftCarriesSend } from "./paste";
 import { draftCarriesSend } from "../../draft-match";
@@ -39,8 +24,7 @@ function raw(lines: StyledLine[]): Block {
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
-  const picker = detectPlanRegion(lines) ?? detectReviewRegion(lines) ?? detectResumeRegion(lines) ??
-    detectPickerRegion(lines);
+  const picker = detectResumeRegion(lines) ?? detectPickerRegion(lines);
   if (picker) {
     const before = trimTrailingBlank(lines.slice(0, picker.startLine));
     return [
@@ -48,15 +32,6 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
       { kind: "picker", picker: picker.model, lines: lines.slice(picker.startLine) },
     ];
   }
-  const trust = detectTrustRegion(lines);
-  if (trust) {
-    const before = trimTrailingBlank(lines.slice(0, trust.startLine));
-    const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(raw(before));
-    blocks.push({ kind: "prompt-select", prompt: trust.model, lines: lines.slice(trust.startLine) });
-    return blocks;
-  }
-
   const approval = detectApprovalRegion(lines);
   if (approval) {
     const before = trimTrailingBlank(lines.slice(0, approval.startLine));
@@ -67,15 +42,6 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
       prompt: approval.model,
       lines: lines.slice(approval.startLine),
     });
-    return blocks;
-  }
-
-  const ask = detectAskRegion(lines) ?? detectAsyncAskRegion(lines);
-  if (ask) {
-    const before = trimTrailingBlank(lines.slice(0, ask.startLine));
-    const blocks: Block[] = [];
-    if (before.length > 0) blocks.push(raw(before));
-    blocks.push({ kind: "picker", picker: ask.model, lines: lines.slice(ask.startLine) });
     return blocks;
   }
 

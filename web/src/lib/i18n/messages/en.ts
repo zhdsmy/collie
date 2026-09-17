@@ -838,8 +838,6 @@ export const en = {
   "prompt.approval.hideCommand": "Collapse command",
   "prompt.approval.showCommand": "Show full command",
   "prompt.approval.persistentOptions": "Persistent permissions (terminal only)",
-  "dialog.picker.notes": "Notes or custom answer (optional)",
-  "dialog.picker.notesPlaceholder": "Add details, or select “None of the above” and write your own answer.",
   "dialog.picker.searchAria": "Search picker options",
   "dialog.picker.apply": "Apply",
   "dialog.picker.clearSearch": "Clear search",
@@ -849,21 +847,6 @@ export const en = {
   "dialog.picker.moveDownAria": "Move {label} down",
   "dialog.picker.noResults": "No matching options",
   "dialog.picker.confirm": "Confirm and close",
-  "dialog.picker.questionProgress": "Question {index}/{total}",
-  "dialog.picker.unanswered.one": "{count} unanswered",
-  "dialog.picker.unanswered.other": "{count} unanswered",
-  "dialog.picker.previousQuestion": "Previous question",
-  "dialog.picker.nextQuestion": "Next question",
-  "dialog.picker.submitAnswer": "Submit answer",
-  "dialog.picker.submitAll": "Submit all answers",
-  "dialog.picker.answerRemaining": "Answer the remaining questions before submitting.",
-  "dialog.picker.async.title": "Questions",
-  "dialog.picker.async.waiting.one": "{count} question waiting",
-  "dialog.picker.async.waiting.other": "{count} questions waiting",
-  "dialog.picker.async.answer": "Answer",
-  "dialog.picker.async.customAnswer": "Custom answer",
-  "dialog.picker.async.customAnswerPlaceholder": "Write a custom answer",
-  "dialog.picker.async.backToInput": "Back to input",
 
   "dialog.sessions.title": "Resume session",
   "dialog.sessions.forkTitle": "Fork session",
@@ -872,10 +855,6 @@ export const en = {
   "dialog.sessions.search": "Search sessions",
   "dialog.sessions.searchAction": "Search",
 
-  "dialog.plan.title": "Plan",
-  "dialog.plan.recap": "Conversation recap",
-  "dialog.plan.body": "Plan content",
-  "dialog.plan.partial": "Only the visible part of the plan is available.",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

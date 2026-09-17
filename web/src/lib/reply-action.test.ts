@@ -44,6 +44,17 @@ function harness(screen: () => string) {
 
 const instant = { sleep: async () => {} }; // no real waiting; the bounded loop still runs its attempts
 
+it.each([
+  "codex--ask-fruit.txt", "codex--v0154-notes-multiline-focused.txt",
+  "codex--async-qa-options.txt", "codex--async-qa-freeform-text.txt",
+  "codex--v0154-plan-short.txt", "codex--review-scope.txt", "codex--trust-prompt.txt",
+])("%s: native dialog blocks ordinary chat before any text is written", async (name) => {
+  const calls = harness(() => fixtureText(name));
+  const out = await sendGuardedReply({ paneId: "w1:p1", text: "continue", agent: "codex", ...instant });
+  expect(out.status).toBe("blocked");
+  expect(calls).toEqual([]);
+});
+
 describe("Codex slash-command submission", () => {
   const idle = () => fixtureText("codex--fresh-idle.txt");
   const completion = () => fixtureText("codex--v0154-command-status.txt");

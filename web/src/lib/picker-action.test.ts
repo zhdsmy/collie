@@ -404,15 +404,6 @@ describe("submitPickerIntent", () => {
     expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Enter"]]);
   });
 
-  it("does not confirm a plan when a different plan appears after Enter", async () => {
-    const plan = fixturePicker("codex--v0154-plan-short.txt");
-    const successor = fixturePicker("codex--v0154-plan-long.txt");
-    scriptWithClosedPicker(plan, plan, plan, successor);
-    const res = await submitPickerIntent(args(plan, { kind: "choose", id: "1" }));
-    expect(res).toEqual({ status: "changed" });
-    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Enter"]]);
-  });
-
   it("sends Enter only for multiple confirm and Escape for cancel", async () => {
     const model = pickerModel({ pointer: "alpha" });
     scriptWithClosedPicker(model, null, model, null);

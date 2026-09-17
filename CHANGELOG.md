@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Codex simple dialogs stay in their native terminal view.** Retire QA, plan, review, and folder-trust cards and their custom automation, restore the base QA parser to upstream, and keep model, session, approval, and statusline cards with guarded chat input.
+
 ## [1.10.0+collie.8] - 2026-09-17
 
 ### Fixed

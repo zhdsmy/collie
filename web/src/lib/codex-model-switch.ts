@@ -89,11 +89,11 @@ function isCancelled(signal: AbortSignal): boolean {
 }
 
 function isModelPicker(model: PickerModel): boolean {
-  return model.kind === "single" && model.questionnaire === undefined && MODEL_TITLE.test(model.title);
+  return model.kind === "single" && MODEL_TITLE.test(model.title);
 }
 
 function isEffortPicker(model: PickerModel): boolean {
-  return model.kind === "single" && model.questionnaire === undefined && EFFORT_TITLE.test(model.title);
+  return model.kind === "single" && EFFORT_TITLE.test(model.title);
 }
 
 function isEffortPickerFor(model: PickerModel, requestedModel: string): boolean {
@@ -102,11 +102,11 @@ function isEffortPickerFor(model: PickerModel, requestedModel: string): boolean 
 }
 
 function isAdvancedPicker(model: PickerModel): boolean {
-  return model.kind === "single" && model.questionnaire === undefined && model.title === ADVANCED_TITLE;
+  return model.kind === "single" && model.title === ADVANCED_TITLE;
 }
 
 function isScopePicker(model: PickerModel): boolean {
-  return model.kind === "single" && model.questionnaire === undefined && model.title === SCOPE_TITLE;
+  return model.kind === "single" && model.title === SCOPE_TITLE;
 }
 
 function stripNativeSuffix(label: string): string {
