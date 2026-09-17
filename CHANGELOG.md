@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.0+collie.11] - 2026-09-17
+
 ### Fixed
 
-- **Hermes startup cards and fixed status survive the latest CLI.** Recognize both Hermes emblems and the new MCP server count, preserve rounded response borders as single full-width lines, and keep the complete model and reasoning level in the fixed status bar.
+- **Hermes startup cards and fixed status survive the latest CLI.** Recognize both Hermes emblems and the new MCP server count, preserve rounded response borders as single full-width lines, and keep the complete model and reasoning level in the fixed status bar. ([201c4f91](https://github.com/zhdsmy/collie/commit/201c4f91))
 
 ## [1.10.0+collie.10] - 2026-09-17
 
