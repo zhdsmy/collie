@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.0+collie.8] - 2026-09-17
+
 ### Fixed
 
-- **Codex Plan and Fast work before resumed session hooks run.** Keep native composer and idle-state checks active when a session ID is not yet reported, abort if that identity appears or changes mid-switch, and keep recent model history tied to a real session.
+- **Codex Plan and Fast work before resumed session hooks run.** Keep native composer and idle-state checks active when a session ID is not yet reported, abort if that identity appears or changes mid-switch, and keep recent model history tied to a real session. ([bdeb8b64](https://github.com/zhdsmy/collie/commit/bdeb8b64))
 
 ## [1.10.0+collie.7] - 2026-09-17
 
