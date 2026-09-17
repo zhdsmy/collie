@@ -94,6 +94,39 @@ describe("live Codex mode state", () => {
 });
 
 describe("guarded Codex mode switch", () => {
+  it("switches Plan and Fast while a resumed session has not reported its identity", async () => {
+    const unbound = (text: string) => ({ ...pane(text), codexSessionKey: undefined });
+    vi.mocked(fetchPane).mockResolvedValueOnce(unbound(planOff)).mockResolvedValue(unbound(planOn));
+    expect((await runCodexModeSwitch({ ...args("plan"), codexSessionKey: undefined })).status).toBe("switched");
+    expect(sendKeys).toHaveBeenCalledExactlyOnceWith("w1:p1", ["shift+tab"], undefined, readCodexModeState(planOff)!.prompt);
+    vi.mocked(fetchPane)
+      .mockResolvedValueOnce(unbound(fastOff))
+      .mockResolvedValueOnce(unbound(fastOff))
+      .mockResolvedValueOnce(unbound(fastOff))
+      .mockResolvedValueOnce(unbound(fastOff))
+      .mockResolvedValueOnce(unbound(fastDraft))
+      .mockResolvedValue(unbound(fastOn));
+    expect((await runCodexModeSwitch({ ...args("fast"), codexSessionKey: undefined })).status).toBe("switched");
+    expect(sendReply).toHaveBeenCalledTimes(2);
+    expect(sendReply).toHaveBeenNthCalledWith(1, "w1:p1", "/fast", false, undefined, readCodexModeState(fastOff)!.prompt);
+    expect(sendReply).toHaveBeenNthCalledWith(2, "w1:p1", "", true, undefined, expect.any(String));
+  });
+
+  it("stops when an unreported identity appears before or during a switch", async () => {
+    vi.mocked(fetchPane).mockResolvedValue(pane(planOff));
+    expect((await runCodexModeSwitch({ ...args("plan"), codexSessionKey: undefined })).status).toBe("changed");
+    expect(sendKeys).not.toHaveBeenCalled();
+    vi.mocked(fetchPane).mockResolvedValueOnce({ ...pane(planOff), codexSessionKey: undefined }).mockResolvedValue(pane(planOn));
+    expect((await runCodexModeSwitch({ ...args("plan"), codexSessionKey: undefined })).status).toBe("changed");
+    expect(sendKeys).toHaveBeenCalledOnce();
+    vi.mocked(fetchPane)
+      .mockResolvedValueOnce({ ...pane(fastOff), codexSessionKey: undefined })
+      .mockResolvedValueOnce({ ...pane(fastOff), codexSessionKey: undefined })
+      .mockResolvedValue(pane(fastOff));
+    expect((await runCodexModeSwitch({ ...args("fast"), codexSessionKey: undefined })).status).toBe("changed");
+    expect(sendReply).not.toHaveBeenCalled();
+  });
+
   it.each([true, false])("switches Plan %s with one bound key and verifies native result", async (enabled) => {
     vi.mocked(fetchPane).mockResolvedValueOnce(pane(enabled ? planOff : planOn)).mockResolvedValue(
       pane(enabled ? planOn : planOff),

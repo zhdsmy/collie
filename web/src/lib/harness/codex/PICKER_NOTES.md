@@ -5,6 +5,25 @@ tab. Its Codex configuration and working directory were isolated under a tempora
 directory, with a local unavailable test provider. No model request was made and no
 daily-session model or statusline configuration was modified.
 
+## Resumed-session mode controls (2026-09-17)
+
+Codex 0.154.0 queues `SessionStart` for resumed sessions and runs it only when a
+model turn begins (`core/src/session/session.rs`, `session/turn.rs`, and
+`hook_runtime.rs` at tag `rust-v0.154.0`). An idle resumed pane can therefore have
+no reported session ID even with the current Herdr integration installed.
+
+Plan/Fast controls allow that absence while retaining idle, empty-composer,
+capability, and exact native-prompt guards. Compare the session identity strictly:
+`undefined` becoming a real key invalidates an in-flight action too. Recent-model
+history still requires a real session key; never derive one from a pane or cwd.
+
+Native verification used a disposable Codex pane, hooks disabled, and an
+unavailable local provider. Plan ON/OFF via guarded Shift+Tab and Fast ON/OFF via
+guarded `/fast` each succeeded with no session ID and an empty composer afterward.
+Fast requires a model catalog entry exposing the Fast service tier; a fallback
+model can display `Fast off` while `/fast` is unavailable. Test with real model
+metadata, without copying authentication or changing the user's configuration.
+
 ## Recognition
 
 `codex--v0154-picker-*.txt` are byte-faithful captures through the bridge's fixture

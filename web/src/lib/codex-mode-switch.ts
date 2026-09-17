@@ -52,7 +52,8 @@ export interface CodexModeSwitchArgs {
   paneId: string;
   scope?: Scope;
   requestedLines: number;
-  codexSessionKey: string;
+  /** SessionStart may be deferred until the first turn after resume. Keep absence observable. */
+  codexSessionKey?: string;
   mode: CodexMode;
   /** The requested state of `mode`. */
   enabled: boolean;
@@ -84,7 +85,7 @@ function mapFastReply(outcome: ReplyOutcome, signal: AbortSignal): CodexModeSwit
 
 async function verifyComposer(
   args: CodexModeSwitchArgs,
-  expectedSession: string,
+  expectedSession: string | undefined,
 ): Promise<
   | { ok: true; state: NonNullable<ReturnType<typeof readCodexModeState>> }
   | { ok: false; status: "changed" | "blocked"; error?: string }

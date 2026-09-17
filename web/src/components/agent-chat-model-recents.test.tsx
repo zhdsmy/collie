@@ -67,10 +67,10 @@ beforeEach(() => {
   if (!Element.prototype.scrollTo) Element.prototype.scrollTo = () => {};
 });
 
-function renderPane(status: AgentStatus = "idle", pane = idle, sessionKey: string | undefined = SESSION_KEY) {
+function renderPane(status: AgentStatus = "idle", pane = idle, sessionKey: string | null | undefined = SESSION_KEY) {
   const agent = { ...fixtureAgents[0]!, agent: "codex", status };
   return render(<RouterProvider router={createMemoryRouter([{ path: "/", element: withHeaderHost(
-    <AgentChat paneId={agent.paneId} agent={agent} agents={[agent]} shellPanes={[]} tabs={[]} text={pane} codexSessionKey={sessionKey} onBack={vi.fn()} onSelect={vi.fn()} />,
+    <AgentChat paneId={agent.paneId} agent={agent} agents={[agent]} shellPanes={[]} tabs={[]} text={pane} codexSessionKey={sessionKey ?? undefined} onBack={vi.fn()} onSelect={vi.fn()} />,
   ) }])} />);
 }
 
@@ -98,6 +98,27 @@ it("keeps Plan visible and disables both controls while its verified toggle runs
   finish({ status: "switched", text: idle, revision: 2 });
   await waitFor(() => expect(plan).toBeEnabled());
   expect(plan).toHaveAttribute("aria-pressed", "true");
+});
+
+it("enables local modes before resume reports a session without borrowing recent models", async () => {
+  const user = userEvent.setup();
+  recordRecent("gpt-5.6-luna", "max");
+  const fastOff = withLevel.replace(/gpt-5\.6-sol(?=[^\n]*$)/, "gpt-5.6-sol · Fast off");
+  vi.mocked(runCodexModeSwitch).mockResolvedValue({ status: "changed" });
+  renderPane("idle", fastOff, null);
+  const plan = screen.getByRole("button", { name: new RegExp(`^${t("codexPlan.title")}:`) });
+  const fast = screen.getByRole("button", { name: new RegExp(`^${t("codexFast.title")}:`) });
+  expect(plan).toBeEnabled();
+  expect(fast).toBeEnabled();
+  await user.click(plan);
+  await waitFor(() => expect(plan).toBeEnabled());
+  await user.click(fast);
+  expect(vi.mocked(runCodexModeSwitch).mock.calls.map(([call]) => ({ mode: call.mode, key: call.codexSessionKey })))
+    .toEqual([{ mode: "plan", key: undefined }, { mode: "fast", key: undefined }]);
+  await waitFor(() => expect(fast).toBeEnabled());
+  await openRecents(user);
+  expect(screen.queryByText("gpt-5.6-luna")).toBeNull();
+  expect(storedRaw()).toBe(pairs(["gpt-5.6-luna", "max"]));
 });
 
 it("shows Plan state but disables switching while Codex works", () => {

@@ -42,7 +42,7 @@ for (const theme of ["light", "dark"]) test(`plan controls: ${theme}`, async ({ 
       ? { ...agent, agent: "codex", status: working ? "working" : "idle" } : agent),
   } }));
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
-    paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: SESSION_KEY,
+    paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: theme === "light" ? undefined : SESSION_KEY,
   } }));
   await page.route("**/api/pane/*/keys*", async (route) => {
     const body = route.request().postDataJSON();
@@ -105,7 +105,7 @@ for (const theme of ["light", "dark"]) test(`inline Fast controls: ${theme}`, as
     agents: fixtureSnapshot.agents.map((agent, i) => i === 0 ? { ...agent, agent: "codex", status: "idle" } : agent),
   } }));
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({
-    json: { paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: SESSION_KEY },
+    json: { paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: theme === "light" ? undefined : SESSION_KEY },
   }));
   const submit = async () => {
     submits++;

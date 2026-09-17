@@ -773,12 +773,12 @@ export function AgentChat({
     !codexIdle ? t("codexModel.idleRequired") : codexControlsBusy ? t("codexPlan.busy") : undefined
   );
   const planDisabledReason = readOnly ? t("chat.status.readOnly") : hostBlock ?? (
-    connecting || !grammarsOn || !modelKeys.capable || !codexSessionKey ||
+    connecting || !grammarsOn || !modelKeys.capable ||
     !liveCodexState || liveCodexState.draft !== null ? t("codexPlan.blocked") :
     !codexIdle ? t("codexPlan.idleRequired") : codexControlsBusy ? t("codexPlan.busy") : undefined
   );
   const fastDisabledReason = readOnly ? t("chat.status.readOnly") : hostBlock ?? (
-    connecting || !grammarsOn || !modelType.capable || !modelKeys.capable || !codexSessionKey ||
+    connecting || !grammarsOn || !modelType.capable || !modelKeys.capable ||
     !liveCodexState || liveCodexState.fast === null || liveCodexState.draft !== null ? t("codexFast.blocked") :
     !codexIdle ? t("codexFast.idleRequired") : codexControlsBusy ? t("codexFast.busy") : undefined
   );
@@ -880,7 +880,7 @@ export function AgentChat({
     const current = mode === "plan" ? planEnabled : fastEnabled;
     const disabledReason = mode === "plan" ? planDisabledReason : fastDisabledReason;
     const messages = mode === "plan" ? "codexPlan" : "codexFast";
-    if (disabledReason || current === null || !codexSessionKey ||
+    if (disabledReason || current === null ||
         modelSwitchAbort.current || modeSwitchAbort.current || composerRef.current?.isWriting()) return;
     const controller = new AbortController();
     modeSwitchAbort.current = controller;
