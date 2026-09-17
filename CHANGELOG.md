@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.0+collie.9] - 2026-09-17
+
 ### Changed
 
-- **Codex simple dialogs stay in their native terminal view.** Retire QA, plan, review, and folder-trust cards and their custom automation, restore the base QA parser to upstream, and keep model, session, approval, and statusline cards with guarded chat input.
+- **Codex simple dialogs stay in their native terminal view.** Retire QA, plan, review, and folder-trust cards and their custom automation, restore the base QA parser to upstream, and keep model, session, approval, and statusline cards with guarded chat input. ([b153074b](https://github.com/zhdsmy/collie/commit/b153074b))
 
 ## [1.10.0+collie.8] - 2026-09-17
 
