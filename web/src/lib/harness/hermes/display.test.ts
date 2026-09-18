@@ -36,3 +36,28 @@ it.each([
 ])("leaves unrelated colored output untouched", (text) => {
   expect(decorateHermesDiff(parse(text)).some((line) => line.surface)).toBe(false);
 });
+
+it("keeps a hunk alive across the pane's wrapped continuations", () => {
+  // The live shape (resumed SKILL.md diff, 2026-09-19): the pane re-wraps a long context line into
+  // a column-0 continuation that lost its leading space, and a long + line into one that lost its
+  // gutter. Both still wear the hunk's paint — the context ink and the changed-row fill — and
+  // neither may end the hunk: the fill-carrying one is diff content and joins the rectangle, the
+  // ink-carrying one is context and stays undecorated. The reply frame after the diff ends it.
+  const text = [
+    "\x1b[38;5;102m@@ -189,6 +189,60 @@\x1b[0m",
+    "\x1b[38;5;136m After that failed read, ask the agent to write its response\x1b[0m",
+    "\x1b[38;5;136me directly. Use this only as a fallback.\x1b[0m",
+    "\x1b[38;5;231;48;5;22m+## Restart agent panes after upgrading\x1b[0m",
+    "\x1b[48;5;22mthe CLI, then relaunch with the resume command.\x1b[0m",
+    "\x1b[38;5;220m╭─ ☤ Hermes ────────────────────────────╮\x1b[0m",
+    "\x1b[38;5;231;48;5;22m+ A later log\x1b[0m",
+  ].join("\n");
+  const rows = decorateHermesDiff(parse(text));
+  expect(rows.map((line) => line.surface?.kind ?? "none")).toEqual([
+    "none", "none", "none", "diff", "diff", "none", "none",
+  ]);
+  expect(rows[3]!.surface!.background).toBe("rgb(33,58,43)");
+  expect(rows[4]!.surface!.background).toBe("rgb(33,58,43)");
+  // Text is untouched; the wrapped + continuation joins the rectangle despite losing its gutter.
+  expect(rows[4]!.segments.every((s) => s.bg === "rgb(33,58,43)")).toBe(true);
+});

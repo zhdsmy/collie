@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Keep a Hermes diff a full rectangle across the pane's wrapped lines.** A long diff line re-wraps at the pane width into column-0 continuations that lose their +/- gutter or leading space, and the first such row ended the whole hunk: every later row kept Hermes's raw bright fill, ragged at the text edge. The hunk now continues across rows still wearing its paint — wrapped changed rows join the rectangle, wrapped context rows stay undecorated — and ends only at a row wearing neither.
+
 ## [1.10.1+collie.2] - 2026-09-18
 
 ### Added
