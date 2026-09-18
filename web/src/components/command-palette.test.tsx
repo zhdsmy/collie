@@ -90,6 +90,20 @@ describe("CommandPalette", () => {
     expect(props.onClose).toHaveBeenCalledOnce();
   });
 
+  it("uses Cursor's official command interaction shapes", async () => {
+    const user = userEvent.setup();
+    const props = setup({ agent: "cursor" });
+    await user.click(screen.getByText("/model"));
+    expect(props.onInsert).toHaveBeenCalledExactlyOnceWith("/model ");
+    expect(props.onSubmit).not.toHaveBeenCalled();
+
+    props.onInsert.mockClear();
+    props.onClose.mockClear();
+    await user.click(screen.getByText("/summarize"));
+    expect(props.onSubmit).toHaveBeenCalledExactlyOnceWith("/summarize");
+    expect(props.onClose).toHaveBeenCalledOnce();
+  });
+
   it("submits a no-arg command immediately and closes", async () => {
     const user = userEvent.setup();
     const props = setup();

@@ -8,10 +8,23 @@ import { lineText, splitLines } from "@/lib/blocks";
 import diffCapture from "@/lib/harness/codex/diff-reflow.fixture.txt?raw";
 import hermesCapture from "@/fixtures/panes/hermes--done.txt?raw";
 import hermesInput from "@/fixtures/panes/hermes--submitted-input.txt?raw";
+import cursorCapture from "@/fixtures/panes/cursor--idle-sanitized.txt?raw";
 import { claudeDiffSample } from "@/test/claude-diff";
 
 const ESC = "\x1b";
 const MUTED_RULE_COLOUR = "var(--terminal-muted-fg, #a1a1a1)"; // dark half as the fallback
+
+it.each([true, false])("renders Cursor query and diff rectangles while removing its input tail (wrap=%s)", (wrap) => {
+  const { container } = render(
+    <AnsiOutput text={cursorCapture} agent="cursor" wrap={wrap} query="demo-service" />,
+  );
+  expect(container.querySelectorAll('[data-terminal-surface="user"]')).toHaveLength(3);
+  expect(container.querySelectorAll('[data-terminal-surface="diff"]')).toHaveLength(2);
+  expect(container.querySelector("pre")?.textContent).not.toContain("Add a follow-up");
+  expect(container.querySelector("pre")?.textContent).not.toContain("Auto Balance");
+  expect(container.querySelector('[data-terminal-surface="diff"] [style*="background-color"]')).not.toBeNull();
+  expect(container.querySelectorAll("[data-find-match]").length).toBeGreaterThan(0);
+});
 
 it.each([true, false])("renders Claude diff rectangles with intact highlights, links and search (wrap=%s)", (wrap) => {
   const { container, rerender } = render(<AnsiOutput text={claudeDiffSample} agent="claude" wrap={wrap} query="oldValue" />);

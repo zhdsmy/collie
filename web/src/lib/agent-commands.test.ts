@@ -28,6 +28,23 @@ describe("commandsFor", () => {
     });
   });
 
+  it("returns Cursor's documented command set and interaction shapes", () => {
+    const cmds = commandsFor("cursor");
+    expect(cmds).toHaveLength(36);
+    expect(cmds.find((c) => c.command === "/model")).toMatchObject({
+      takesArg: true,
+      argHint: "[filter]",
+      common: true,
+    });
+    expect(cmds.find((c) => c.command === "/summarize")).toMatchObject({
+      takesArg: false,
+      common: true,
+    });
+    for (const dangerous of ["/clear", "/rewind", "/update", "/logout", "/quit", "/exit"]) {
+      expect(cmds.find((c) => c.command === dangerous)?.dangerous).toBe(true);
+    }
+  });
+
   it("returns the Pi catalog for 'pi'", () => {
     const cmds = commandsFor("pi");
     expect(cmds.length).toBeGreaterThan(0);
@@ -117,6 +134,7 @@ describe("commandsFor", () => {
   it("is case-insensitive", () => {
     expect(commandsFor("CLAUDE")).toBe(commandsFor("claude"));
     expect(commandsFor("Codex")).toBe(commandsFor("codex"));
+    expect(commandsFor("Cursor")).toBe(commandsFor("cursor"));
     expect(commandsFor("PI")).toBe(commandsFor("pi"));
     expect(commandsFor("OpenCode")).toBe(commandsFor("opencode"));
     expect(commandsFor("OMP")).toBe(commandsFor("omp"));
@@ -127,9 +145,10 @@ describe("commandsFor", () => {
     expect(commandsFor("  claude  ")).toBe(commandsFor("claude"));
   });
 
-  it("tolerates label variants via prefix (claude-code, codex-cli, opencode-dev)", () => {
+  it("tolerates label variants via prefix (claude-code, codex-cli, cursor-cli, opencode-dev)", () => {
     expect(commandsFor("claude-code")).toBe(commandsFor("claude"));
     expect(commandsFor("codex-cli")).toBe(commandsFor("codex"));
+    expect(commandsFor("cursor-cli")).toBe(commandsFor("cursor"));
     expect(commandsFor("opencode-dev")).toBe(commandsFor("opencode"));
     expect(commandsFor("pi-go")).toBe(commandsFor("pi"));
     expect(commandsFor("omp-dev")).toBe(commandsFor("omp"));
@@ -157,7 +176,7 @@ describe("commandsFor", () => {
     }
   });
 
-  it.each(["claude", "codex", "pi", "opencode", "omp", "grok", "hermes"])(
+  it.each(["claude", "codex", "cursor", "pi", "opencode", "omp", "grok", "hermes"])(
     "exposes for '%s' a 'common' subset that is a proper, non-empty subset of all commands",
     (agent) => {
       const all = commandsFor(agent);
@@ -169,7 +188,7 @@ describe("commandsFor", () => {
     },
   );
 
-  it.each(["claude", "codex", "pi", "opencode", "omp", "grok", "hermes"])(
+  it.each(["claude", "codex", "cursor", "pi", "opencode", "omp", "grok", "hermes"])(
     "'%s' entries are well-formed (slash-prefixed, unique, arg hints only when takesArg)",
     (agent) => {
       const all = commandsFor(agent);

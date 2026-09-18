@@ -2,11 +2,10 @@
 // Herdr snapshot `agent` string to its HarnessAdapter; anything absent from the map has no adapter,
 // so it keeps the universal raw mirror (the T1 fallback). Both gates route through here — the render
 // pipeline (harness/index buildBlocks) and agent-chat's status strip — so the policy can't drift, and
-// adding a further verified agent is a one-line change to ADAPTERS. The list holds three today:
-// claude, which lifts every block kind; codex, which keeps simple dialogs native and lifts
-// model/statusline/resume pickers and command approvals; grok, which is Tier 1 chrome plus permission / ask /
-// plan lifts; and omp, which is Tier 1 and lifts none — it contributes chrome
-// stripping and the composer gate only. Adapters register by their EXACT agent string only —
+// adding a further verified agent is a one-line change to ADAPTERS. Full adapters may lift native
+// dialogs and verify composer sends; display-only adapters such as Cursor and Hermes restrict
+// themselves to transcript presentation and status extraction. Adapters register by their EXACT
+// agent string only —
 // prefix-matching here was the AltanS/collie#99 reject: it would hand a harness's live keystroke
 // recipes to any agent string sharing the prefix. `hasBlockGrammar` replaces the old
 // grammar/agents predicate:
@@ -20,6 +19,7 @@ import { grokAdapter } from "./grok";
 import { ompAdapter } from "./omp";
 import { agyAdapter, antigravityAdapter } from "./agy";
 import { hermesAdapter } from "./hermes";
+import { cursorAdapter } from "./cursor";
 
 // Built FROM the adapter list (not a hand-written literal) so a key can't silently drift from its
 const ADAPTERS: Record<string, HarnessAdapter> = Object.fromEntries(
@@ -31,6 +31,7 @@ const ADAPTERS: Record<string, HarnessAdapter> = Object.fromEntries(
     agyAdapter,
     antigravityAdapter,
     hermesAdapter,
+    cursorAdapter,
   ].map((a) => [a.agent, a]),
 );
 

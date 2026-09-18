@@ -572,6 +572,7 @@ export const zhTW: Dictionary = {
   "harnessBar.model": "Model",
   "harnessBar.effort": "Effort",
   "harnessBar.compact": "Compact",
+  "harnessBar.summarize": "Summarize",
   "harnessBar.resume": "Resume",
   "harnessBar.tree": "Tree",
   "harnessBar.confirmAria": "Tap again to confirm {command}",

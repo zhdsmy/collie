@@ -37,7 +37,7 @@ describe("the shipped bar", () => {
   });
 
   it("names a bar for exactly the harnesses this milestone drove from a phone", () => {
-    expect(BAR_AGENTS.toSorted()).toEqual(["claude", "codex", "hermes", "omp", "pi"]);
+    expect(BAR_AGENTS.toSorted()).toEqual(["claude", "codex", "cursor", "hermes", "omp", "pi"]);
   });
 
   it("gives Claude Model, Effort, Compact and Resume, in that order", () => {
@@ -48,6 +48,14 @@ describe("the shipped bar", () => {
     // Codex's own /model picker sets the model AND the reasoning effort, so the one button reaches
     // both dials and there is nothing for a second one to do.
     expect(barFor("codex").map((i) => i.id)).toEqual(["model", "compact", "resume"]);
+  });
+
+  it("gives Cursor Model, Summarize and Resume using its canonical commands", () => {
+    expect(barFor("cursor").map((i) => [i.id, i.command])).toEqual([
+      ["model", "/model"],
+      ["summarize", "/summarize"],
+      ["resume", "/resume"],
+    ]);
   });
 
   it("gives pi Tree and no Effort, because pi has no effort command", () => {
@@ -75,6 +83,7 @@ describe("the shipped bar", () => {
   it("reaches a bar through the catalog's own agent ladder", () => {
     expect(barFor("claude-code").map((i) => i.id)).toEqual(barFor("claude").map((i) => i.id));
     expect(barFor("  CLAUDE ").map((i) => i.id)).toEqual(barFor("claude").map((i) => i.id));
+    expect(barFor("cursor-cli").map((i) => i.id)).toEqual(barFor("cursor").map((i) => i.id));
   });
 
   it("spells every shipped label as a harnessBar key", () => {

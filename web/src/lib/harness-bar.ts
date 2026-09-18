@@ -91,6 +91,15 @@ const CODEX: readonly HarnessBarItem[] = [
   { id: "resume", label: "harnessBar.resume", command: "/resume" },
 ];
 
+// ── Cursor Agent ─────────────────────────────────────────────────────────────
+// Cursor renamed its compaction command to `/summarize`; `/compact` remains only a compatibility
+// alias. Keep the canonical name on the phone so the bar matches Cursor's own command reference.
+const CURSOR: readonly HarnessBarItem[] = [
+  { id: "model", label: "harnessBar.model", command: "/model" },
+  { id: "summarize", label: "harnessBar.summarize", command: "/summarize" },
+  { id: "resume", label: "harnessBar.resume", command: "/resume" },
+];
+
 // ── pi ───────────────────────────────────────────────────────────────────────
 // No Effort button, because pi has no effort or thinking command: its thinking level lives inside
 // `/settings`, a modal the phone would then have to drive with the keys pad. `/settings` is
@@ -151,6 +160,7 @@ const HERMES: readonly HarnessBarItem[] = [
 const BARS = new Map<string, readonly HarnessBarItem[]>([
   ["claude", CLAUDE],
   ["codex", CODEX],
+  ["cursor", CURSOR],
   ["pi", PI],
   ["omp", OMP],
   ["hermes", HERMES],

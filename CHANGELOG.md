@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Cursor Agent gains a purpose-built mobile terminal view.** Submitted queries and diffs render as full-width rectangles, live input chrome moves out of the mirror, its status stays fixed above Composer, and the Agent palette plus Model, Summarize and Resume shortcuts use Cursor's documented commands.
+
 ## [1.10.1+collie.1] - 2026-09-17
 
 ### Fixed

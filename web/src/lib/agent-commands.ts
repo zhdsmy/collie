@@ -127,6 +127,48 @@ const CODEX: readonly AgentCommand[] = [
   { command: "/quit", description: "Exit the Codex CLI immediately (alias: /exit)", takesArg: false, argHint: "", common: false, dangerous: true },
 ];
 
+// ── Cursor Agent ─────────────────────────────────────────────────────────────
+// Source: cursor.com/docs/cli/reference/slash-commands (2026-09-18). Aliases are omitted: one
+// canonical row keeps the phone palette short while the CLI continues to accept every alias.
+const CURSOR: readonly AgentCommand[] = [
+  { command: "/model", description: "Select a model, optionally filtering the picker", takesArg: true, argHint: "[filter]", common: true, dangerous: false }, // harness-bar
+  { command: "/summarize", description: "Summarize the conversation to free up context", takesArg: false, argHint: "", common: true, dangerous: false }, // harness-bar
+  { command: "/resume", description: "Open recent chats and resume one", takesArg: false, argHint: "", common: true, dangerous: false }, // harness-bar
+  { command: "/plan", description: "Switch to Plan mode or submit a planning prompt", takesArg: true, argHint: "[prompt]", common: true, dangerous: false },
+  { command: "/ask", description: "Toggle Ask mode for read-only questions", takesArg: false, argHint: "", common: true, dangerous: false },
+  { command: "/debug", description: "Switch to Debug mode or submit a debugging prompt", takesArg: true, argHint: "[prompt]", common: true, dangerous: false },
+  { command: "/goal", description: "Set a long-lived objective for the agent", takesArg: true, argHint: "[objective]", common: true, dangerous: false },
+  { command: "/rename", description: "Rename the current chat session", takesArg: true, argHint: "<name>", common: true, dangerous: false },
+  { command: "/clear", description: "Start a new chat session with empty context", takesArg: false, argHint: "", common: true, dangerous: true },
+  { command: "/rewind", description: "Jump back to a previous message and restore its state", takesArg: false, argHint: "", common: true, dangerous: true },
+  { command: "/run-everything", description: "Configure whether Cursor runs commands without approval", takesArg: true, argHint: "[on|off|status]", common: false, dangerous: false },
+  { command: "/max-mode", description: "Toggle Max Mode on legacy request-based plans", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/fork", description: "Fork the current chat into a new session", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/logs", description: "Show and copy the Cursor Agent debug-log path", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/update", description: "Update Cursor Agent to the latest version", takesArg: false, argHint: "", common: false, dangerous: true },
+  { command: "/vim", description: "Toggle Vim editing in the prompt", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/line-numbers", description: "Toggle line numbers in rendered code blocks", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/show-thinking", description: "Toggle model thinking blocks", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/status-indicators", description: "Toggle terminal title status indicators", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/shell", description: "Enter Shell mode or run a shell command", takesArg: true, argHint: "[command]", common: false, dangerous: false },
+  { command: "/about", description: "Show Cursor Agent version and account details", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/setup-terminal", description: "Install Cursor Agent terminal integration", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/help", description: "Show slash-command help", takesArg: true, argHint: "[command]", common: false, dangerous: false },
+  { command: "/feedback", description: "Send feedback about Cursor Agent", takesArg: true, argHint: "[message]", common: false, dangerous: false },
+  { command: "/open", description: "Open this Git root in Cursor", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/copy-request-id", description: "Copy the last request ID", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/copy-conversation-id", description: "Copy the current conversation ID", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/mcp", description: "Manage MCP servers and inspect their tools", takesArg: true, argHint: "[subcommand]", common: false, dangerous: false },
+  { command: "/plugin", description: "Manage plugins and marketplaces", takesArg: true, argHint: "[subcommand]", common: false, dangerous: false },
+  { command: "/config", description: "Configure Cursor Agent interactively", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/copy", description: "Copy a previous user message", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/sandbox", description: "Configure sandbox mode and network access", takesArg: false, argHint: "", common: false, dangerous: false },
+  { command: "/bedrock", description: "Configure Amazon Bedrock", takesArg: true, argHint: "[subcommand]", common: false, dangerous: false },
+  { command: "/logout", description: "Sign out of Cursor Agent", takesArg: false, argHint: "", common: false, dangerous: true },
+  { command: "/quit", description: "Exit Cursor Agent", takesArg: false, argHint: "", common: false, dangerous: true },
+  { command: "/exit", description: "Exit Cursor Agent", takesArg: false, argHint: "", common: false, dangerous: true },
+];
+
 // ── Pi (pi.dev) ──────────────────────────────────────────────────────────────
 const PI: readonly AgentCommand[] = [
   { command: "/compact", description: "Manually compact context, optionally with instructions", takesArg: true, argHint: "[instructions]", common: true, dangerous: false }, // harness-bar
@@ -336,6 +378,7 @@ const HERMES: readonly AgentCommand[] = [
 const CATALOG = new Map<string, readonly AgentCommand[]>([
   ["claude", CLAUDE],
   ["codex", CODEX],
+  ["cursor", CURSOR],
   ["pi", PI],
   ["opencode", OPENCODE],
   ["omp", OMP],

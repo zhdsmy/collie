@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 // The harness section of the actions belt: the running agent's own slash commands, sitting inside
 // the one scrolling row above the input (components/actions-row.tsx). Model, Effort, Compact and
-// Resume on a Claude Code pane; Codex, pi and omp get their own. The table is lib/harness-bar.ts —
+// Resume on a Claude Code pane; Cursor, Codex, pi and omp get their own. The table is lib/harness-bar.ts —
 // nothing here decides what the buttons are.
 //
 // It exists because Altan drives Claude Code from the phone and wants those four under the thumb
@@ -83,6 +83,7 @@ const ICONS = new Map<string, LucideIcon>([
   ["model", Cpu], // which brain is answering
   ["effort", Gauge], // how hard it is told to think
   ["compact", Shrink], // fold the context up
+  ["summarize", Shrink], // Cursor's canonical name for folding the context up
   ["resume", History], // go back to an earlier session
   ["tree", ListTree], // the session tree
 ]);

@@ -16,6 +16,14 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Cursor Agent input, statusline and transcript surfaces (captured 2026-09-18)
+
+`cursor--idle-sanitized.txt` preserves real Cursor Agent ANSI rows for a submitted query, a
+two-sided diff, the idle input box and its statusline. Hostnames, addresses, commands and project
+content were replaced before the fixture entered the repository; the SGR boundaries and Cursor's
+background colours are unchanged. Tests derive working-hint and two-row status variants from this
+captured three-row input shape so no request is sent into the operator's live session.
+
 ## Codex native QA and plan dialogs (captured 2026-09-13 through 2026-09-15)
 
 `codex--async-qa-*.txt`, `codex--v0154-question-*.txt`, and
