@@ -219,6 +219,19 @@ function StatuslineDivider() {
   return <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/25" />;
 }
 
+/**
+ * Claude's own `new task? /clear to save N tokens` hint, matched against a COMPLETE status row.
+ *
+ * It has two placements, and both must end up behind the Info button rather than in the strip as
+ * text. 2.1.273 appends it to the right of a user-configured statusline (`claude--custom-statusline.txt`,
+ * where the field split below finds it as a field). 2.1.278 paints its notifications — this hint and
+ * others like `Ctrl+Y to paste deleted text` — right-aligned on their OWN row below the mode row. That
+ * row carries no ` | ` field, so the router in StatuslineRow matches it by this sentence alone;
+ * otherwise it falls through to the verbatim branch and the phone shows the hint as a raw strip row,
+ * indented by the terminal's own right-alignment padding.
+ */
+const CLAUDE_NEW_TASK_HINT = /^new task\? \/clear to save \S+ tokens$/;
+
 function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode }) {
   useLocale();
   const [hintAnchor, setHintAnchor] = useState<{ top: number; right: number } | null>(null);
@@ -231,7 +244,7 @@ function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
     offset += part.length;
     if (!text || index % 2 === 1) continue;
     const segments = sliceSegments(row.segments, start, start + text.length);
-    if (/^new task\? \/clear to save \S+ tokens$/.test(text)) {
+    if (CLAUDE_NEW_TASK_HINT.test(text)) {
       hint = segments;
       continue;
     }
@@ -570,7 +583,13 @@ export function StatuslineRow({
     );
   }
 
-  if (agent === "claude" && /\s\|\s/.test(lineText(row))) return <ClaudeStatusline row={row} leading={leading} />;
+  if (agent === "claude") {
+    const text = lineText(row);
+    // A pipe-separated statusline, or the new-task hint standing alone on its own notification row.
+    if (/\s\|\s/.test(text) || CLAUDE_NEW_TASK_HINT.test(text.trim())) {
+      return <ClaudeStatusline row={row} leading={leading} />;
+    }
+  }
   if (agent !== "codex" && agent !== "hermes") {
     return (
       <div data-slot="statusline-row" className={ROW_CLASS}>

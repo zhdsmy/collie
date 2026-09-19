@@ -341,6 +341,20 @@ it("compacts the captured Claude custom statusline without dropping its right-si
   expect(view.queryByRole("dialog")).toBeNull();
 });
 
+it("moves a lone new-task hint row onto the Info button instead of the strip", () => {
+  // 2.1.278's notifications are painted right-aligned on their OWN row below the mode row, so the row
+  // arrives carrying the terminal's right-alignment padding and no ` | ` field. It used to fall to the
+  // verbatim branch, which put the hint in the phone's status strip as raw, deeply indented text.
+  const row = splitLines(parseAnsi(`${" ".repeat(47)}new task? /clear to save 681.5k tokens`))[0]!;
+  const view = render(<StatuslineRow agent="claude" row={row} />);
+  expect(view.container.textContent).not.toContain("new task?");
+  expect(view.container.querySelector('[data-slot="claude-statusline"]')).not.toBeNull();
+  const hint = view.getByRole("button", { name: "Claude hint" });
+  expect(view.container.textContent).not.toMatch(/ {2,}/);
+  fireEvent.click(hint);
+  expect(view.getByRole("dialog", { name: "Claude hint" })).toHaveTextContent("new task? /clear to save 681.5k tokens");
+});
+
 it.each(["on", "off"])("shows explicit Claude Fast:%s without adding a mode switch", (state) => {
   const row = splitLines(parseAnsi(`model | Fast:${state} | ctx 30%`))[0]!;
   const view = render(<StatuslineRow agent="claude" row={row} />);

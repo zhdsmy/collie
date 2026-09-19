@@ -58,6 +58,11 @@ const NEUTRAL = new Set([
   // the harness bar's alias options are a real command form, and an ordinary idle screen to this
   // adapter. Nothing on it is a dialog — the alias needs no picker, which is the point of the row.
   "claude--model-alias.txt",
+  // A multi-line draft in the box with 2.1.278's own `ctrl+g to edit in Vim` carrying on the
+  // statusline row — an ordinary idle screen, never a dialog. The companion pin (chrome.test.ts)
+  // records what the capture exists for: reading that row as an ExitPlanMode footer hid the composer
+  // from the send guard.
+  "claude--draft-multiline-vim-hint.txt",
 ]);
 
 const allClaudeFixtures = readdirSync(PANES_DIR)

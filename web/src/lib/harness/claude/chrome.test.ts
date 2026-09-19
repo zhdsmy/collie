@@ -798,6 +798,12 @@ describe("real corpus — pinned so any change to the walk shows up as a diff", 
     { fixture: "plan-approval--three-row-focused", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "plan-approval--three-row-typed-focused", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "rename-resolved", statusRows: 2, draft: null, stripped: 6 },
+    // Claude 2.1.278 paints `ctrl+g to edit in Vim` right-aligned ON the statusline row while a
+    // multi-line draft sits in the input box. Read as a plan footer (the phrase matched ANYWHERE in
+    // the row), that row hid the box — so the reply guard typed the text and then withheld Enter
+    // ("delivered, not submitted") on every multi-line send. statusRows is 2: the hint does not add a
+    // row, it rides the statusline row.
+    { fixture: "draft-multiline-vim-hint", statusRows: 2, draft: "example-one.png 示例段落：这是一段用于测试的多行草稿。 /tmp/collie-fixture/example-two.jpg", stripped: 10 },
     { fixture: "select-menu", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "select-multi", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "select-multiselect-checked", statusRows: 0, draft: null, stripped: 0 },
@@ -840,5 +846,34 @@ describe("real corpus — pinned so any change to the walk shows up as a diff", 
       expect(extractInputDraft(lines)).toContain(draft);
     }
     expect(lines.length - stripChrome(lines).length).toBe(stripped);
+  });
+});
+
+// Claude 2.1.278's multi-line-draft affordance. Captured 2026-09-19 in an isolated scratch pane
+// (`claude--draft-multiline-vim-hint.txt`), after a reply from the phone stalled with "text delivered,
+// not submitted": Claude paints `ctrl+g to edit in Vim` right-aligned on the statusline row once the
+// box holds a multi-line draft, and reading that row as a plan footer (the phrase matched anywhere in
+// the row) made the whole composer invisible — no box, no draft, no statusline strip, so the guard's
+// verify-after read could never see the text it had typed and kept the submit key back.
+describe("a statusline row carrying Claude's own ctrl+g hint is not a dialog footer", () => {
+  const SENT = "/tmp/collie-fixture/example-one.png\n\n示例段落：这是一段用于测试的多行草稿。\n\n/tmp/collie-fixture/example-two.jpg\n";
+
+  it("finds the box, the draft and the strip, and vouches for the send", () => {
+    const lines = fixtureLines("claude--draft-multiline-vim-hint.txt");
+    expect(hasInputBox(lines)).toBe(true);
+    const draft = extractInputDraft(lines);
+    expect(draft).toBe("/tmp/collie-fixture/example-one.png 示例段落：这是一段用于测试的多行草稿。 /tmp/collie-fixture/example-two.jpg");
+    expect(draftCarriesSend(SENT, draft)).toBe(true);
+    expect(statusText(lines)).toEqual([
+      "glm-5.3-flash[1m] xhigh | Fast:off | v2.1.278       ctrl+g to edit in Vim",
+      "⏵⏵ auto mode on (shift+tab to cycle)",
+    ]);
+  });
+
+  it("still refuses a real ExitPlanMode footer, which OPENS with the phrase", () => {
+    for (const footer of [" ctrl+g to edit in Vim · ~/.claude/plans/refactor-x-snazzy-pelican.md", "ctrl+g to edit in  nano "]) {
+      const lines = boxWithStatusRows("❯ ", [footer]);
+      expect(hasInputBox(lines)).toBe(false);
+    }
   });
 });

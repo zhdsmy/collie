@@ -66,6 +66,9 @@ describe("parity with the old walk on the real corpus", () => {
     "claude--draft-footer-empty.txt",
     "claude--draft-footer-single.txt",
     "claude--draft-footer-wrapped.txt",
+    // 2.1.278 appends `ctrl+g to edit in Vim` to the statusline row while a multi-line draft is in the
+    // box; read as a plan footer, that row refused the box and a phone reply was typed-and-not-sent.
+    "claude--draft-multiline-vim-hint.txt",
     "claude--draft-paste-placeholder.txt",
     "claude--draft-paste-split-partial.txt",
     "claude--draft-paste-split-tail.txt",

@@ -189,10 +189,21 @@ export type { PromptFamily };
  *   - "Enter to select …"  → select     (AskUserQuestion: the digit THEN Enter)
  *   - "Enter to confirm …" → trust      (folder-trust prompt: the digit alone)
  *   - "… Tab to amend …"   → permission (edit/bash "Do you want to proceed?": the digit alone)
- *   - "ctrl+g to edit …" or a "~/.claude/plans/…" path → plan (ExitPlanMode: the digit alone)
+ *   - "ctrl+g to edit …" (OPENING the row) or a "~/.claude/plans/…" path → plan (ExitPlanMode: the
+ *     digit alone)
  *
  * Case-insensitive and anchored only on the confirm phrase, so per-install extra hints
  * (ctrl+e to explain, ↑/↓ to navigate, …) don't disturb the classification.
+ *
+ * The plan rule's ctrl+g phrase must OPEN the row, because Claude Code 2.1.278 also paints
+ * `ctrl+g to edit in Vim` right-aligned on the STATUSLINE row while a multi-line draft sits in the
+ * input box (`claude--draft-multiline-vim-hint.txt`). That row is the user's own statusline with the
+ * hint appended, not a footer, and reading it as one hides the input box from the send guard — the
+ * reply then stalls with "text delivered, not submitted" (`hasInputBox` is what `composerReady`
+ * answers). Every real ExitPlanMode footer in the corpus opens with the phrase (` ctrl+g to edit in
+ * Vim · ~/.claude/plans/…`), so the anchor keeps the dialog refused and only stops the statusline
+ * false positive. The plan-path alternative deliberately stays unanchored: a narrow pane wraps the
+ * footer after the `·`, leaving the path alone on the next row.
  */
 export function classifyFooter(text: string): PromptFamily | null {
   const t = text.toLowerCase();
@@ -200,7 +211,7 @@ export function classifyFooter(text: string): PromptFamily | null {
   if (t.trim() === "press enter to confirm or esc to go back") return null;
   if (/\benter to select\b/.test(t)) return "select";
   if (/\benter to confirm\b/.test(t)) return "trust";
-  if (/ctrl\+g to edit\b/.test(t) || /\.claude\/plans\//.test(t)) return "plan";
+  if (/^\s*ctrl\+g to edit\b/.test(t) || /\.claude\/plans\//.test(t)) return "plan";
   if (/\btab to amend\b/.test(t)) return "permission";
   return null;
 }

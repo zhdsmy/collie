@@ -16,6 +16,16 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Claude statusline hint over a multi-line draft (captured 2026-09-19)
+
+`claude--draft-multiline-vim-hint.txt` is a byte-faithful capture of Claude Code 2.1.278 in an
+isolated scratch Herdr pane (no conversation turn, no model request). The input box holds a
+multi-line draft and the TUI paints `ctrl+g to edit in Vim` right-aligned on the statusline row
+below it. The draft is synthetic — `/tmp/collie-fixture/…` paths and one CJK paragraph — while the
+SGR bytes, the box geometry and the hint's padding are unchanged. It pins the send guard's failure
+mode: read as an ExitPlanMode footer, that statusline row hid the whole input box, so a phone reply
+was typed and then left unsubmitted ("text delivered, not submitted") on every multi-line send.
+
 ## Cursor Agent input, statusline and transcript surfaces (captured 2026-09-18)
 
 `cursor--idle-sanitized.txt` preserves real Cursor Agent ANSI rows for a submitted query, a

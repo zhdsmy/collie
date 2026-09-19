@@ -1,0 +1,23 @@
+[0m[1m[38;5;2m➜  [0m[1m[38;5;6mcollie-harness-scratch[0m CLAUDE_CODE_IDLE_TOKEN_THRESHOLD=1 CLAUDE_CODE_IDLE
+_THRESHOLD_MINUTES=0 claude
+[0m[38;2;215;119;87m ▐[0m[38;2;215;119;87m[48;2;0;0;0m▛███▛█   [0m[1mClaude Code [0m[38;2;153;153;153mv2.1.278[0m
+[0m[38;2;215;119;87m▝▜[0m[38;2;215;119;87m[48;2;0;0;0m█████[0m[38;2;215;119;87m█▀  [0m[38;2;153;153;153mglm-5.3-flash[1m] with xhigh effort · API Usage Billing[0m
+[0m[38;2;215;119;87m  ▝▝ ▝▝    [0m[38;2;153;153;153m/private/tmp/collie-harness-scratch[0m
+
+  [0m[1mUpdated to latest. Got 30 features, 168 bugfixes, and 70 other changes.[0m
+  [0m[38;2;153;153;153mcode.claude.com/docs/en/changelog for details[0m
+
+
+[0m[38;2;80;80;80m[48;2;55;55;55m❯ [0m[38;2;153;153;153m[48;2;55;55;55mreply with just: ok[0m[48;2;55;55;55m                                                        [0m
+
+[0m[38;2;255;107;128m✻[0m [0m[38;2;255;107;128m500 token plan quota exhausted[0m[38;2;153;153;153m · Retrying in 20s · attempt 7/10[0m
+
+[0m[38;2;136;136;136m─────────────────────────────────────────────────────────────────────────────[0m
+[0m[38;2;153;153;153m❯ [0m/tmp/collie-fixture/example-one.png
+
+  示例段落：这是一段用于测试的多行草稿。
+
+  /tmp/collie-fixture/example-two.jpg[0m[7m [0m
+[0m[38;2;136;136;136m─────────────────────────────────────────────────────────────────────────────[0m
+  [0m[38;2;153;153;153mglm-5.3-flash[1m] xhigh | Fast:off | v2.1.278       ctrl+g to edit in Vim[0m
+  [0m[38;2;255;193;7m⏵⏵ auto mode on[0m[38;2;153;153;153m (shift+tab to cycle)[0m

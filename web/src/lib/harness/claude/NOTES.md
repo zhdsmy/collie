@@ -86,3 +86,31 @@ The known `new task? /clear to save … tokens` hint lives behind a read-only In
 popup is portalled out of both status scrollers and the mirror filter so it cannot be clipped or
 double-inverted. Unknown hints stay literal. The mode row drops its terminal indent only in the
 display; detection, region binding and the existing shift+tab recipe keep the captured text.
+
+# 2.1.278 paints hints and notifications on the statusline and its own rows — 2026-09-19
+
+Claude Code 2.1.278 puts two new kinds of text under the statusline, and both were read as something
+they are not. Reproduced in an isolated scratch pane; every capture is synthetic-content, real-ANSI.
+
+- **`ctrl+g to edit in Vim` rides the STATUSLINE row while a multi-line draft is in the box**
+  (`claude--draft-multiline-vim-hint.txt`). `classifyFooter`'s plan family matched the phrase
+  ANYWHERE in a row (it is the ExitPlanMode footer), so the statusline row — the user's own
+  `model | effort | …` plus the hint appended — refused the whole box in `locateInputBox` step 4.
+  `hasInputBox`/`composerReady` then answered false, the guard's verify-after read found no draft,
+  and every multi-line reply stalled as "text delivered, not submitted" (the user then had to press
+  Enter by hand in the pane). Fix: the plan family requires the phrase to OPEN the row, which every
+  real footer in the corpus does (` ctrl+g to edit in Vim · ~/.claude/plans/…`). The plan-path
+  alternative stays unanchored — a narrow pane wraps the footer after the `·`.
+- **Notifications are painted right-aligned on their OWN row, below the mode row** (2.1.278 moved them
+  out of the statusline row, which is where 2.1.273 put them — see `claude--custom-statusline.txt`).
+  The known `new task? /clear to save N tokens` sentence therefore arrived on a row without any ` | `
+  field, fell through `StatuslineRow`'s router to the verbatim branch, and the phone showed the hint
+  as a raw, right-indent-padded strip row. Fix: the router also matches that sentence standing alone,
+  which puts it behind the same Info button as the same-row placement.
+- **Known limit:** a notification row whose text reads as a key hint — `Ctrl+Y to paste deleted text`,
+  painted after a large draft is deleted — still refuses the box through
+  `tailNamesAMenu`/`namesAMenuKey`, so the guard stalls until the notification expires. The structural
+  fix (modelling "Claude notification row" as chrome the tail checks must not read as a modal) is
+  deliberately NOT made here: it would loosen the stale-box dialog defence for every agent, and the
+  shape has only been seen transiently. Revisit if it costs a real send.
+

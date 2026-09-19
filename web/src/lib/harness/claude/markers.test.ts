@@ -235,6 +235,11 @@ describe("classifyFooter", () => {
     expect(classifyFooter("← for agents")).toBeNull();
     expect(classifyFooter("Do you want to proceed?")).toBeNull();
     expect(classifyFooter("Press enter to confirm or esc to go back")).toBeNull();
+    // Claude 2.1.278 paints this hint right-aligned ON the statusline row while a multi-line draft is
+    // in the box. The row is the user's own statusline with the hint appended, so it does not OPEN
+    // with the phrase — only a real ExitPlanMode footer does, and reading this one as a footer hides
+    // the input box from the send guard (`claude--draft-multiline-vim-hint.txt`).
+    expect(classifyFooter("  example-model[1m] xhigh | Fast:off | v2.1.278       ctrl+g to edit in Vim")).toBeNull();
   });
 });
 
