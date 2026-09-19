@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.2+collie.2] - 2026-09-20
+
 ### Changed
 
-- **The Cursor statusline re-lands on this line.** The compact Cursor strip and its plan-usage fixes were cut as `1.10.1+collie.8`–`1.10.1+collie.10` on a parallel line and are folded in here, so the next release carries them together with the upstream 1.10.2 install fixes.
+- **The Cursor statusline re-lands on this line.** The compact Cursor strip and its plan-usage fixes were cut as `1.10.1+collie.8`–`1.10.1+collie.10` on a parallel line and are folded in here, so the next release carries them together with the upstream 1.10.2 install fixes. ([49eb4cf3](https://github.com/zhdsmy/collie/commit/49eb4cf3))
 
 ## [1.10.2+collie.1] - 2026-09-19
 
