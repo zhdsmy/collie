@@ -681,12 +681,19 @@ export function AgentChat({
       grammarsOn ? adapterFor(agent?.agent)?.extractStatusLines(splitLines(parseAnsi(modelSwitching ? modelSwitchBase : display))) ?? [] : [],
     [display, agent?.agent, grammarsOn, modelSwitching, modelSwitchBase],
   );
-  const statuslineRows = useMemo(() => agent?.agent === "codex" && statusLines.length > 0 ? [{
-    segments: statusLines.flatMap((row, index) => [
-      ...(index > 0 ? [{ text: " · ", style: {}, muted: false }] : []),
-      ...row.segments.filter((segment) => !isCodexPlanHint(segment)),
-    ]),
-  }] : statusLines, [agent?.agent, statusLines]);
+  const statuslineRows = useMemo(() => {
+    if (statusLines.length === 0 || (agent?.agent !== "codex" && agent?.agent !== "cursor")) {
+      return statusLines;
+    }
+    return [{
+      segments: statusLines.flatMap((row, index) => [
+        ...(index > 0 ? [{ text: " · ", style: {}, muted: false }] : []),
+        ...(agent.agent === "codex"
+          ? row.segments.filter((segment) => !isCodexPlanHint(segment))
+          : row.segments),
+      ]),
+    }];
+  }, [agent?.agent, statusLines]);
   // A TORN FRAME MUST NOT TAKE THE STRIP OFF THE SCREEN. The TUI repaints its footer many times a
   // second, and a poll that lands mid-repaint reads a screen with no footer in it at all — measured:
   // 2 of 320 samples taken at ~100 ms while a reply streamed (`use-held-statuslines.ts` has the

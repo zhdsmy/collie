@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **The Cursor statusline re-lands on this line.** The compact Cursor strip and its plan-usage fixes were cut as `1.10.1+collie.8`–`1.10.1+collie.10` on a parallel line and are folded in here, so the next release carries them together with the upstream 1.10.2 install fixes.
+
 ## [1.10.2+collie.1] - 2026-09-19
 
 ### Fixed
@@ -43,6 +47,23 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 - **`collie update` works again when your home directory is a git repository.** A dotfiles repository whose working tree sits at `~` made Collie read a binary install as a source checkout. `collie update` then refused to run and pointed you at your own dotfiles remote. Collie now counts a directory as a checkout only when the repository starts there. Reported by [@krishkumar](https://github.com/krishkumar) ([#243](https://github.com/AltanS/collie/issues/243)) ([d43f8fd1](https://github.com/AltanS/collie/commit/d43f8fd1))
 - **A checkout whose git data is unreadable is never mistaken for a binary install.** A corrupt or unreadable `.git` made git refuse to answer, and Collie then read the folder as a binary install, which `collie update` moves aside. Collie now stops, says the git data cannot be read, and tells you to repair it. ([0091f5ec](https://github.com/AltanS/collie/commit/0091f5ec))
 - **Collie no longer asks git about the wrong repository.** If `GIT_DIR` or one of its siblings was set in your shell, or Collie ran from a git hook, every git question it asked was answered about that other repository instead of its own. No Collie process passes those variables to anything it starts now. ([ADR 0049](https://github.com/AltanS/collie/blob/main/.adr/0049-no-child-inherits-a-relocated-repository.md), [dcd313b1](https://github.com/AltanS/collie/commit/dcd313b1))
+## [1.10.1+collie.10] - 2026-09-20
+
+### Changed
+
+- **Cursor plan usage separates its labels from the numbers.** `AUTO6%` ran the label into its value, and in a terminal face whose zero carries no slash that reads as `AUT06%`; a colon now sits between each label and its share. ([12094d8](https://github.com/zhdsmy/collie/commit/12094d8))
+
+## [1.10.1+collie.9] - 2026-09-20
+
+### Changed
+
+- **Cursor plan usage spells out AUTO instead of A.** The compact strip abbreviated Cursor's `auto` share to a single letter next to `API`, which read as an unrelated code; both shares now carry the word the terminal prints. ([a465abd](https://github.com/zhdsmy/collie/commit/a465abd))
+
+## [1.10.1+collie.8] - 2026-09-20
+
+### Changed
+
+- **Cursor status stays compact while tasks are running.** Its separate task and metrics rows now share one horizontally scrolling strip, with accessible icons for activity, model, workspace, context and plan usage; active tasks animate without overriding reduced-motion preferences, and unknown fields keep their original ANSI text. ([dbff0ed](https://github.com/zhdsmy/collie/commit/dbff0ed))
 
 ## [1.10.1+collie.7] - 2026-09-19
 

@@ -2,10 +2,12 @@ import {
   ChevronUp,
   CalendarDays,
   Clock,
+  Cpu,
   Database,
   CircleAlert,
   CircleCheck,
   CircleOff,
+  FolderGit2,
   Gauge,
   GitBranch,
   Hourglass,
@@ -203,6 +205,115 @@ function ClaudeField({ segments, text }: { segments: AnsiSegment[]; text: string
       {Icon && <Icon aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />}
       <span><StyledText segments={segments} /></span>
     </span>
+  );
+}
+
+function CursorIconField({
+  text,
+  segments,
+  icon: Icon,
+  value,
+  animated = false,
+}: {
+  text: string;
+  segments: AnsiSegment[];
+  icon: LucideIcon;
+  value: string;
+  animated?: boolean;
+}) {
+  const start = text.indexOf(value);
+  return (
+    <span role="img" aria-label={text} title={text}
+      className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none">
+      <Icon aria-hidden="true"
+        className={cn("size-[12px] shrink-0", animated && "motion-safe:animate-spin motion-reduce:animate-none")}
+        strokeWidth={2.25} style={segments[0] && styleFor(segments[0])} />
+      <span aria-hidden="true">
+        <StyledText segments={sliceSegments(segments, start, start + value.length)} />
+      </span>
+    </span>
+  );
+}
+
+interface StatuslineField {
+  index: number;
+  text: string;
+  start: number;
+}
+
+function CursorStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode }) {
+  const parts = lineText(row).split(/( · )/);
+  const fields: StatuslineField[] = [];
+  let offset = 0;
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index] ?? "";
+    const text = part.trim();
+    const start = offset + (text ? part.indexOf(text) : 0);
+    offset += part.length;
+    if (text && index % 2 === 0) fields.push({ index, text, start });
+  }
+
+  const contextIndex = fields.findIndex((field) => /^[▓░]+\s+\d+%/.test(field.text));
+  const modelIndex = contextIndex >= 2 ? contextIndex - 2 : -1;
+  const locationIndex = contextIndex >= 1 ? contextIndex - 1 : -1;
+  return (
+    <div data-slot="cursor-statusline" className={ROW_CLASS}>
+      {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
+      {fields.map((field, position) => {
+        const segments = sliceSegments(row.segments, field.start, field.start + field.text.length);
+        const task = /^(\d+) tasks?$/.exec(field.text);
+        const context = /^[▓░]+\s+(\d+%)\s*(.*)$/.exec(field.text);
+        const plan = /^plan\s+(\d+%)\s+\(auto\s+(\d+%)\s+api\s+(\d+%)\)\s+↻(\S+)$/i.exec(field.text);
+        let content: ReactNode;
+        if (task?.[1]) {
+          content = <CursorIconField text={field.text} segments={segments} icon={Loader2}
+            value={task[1]} animated />;
+        } else if (position === modelIndex) {
+          content = <CursorIconField text={field.text} segments={segments} icon={Cpu}
+            value={field.text} />;
+        } else if (position === locationIndex) {
+          content = <CursorIconField text={field.text} segments={segments} icon={FolderGit2}
+            value={field.text} />;
+        } else if (context?.[1] && Number.parseInt(context[1], 10) <= 100) {
+          const valueStart = field.text.indexOf(context[1]);
+          const detail = context[2]?.trim() ?? "";
+          content = (
+            <span title={field.text}
+              className="inline-flex min-h-3.5 shrink-0 items-center gap-1 leading-none">
+              <ContextField value={context[1]} remaining />
+              {detail && <span><StyledText segments={sliceSegments(
+                segments,
+                valueStart + context[1].length,
+                field.text.length,
+              )} /></span>}
+            </span>
+          );
+        } else if (plan?.[1] && plan[2] && plan[3] && plan[4]) {
+          content = (
+            <span role="img" aria-label={field.text} title={field.text}
+              className="inline-flex min-h-3.5 shrink-0 items-center gap-1 leading-none"
+              style={segments[0] && styleFor(segments[0])}>
+              <Gauge aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
+              <span aria-hidden="true">{plan[1]} <span className="opacity-70">AUTO:{plan[2]} API:{plan[3]}</span></span>
+              <CalendarDays aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
+              <span aria-hidden="true">{plan[4]}</span>
+            </span>
+          );
+        } else {
+          content = (
+            <span className="inline-flex min-h-3.5 shrink-0 items-center" title={field.text}>
+              <StyledText segments={segments} />
+            </span>
+          );
+        }
+        return (
+          <span key={field.index} className="inline-flex shrink-0 items-center gap-1.5">
+            {position > 0 && <StatuslineDivider />}
+            {content}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -563,6 +674,7 @@ export function StatuslineRow({
     // which ClaudeStatusline drops for the same reason.
     if (/\s\|\s/.test(text)) return <ClaudeStatusline row={row} leading={leading} />;
   }
+  if (agent === "cursor") return <CursorStatusline row={row} leading={leading} />;
   if (agent !== "codex" && agent !== "hermes") {
     return (
       <div data-slot="statusline-row" className={ROW_CLASS}>
