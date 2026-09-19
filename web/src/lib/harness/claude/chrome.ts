@@ -200,6 +200,39 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
 }
 
 /**
+ * Claude's own `new task? /clear to save N tokens` hint, as its own sentence, read off the
+ * re-surfaced statusline run — or null when no row carries it.
+ *
+ * It is READ rather than rendered: the actions belt draws it as a tip icon (`composer.tsx`), so this
+ * is the one place that recognises the sentence and both surfaces take their answer from here. The
+ * hint has two placements and this handles both, because it splits a row the way the strip does and
+ * takes the first whole field that IS the sentence:
+ *
+ *   - appended to the statusline row (2.1.273, `claude--custom-statusline.txt`);
+ *   - alone on its own right-aligned row below the mode row (2.1.278 — see NOTES.md).
+ *
+ * `CLAUDE_NEW_TASK_HINT` is exported for the strip's own use: it drops that field so the sentence
+ * never prints twice. The two surfaces are one fact and must be taught together.
+ */
+export function claudeHintText(rows: readonly StyledLine[]): string | null {
+  for (const row of rows) {
+    for (const [index, part] of lineText(row).split(CLAUDE_STATUS_FIELD).entries()) {
+      const text = part.trim();
+      if (index % 2 === 1 || !CLAUDE_NEW_TASK_HINT.test(text)) continue;
+      return text;
+    }
+  }
+  return null;
+}
+
+/** Claude's own new-task sentence — one definition, read by the strip and by the actions belt. */
+export const CLAUDE_NEW_TASK_HINT = /^new task\? \/clear to save \S+ tokens$/;
+
+/** How a user-configured Claude statusline row is split into fields: the ` | ` separators, and the
+ *  two-space run that pads a right-aligned hint away from the fields before it. */
+const CLAUDE_STATUS_FIELD = /(\s+\|\s+|(?<=\S)\s{2,}(?=\S))/;
+
+/**
  * The literal region a write to this pane is bound to — `sendKeys`'s `region` argument, which the
  * bridge re-checks before it types (bridge/prompt-binding.ts). A keystroke aimed at a screen that has
  * since moved is refused with `prompt_changed` instead of landing on whatever replaced it.

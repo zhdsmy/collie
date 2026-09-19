@@ -105,12 +105,22 @@ they are not. Reproduced in an isolated scratch pane; every capture is synthetic
   out of the statusline row, which is where 2.1.273 put them — see `claude--custom-statusline.txt`).
   The known `new task? /clear to save N tokens` sentence therefore arrived on a row without any ` | `
   field, fell through `StatuslineRow`'s router to the verbatim branch, and the phone showed the hint
-  as a raw, right-indent-padded strip row. Fix: the router also matches that sentence standing alone,
-  which puts it behind the same Info button as the same-row placement.
+  as a raw, right-indent-padded strip row.
+- **The hint is a TIP, and a tip belongs on the actions belt, not in the terminal strip** (operator's
+  call, 2026-09-19 — "以 tip icon 的形式放在操作提示栏"). The strip is fields: compact values the pane
+  is saying about itself, each one wearing an icon. Claude's sentence is a suggestion with a command in
+  it, so it went behind an icon-only pill at the end of Collie's run on the belt (`composer.tsx`), which
+  opens the shared in-flow dock with the sentence verbatim. `claudeHintText` (chrome.ts) is the ONE
+  reader of that sentence; `StatuslineRow` drops the field it finds so the strip never prints it twice.
+  The tip appears and disappears with the pane's own screen, and the pill is absent everywhere else.
 - **Known limit:** a notification row whose text reads as a key hint — `Ctrl+Y to paste deleted text`,
   painted after a large draft is deleted — still refuses the box through
   `tailNamesAMenu`/`namesAMenuKey`, so the guard stalls until the notification expires. The structural
   fix (modelling "Claude notification row" as chrome the tail checks must not read as a modal) is
   deliberately NOT made here: it would loosen the stale-box dialog defence for every agent, and the
   shape has only been seen transiently. Revisit if it costs a real send.
+- **Known limit:** only the `new task?` sentence has a tip pill. Any other notification Claude paints
+  on that row (the `Ctrl+Y` one, whatever comes next) has no pill and the strip drops nothing, so a
+  VERBATIM row still reaches the strip — which is the honest default: an unknown row is shown rather
+  than swallowed. Add the next sentence to `claudeHintText` when it earns one.
 

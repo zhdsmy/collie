@@ -9,7 +9,6 @@ import {
   Gauge,
   GitBranch,
   Hourglass,
-  Info,
   ListChecks,
   Loader2,
   Pause,
@@ -20,8 +19,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import type { ReactNode } from "react";
 
 import type { AnsiSegment } from "@/lib/ansi";
 import type { SessionModel } from "@/lib/types";
@@ -31,10 +29,10 @@ import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { AnchoredMenu } from "@/components/ui/anchored-menu";
 import { CodexModeToggle, type CodexModeToggleProps } from "@/components/codex-mode-toggle";
 import { parseCodexModelField, parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
 import { modeFieldOf, type ClaudeModeField } from "@/lib/harness/claude/mode";
+import { CLAUDE_NEW_TASK_HINT } from "@/lib/harness/claude/chrome";
 
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
@@ -220,64 +218,37 @@ function StatuslineDivider() {
 }
 
 /**
- * Claude's own `new task? /clear to save N tokens` hint, matched against a COMPLETE status row.
+ * Claude's user-configured statusline: `model effort | ctx N% | branch | vVERSION`, split on its own
+ * separators so each field can wear an icon and a compact value.
  *
- * It has two placements, and both must end up behind the Info button rather than in the strip as
- * text. 2.1.273 appends it to the right of a user-configured statusline (`claude--custom-statusline.txt`,
- * where the field split below finds it as a field). 2.1.278 paints its notifications — this hint and
- * others like `Ctrl+Y to paste deleted text` — right-aligned on their OWN row below the mode row. That
- * row carries no ` | ` field, so the router in StatuslineRow matches it by this sentence alone;
- * otherwise it falls through to the verbatim branch and the phone shows the hint as a raw strip row,
- * indented by the terminal's own right-alignment padding.
+ * ONE FIELD IS DROPPED RATHER THAN DRAWN: Claude's own `new task? /clear to save N tokens` sentence,
+ * which it either appends to this row (2.1.273) or paints alone on a row below the mode row (2.1.278).
+ * It is a TIP, not a status field, and the actions belt carries it as a tip icon now (composer.tsx) —
+ * the strip's job here is only to not print it a second time. The sentence is recognised in exactly
+ * one place (`claudeHintText`, harness/claude/chrome.ts), which is what feeds that pill, so the two
+ * cannot drift into disagreeing about what the tip is.
  */
-const CLAUDE_NEW_TASK_HINT = /^new task\? \/clear to save \S+ tokens$/;
-
 function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode }) {
   useLocale();
-  const [hintAnchor, setHintAnchor] = useState<{ top: number; right: number } | null>(null);
   let offset = 0;
-  let hint: AnsiSegment[] | undefined;
   const fields: ReactNode[] = [];
   for (const [index, part] of lineText(row).split(/(\s+\|\s+|(?<=\S)\s{2,}(?=\S))/).entries()) {
     const text = part.trim();
     const start = offset + part.indexOf(text);
     offset += part.length;
     if (!text || index % 2 === 1) continue;
-    const segments = sliceSegments(row.segments, start, start + text.length);
-    if (CLAUDE_NEW_TASK_HINT.test(text)) {
-      hint = segments;
-      continue;
-    }
+    if (CLAUDE_NEW_TASK_HINT.test(text)) continue;
     fields.push(
       <span key={index} className="inline-flex shrink-0 items-center gap-1.5">
         {fields.length > 0 && <StatuslineDivider />}
-        <ClaudeField text={text} segments={segments} />
+        <ClaudeField text={text} segments={sliceSegments(row.segments, start, start + text.length)} />
       </span>,
     );
   }
-  const label = t("statusline.claude.hint");
   return (
-    <div className="relative min-w-0">
-      <div data-slot="claude-statusline" className={ROW_CLASS}>
-        {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
-        {fields}
-        {hint && <Button variant="ghost" aria-label={label} aria-expanded={hintAnchor !== null} aria-haspopup="dialog" onClick={(event) => {
-          const bounds = event.currentTarget.parentElement!.getBoundingClientRect();
-          setHintAnchor(hintAnchor ? null : { top: bounds.top, right: window.innerWidth - bounds.right });
-        }}
-          className="h-auto min-h-3.5 shrink-0 rounded-sm border-0 p-0 has-[>svg]:px-0 leading-none">
-          <Info aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
-        </Button>}
-      </div>
-      {/* Outside both status scrollers and the mirror's filter, so the hint is not clipped. */}
-      {hintAnchor && hint && createPortal(
-        <div className="fixed z-50" style={hintAnchor}>
-          <AnchoredMenu open onClose={() => setHintAnchor(null)} label={label}
-            className="w-72 max-w-[calc(100vw-2rem)] p-3 text-xs leading-relaxed whitespace-normal text-foreground">
-            {hint.map((segment) => segment.text).join("")}
-          </AnchoredMenu>
-        </div>, document.body,
-      )}
+    <div data-slot="claude-statusline" className={ROW_CLASS}>
+      {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
+      {fields}
     </div>
   );
 }
@@ -585,10 +556,12 @@ export function StatuslineRow({
 
   if (agent === "claude") {
     const text = lineText(row);
-    // A pipe-separated statusline, or the new-task hint standing alone on its own notification row.
-    if (/\s\|\s/.test(text) || CLAUDE_NEW_TASK_HINT.test(text.trim())) {
-      return <ClaudeStatusline row={row} leading={leading} />;
-    }
+    // Claude's own new-task sentence, alone on its own notification row (2.1.278): the actions belt
+    // carries it as a tip icon, so the strip draws NOTHING for it rather than an empty row.
+    if (CLAUDE_NEW_TASK_HINT.test(text.trim())) return null;
+    // A pipe-separated statusline. The hint may also be appended to it as a field, which
+    // ClaudeStatusline drops for the same reason.
+    if (/\s\|\s/.test(text)) return <ClaudeStatusline row={row} leading={leading} />;
   }
   if (agent !== "codex" && agent !== "hermes") {
     return (

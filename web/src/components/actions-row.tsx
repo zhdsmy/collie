@@ -188,12 +188,19 @@ export interface GeneralAction {
   /** ALREADY TRANSLATED. The button's accessible name — what a reader announces and what a test
    *  addresses. It is never shortened for the paint. */
   label: string;
-  /** ALREADY TRANSLATED. The word the pill DRAWS, when the accessible name is too long to wear: the
-   *  row shows "Type" and announces "Type into terminal". Defaults to {@link label}.
+  /**
+   * ALREADY TRANSLATED. The word the pill DRAWS, when the accessible name is too long to wear: the
+   * row shows "Type" and announces "Type into terminal". Defaults to {@link label}.
    *
-   *  It must be a prefix-or-part of `label` and never a different word — a visible word the
-   *  accessible name does not contain is the WCAG 2.5.3 failure, and it also means a person saying
-   *  "tap Display" and a reader hearing "Display settings" are no longer talking about one button. */
+   * An EMPTY STRING means an icon-only pill, and that is a deliberate choice rather than an
+   * omission: the agent's own tip has a sentence for a name and no word of ours to draw (see
+   * composer.tsx). The gap beside the empty label goes with it — see the render.
+   *
+   * Otherwise it must be a prefix-or-part of `label` and never a different word — a visible word
+   * the accessible name does not contain is the WCAG 2.5.3 failure, and it also means a person
+   * saying "tap Display" and a reader hearing "Display settings" are no longer talking about one
+   * button.
+   */
   word?: string;
   /** Draws the "on" tint: the dock this opens is open, or the mode it arms is armed. */
   on?: boolean;
@@ -374,7 +381,10 @@ export function ActionsRow({ general, agent, mine, onRun, disabled, handle }: Ac
                     aria-expanded={action.expanded}
                     aria-pressed={action.pressed}
                     onClick={action.onSelect}
-                    className={cn(`${STRIP_ROW_PILL} gap-1.5 text-xs`, action.on === true ? ON : OFF)}
+                    // An empty `word` is a DELIBERATE icon-only pill (the agent's own tip), so the
+                    // label's gap goes with the label: `gap-1.5` beside an empty text node is 6px of
+                    // padding the belt pays for nothing. Every other action draws its word.
+                    className={cn(STRIP_ROW_PILL, "text-xs", action.word !== "" && "gap-1.5", action.on === true ? ON : OFF)}
                   >
                     <action.icon className="size-4 shrink-0" />
                     {action.word ?? action.label}

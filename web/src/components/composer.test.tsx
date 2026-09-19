@@ -2722,3 +2722,32 @@ describe("Composer — the attach picker offers photos as well as files", () => 
     expect(opened).toEqual(["attach-photos", "attach-files"]);
   });
 });
+
+// The agent's own tip, as the belt's icon-only pill (claudeTip comes from the pane's own screen —
+// agent-chat.tsx reads it with claudeHintText and the statusline strip drops the sentence).
+describe("the agent's tip pill", () => {
+  it("is absent unless the pane's agent painted a tip", () => {
+    renderComposer();
+    const group = screen.getByRole("group", { name: translate("composer.controls.label") });
+    expect(within(group).queryByRole("button", { name: translate("statusline.claude.hint") })).toBeNull();
+  });
+
+  it("draws one icon-only pill that owns its dock, and only for a tip", async () => {
+    renderComposer({ claudeTip: "new task? /clear to save 681.5k tokens" });
+    const group = screen.getByRole("group", { name: translate("composer.controls.label") });
+    const tip = within(group).getByRole("button", { name: translate("statusline.claude.hint") });
+    // Icon-only: no word beside the glyph, so the pill's text is exactly nothing.
+    expect(tip.querySelector("svg")).not.toBeNull();
+    expect(tip.textContent).toBe("");
+    expect(tip).toHaveAttribute("aria-expanded", "false");
+    await userEvent.setup().click(tip);
+    // The dock is the shared in-flow one (ui/composer-dock.tsx), titled by its own h2 — no dialog
+    // role, which is that primitive's business and not this pill's.
+    expect(screen.getByRole("heading", { name: translate("statusline.claude.hint") })).toBeVisible();
+    // The sentence verbatim: it is Claude's own, and the app shows it as printed.
+    expect(screen.getByText("new task? /clear to save 681.5k tokens")).toBeVisible();
+    expect(tip).toHaveAttribute("aria-expanded", "true");
+    await userEvent.setup().click(tip);
+    expect(screen.queryByRole("heading", { name: translate("statusline.claude.hint") })).toBeNull();
+  });
+});

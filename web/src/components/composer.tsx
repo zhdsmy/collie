@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { ChangeEvent, ClipboardEvent, CSSProperties } from "react";
 import { useRevalidator } from "react-router";
-import { Check, FileText, Image, Keyboard, Loader2, Mic, Paperclip, Send, Settings2, Slash, Square, Terminal, Zap } from "lucide-react";
+import { Check, FileText, Image, Keyboard, Lightbulb, Loader2, Mic, Paperclip, Send, Settings2, Slash, Square, Terminal, Zap } from "lucide-react";
 
 import { applyDraftFontSize, fontStack, inputFocusZoomsPage } from "@/hooks/use-display-prefs";
 import type { DisplayPrefs } from "@/hooks/use-display-prefs";
@@ -109,6 +109,18 @@ interface ComposerProps {
   /** Mirror display prefs — the View row lives here, but the mirror (in AgentChat) reads the same
    * single instance, so they're threaded through rather than each calling useDisplayPrefs. */
   prefs: DisplayPrefs;
+  /**
+   * The agent's OWN tip for this pane — Claude's `new task? /clear to save N tokens` sentence, read
+   * off the re-surfaced statusline run by the pane (`claudeHintText`, harness/claude/chrome.ts).
+   *
+   * It is a TIP, not a status field, so it does not belong in the terminal strip: the strip would have
+   * to print Claude's raw sentence, right-alignment padding and all, in the middle of fields that are
+   * all compact values. It arrives here as the belt's tip icon instead — one icon-only pill that opens
+   * this dock.
+   *
+   * Only ever set for an agent that paints one; absent means no pill, which is every other pane.
+   */
+  claudeTip?: string | null;
   setWrap: (wrap: boolean) => void;
   stepFontSize: (delta: number) => void;
   setRawTerminal: (raw: boolean) => void;
@@ -148,7 +160,7 @@ interface ComposerProps {
 // decode. They now live behind the ⚙ on the actions row, as labelled rows in the same
 // in-flow dock (they change how the mirror LOOKS, so the mirror has to stay visible while you flip
 // them). Find moved the other way — to the header, where its find bar already takes over the row.
-type ComposerDrawer = "quick" | "cmd" | "display" | null;
+type ComposerDrawer = "quick" | "cmd" | "display" | "tip" | null;
 
 
 
@@ -172,7 +184,7 @@ const KEY_REVALIDATE_MS = 300;
 const ATTACH_PRESS_MS = 220;
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, onDockOpen, onWritingChange, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent, pullHandle },
+  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, onDockOpen, onWritingChange, composing, dialogPresent, text, terminalDraft, rawTerminalDraft, prefs, claudeTip, setWrap, stepFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply, onSent, pullHandle },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -1046,6 +1058,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
+        {/* The agent's own tip (Claude's `new task? /clear to save N tokens`), opened from the belt's
+            lightbulb pill. The sentence is Claude's own and is shown verbatim: it names a command
+            (`/clear`) and a number this app does not compute, so there is nothing here to translate. */}
+        {drawer === "tip" && claudeTip && (
+          <ComposerDock title={translate("statusline.claude.hint")} onClose={closeDrawer}>
+            <p className="px-3 py-2 font-mono text-xs leading-relaxed text-muted-foreground">{claudeTip}</p>
+          </ComposerDock>
+        )}
         {/* The one action row: Keys · Quick · Agent · ⚙ (Agent only when the pane's agent has
             commands). Display prefs used to sit on a second, permanent icon-only "View" row above
             this one; folding them behind the ⚙ gives the mirror that row back. The gear is icon-only
@@ -1155,6 +1175,24 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 expanded: drawer === "display",
                 onSelect: () => requestDrawer(drawer === "display" ? null : "display"),
               },
+              // THE AGENT'S OWN TIP, as an icon-only pill at the end of Collie's run. It is the one
+              // pill on this belt that is not ours: the sentence comes from Claude's screen
+              // (`claudeTip`), so it appears and disappears with that pane's own tip and is absent
+              // everywhere else. Icon-only because it is an aside, not a peer of the three toggles —
+              // and because a word for it would be ours to invent for a sentence that is Claude's.
+              ...(claudeTip
+                ? [
+                    {
+                      id: "tip",
+                      icon: Lightbulb,
+                      label: translate("statusline.claude.hint"),
+                      word: "",
+                      on: drawer === "tip",
+                      expanded: drawer === "tip",
+                      onSelect: () => requestDrawer(drawer === "tip" ? null : "tip"),
+                    },
+                  ]
+                : []),
           ]}
           agent={agent}
           mine={operatorCommands}

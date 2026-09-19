@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Claude's new-task tip becomes an icon on the actions belt.** Claude Code paints `new task? /clear to save N tokens` under its statusline — appended to the statusline row, or alone on a right-aligned row of its own — and the strip printed it as raw text between compact status fields. It is a suggestion carrying a command, not a status field, so it is now an icon-only pill at the end of Collie's run on the actions belt, which opens the dock with the sentence verbatim; it appears and disappears with the pane's own tip, and no other pane grows a pill. The strip drops the sentence rather than showing it twice.
+
 ## [1.10.1+collie.4] - 2026-09-19
 
 ### Fixed

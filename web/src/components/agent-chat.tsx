@@ -90,6 +90,7 @@ import { paneName, panePlaceParts } from "@/lib/pane-name";
 import { keysSendable, useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux-capability";
 import { runClaudeModeSwitch } from "@/lib/claude-mode-switch";
 import { readClaudeModeState } from "@/lib/harness/claude/mode";
+import { claudeHintText } from "@/lib/harness/claude/chrome";
 import { hasJournalAdapter } from "@/lib/journal-agents";
 import { paneRowKey } from "@/lib/hosts";
 import { historyPath, spacePath } from "@/lib/nav";
@@ -686,6 +687,14 @@ export function AgentChat({
     ]),
   }] : statusLines, [agent?.agent, statusLines]);
   const statuslineVisible = statuslineRows.length > 0 || showWriteHost;
+  // Claude paints its own `new task? /clear to save N tokens` tip under the statusline, and it is a
+  // TIP rather than a status field: the strip drops the sentence and the actions belt carries it as a
+  // tip icon (composer.tsx). Read off the SAME rows the strip was cut from, so the two cannot tell
+  // different stories about what the tip is; null on every other pane.
+  const claudeTip = useMemo(
+    () => (agent?.agent === "claude" ? claudeHintText(statuslineRows) : null),
+    [agent?.agent, statuslineRows],
+  );
 
   // A user draft stranded on the input box's "❯" line — a message queued while the agent was busy
   // then recalled, which persists across turns. stripChrome peels the box off the mirror so it goes
@@ -2379,6 +2388,8 @@ export function AgentChat({
                   terminalDraft={terminalDraft}
                   rawTerminalDraft={rawTerminalDraft}
                   prefs={prefs}
+                  // Claude's own tip for this pane, drawn as the belt's lightbulb pill (composer.tsx).
+                  claudeTip={claudeTip}
                   setWrap={setWrap}
                   stepFontSize={stepFontSize}
                   setRawTerminal={setRawTerminal}

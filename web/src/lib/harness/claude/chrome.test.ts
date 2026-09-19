@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parseAnsi } from "../../ansi";
 import { splitLines, type StyledLine } from "../../blocks";
 import { draftCarriesSend } from "../../reply-action";
-import { extractInputDraft, extractStatusLines, hasInputBox, stripChrome } from "./chrome";
+import { claudeHintText, extractInputDraft, extractStatusLines, hasInputBox, stripChrome } from "./chrome";
 import { lineText } from "./markers";
 
 /** The statusline run as plain text. extractStatusLines returns STYLED lines — a statusline tells
@@ -875,5 +875,29 @@ describe("a statusline row carrying Claude's own ctrl+g hint is not a dialog foo
       const lines = boxWithStatusRows("❯ ", [footer]);
       expect(hasInputBox(lines)).toBe(false);
     }
+  });
+});
+
+// The agent's own tip, read off the statusline run so the actions belt can carry it as an icon
+// (composer.tsx). The strip reads the SAME sentence through CLAUDE_NEW_TASK_HINT to drop it, so a
+// change to either half that is not made to both shows up as a diff in one test or the other.
+describe("claudeHintText — the new-task sentence, for the belt's tip icon", () => {
+  it("finds it as a field of a real captured statusline row", () => {
+    expect(claudeHintText(fixtureLines("claude--custom-statusline.txt")))
+      .toBe("new task? /clear to save 600.0k tokens");
+  });
+
+  it("finds it alone on its own right-aligned notification row (2.1.278's placement)", () => {
+    const rows = splitLines(parseAnsi([
+      "  example-model[1m] xhigh | Fast:off | v2.1.278",
+      "  ⏵⏵ auto mode on (shift+tab to cycle)",
+      `${" ".repeat(47)}new task? /clear to save 681.5k tokens`,
+    ].join("\n")));
+    expect(claudeHintText(rows)).toBe("new task? /clear to save 681.5k tokens");
+  });
+
+  it("returns null for rows that carry no tip, and for a longer sentence that merely starts alike", () => {
+    expect(claudeHintText(fixtureLines("claude--working.txt"))).toBeNull();
+    expect(claudeHintText(splitLines(parseAnsi("  new task? /clear to save 681.5k tokens and more")))).toBeNull();
   });
 });

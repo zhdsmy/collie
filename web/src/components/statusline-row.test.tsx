@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { parseAnsi } from "@/lib/ansi";
 import { lineText, splitLines } from "@/lib/blocks";
-import { extractStatusLines } from "@/lib/harness/claude/chrome";
+import { claudeHintText, extractStatusLines } from "@/lib/harness/claude/chrome";
 import { __resetLocale, setLocale, whenLocaleReady, type Locale } from "@/lib/i18n";
 import { StatuslineRow } from "./statusline-row";
 
@@ -314,7 +314,7 @@ it.each(["pi", "opencode", "unknown"])("leaves %s status rows verbatim", (agent)
   expect(within(container).getByText("Context 73% left").style.color).toBe("var(--ansi-6)");
 });
 
-it("compacts the captured Claude custom statusline without dropping its right-side hint", () => {
+it("compacts the captured Claude custom statusline without printing its right-side hint", () => {
   const capture = readFileSync(join(import.meta.dirname, "..", "fixtures", "panes", "claude--custom-statusline.txt"), "utf8");
   const rows = extractStatusLines(splitLines(parseAnsi(capture)));
   expect(rows).toHaveLength(2);
@@ -324,7 +324,11 @@ it("compacts the captured Claude custom statusline without dropping its right-si
   expect(ring).toHaveAttribute("data-used", "66");
   expect(view.getByRole("img")).toHaveAttribute("aria-label", "Context 34% left");
   expect(view.container.textContent).toContain("example-model[1m] xhigh");
+  // The `new task? /clear to save 600.0k tokens` field is DROPPED, not decorated: it is the agent's
+  // TIP, and the belt's pill (composer.tsx) carries it. claudeHintText (chrome.test.ts) is what feeds
+  // that pill; this test is the other half, that the strip never prints it a second time.
   expect(view.container.textContent).not.toContain("new task?");
+  expect(claudeHintText(rows)).toBe("new task? /clear to save 600.0k tokens");
   expect(view.container.textContent).not.toMatch(/ {2,}|\|/);
   expect(view.container.querySelector(".lucide-git-branch")).not.toBeNull();
   expect(view.container.querySelector(".lucide-tag")).not.toBeNull();
@@ -332,27 +336,16 @@ it("compacts the captured Claude custom statusline without dropping its right-si
   expect(strip).toHaveClass("overflow-x-auto", "whitespace-nowrap");
   expect(strip.firstElementChild).toHaveAttribute("data-slot", "statusline-target");
   expect(view.getByText("example-model[1m] xhigh")).toHaveStyle({ color: "rgb(153,153,153)" });
-  const hint = view.getByRole("button", { name: "Claude hint" });
-  fireEvent.click(hint);
-  const dialog = view.getByRole("dialog", { name: "Claude hint" });
-  expect(dialog).toHaveTextContent("new task? /clear to save 600.0k tokens");
-  expect(strip).not.toContainElement(dialog);
-  fireEvent.keyDown(window, { key: "Escape" });
-  expect(view.queryByRole("dialog")).toBeNull();
 });
 
-it("moves a lone new-task hint row onto the Info button instead of the strip", () => {
+it("drops a lone new-task hint row instead of printing it in the strip", () => {
   // 2.1.278's notifications are painted right-aligned on their OWN row below the mode row, so the row
-  // arrives carrying the terminal's right-alignment padding and no ` | ` field. It used to fall to the
-  // verbatim branch, which put the hint in the phone's status strip as raw, deeply indented text.
+  // arrives carrying the terminal's right-alignment padding. It used to fall to the verbatim branch and
+  // print as raw, deeply indented strip text; it is the agent's TIP now, carried by the actions belt's
+  // lightbulb pill (composer.tsx, fed by claudeHintText), so the strip draws nothing for it.
   const row = splitLines(parseAnsi(`${" ".repeat(47)}new task? /clear to save 681.5k tokens`))[0]!;
   const view = render(<StatuslineRow agent="claude" row={row} />);
-  expect(view.container.textContent).not.toContain("new task?");
-  expect(view.container.querySelector('[data-slot="claude-statusline"]')).not.toBeNull();
-  const hint = view.getByRole("button", { name: "Claude hint" });
-  expect(view.container.textContent).not.toMatch(/ {2,}/);
-  fireEvent.click(hint);
-  expect(view.getByRole("dialog", { name: "Claude hint" })).toHaveTextContent("new task? /clear to save 681.5k tokens");
+  expect(view.container.textContent).toBe("");
 });
 
 it.each(["on", "off"])("shows explicit Claude Fast:%s without adding a mode switch", (state) => {
