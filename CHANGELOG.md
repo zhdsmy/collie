@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.1+collie.9] - 2026-09-20
+
 ### Changed
 
-- **Cursor plan usage spells out AUTO instead of A.** The compact strip abbreviated Cursor's `auto` share to a single letter next to `API`, which read as an unrelated code; both shares now carry the word the terminal prints.
+- **Cursor plan usage spells out AUTO instead of A.** The compact strip abbreviated Cursor's `auto` share to a single letter next to `API`, which read as an unrelated code; both shares now carry the word the terminal prints. ([a465abd](https://github.com/zhdsmy/collie/commit/a465abd))
 
 ## [1.10.1+collie.8] - 2026-09-20
 
