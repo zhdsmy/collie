@@ -111,6 +111,45 @@ it("compacts the current Codex statusline without abbreviating model, effort, br
   expect(strip).not.toHaveClass("truncate");
 });
 
+it.each(["1 task", "3 tasks"])("compacts Cursor fields with accessible icons and an animated task count: %s", (tasks) => {
+  const text = [
+    `\x1b[34m${tasks}\x1b[0m`,
+    "\x1b[36mAuto Balance\x1b[0m",
+    "\x1b[90msample main\x1b[0m",
+    "▓▓▓▓░░ \x1b[36m8\x1b[35m2%\x1b[0m 223k ↑29.3k",
+    "\x1b[33mplan 19% (auto 6% api 89%) ↻Sep30\x1b[0m",
+  ].join(" · ");
+  const { container } = renderRow(text, "cursor");
+  const count = tasks.split(" ")[0]!;
+  const task = within(container).getByRole("img", { name: tasks });
+  expect(task).toHaveTextContent(count);
+  expect(task.querySelector("svg")).toHaveClass(
+    "lucide-loader-circle",
+    "motion-safe:animate-spin",
+    "motion-reduce:animate-none",
+  );
+  expect(task.querySelector("svg")?.style.color).toBe("var(--ansi-4)");
+  expect(within(container).getByRole("img", { name: "Auto Balance" }).querySelector("svg"))
+    .toHaveClass("lucide-cpu");
+  expect(within(container).getByRole("img", { name: "sample main" }).querySelector("svg"))
+    .toHaveClass("lucide-folder-git-2");
+  expect(within(container).getByRole("img", { name: "Context 82% left" })).toHaveTextContent("82%");
+  expect(container.textContent).toContain("223k ↑29.3k");
+  expect(within(container).getByRole("img", {
+    name: "plan 19% (auto 6% api 89%) ↻Sep30",
+  })).toHaveTextContent("19% A6% API89%Sep30");
+  expect(container.querySelector('[data-slot="cursor-statusline"]')).toHaveClass(
+    "overflow-x-auto",
+    "whitespace-nowrap",
+  );
+});
+
+it("keeps an unrecognized Cursor status field literal and styled", () => {
+  const { container } = renderRow("\x1b[35mcustom status field\x1b[0m", "cursor");
+  expect(within(container).queryByRole("img")).toBeNull();
+  expect(within(container).getByText("custom status field")).toHaveStyle({ color: "var(--ansi-5)" });
+});
+
 it("keeps a leading target inside the same horizontally scrollable row", () => {
   const row = splitLines(parseAnsi("model · Working · main"))[0]!;
   const { container } = render(

@@ -12,6 +12,10 @@ const capture = readFileSync(
   join(import.meta.dirname, "..", "..", "..", "fixtures", "panes", "cursor--idle-sanitized.txt"),
   "utf8",
 );
+const workingCapture = readFileSync(
+  join(import.meta.dirname, "..", "..", "..", "fixtures", "panes", "cursor--working-status-sanitized.txt"),
+  "utf8",
+);
 
 function parsed(text: string): StyledLine[] {
   return splitLines(parseAnsi(text));
@@ -75,6 +79,26 @@ describe("Cursor chrome", () => {
       "  Auto · workspace · ▓▓▓░░░ 52%",
       "  Plan · 1 task · branch main",
     ]);
+  });
+
+  it("extracts both styled rows from the captured working status", () => {
+    const statuses = extractStatusLines(parsed(workingCapture));
+    expect(statuses.map(lineText)).toEqual([
+      "  1 task",
+      expect.stringContaining("Auto Balance · sample main ·"),
+    ]);
+    expect(statuses[0]?.segments.some((segment) => segment.fg === "var(--ansi-4)")).toBe(true);
+    expect(statuses[1]?.segments.some((segment) => segment.fg === "var(--ansi-3)")).toBe(true);
+  });
+
+  it("extracts the captured working task count and metrics as two styled rows", () => {
+    const statuses = extractStatusLines(parsed(workingCapture));
+    expect(statuses.map((line) => lineText(line).trim())).toEqual([
+      "1 task",
+      "Auto Balance · sample main · ▓▓▓▓░░ 82% 223k ↑29.3k · plan 19% (auto 6% api 89%) ↻Sep30",
+    ]);
+    expect(statuses[0]?.segments.some((segment) => segment.fg === "var(--ansi-4)")).toBe(true);
+    expect(statuses[1]?.segments.some((segment) => segment.fg === "var(--ansi-6)")).toBe(true);
   });
 
   it("is tail-anchored and refuses neutral, incomplete, or arrowless lookalikes", () => {

@@ -11,6 +11,10 @@ const capture = readFileSync(
   join(import.meta.dirname, "..", "src", "fixtures", "panes", "cursor--idle-sanitized.txt"),
   "utf8",
 );
+const workingCapture = readFileSync(
+  join(import.meta.dirname, "..", "src", "fixtures", "panes", "cursor--working-status-sanitized.txt"),
+  "utf8",
+);
 
 test.beforeEach(async ({ page }) => {
   await installApiStub(page);
@@ -52,5 +56,25 @@ test("Cursor pane keeps transcript readable and puts its controls under the thum
   await expect(page.getByText("Auto Balance", { exact: false })).toBeVisible();
   await expect(page.getByText("Add a follow-up", { exact: false })).toHaveCount(0);
 
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("Cursor working status stays compact and accessible", async ({ page }) => {
+  await page.route(
+    (url) => decodeURIComponent(url.pathname) === `/api/pane/${paneId}`,
+    (route) => route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ paneId, text: workingCapture, truncated: false, revision: 2 }),
+    }),
+  );
+  await page.goto(`/pane/${paneId}`);
+
+  await expect(page.getByRole("img", { name: "1 task" })).toHaveText("1");
+  await expect(page.getByRole("img", { name: "Auto Balance" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "sample main" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Context 82% left" })).toHaveText("82%");
+  await expect(page.getByRole("img", {
+    name: "plan 19% (auto 6% api 89%) ↻Sep30",
+  })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

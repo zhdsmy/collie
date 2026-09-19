@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Cursor status stays compact while tasks are running.** Its separate task and metrics rows now share one horizontally scrolling strip, with accessible icons for activity, model, workspace, context and plan usage; active tasks animate without overriding reduced-motion preferences, and unknown fields keep their original ANSI text.
+
 ## [1.10.1+collie.7] - 2026-09-19
 
 ### Fixed
