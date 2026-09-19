@@ -15,6 +15,26 @@ Regression checks retain older fixtures, cover new idle and wrapped response fra
 synthetic working/draft states and startup counts, and preserve source-row mapping.
 No input was sent to the user's Hermes conversation.
 
+## A streaming reply can tear the footer, and the strip now outlives it — 2026-09-19
+
+The operator, watching a reply stream: "有些瞬间 statusline 不见了". Measured instead of guessed: the
+pane read was sampled 320 times at ~100 ms while a reply streamed into an isolated Hermes pane, and 2
+of those samples came back as a TORN FRAME — every row of the screen except the footer, which the TUI
+was mid-repaint on, so the capture's last row was the streaming line itself and no status row, no
+prompt and no rules were in it at all:
+
+    197  ┊ 💻 $         for i in $(seq 1 200) + 4 commands  13.3s
+    198  ┊ 💻 preparing terminal…        ← the screen's bottom row
+
+`extractStatusLines` is right to report nothing for that capture — there is nothing there — but the
+view was treating a missing MEASUREMENT as an instruction to unmount the strip, so the whole chrome
+below it moved up and back on the next poll. `hooks/use-held-statuslines.ts` now holds the last rows
+that DID carry a strip for up to 5 s, keyed on the pane address plus its agent (so a pane switch
+adopts the new screen instead of showing this one's), and never past that window (so a pane whose
+agent really stopped painting a footer is corrected rather than left stale). Reasoning and the
+boundary — it is deliberately not extended to `hasInputBox`, which gates a destructive write — are in
+that file's header.
+
 ## Startup and resume announcements share read-only cards — 2026-09-16
 
 The native startup panel has a bold `Hermes Agent v…` heading, a rounded full frame,

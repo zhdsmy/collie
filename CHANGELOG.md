@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **A statusline no longer blinks out while a reply streams.** The agent's TUI repaints its footer many times a second, and a poll that lands mid-repaint reads a screen with no footer in it at all — measured on a streaming Hermes pane, 2 of 320 samples at ~100 ms — so the strip unmounted for that poll and the whole chrome below it moved up and back. The strip now holds the last rows that really carried one for up to five seconds, keyed on the pane and its agent so a pane switch or an exited agent never inherits them.
+
 ## [1.10.1+collie.6] - 2026-09-19
 
 ### Fixed

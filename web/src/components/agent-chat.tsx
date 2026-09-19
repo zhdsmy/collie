@@ -91,6 +91,7 @@ import { keysSendable, useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux
 import { runClaudeModeSwitch } from "@/lib/claude-mode-switch";
 import { readClaudeModeState } from "@/lib/harness/claude/mode";
 import { claudeHintText } from "@/lib/harness/claude/chrome";
+import { useHeldStatusLines } from "@/hooks/use-held-statuslines";
 import { hasJournalAdapter } from "@/lib/journal-agents";
 import { paneRowKey } from "@/lib/hosts";
 import { historyPath, spacePath } from "@/lib/nav";
@@ -686,14 +687,27 @@ export function AgentChat({
       ...row.segments.filter((segment) => !isCodexPlanHint(segment)),
     ]),
   }] : statusLines, [agent?.agent, statusLines]);
-  const statuslineVisible = statuslineRows.length > 0 || showWriteHost;
+  // A TORN FRAME MUST NOT TAKE THE STRIP OFF THE SCREEN. The TUI repaints its footer many times a
+  // second, and a poll that lands mid-repaint reads a screen with no footer in it at all — measured:
+  // 2 of 320 samples taken at ~100 ms while a reply streamed (`use-held-statuslines.ts` has the
+  // capture). Keeping the strip as the last read that had one costs a stale row for at most one
+  // glance and saves the whole chrome below it from teleporting up and back (§2 of DESIGN.md).
+  //
+  // The key is the pane's ADDRESS plus the agent that owns it, so a switch to another pane (or an
+  // agent exiting) adopts that screen as it is rather than holding this one's rows over it; and the
+  // empty key for a pane the strip does not apply to (raw terminal on, or no agent) clears it at once.
+  const heldStatuslineRows = useHeldStatusLines(
+    grammarsOn && agent ? `${paneRowKey(agent)}\u0000${agent.agent}` : "",
+    statuslineRows,
+  );
+  const statuslineVisible = heldStatuslineRows.length > 0 || showWriteHost;
   // Claude paints its own `new task? /clear to save N tokens` tip under the statusline, and it is a
   // TIP rather than a status field: the strip drops the sentence and the actions belt carries it as a
   // tip icon (composer.tsx). Read off the SAME rows the strip was cut from, so the two cannot tell
   // different stories about what the tip is; null on every other pane.
   const claudeTip = useMemo(
-    () => (agent?.agent === "claude" ? claudeHintText(statuslineRows) : null),
-    [agent?.agent, statuslineRows],
+    () => (agent?.agent === "claude" ? claudeHintText(heldStatuslineRows) : null),
+    [agent?.agent, heldStatuslineRows],
   );
 
   // A user draft stranded on the input box's "❯" line — a message queued while the agent was busy
@@ -2317,7 +2331,7 @@ export function AgentChat({
                   )}
                   style={mirrorFace.style}
                 >
-                  {statuslineRows.length > 0 ? statuslineRows.map((row, i) => (
+                  {heldStatuslineRows.length > 0 ? heldStatuslineRows.map((row, i) => (
                     // Index key: these rows are a positional snapshot of the pane tail, re-derived on
                     // every poll — there is no identity to preserve across renders.
                     <StatuslineRow
