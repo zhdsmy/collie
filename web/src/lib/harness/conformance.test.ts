@@ -63,6 +63,10 @@ const NEUTRAL = new Set([
   // records what the capture exists for: reading that row as an ExitPlanMode footer hid the composer
   // from the send guard.
   "claude--draft-multiline-vim-hint.txt",
+  // An idle screen whose tail carries 2.1.278's own `Ctrl+Y to paste deleted text` notification row.
+  // Composer chrome, never a dialog — and the negative control that matters most here, because the row
+  // reads as a key hint and used to hide the input box from every caller of `hasInputBox`.
+  "claude--notification-paste-delete.txt",
 ]);
 
 const allClaudeFixtures = readdirSync(PANES_DIR)

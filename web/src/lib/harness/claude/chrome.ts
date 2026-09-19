@@ -200,33 +200,81 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
 }
 
 /**
- * Claude's own `new task? /clear to save N tokens` hint, as its own sentence, read off the
- * re-surfaced statusline run — or null when no row carries it.
- *
- * It is READ rather than rendered: the actions belt draws it as a tip icon (`composer.tsx`), so this
- * is the one place that recognises the sentence and both surfaces take their answer from here. The
- * hint has two placements and this handles both, because it splits a row the way the strip does and
- * takes the first whole field that IS the sentence:
- *
- *   - appended to the statusline row (2.1.273, `claude--custom-statusline.txt`);
- *   - alone on its own right-aligned row below the mode row (2.1.278 — see NOTES.md).
- *
- * `CLAUDE_NEW_TASK_HINT` is exported for the strip's own use: it drops that field so the sentence
- * never prints twice. The two surfaces are one fact and must be taught together.
+ * Claude's own `new task? /clear to save N tokens` hint, as its own sentence — the form it takes when
+ * Claude appends it to a user-configured statusline row (`claude--custom-statusline.txt`). A whole row
+ * that IS the sentence is recognised structurally instead, by {@link isClaudeAsideRow}.
  */
-export function claudeHintText(rows: readonly StyledLine[]): string | null {
-  for (const row of rows) {
-    for (const [index, part] of lineText(row).split(CLAUDE_STATUS_FIELD).entries()) {
-      const text = part.trim();
-      if (index % 2 === 1 || !CLAUDE_NEW_TASK_HINT.test(text)) continue;
-      return text;
-    }
-  }
-  return null;
+export const CLAUDE_NEW_TASK_HINT = /^new task\? \/clear to save \S+ tokens$/;
+
+/**
+ * How far right a row must start before it reads as one of Claude's own ASIDES — the notifications it
+ * paints at the right edge of the statusline tail (`new task? /clear to save N tokens`,
+ * `Ctrl+Y to paste deleted text`, …).
+ *
+ * STRUCTURAL, NOT A SENTENCE LIST, because these are Claude's to invent and a list would have to be
+ * re-taught per release. Right-alignment is the one thing all of them have and no statusline row does:
+ * measured on real captures (2026-09-19), Claude's own statusline and mode rows are indented 2 columns
+ * while every aside starts far right — 47 columns on a 77-column pane in
+ * `claude--notification-paste-delete.txt`. 8 is clear of the 2 and far under the 47, so it separates
+ * the two without being tied to one pane width.
+ *
+ * WHAT THIS BUYS IS NOT ONLY DISPLAY. A hint-shaped aside reads as a key hint — `Ctrl+Y to paste
+ * deleted text` looks like `<key> to <verb>`, which is what a dialog footer looks like — so
+ * `tailNamesAMenu` used to refuse the input box outright while one was on screen: the strip went
+ * empty AND the composer was greyed, because the send gate is `hasInputBox`. Excluding an aside from
+ * that check is what makes the box, the strip and a send all survive the notification; that capture is
+ * the regression test.
+ *
+ * Ceiling, accepted: a user statusline whose own command right-aligns a row past column 8 with no
+ * ` | ` in it is read as an aside — it leaves the strip and lands behind the tip icon. One tap, nothing
+ * lost, and no such statusline has been seen.
+ */
+const ASIDE_MIN_INDENT = 8;
+
+/** Whether a whole statusline-tail row is one of Claude's own right-aligned asides (see
+ *  {@link ASIDE_MIN_INDENT}). A statusline FIELD row never is: its pipes are the user's own format. */
+export function isClaudeAsideRow(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed === "") return false;
+  if (CLAUDE_NEW_TASK_HINT.test(trimmed)) return true;
+  if (/\s\|\s/.test(text)) return false;
+  return text.length - text.trimStart().length >= ASIDE_MIN_INDENT;
 }
 
-/** Claude's own new-task sentence — one definition, read by the strip and by the actions belt. */
-export const CLAUDE_NEW_TASK_HINT = /^new task\? \/clear to save \S+ tokens$/;
+/**
+ * Claude's own tip for this pane, read off the re-surfaced statusline run — or null when nothing on
+ * screen is one.
+ *
+ * It is READ rather than rendered: the actions belt draws it as an icon-only pill (composer.tsx), so
+ * this is the one place that recognises a tip and every surface takes its answer from here. Two shapes,
+ * both from real captures:
+ *
+ *   - a whole row that is an aside ({@link isClaudeAsideRow}) — 2.1.278's placement, and the only one
+ *     that sees `Ctrl+Y …`;
+ *   - the `new task? …` sentence appended as a FIELD of a user-configured statusline row (2.1.273,
+ *     `claude--custom-statusline.txt`), where the row's pipes keep it out of the aside rule.
+ *
+ * Several are joined rather than dropped: Claude can paint more than one notification at once. A row
+ * the strip drops (StatuslineRow, same rule) must still arrive here, or the sentence would vanish from
+ * the phone entirely.
+ */
+export function claudeHintText(rows: readonly StyledLine[]): string | null {
+  const tips: string[] = [];
+  for (const row of rows) {
+    const text = lineText(row);
+    if (isClaudeAsideRow(text)) {
+      tips.push(text.trim());
+      continue;
+    }
+    for (const [index, part] of text.split(CLAUDE_STATUS_FIELD).entries()) {
+      const field = part.trim();
+      if (index % 2 === 1 || !CLAUDE_NEW_TASK_HINT.test(field)) continue;
+      tips.push(field);
+      break;
+    }
+  }
+  return tips.length > 0 ? tips.join(" · ") : null;
+}
 
 /** How a user-configured Claude statusline row is split into fields: the ` | ` separators, and the
  *  two-space run that pads a right-aligned hint away from the fields before it. */
@@ -485,6 +533,11 @@ function steppedMarksAreStatusline(
  *  walk (its footer split off by a blank, like the background-agents footer), and only these rows
  *  tell it apart. A popup tail is exempt, because its grammar named every row. */
 function tailNamesAMenu(text: string, inStatusline: boolean): boolean {
+  // Claude's own right-aligned asides are NOT menus, however they read: `Ctrl+Y to paste deleted text`
+  // is a key hint by shape, and refusing the box for it greyed the whole composer while it was up
+  // (isClaudeAsideRow carries the argument and the capture). A dialog's footer is left-aligned, so
+  // this cannot hide one.
+  if (isClaudeAsideRow(text)) return false;
   // Claude's native working hint is not a modal. Exempt only its exact segment inside the
   // confirmed status run; every other key hint, including one on the same row, still refuses.
   return NUMBERED_OPTION_ROW.test(text) || text.trim().split(/\s+·\s+/).some((segment) =>

@@ -113,14 +113,16 @@ they are not. Reproduced in an isolated scratch pane; every capture is synthetic
   opens the shared in-flow dock with the sentence verbatim. `claudeHintText` (chrome.ts) is the ONE
   reader of that sentence; `StatuslineRow` drops the field it finds so the strip never prints it twice.
   The tip appears and disappears with the pane's own screen, and the pill is absent everywhere else.
-- **Known limit:** a notification row whose text reads as a key hint — `Ctrl+Y to paste deleted text`,
-  painted after a large draft is deleted — still refuses the box through
-  `tailNamesAMenu`/`namesAMenuKey`, so the guard stalls until the notification expires. The structural
-  fix (modelling "Claude notification row" as chrome the tail checks must not read as a modal) is
-  deliberately NOT made here: it would loosen the stale-box dialog defence for every agent, and the
-  shape has only been seen transiently. Revisit if it costs a real send.
-- **Known limit:** only the `new task?` sentence has a tip pill. Any other notification Claude paints
-  on that row (the `Ctrl+Y` one, whatever comes next) has no pill and the strip drops nothing, so a
-  VERBATIM row still reaches the strip — which is the honest default: an unknown row is shown rather
-  than swallowed. Add the next sentence to `claudeHintText` when it earns one.
+- **A notification row is an ASIDE, and a whole row of it is one** (`isClaudeAsideRow`, chrome.ts). The
+  rule is structural: a statusline-tail row that starts past column 8 and carries no ` | ` field, or the
+  `new task?` sentence at any indent (a narrow pane can right-align it into nothing). Its two jobs are
+  the tip pill and the box: `claudeHintText` reads the tip text off it, `StatuslineRow` returns null for
+  it, and `tailNamesAMenu` refuses nothing for it. That last one is not cosmetic — a hint-shaped aside
+  (`Ctrl+Y to paste deleted text`, 47 columns in on a 77-column pane) reads as `<key> to <verb>`, so the
+  box used to be refused outright while it was up: empty strip, greyed composer, `hasInputBox` false.
+  `claude--notification-paste-delete.txt` pins all three, and the corpus invariant in
+  `input-box-frame.test.ts` now counts the aside it exempts instead of asserting it cannot exist.
+- **Ceiling, accepted:** a user statusline whose own command right-aligns a row past column 8 with no
+  pipes reads as an aside — it leaves the strip for the tip icon. One tap, nothing lost, unseen in
+  practice. And an aside is shown as Claude wrote it: the app never synthesises or translates a tip.
 

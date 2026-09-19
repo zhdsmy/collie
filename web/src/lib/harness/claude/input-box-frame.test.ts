@@ -6,7 +6,7 @@ import { parseAnsi } from "../../ansi";
 import { splitLines, type StyledLine } from "../../blocks";
 import { detectAutocompleteRegion } from "./autocomplete";
 import { namesAMenuKey } from "../menu-hints";
-import { extractInputDraft, extractStatusLines, hasInputBox, inputBoxTail } from "./chrome";
+import { extractInputDraft, extractStatusLines, hasInputBox, inputBoxTail, isClaudeAsideRow } from "./chrome";
 import { claudeBuildBlocks } from "./index";
 import { lineText } from "./markers";
 import { detectMenuRegion } from "./menu";
@@ -69,6 +69,10 @@ describe("parity with the old walk on the real corpus", () => {
     // 2.1.278 appends `ctrl+g to edit in Vim` to the statusline row while a multi-line draft is in the
     // box; read as a plan footer, that row refused the box and a phone reply was typed-and-not-sent.
     "claude--draft-multiline-vim-hint.txt",
+    // ...and its notification rows: `Ctrl+Y to paste deleted text` right-aligned under the mode row, on
+    // an otherwise idle screen. Composer chrome, and the row that used to hide the box behind a
+    // key-hint-shaped refusal.
+    "claude--notification-paste-delete.txt",
     "claude--draft-paste-placeholder.txt",
     "claude--draft-paste-split-partial.txt",
     "claude--draft-paste-split-tail.txt",
@@ -229,16 +233,26 @@ describe("a statusline-shaped tail still carries no menu", () => {
 
   it("no statusline row in the Claude corpus names a menu key or a numbered option", () => {
     let rows = 0;
+    let asides = 0;
     for (const name of CLAUDE_FIXTURES) {
       const lines = load(name);
       if (inputBoxTail(lines) !== "statusline") continue;
       for (const row of extractStatusLines(lines).map(lineText)) {
+        // Claude's own ASIDE rows are the single exception, and by construction: `Ctrl+Y to paste
+        // deleted text` IS a `<key> to <verb>` hint by shape, which is why `tailNamesAMenu` exempts the
+        // aside rule rather than this check being loosened by a word list
+        // (claude--notification-paste-delete.txt).
+        if (isClaudeAsideRow(row)) {
+          asides++;
+          continue;
+        }
         rows++;
         expect(namesAMenuKey(row), `${name}: ${row}`).toBe(false);
         expect(/^\s*(?:❯\s*)?\d+\.\s+\S/.test(row), `${name}: ${row}`).toBe(false);
       }
     }
     expect(rows).toBeGreaterThan(10);
+    expect(asides).toBe(1); // the one aside in the corpus, counted so a second one is a visible diff
   });
 });
 

@@ -26,6 +26,15 @@ SGR bytes, the box geometry and the hint's padding are unchanged. It pins the se
 mode: read as an ExitPlanMode footer, that statusline row hid the whole input box, so a phone reply
 was typed and then left unsubmitted ("text delivered, not submitted") on every multi-line send.
 
+`claude--notification-paste-delete.txt` is the same kind of capture, from the same scratch pane: an
+EMPTY input box with 2.1.278's `Ctrl+Y to paste deleted text` notification right-aligned on a row of
+its own below the mode row (47 columns in, on a 77-column pane). The launch command, the working
+directory and the model name were replaced before the fixture entered the repository; the notification
+row's padding, its SGR and the box geometry are unchanged. It pins the other half of the same bug: the
+row reads as a `<key> to <verb>` hint, which is what a dialog footer reads like, so it refused the
+input box outright — the status strip went empty and the composer was greyed, because `hasInputBox` is
+the send gate.
+
 ## Cursor Agent input, statusline and transcript surfaces (captured 2026-09-18)
 
 `cursor--idle-sanitized.txt` preserves real Cursor Agent ANSI rows for a submitted query, a

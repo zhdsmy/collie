@@ -338,14 +338,16 @@ it("compacts the captured Claude custom statusline without printing its right-si
   expect(view.getByText("example-model[1m] xhigh")).toHaveStyle({ color: "rgb(153,153,153)" });
 });
 
-it("drops a lone new-task hint row instead of printing it in the strip", () => {
+it("drops a notification row instead of printing it in the strip", () => {
   // 2.1.278's notifications are painted right-aligned on their OWN row below the mode row, so the row
-  // arrives carrying the terminal's right-alignment padding. It used to fall to the verbatim branch and
-  // print as raw, deeply indented strip text; it is the agent's TIP now, carried by the actions belt's
+  // arrives carrying the terminal's alignment padding. It used to fall to the verbatim branch and print
+  // as raw, deeply indented strip text; it is the agent's TIP now, carried by the actions belt's
   // lightbulb pill (composer.tsx, fed by claudeHintText), so the strip draws nothing for it.
-  const row = splitLines(parseAnsi(`${" ".repeat(47)}new task? /clear to save 681.5k tokens`))[0]!;
-  const view = render(<StatuslineRow agent="claude" row={row} />);
-  expect(view.container.textContent).toBe("");
+  for (const apart of ["new task? /clear to save 681.5k tokens", "Ctrl+Y to paste deleted text"]) {
+    const row = splitLines(parseAnsi(`${" ".repeat(47)}${apart}`))[0]!;
+    const view = render(<StatuslineRow agent="claude" row={row} />);
+    expect(view.container.textContent).toBe("");
+  }
 });
 
 it.each(["on", "off"])("shows explicit Claude Fast:%s without adding a mode switch", (state) => {

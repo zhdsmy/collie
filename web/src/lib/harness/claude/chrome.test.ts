@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parseAnsi } from "../../ansi";
 import { splitLines, type StyledLine } from "../../blocks";
 import { draftCarriesSend } from "../../reply-action";
-import { claudeHintText, extractInputDraft, extractStatusLines, hasInputBox, stripChrome } from "./chrome";
+import { claudeHintText, extractInputDraft, extractStatusLines, hasInputBox, isClaudeAsideRow, stripChrome } from "./chrome";
 import { lineText } from "./markers";
 
 /** The statusline run as plain text. extractStatusLines returns STYLED lines — a statusline tells
@@ -798,6 +798,12 @@ describe("real corpus — pinned so any change to the walk shows up as a diff", 
     { fixture: "plan-approval--three-row-focused", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "plan-approval--three-row-typed-focused", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "rename-resolved", statusRows: 2, draft: null, stripped: 6 },
+    // 2.1.278's notifications: `Ctrl+Y to paste deleted text` right-aligned on its OWN row below the
+    // mode row, 47 columns in on a 77-column pane, with an EMPTY input box above it. It used to refuse
+    // the whole box (the row reads as a `<key> to <verb>` hint, which is what a dialog footer reads
+    // like), so `hasInputBox` was false: the strip went empty and the composer was greyed for as long
+    // as the notification was up. Three status rows now, and the aside is read as the pane's tip.
+    { fixture: "notification-paste-delete", statusRows: 3, draft: null, stripped: 8 },
     // Claude 2.1.278 paints `ctrl+g to edit in Vim` right-aligned ON the statusline row while a
     // multi-line draft sits in the input box. Read as a plan footer (the phrase matched ANYWHERE in
     // the row), that row hid the box — so the reply guard typed the text and then withheld Enter
@@ -879,25 +885,41 @@ describe("a statusline row carrying Claude's own ctrl+g hint is not a dialog foo
 });
 
 // The agent's own tip, read off the statusline run so the actions belt can carry it as an icon
-// (composer.tsx). The strip reads the SAME sentence through CLAUDE_NEW_TASK_HINT to drop it, so a
-// change to either half that is not made to both shows up as a diff in one test or the other.
-describe("claudeHintText — the new-task sentence, for the belt's tip icon", () => {
-  it("finds it as a field of a real captured statusline row", () => {
+// (composer.tsx). The strip reads the SAME rule (isClaudeAsideRow) to drop the row, so a change to
+// either half that is not made to both shows up as a diff in one test or the other.
+describe("isClaudeAsideRow / claudeHintText — Claude's own right-aligned notifications", () => {
+  it("reads the real `Ctrl+Y to paste deleted text` capture as an aside, not a menu", () => {
+    const lines = fixtureLines("claude--notification-paste-delete.txt");
+    // The regression that matters: this row is `<key> to <verb>`, so it used to refuse the box and take
+    // the strip and the composer's send gate with it.
+    expect(hasInputBox(lines)).toBe(true);
+    expect(claudeHintText(extractStatusLines(lines))).toBe("Ctrl+Y to paste deleted text");
+  });
+
+  it("finds the new-task sentence as a field of a real captured statusline row", () => {
     expect(claudeHintText(fixtureLines("claude--custom-statusline.txt")))
       .toBe("new task? /clear to save 600.0k tokens");
   });
 
-  it("finds it alone on its own right-aligned notification row (2.1.278's placement)", () => {
+  it("joins the asides Claude paints at once rather than dropping all but the first", () => {
     const rows = splitLines(parseAnsi([
       "  example-model[1m] xhigh | Fast:off | v2.1.278",
-      "  ⏵⏵ auto mode on (shift+tab to cycle)",
       `${" ".repeat(47)}new task? /clear to save 681.5k tokens`,
+      `${" ".repeat(31)}Ctrl+Y to paste deleted text`,
     ].join("\n")));
-    expect(claudeHintText(rows)).toBe("new task? /clear to save 681.5k tokens");
+    expect(claudeHintText(rows)).toBe("new task? /clear to save 681.5k tokens · Ctrl+Y to paste deleted text");
   });
 
-  it("returns null for rows that carry no tip, and for a longer sentence that merely starts alike", () => {
-    expect(claudeHintText(fixtureLines("claude--working.txt"))).toBeNull();
-    expect(claudeHintText(splitLines(parseAnsi("  new task? /clear to save 681.5k tokens and more")))).toBeNull();
+  it.each([
+    // Every one of Claude's OWN rows is indented 2 columns, and a statusline field row is never an
+    // aside whatever its indent: its pipes are the user's own format.
+    ["  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents", false],
+    ["  example-model[1m] xhigh | Fast:off | v2.1.278", false],
+    [`${" ".repeat(47)}example-model[1m] xhigh | ctx 34% | main`, false],
+    ["", false],
+    ["  new task? /clear to save 681.5k tokens", true], // the sentence, at ANY indent (narrow panes)
+    [`${" ".repeat(8)}Ctrl+Y to paste deleted text`, true],
+  ])("isClaudeAsideRow(%j) → %s", (text, expected) => {
+    expect(isClaudeAsideRow(text)).toBe(expected);
   });
 });

@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { CodexModeToggle, type CodexModeToggleProps } from "@/components/codex-mode-toggle";
 import { parseCodexModelField, parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
 import { modeFieldOf, type ClaudeModeField } from "@/lib/harness/claude/mode";
-import { CLAUDE_NEW_TASK_HINT } from "@/lib/harness/claude/chrome";
+import { CLAUDE_NEW_TASK_HINT, isClaudeAsideRow } from "@/lib/harness/claude/chrome";
 
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
@@ -556,11 +556,11 @@ export function StatuslineRow({
 
   if (agent === "claude") {
     const text = lineText(row);
-    // Claude's own new-task sentence, alone on its own notification row (2.1.278): the actions belt
-    // carries it as a tip icon, so the strip draws NOTHING for it rather than an empty row.
-    if (CLAUDE_NEW_TASK_HINT.test(text.trim())) return null;
-    // A pipe-separated statusline. The hint may also be appended to it as a field, which
-    // ClaudeStatusline drops for the same reason.
+    // Claude's own right-aligned aside (`new task? …`, `Ctrl+Y …`): the actions belt carries it as a
+    // tip icon, so the strip draws NOTHING for it rather than a raw, deeply indented row.
+    if (isClaudeAsideRow(text)) return null;
+    // A pipe-separated statusline. The `new task?` sentence may also be appended to it as a field,
+    // which ClaudeStatusline drops for the same reason.
     if (/\s\|\s/.test(text)) return <ClaudeStatusline row={row} leading={leading} />;
   }
   if (agent !== "codex" && agent !== "hermes") {
