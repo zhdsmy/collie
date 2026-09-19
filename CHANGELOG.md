@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **`collie update` no longer misreads a checkout, wherever it is run from.** Merge upstream 1.10.2 for three install-detection faults: a dotfiles repository at `~` made a binary install look like a source checkout and refused to update, an unreadable `.git` was read as a binary install that `update` would then move aside, and a `GIT_DIR` inherited from the shell or a git hook made every git question answer about another repository. See [the complete upstream changes and merge decisions](./docs/upstream-v1.10.2.md).
+
 ## [1.10.1+collie.7] - 2026-09-19
 
 ### Fixed
