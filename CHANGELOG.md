@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.1+collie.10] - 2026-09-20
+
 ### Changed
 
-- **Cursor plan usage separates its labels from the numbers.** `AUTO6%` ran the label into its value, and in a terminal face whose zero carries no slash that reads as `AUT06%`; a colon now sits between each label and its share.
+- **Cursor plan usage separates its labels from the numbers.** `AUTO6%` ran the label into its value, and in a terminal face whose zero carries no slash that reads as `AUT06%`; a colon now sits between each label and its share. ([12094d8](https://github.com/zhdsmy/collie/commit/12094d8))
 
 ## [1.10.1+collie.9] - 2026-09-20
 
