@@ -85,6 +85,9 @@ git 对“此处没有仓库”和“此处有仓库但我读不了”（`HEAD` 
 上游本次的改动全在 CLI：安装种类判定、`doctor` 文案、以及所有子进程的环境。验证因此集中在“本机两种真实安装是否仍被正确识别”“`GIT_DIR` 这类变量是否真的不再影响结果”“现有 `clip`／bridge 行为未被牵动”三点，外加常规的前后端类型、lint、测试与正式构建。浏览器与真机行为不在本次影响面内。
 
 - 二进制安装（`~/.local/share/collie`，detached checkout）与开发 checkout 仍分别被识别为原有种类，`collie doctor`／`version` 正常。
-- 导出一个不等于 Collie 自身仓库的 `GIT_DIR` 后重跑同样的判定，结果**不随该变量改变** —— 这是本发布的核心断言，也是 #243 与 ADR 0049 的直接复验；同时确认 `GIT_PAGER` 保留、`GIT_CEILING_DIRECTORIES` 之类不误删。
-- 上游自带的定向测试（`cli/install-kind.test.ts` 与 `cli/sys.test.ts` 各新增上百行）全部通过；根测试套件 128 pass / 0 fail，全量 lint 与前后端两个 typecheck 通过；正式构建（`bun run build`）通过并核对产物版本。
-- 未覆盖：本机 `$HOME` 不是 git 仓库，因此 #243 的原始触发条件无法在本机复现，只能用“导出 `GIT_DIR`”等价地验证同一处判定；真实 dotfiles 环境下的表现以上游 `cli/install-kind.test.ts` 的表驱动用例为准。
+- **三处修复都在本机用真实二进制做了前后对照**（旧版 `1.10.1+collie.7` vs 新版 `1.10.2+collie.2`）：
+  1. **#243**：把一个合法的二进制安装树放进一个 origin 为 `https://example.invalid/wrong-repo.git` 的仓库里，旧版 `doctor` 报 `linked clone …（origin https://example.invalid/wrong-repo.git）` —— 正是把别人的仓库当成自己的；新版不再如此。根因用两个 git 问题即可复述：在同一深度问 `--git-dir` 得到 `/private/tmp/collie-gitdir-probe/.git`（退出码 0，只说明“有个仓库包含这里”），问 `--show-prefix` 得到 `new/versions/1.10.2/`（非空 = 不是顶层 = 不是 checkout）。
+  2. **读不出来的 `.git`**：直接调用发布出去的 `cli/install-kind.ts`，二进制布局 + `hasGitEntry` 从 `{kind:"binary"}` 变为 `{kind:"unknown", why:"broken-checkout"}`，不再落到会把版本目录挪进 `.trash/` 的那一支。
+  3. **ADR 0049**：在真实安装上用 `GIT_DIR=/tmp/collie-gitdir-probe/.git` 跑同一条命令，旧版 `install` 与 `update-source` 两行都跟随了这个诱饵仓库（`linked clone … origin wrong-repo`），新版两行都给出自己的仓库；再叠加 `GIT_WORK_TREE`／`GIT_PREFIX`／`GIT_NAMESPACE`（git hook 的环境形态）结果不变。同时确认 `GIT_PAGER` 保留、未被误删。
+- 上游自带的定向测试（`cli/install-kind.test.ts` 与 `cli/sys.test.ts` 各新增上百行）全部通过；根测试套件 1499 + 128 pass / 0 fail，全量 lint 与前后端两个 typecheck 通过；正式构建（`bun run build`）通过并核对产物版本；web 全量套件 9167 pass / 0 fail。
+- 未覆盖：本机 `$HOME` 本身不是 git 仓库，因此上表第 1 项用的是“二进制安装位于某个仓库内部”这一等价形态，而非真实 dotfiles 工作区；真实 dotfiles 环境的表现以上游 `cli/install-kind.test.ts` 的表驱动用例为准。
