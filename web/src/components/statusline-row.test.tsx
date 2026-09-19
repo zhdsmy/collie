@@ -137,7 +137,7 @@ it.each(["1 task", "3 tasks"])("compacts Cursor fields with accessible icons and
   expect(container.textContent).toContain("223k ↑29.3k");
   expect(within(container).getByRole("img", {
     name: "plan 19% (auto 6% api 89%) ↻Sep30",
-  })).toHaveTextContent("19% AUTO6% API89%Sep30");
+  })).toHaveTextContent("19% AUTO:6% API:89%Sep30");
   expect(container.querySelector('[data-slot="cursor-statusline"]')).toHaveClass(
     "overflow-x-auto",
     "whitespace-nowrap",

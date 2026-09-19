@@ -294,7 +294,7 @@ function CursorStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
               className="inline-flex min-h-3.5 shrink-0 items-center gap-1 leading-none"
               style={segments[0] && styleFor(segments[0])}>
               <Gauge aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
-              <span aria-hidden="true">{plan[1]} <span className="opacity-70">AUTO{plan[2]} API{plan[3]}</span></span>
+              <span aria-hidden="true">{plan[1]} <span className="opacity-70">AUTO:{plan[2]} API:{plan[3]}</span></span>
               <CalendarDays aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
               <span aria-hidden="true">{plan[4]}</span>
             </span>
