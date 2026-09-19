@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Cursor plan usage spells out AUTO instead of A.** The compact strip abbreviated Cursor's `auto` share to a single letter next to `API`, which read as an unrelated code; both shares now carry the word the terminal prints.
+
 ## [1.10.1+collie.8] - 2026-09-20
 
 ### Changed
