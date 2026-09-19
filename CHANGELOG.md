@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.1+collie.6] - 2026-09-19
+
 ### Fixed
 
-- **A hint-shaped notification no longer hides the composer.** Claude paints its notifications right-aligned on a row of its own below the mode row, and `Ctrl+Y to paste deleted text` reads as `<key> to <verb>`, which is the shape of a dialog footer — so it refused the input box outright while it was up: the status strip went empty and the composer was greyed, because `hasInputBox` is the send gate. A row Claude right-aligns is now read as an aside and is exempt from that check, and the tip pill is driven by that same rule rather than by one known sentence, so a notification this app has never seen lands behind the lightbulb instead of in the strip. Pinned by `claude--notification-paste-delete.txt`, a capture of that screen.
+- **A hint-shaped notification no longer hides the composer.** Claude paints its notifications right-aligned on a row of its own below the mode row, and `Ctrl+Y to paste deleted text` reads as `<key> to <verb>`, which is the shape of a dialog footer — so it refused the input box outright while it was up: the status strip went empty and the composer was greyed, because `hasInputBox` is the send gate. A row Claude right-aligns is now read as an aside and is exempt from that check, and the tip pill is driven by that same rule rather than by one known sentence, so a notification this app has never seen lands behind the lightbulb instead of in the strip. Pinned by `claude--notification-paste-delete.txt`, a capture of that screen. ([361295c2](https://github.com/zhdsmy/collie/commit/361295c2))
 
 ## [1.10.1+collie.5] - 2026-09-19
 
