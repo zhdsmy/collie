@@ -30,10 +30,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.10.1+collie.4] - 2026-09-19
+
 ### Fixed
 
-- **A multi-line Claude reply sends again.** Claude Code 2.1.278 paints its `ctrl+g to edit in Vim` hint on the statusline row while the input box holds a multi-line draft; read as a plan-dialog footer, that row hid the composer from the send guard, which then typed the text and withheld Enter — the phone reported "text delivered, not submitted" on every multi-line send. The plan family now requires that phrase to OPEN the row, which every real ExitPlanMode footer does, so the dialog stays refused and a user-configured statusline that ends its row with the hint no longer counts as one. Pinned by `claude--draft-multiline-vim-hint.txt`.
-- **Claude's new-task hint stops printing in the status strip.** A newer Claude Code paints its `new task? /clear to save N tokens` notification right-aligned on its own row below the mode row, and a row without pipe-separated fields fell through to the verbatim branch, so the phone showed the hint as a raw, indented strip row. It now reaches the same read-only Info button the same-row placement uses, and unknown notification text is unchanged.
+- **A multi-line Claude reply sends again.** Claude Code 2.1.278 paints its `ctrl+g to edit in Vim` hint on the statusline row while the input box holds a multi-line draft; read as a plan-dialog footer, that row hid the composer from the send guard, which then typed the text and withheld Enter — the phone reported "text delivered, not submitted" on every multi-line send. The plan family now requires that phrase to OPEN the row, which every real ExitPlanMode footer does, so the dialog stays refused and a user-configured statusline that ends its row with the hint no longer counts as one. Pinned by `claude--draft-multiline-vim-hint.txt`. ([7332a2eb](https://github.com/zhdsmy/collie/commit/7332a2eb))
+- **Claude's new-task hint stops printing in the status strip.** A newer Claude Code paints its `new task? /clear to save N tokens` notification right-aligned on its own row below the mode row, and a row without pipe-separated fields fell through to the verbatim branch, so the phone showed the hint as a raw, indented strip row. It now reaches the same read-only Info button the same-row placement uses, and unknown notification text is unchanged. ([7332a2eb](https://github.com/zhdsmy/collie/commit/7332a2eb))
 
 ## [1.10.1+collie.3] - 2026-09-19
 
