@@ -1,11 +1,8 @@
-// Codex's chrome is boxless: a `› ` prompt row (wrapping onto two-space-indented continuation
-// rows) with the dot-separated status row directly beneath, sitting at the buffer tail. The
-// dialogs (trust / approval / ask) REPLACE that pair entirely — their own footer becomes the
-// tail — so locating the composer is also the composer-vs-modal discriminator. A submitted
-// message echoes into the transcript with the same `› ` prefix, which is why the walk anchors
-// on the STATUS row at the tail and only then looks up for the prompt row: an echo higher in
-// the transcript never has the status row directly beneath it. Command completion replaces
-// that status row too; commandInput recognizes its exact-command case. Pure; no pane access.
+// Codex's boxless composer is anchored by its live prompt and status footer; dialogs replace
+// that pair. Normalize only a proven painted particle band, using the same helper as the bridge,
+// so animation cannot change a bound draft. Keep the working/custom footer and exact-command
+// completion guards. Upstream's bandTop removes particle-only rows above the prompt with the
+// composer; it uses the local normalization proof rather than classifying typed Braille by glyph.
 
 import type { StyledLine } from "../../blocks";
 import { normalizeComposerParticles } from "./particles";
@@ -24,6 +21,8 @@ import {
 } from "./markers";
 
 export interface ComposerBox {
+  /** First row of the composer band: the prompt row, or the starfield rows directly above it. */
+  top: number;
   /** The `› ` prompt row. */
   promptRow: number;
   /** The status row under it (last non-blank row of the frame). */
@@ -33,7 +32,8 @@ export interface ComposerBox {
 // A draft wraps onto indented continuation rows between the prompt row and the status row.
 // Captured drafts show one; the bound is slack for longer phone-typed messages. 8 stranded a
 // wrap (locateComposer returned null and the app reported a dialog). Same 100 as omp/Grok/
-// Claude. A run deeper than this is not a composer (fail closed — locateComposer returns null).
+// Claude. A defence bound (see the header): a prompt row further up than this is not searched for,
+// and locateComposer fails closed.
 const MAX_DRAFT_ROWS = 100;
 
 // A continuation starts with Codex's two-space gutter; the draft may add its own indent.
@@ -128,6 +128,7 @@ function commandInput(lines: StyledLine[]): { draft: string; prompt: string } | 
 
 /** The composer with a status footer. Command completion is recognized separately below. */
 export function locateComposer(lines: StyledLine[]): ComposerBox | null {
+  const original = lines;
   lines = normalizeComposerParticles(lines);
   const texts = lines.map((l) => rstrip(lineText(l)));
   const statusRow = lastNonBlankIndex(texts);
@@ -141,13 +142,15 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   // Separate layout padding from the draft. Internal empty paragraphs are valid, but crossing one
   // requires the live marker's paint so a dim submitted echo cannot claim later output. The newer
   // custom footer shapes below have their own stricter marker/background proof even without a gap.
-  const top = skipBlanksUp(texts, statusRow - 1);
-  if (top < 0) return null;
+  let top = statusRow - 1;
+  // A normalized starfield can occupy more rows than a transcript section's short blank gap.
+  while (top >= 0 && statusRow - top <= MAX_DRAFT_ROWS && isBlank(texts[top]!)) top--;
+  if (top < 0 || statusRow - top > MAX_DRAFT_ROWS) return null;
   // A working footer is valid only as the exact queue-hint + context pair. This prevents a
   // transcript line that happens to end in `50% context left` from becoming an input box.
   if (workingStatus && !isWorkingQueueRow(texts[top]!)) return null;
   let crossedBlank = false;
-  for (let i = top; i >= 0 && top - i < MAX_DRAFT_ROWS; i--) {
+  for (let i = top; i >= 0 && statusRow - 1 - i <= MAX_DRAFT_ROWS; i--) {
     const t = texts[i]!;
     if (promptText(t) !== null) {
       if (crossedBlank && !workingStatus && !customStatus) {
@@ -155,7 +158,7 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
         if (!marker?.bold || marker.dim) return null;
       }
       if (customStatus && !hasComposerChrome(lines, i, statusRow)) return null;
-      return { promptRow: i, statusRow };
+      return { top: bandTop(original, texts, i), promptRow: i, statusRow };
     }
     if (isBlank(t)) {
       crossedBlank = true;
@@ -167,16 +170,29 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   return null;
 }
 
+/** The starfield rows directly above the prompt belong to the composer band, and leave the mirror
+ *  with it. Only a row that holds sparkles and nothing else: such a row is never transcript. */
+function bandTop(lines: StyledLine[], texts: string[], promptRow: number): number {
+  let top = promptRow;
+  while (
+    top > 0 &&
+    promptRow - top < MAX_DRAFT_ROWS &&
+    isBlank(texts[top - 1]!) &&
+    !isBlank(lineText(lines[top - 1]!))
+  ) {
+    top--;
+  }
+  return top;
+}
+
 /**
- * Return `lines` with the composer (prompt row through status row) removed from the tail.
+ * Return `lines` with the composer (its band through the status row) removed from the tail.
  * Unchanged input is the SAME REFERENCE, so callers can treat `result === lines` as "no chrome".
  */
 export function stripChrome(lines: StyledLine[]): StyledLine[] {
-  const original = lines;
-  lines = normalizeComposerParticles(lines);
   const box = locateComposer(lines);
-  if (box === null) return original;
-  return lines.slice(0, box.promptRow);
+  if (box === null) return lines;
+  return lines.slice(0, box.top);
 }
 
 /** The status row, styled, for the strip above the phone composer. Empty when no composer. */
@@ -190,6 +206,7 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
  * The user's draft stranded in the composer: the `› ` row's text plus wrapped continuation
  * rows, joined with single spaces (Codex word-wraps — verified against the typed original on
  * the draft-wrapped capture). The placeholder is not a draft. Null = no composer / empty.
+ * Sparkles are painted over first, and a blank row between the prompt and the status row is skipped.
  *
  * Load-bearing: registering this adapter switches Codex panes from one-shot send to
  * type-then-verify, and THIS is the verify half.
@@ -220,7 +237,8 @@ export function composerReady(lines: StyledLine[]): boolean {
 
 /** The literal on-screen prompt/draft run a destructive write is bound to. Ending at the last draft
  * continuation keeps a wrapped message inside the bridge's bounded tail window; naming only the
- * first `›` row would permanently 409 once six or more non-blank wrap rows sat beneath it. */
+ * first `›` row would permanently 409 once six or more non-blank wrap rows sat beneath it.
+ * Particle spaces use the same normalization in the bridge, so animated drafts stay bound. */
 export function composerPrompt(lines: StyledLine[]): string | null {
   lines = normalizeComposerParticles(lines);
   const box = locateComposer(lines);

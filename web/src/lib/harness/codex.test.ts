@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parseAnsi } from "../ansi";
 import { splitLines } from "../blocks";
 import { codexAdapter } from "./codex";
-import { locateComposer, stripChrome } from "./codex/chrome";
+import { composerPrompt, extractInputDraft, locateComposer, stripChrome } from "./codex/chrome";
 import { isStatusRow, lineText, PLACEHOLDER } from "./codex/markers";
 import { detectApprovalRegion } from "./codex/approval";
 import { detectAskRegion } from "./codex/ask";
@@ -427,7 +427,7 @@ describe("chrome", () => {
     const caption = "  是的，输入这里也做同样的处理。";
     const status = "  gpt-6-astra xhigh · Ready · Context 28% left · Fast off · main · 0.153.4";
     const lines = splitLines(parseAnsi(["• Previous answer", "", prompt, blank, caption, "", status].join("\n")));
-    expect(locateComposer(lines)).toEqual({ promptRow: 2, statusRow: 6 });
+    expect(locateComposer(lines)).toEqual({ top: 2, promptRow: 2, statusRow: 6 });
     expect(codexAdapter.composerReady!(lines)).toBe(true);
     expect(codexAdapter.extractInputDraft(lines)).toBe("[Image #1] 是的，输入这里也做同样的处理。");
     expect(codexAdapter.composerPrompt!(lines)).toBe(`› [Image #1]\n\n${caption}`);
@@ -515,6 +515,93 @@ describe("chrome", () => {
     expect(
       locateComposer(splitLines(parseAnsi(["› start", ...cont.slice(1), "", status].join("\n")))),
     ).not.toBeNull();
+  });
+});
+
+// Issue #245. Codex's Astra models paint a starfield over the composer band: braille glyphs, each in
+// its own grey foreground, on the row above the prompt, after the draft, and on rows under it. The
+// local normalization proves the painted band before cleaning it, on both sides of a bound send.
+// Upstream's bandTop also removes the particle-only row above the prompt from the mirror.
+describe("the Astra starfield (issue #245)", () => {
+  const ESC = "\x1b";
+  const spark = (glyph: string) => `${ESC}[38;2;150;151;155m${glyph}${ESC}[0m`;
+  const STATUS = "  gpt-6-astra medium · /tmp/sandbox · master · Context 3% used";
+  const starRow = (lead: string) => `${lead}${spark("⠁")}      ${spark("⠈")}    ${spark("⡀")}`;
+  // Match the captured complete background and bold prompt; an unpainted lookalike is not proof.
+  const painted = (row: string) => `${ESC}[48;2;40;40;40m${(row || " ").replaceAll(`${ESC}[0m`, `${ESC}[39m`).replace(/^›/, `${ESC}[1m›${ESC}[22m`)}${ESC}[0m`;
+  const screen = (rows: string[]) => splitLines(parseAnsi(rows.join("\n")));
+
+  it("the real 0.154.0 capture: an idle composer, not a stranded draft of sparkles", () => {
+    const lines = fixtureLines("codex--v0154-submitted-fill.txt");
+    expect(locateComposer(lines)).not.toBeNull();
+    expect(extractInputDraft(lines)).toBeNull();
+    // The sparkle row above the prompt belongs to the band and leaves the mirror with it.
+    const kept = stripChrome(lines).map(lineText);
+    expect(kept.some((t) => /[⠀-⣿]/u.test(t))).toBe(false);
+    expect(kept.join("\n")).toContain("docs live here");
+    // Shared normalization makes the prompt stable even while the particles repaint.
+    expect(composerPrompt(lines)).toBe("› Ask Codex to do anything");
+  });
+
+  it("finds the composer with six starfield and blank rows between the prompt and the status row", () => {
+    const lines = screen([
+      "• Done.",
+      "",
+      ...[
+      starRow(""),
+      `› fix the login bug${spark("⠂")}   ${spark("⠄")}`,
+      starRow("  "),
+      "",
+      starRow("   "),
+      starRow(""),
+      "",
+      starRow("    "),
+      "",
+      ].map(painted),
+      STATUS,
+    ]);
+    const box = locateComposer(lines);
+    expect(box).not.toBeNull();
+    expect(box!.promptRow).toBe(3);
+    expect(box!.top).toBe(2);
+    expect(extractInputDraft(lines)).toBe("fix the login bug");
+    expect(stripChrome(lines).map(lineText)).toEqual(["• Done.", ""]);
+  });
+
+  it("does not treat unpainted starfield lookalikes as a proven composer", () => {
+    const lines = screen([starRow(""), `› draft${spark("⠂")}`, starRow(""), STATUS]);
+    expect(locateComposer(lines)).toBeNull();
+    expect(stripChrome(lines)).toBe(lines);
+  });
+
+  it("keeps a wrapped draft's continuation rows across a blank row", () => {
+    const lines = screen(["› please move the images across to", "  the new blog folder", "", "", STATUS]);
+    expect(extractInputDraft(lines)).toBe("please move the images across to the new blog folder");
+  });
+
+  // If the live prompt row were ever missing, the lowest `› ` row would be an ECHO in the transcript.
+  // Codex's own output under an echo starts at column 0, and a draft or sparkle row never does.
+  it("refuses rather than reach an echo when the live prompt row is missing", () => {
+    const lines = screen(["› the message I sent earlier", "", "• Ran git status", "  └ clean", "", STATUS]);
+    expect(locateComposer(lines)).toBeNull();
+    expect(stripChrome(lines)).toBe(lines);
+  });
+
+  it("keeps braille the operator typed: it has no colour of its own", () => {
+    const lines = screen(["› braille ⠁⠈ test", "", STATUS]);
+    expect(extractInputDraft(lines)).toBe("braille ⠁⠈ test");
+    expect(composerPrompt(lines)).toBe("› braille ⠁⠈ test");
+  });
+
+  it("takes the LOWEST prompt row, so an echo above it is never the composer", () => {
+    const lines = screen(["› the message I sent earlier", "", "• Working on it.", "", "› Ask Codex to do anything", "", STATUS]);
+    expect(locateComposer(lines)!.promptRow).toBe(4);
+    expect(stripChrome(lines).map(lineText)).toContain("› the message I sent earlier");
+  });
+
+  it("refuses when a second status row sits between the tail and the prompt", () => {
+    const lines = screen(["› old", "", STATUS, "", "• something", "", STATUS]);
+    expect(locateComposer(lines)).toBeNull();
   });
 });
 

@@ -25,7 +25,7 @@ describe("Codex disabled-statusline chrome", () => {
   it("anchors an empty composer on the shortcut/context footer", () => {
     const parsed = lines("codex--v0154-statusline-disabled-idle.txt");
 
-    expect(locateComposer(parsed)).toEqual({ promptRow: 17, statusRow: 19 });
+    expect(locateComposer(parsed)).toEqual({ top: 17, promptRow: 17, statusRow: 19 });
     expect(composerReady(parsed)).toBe(true);
     expect(extractInputDraft(parsed)).toBeNull();
     expect(lineText(extractStatusLines(parsed)[0]!)).toContain("? for shortcuts");
@@ -34,7 +34,7 @@ describe("Codex disabled-statusline chrome", () => {
   it("keeps a non-empty draft visible when the statusline is disabled", () => {
     const parsed = lines("codex--v0154-statusline-disabled-draft.txt");
 
-    expect(locateComposer(parsed)).toEqual({ promptRow: 17, statusRow: 19 });
+    expect(locateComposer(parsed)).toEqual({ top: 17, promptRow: 17, statusRow: 19 });
     expect(composerReady(parsed)).toBe(true);
     expect(extractInputDraft(parsed)).toBe("PICKER_INPUT_PROBE 中文");
   });
@@ -42,7 +42,7 @@ describe("Codex disabled-statusline chrome", () => {
   it("anchors the model-only, theme-colours-off status row", () => {
     const parsed = lines("codex--v0154-statusline-single-idle.txt");
 
-    expect(locateComposer(parsed)).toEqual({ promptRow: 17, statusRow: 19 });
+    expect(locateComposer(parsed)).toEqual({ top: 17, promptRow: 17, statusRow: 19 });
     expect(composerReady(parsed)).toBe(true);
     expect(extractInputDraft(parsed)).toBeNull();
     expect(lineText(extractStatusLines(parsed)[0]!)).toContain("gpt-5.6-sol");
@@ -58,7 +58,7 @@ describe("Codex disabled-statusline chrome", () => {
     "codex--v0154-statusline-single-idle.txt",
   ])("anchors the custom status shape in %s", (name) => {
     const parsed = lines(name);
-    expect(locateComposer(parsed)).toEqual({ promptRow: 17, statusRow: 19 });
+    expect(locateComposer(parsed)).toEqual({ top: 17, promptRow: 17, statusRow: 19 });
     expect(composerReady(parsed)).toBe(true);
   });
 

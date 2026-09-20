@@ -3,6 +3,10 @@ import { test, expect } from "@playwright/test";
 import { installApiStub } from "./fixtures/api";
 import { fixtureSnapshot } from "@/test/handlers";
 
+// The API is page.route-backed; WebKit's active service worker bypasses those handlers on reload.
+// Service-worker behavior has its own spec; keep this input/animation check on the mocked API.
+test.use({ serviceWorkers: "block" });
+
 const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/codex--v0154-particles-${name}.txt`, import.meta.url), "utf8");
 const empty = fixture("working");
 const draft = fixture("draft");

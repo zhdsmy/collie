@@ -36,7 +36,8 @@ import { Collapse, CollapseSwap } from "@/components/ui/collapse";
 import { RouteHeader } from "@/components/app-header";
 import { HeaderStatus } from "@/components/header-status";
 import { AnsiOutput } from "@/components/ansi-output";
-import { MIRROR_SPACE, MIRROR_INVERT } from "@/components/mirror-space";
+import { MIRROR_SPACE, MIRROR_INVERT, MUSE_MIRROR } from "@/components/mirror-space";
+import { AgentsFooter } from "@/components/agents-footer";
 import { StatuslineRow } from "@/components/statusline-row";
 import { cn } from "@/lib/utils";
 import { parseAnsi } from "@/lib/ansi";
@@ -715,6 +716,17 @@ export function AgentChat({
   const claudeTip = useMemo(
     () => (agent?.agent === "claude" ? claudeHintText(heldStatuslineRows) : null),
     [agent?.agent, heldStatuslineRows],
+  );
+
+  // The background-agents block the harness paints under its statusline (issue #242). stripChrome
+  // peels it off the mirror with the box, and the strip stops above it, so this is its one surface.
+  // Same adapter and same parse source as the strip, so the two cannot disagree on where it starts.
+  const agentsFooter = useMemo(
+    () =>
+      grammarsOn
+        ? adapterFor(agent?.agent)?.extractAgentsFooter?.(splitLines(parseAnsi(display))) ?? []
+        : [],
+    [display, agent?.agent, grammarsOn],
   );
 
   // A user draft stranded on the input box's "❯" line — a message queued while the agent was busy
@@ -2200,11 +2212,12 @@ export function AgentChat({
                     onMatchCount={findOpen ? handleMatchCount : undefined}
                     // Native-mirror agents keep their identity with raw-terminal on: the pref
                     // bypasses block GRAMMARS, and native rendering is display faithfulness, not
-                    // a grammar — muse has no adapter, so dropping the agent here would only
-                    // re-invert the pane (.adr/0047) while bypassing nothing.
+                    // a grammar. Dropping the agent here would re-invert a Muse pane (.adr/0047),
+                    // so the agent stays and `grammars` is what turns its adapter off.
                     agent={
                       grammarsOn || rendersNativeMirror(agent?.agent) ? agent?.agent : undefined
                     }
+                    grammars={grammarsOn}
                     onPromptAction={handlePromptAction}
                     onWizardAction={handleWizardAction}
                     onPreviewAction={handlePreviewAction}
@@ -2331,9 +2344,10 @@ export function AgentChat({
                     // dark space and inverts in light with it (ADR 0002) — a bright statusline colour is
                     // chosen against a near-black background and is illegible re-themed onto app chrome.
                     // It also makes the strip read as the bottom of the pane it was cut from, which is
-                    // where the TUI drew it.
-                    MIRROR_SPACE,
-                    MIRROR_INVERT,
+                    // where the TUI drew it. So it follows the mirror all the way: a native-mirror
+                    // agent's strip stands on the native ground and is not inverted (.adr/0047).
+                    rendersNativeMirror(agent?.agent) ? MUSE_MIRROR : MIRROR_SPACE,
+                    rendersNativeMirror(agent?.agent) ? null : MIRROR_INVERT,
                     mirrorFace.className,
                   )}
                   style={mirrorFace.style}
@@ -2383,6 +2397,13 @@ export function AgentChat({
                   )}
                 </div>
                 )}
+              </Collapse>
+
+              {/* Background agents, under the statusline as the TUI drew them. Its own element and its
+                  own budget, one row until tapped (agents-footer.tsx). Stands down with the strip
+                  while the keyboard is up, through `Collapse` for the same DESIGN.md reason. */}
+              <Collapse open={!composing && agentsFooter.length > 0}>
+                {agentsFooter.length > 0 && <AgentsFooter rows={agentsFooter} face={mirrorFace} />}
               </Collapse>
 
               {/* One boundary separates the terminal status strip from the input controls. */}
