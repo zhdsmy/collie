@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.11.1+collie.1] - 2026-09-21
+
 ### Fixed
 
-- **Crew updates keep moving and leave the composer clear.** Merge upstream v1.11.1: continue polling while members update, refresh missing preflight verdicts without a watching phone, explain withheld turns in the lead journal, and move the update badge into the top notice strip. Preserve the downstream iOS viewport and verified Codex input. See [the complete upstream changes and merge decisions](./docs/upstream-v1.11.1.md).
+- **Crew updates keep moving and leave the composer clear.** Merge upstream v1.11.1: continue polling while members update, refresh missing preflight verdicts without a watching phone, explain withheld turns in the lead journal, and move the update badge into the top notice strip. Preserve the downstream iOS viewport and verified Codex input. See [the complete upstream changes and merge decisions](./docs/upstream-v1.11.1.md). ([e4819a51](https://github.com/zhdsmy/collie/commit/e4819a51))
 
 ## [1.11.0+collie.1] - 2026-09-20
 
