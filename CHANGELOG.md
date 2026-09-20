@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Crew updates keep moving and leave the composer clear.** Merge upstream v1.11.1: continue polling while members update, refresh missing preflight verdicts without a watching phone, explain withheld turns in the lead journal, and move the update badge into the top notice strip. Preserve the downstream iOS viewport and verified Codex input. See [the complete upstream changes and merge decisions](./docs/upstream-v1.11.1.md).
+
 ## [1.11.0+collie.1] - 2026-09-20
 
 ### Changed
@@ -47,6 +51,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 ### Fixed
 
 - **`collie update` no longer misreads a checkout, wherever it is run from.** Merge upstream 1.10.2 for three install-detection faults: a dotfiles repository at `~` made a binary install look like a source checkout and refused to update, an unreadable `.git` was read as a binary install that `update` would then move aside, and a `GIT_DIR` inherited from the shell or a git hook made every git question answer about another repository. See [the complete upstream changes and merge decisions](./docs/upstream-v1.10.2.md). ([b1c1a693](https://github.com/zhdsmy/collie/commit/b1c1a693))
+## [1.11.1] - 2026-09-20
+
+### Fixed
+
+- **A crew update no longer stalls after the lead has updated itself.** The phone stopped reading the update subject the moment the lead's own run reached `done`, which on a crew update is seconds in, before the members have started. That read is also what asks each member for a fresh preflight verdict, and a member whose verdict the lead does not hold is never handed its turn, so a run could sit on `waiting` for minutes and then take the release in four seconds. The phone follows the crew half of the run now, and the lead asks for the verdict it is stuck on instead of waiting to be asked. ([a0175935](https://github.com/AltanS/collie/commit/a0175935))
+- **A member that is not handed its turn now says why.** A withheld turn was the one thing an update run did in total silence, on the lead and on the member, so a run that had stopped moving looked exactly like one that was working. The lead names the machine and the cause once, in its own journal. ([a0175935](https://github.com/AltanS/collie/commit/a0175935))
+- **The update badge no longer covers the message box.** A run another device started drew a bar across the bottom of the screen, over the composer's input row, and it did so in the one case that hands that box back on purpose: after `keep using the app` on a download that had stopped. It is one line in the band above the header now, beside the connection bar and the update offer, and the band picks one winner rather than stacking them. A connection you have lost still wins that band: during a crew update the two are often one event seen twice, but not always, and hiding a machine you cannot reach is the worse of the two mistakes. ([a0175935](https://github.com/AltanS/collie/commit/a0175935))
 ## [1.11.0] - 2026-09-20
 
 ### Added
