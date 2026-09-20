@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.11.0+collie.1] - 2026-09-20
+
 ### Changed
 
-- **Follow upstream with Muse, cache insights, and reliable animated input.** Merge upstream v1.11.0, including Claude background agents and session hand-over, cache reset explanations, crew update fixes, and doctor identity handling. Combine Codex's upstream composer-band trimming with downstream verified sends; retain native QA and Plan screens. See [the complete upstream changes and merge decisions](./docs/upstream-v1.11.0.md).
+- **Follow upstream with Muse, cache insights, and reliable animated input.** Merge upstream v1.11.0, including Claude background agents and session hand-over, cache reset explanations, crew update fixes, and doctor identity handling. Combine Codex's upstream composer-band trimming with downstream verified sends; retain native QA and Plan screens. See [the complete upstream changes and merge decisions](./docs/upstream-v1.11.0.md). ([c0337366](https://github.com/zhdsmy/collie/commit/c0337366))
 
 ## [1.10.2+collie.2] - 2026-09-20
 
