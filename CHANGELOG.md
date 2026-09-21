@@ -30,9 +30,15 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.11.1+collie.2] - 2026-09-21
+
 ### Fixed
 
-- **Recent models remember the verified model after a switch.** Sending before the next route poll records the model and reasoning level from the completed switch's local read-back. Browsing frozen history still uses the live pane model.
+- **Recent models remember the verified model after a switch.** Sending before the next route poll records the model and reasoning level from the completed switch's local read-back. Browsing frozen history still uses the live pane model. ([c4fb263c](https://github.com/zhdsmy/collie/commit/c4fb263c))
+
+### Packaging
+
+- **Browser tests use isolated storage across supported Node runtimes.** Disable Node's native Web Storage in Vitest workers so the existing Git checks also pass under Node 26, using jsdom's per-test-file storage instead. ([7293509f](https://github.com/zhdsmy/collie/commit/7293509f))
 
 ## [1.11.1+collie.1] - 2026-09-21
 
