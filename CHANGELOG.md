@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hermes shows the model without a stale reasoning level.** Keep the full model name in the statusline, but stop appending saved session effort that can lag behind in-memory reasoning changes.
+
 ## [1.11.1+collie.2] - 2026-09-21
 
 ### Fixed

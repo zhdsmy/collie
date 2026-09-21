@@ -221,15 +221,16 @@ one-shot transport. No composer-ready claim, draft takeover or interactive dialo
 those require a separately verified input contract. Unit tests pin the unchanged transport and
 run the conformance suite against the other harness captures. Browser checks use mocked APIs.
 
-The model field is enriched from the exact Herdr-reported session in Hermes' read-only SessionDB.
-Only `model` and the explicit `model_config.reasoning_config` effort are exposed. Disabled reasoning
-reads `none`; absent or unknown effort is omitted. The model must match the terminal's full name or
-truncated prefix before replacement. This is the last saved session configuration, not a live probe
-of provider settings: an in-memory `/reasoning` change appears only after Hermes persists it.
-Global config, credentials and other sessions are never used to fill gaps.
+The model field expands to the full name from the exact Herdr-reported session in Hermes'
+read-only SessionDB, only when it matches the terminal's full name or truncated prefix.
+Do not append the saved `model_config.reasoning_config` effort: `/reasoning` can change
+the running CLI's in-memory setting without updating that database field, leaving the
+strip stuck on an old level. Saved metadata and global config are not live reasoning
+state. Credentials and other sessions are never used to fill gaps.
 
-Verification: 5,906 frontend tests and 208 targeted backend tests pass, alongside both typechecks,
-the root build and full-tree lint. Chromium checks at 320/390 CSS pixels, light/dark and English/Chinese
+Historical verification (before removing saved effort): 5,906 frontend tests and 208 targeted
+backend tests pass, alongside both typechecks, the root build and full-tree lint.
+Chromium checks at 320/390 CSS pixels, light/dark and English/Chinese
 keep both curved ends visible on one row, retain full model plus effort, and scroll through the
 last status field without widening the document. Browser checks also retain a multiline real draft
 and restore terminal-width frames in Raw terminal mode. Direct read-only checks resolve the active

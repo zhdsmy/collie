@@ -57,7 +57,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await expect(tab).toHaveAttribute("aria-current", "true");
     await expect.poll(() => tabIsVisible(tab)).toBe(true);
 
-    const metrics = page.getByText(`${model} high`, { exact: true });
+    const metrics = page.getByText(model, { exact: true });
     const operations = page.getByText(hint, { exact: true });
     await expect(metrics).toBeVisible();
     await expect(operations).toHaveCount(1);

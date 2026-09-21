@@ -445,7 +445,7 @@ function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]
     const names = [sessionModel.model, (sessionModel.model.split("/").at(-1) ?? sessionModel.model).replace(/\.gguf$/, "")];
     const matches = names.some((name) => visible.endsWith("...") ? name.startsWith(visible.slice(0, -3)) : name === visible);
     if (matches) {
-      const label = sessionModel.model + (sessionModel.reasoningEffort ? ` ${sessionModel.reasoningEffort}` : "");
+      const label = sessionModel.model;
       const ink = sliceSegments(segments, model[0].length, text.length)[0];
       return <span className="inline-flex min-h-3.5 shrink-0 items-center" title={label} style={ink && styleFor(ink)}>{label}</span>;
     }
