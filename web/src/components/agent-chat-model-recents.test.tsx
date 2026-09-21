@@ -366,6 +366,37 @@ it("records the pair only once a reply has actually been sent with it", async ()
   await waitFor(() => expect(storedRaw()).toBe(pairs(["gpt-5.6-sol", "high"])));
 });
 
+it("records the switched model before the parent poll catches up", async () => {
+  const user = userEvent.setup();
+  let typed = "";
+  server.use(
+    http.post<never, { text?: string; submit?: boolean }>(/\/api\/pane\/[^/]+\/reply$/, async ({ request }) => {
+      const body = await request.json();
+      typed = body.submit ? "" : body.text ?? "";
+      return HttpResponse.json({ ok: true });
+    }),
+    http.get(/\/api\/pane\/[^/]+$/, () => HttpResponse.json({
+      paneId: "w1:p1",
+      text: codexPaneWithDraft(typed).replace("gpt-5.6-sol default", "gpt-5.6-luna max"),
+      truncated: false,
+      revision: 2,
+      codexSessionKey: SESSION_KEY,
+    })),
+  );
+  recordRecent("gpt-5.6-luna", "max");
+  vi.mocked(runCodexModelSwitch).mockResolvedValue({ status: "switched" });
+  // The local read-back advances to luna/max, while the route still supplies sol/high.
+  renderPane("idle", withLevel);
+  const panel = await openRecents(user);
+  await user.click(within(panel).getByRole("button", { name: "gpt-5.6-luna max" }));
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Recently used models" })).toBeNull());
+  const draft = screen.getByRole<HTMLTextAreaElement>("textbox");
+  await user.type(draft, "use the new model");
+  await user.click(screen.getByRole("button", { name: "Send" }));
+  await waitFor(() => expect(draft).toHaveValue(""));
+  expect(storedRaw()).toBe(pairs(["gpt-5.6-luna", "max"]));
+});
+
 it("toggles the in-flow model panel and keeps Composer docks mutually exclusive", async () => {
   const user = userEvent.setup();
   renderPane("idle", withLevel);

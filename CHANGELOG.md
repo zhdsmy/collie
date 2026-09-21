@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Recent models remember the verified model after a switch.** Sending before the next route poll records the model and reasoning level from the completed switch's local read-back. Browsing frozen history still uses the live pane model.
+
 ## [1.11.1+collie.1] - 2026-09-21
 
 ### Fixed

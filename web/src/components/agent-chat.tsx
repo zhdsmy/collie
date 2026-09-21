@@ -771,14 +771,16 @@ export function AgentChat({
   // preview's text tracks the RAW line live, so host typing streams in without ever touching the input.
   const terminalDraft = useStableTerminalDraft(rawTerminalDraft);
 
-  // Read the live poll, never a mirror frozen while the operator scrolls its history.
+  // While following, include local read-backs from model switching before the next poll arrives.
+  // While browsing history, use the live poll rather than the frozen mirror.
   //
   // Each row is walked as FIELDS, not as one string: Codex 0.154 prints the level beside the model
   // (`gpt-5.6-sol · high`) rather than inside the same field, so a field that carries a model and no
   // level asks its neighbour whether it is one (harness/codex/model-field.ts).
   const currentModel = useMemo(() => {
     if (agent?.agent !== "codex") return undefined;
-    const rows = adapterFor("codex")?.extractStatusLines(splitLines(parseAnsi(modelSwitching ? modelSwitchBase : text))) ?? [];
+    const modelText = modelSwitching ? modelSwitchBase : following ? shown.text : text;
+    const rows = adapterFor("codex")?.extractStatusLines(splitLines(parseAnsi(modelText))) ?? [];
     for (const row of rows) {
       const fields = lineText(row).split(" · ");
       for (const [index, field] of fields.entries()) {
@@ -787,7 +789,7 @@ export function AgentChat({
       }
     }
     return undefined;
-  }, [agent?.agent, text, knownModels, modelSwitching, modelSwitchBase]);
+  }, [agent?.agent, text, knownModels, modelSwitching, modelSwitchBase, following, shown.text]);
   const modelType = useMuxCapability("typeText", scope);
   const modelKeys = useMuxCapability("sendKeys", scope);
   const liveCodexState = useMemo(
