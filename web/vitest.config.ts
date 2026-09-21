@@ -25,6 +25,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Node 25+ exposes its own storage globals; browser tests need jsdom's isolated storage.
+    execArgv: ["--no-experimental-webstorage"],
     globals: true,
     css: false,
     setupFiles: ["./src/test/setup.ts"],
