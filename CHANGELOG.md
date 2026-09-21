@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Cursor on-demand fees stay visible in the compact statusline.** A plan field carrying Cursor's optional `od` spend previously missed the compact grammar and fell back to the long terminal sentence; it now keeps the exact current/limit amount beside a cost icon while preserving the full field as its accessible name.
+
 ## [1.11.1+collie.3] - 2026-09-21
 
 ### Fixed

@@ -144,6 +144,16 @@ it.each(["1 task", "3 tasks"])("compacts Cursor fields with accessible icons and
   );
 });
 
+it("keeps Cursor on-demand cost in the compact plan field", () => {
+  const text = "plan 23% (auto 8% api 100%) od $1.32/$274 ↻Sep30";
+  const { container } = renderRow(`\x1b[33m${text}\x1b[0m`, "cursor");
+  const field = within(container).getByRole("img", { name: text });
+  expect(field).toHaveTextContent("23% AUTO:8% API:100%$1.32/$274Sep30");
+  expect(field.querySelector(".lucide-gauge")).toBeInTheDocument();
+  expect(field.querySelector(".lucide-circle-dollar-sign")).toBeInTheDocument();
+  expect(field.querySelector(".lucide-calendar-days")).toBeInTheDocument();
+});
+
 it("keeps an unrecognized Cursor status field literal and styled", () => {
   const { container } = renderRow("\x1b[35mcustom status field\x1b[0m", "cursor");
   expect(within(container).queryByRole("img")).toBeNull();

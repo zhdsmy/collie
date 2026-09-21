@@ -6,6 +6,7 @@ import {
   Database,
   CircleAlert,
   CircleCheck,
+  CircleDollarSign,
   CircleOff,
   FolderGit2,
   Gauge,
@@ -263,7 +264,7 @@ function CursorStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
         const segments = sliceSegments(row.segments, field.start, field.start + field.text.length);
         const task = /^(\d+) tasks?$/.exec(field.text);
         const context = /^[▓░]+\s+(\d+%)\s*(.*)$/.exec(field.text);
-        const plan = /^plan\s+(\d+%)\s+\(auto\s+(\d+%)\s+api\s+(\d+%)\)\s+↻(\S+)$/i.exec(field.text);
+        const plan = /^plan\s+(\d+%)\s+\(auto\s+(\d+%)\s+api\s+(\d+%)\)(?:\s+od\s+(\$[\d,.]+\/\$[\d,.]+))?\s+↻(\S+)$/i.exec(field.text);
         let content: ReactNode;
         if (task?.[1]) {
           content = <CursorIconField text={field.text} segments={segments} icon={Loader2}
@@ -288,15 +289,19 @@ function CursorStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
               )} /></span>}
             </span>
           );
-        } else if (plan?.[1] && plan[2] && plan[3] && plan[4]) {
+        } else if (plan?.[1] && plan[2] && plan[3] && plan[5]) {
           content = (
             <span role="img" aria-label={field.text} title={field.text}
               className="inline-flex min-h-3.5 shrink-0 items-center gap-1 leading-none"
               style={segments[0] && styleFor(segments[0])}>
               <Gauge aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
               <span aria-hidden="true">{plan[1]} <span className="opacity-70">AUTO:{plan[2]} API:{plan[3]}</span></span>
+              {plan[4] && <>
+                <CircleDollarSign aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
+                <span aria-hidden="true">{plan[4]}</span>
+              </>}
               <CalendarDays aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
-              <span aria-hidden="true">{plan[4]}</span>
+              <span aria-hidden="true">{plan[5]}</span>
             </span>
           );
         } else {
