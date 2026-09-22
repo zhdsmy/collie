@@ -1,15 +1,38 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { verifyExpectedPrompt } from "../../../../../bridge/prompt-binding";
 
 import { parseAnsi } from "../../ansi";
 import { lineText, splitLines } from "../../blocks";
 import {
+  composerPrompt,
   composerReady,
   extractInputDraft,
   extractStatusLines,
   locateComposer,
 } from "./chrome";
+
+describe("Codex working-to-idle submit binding", () => {
+  it.each([
+    "please continue this investigation",
+    "请检查锁和写入的时序。\n\n  仅讨论，先别修改代码。",
+    "Explain this literal text:\n  tab to queue message",
+  ])("keeps the same draft bound when the queue hint disappears: %s", (draft) => {
+    const prompt = `\x1b[1m› \x1b[22m${draft}`;
+    const working = ["• Working (3s • esc to interrupt)", prompt, "", "tab to queue message", "50% context left"].join("\n");
+    const idle = [prompt, "", "  gpt-6-astra · /tmp/probe · Context 50% left · weekly 88% left"].join("\n");
+    const before = splitLines(parseAnsi(working));
+    const after = splitLines(parseAnsi(idle));
+    expect(composerReady(before)).toBe(true);
+    expect(composerReady(after)).toBe(true);
+    expect(extractInputDraft(before)).toBe(extractInputDraft(after));
+    const expected = composerPrompt(before);
+    expect(expected).toBe(`› ${draft}`);
+    expect(verifyExpectedPrompt(idle, expected!)).toEqual({ ok: true });
+    expect(verifyExpectedPrompt(idle.replace("› ", "› changed "), expected!).ok).toBe(false);
+  });
+});
 
 const PANES = join(import.meta.dirname, "../../../fixtures/panes");
 

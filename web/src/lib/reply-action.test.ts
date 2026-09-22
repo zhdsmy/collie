@@ -992,7 +992,7 @@ describe("the pre-type work is handed the region its keys must be bound to", () 
     expect(out).toEqual({ status: "sent" });
     expect(calls).toEqual([
       { text, submit: false },
-      { text: "", submit: true, expected_prompt: paneWithWorkingDraft(draft).split("\n").slice(1, -1).join("\n") },
+      { text: "", submit: true, expected_prompt: `› ${draft}` },
     ]);
   });
 });

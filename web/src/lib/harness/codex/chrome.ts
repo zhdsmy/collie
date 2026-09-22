@@ -202,6 +202,18 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   return [lines[box.statusRow]!];
 }
 
+function draftEnd(lines: StyledLine[], box: ComposerBox): number {
+  let end = box.statusRow;
+  while (end > box.promptRow + 1 && isBlank(lineText(lines[end - 1]!))) end--;
+  // locateComposer proves this final row is the working footer. It can disappear when a turn
+  // finishes without changing the draft; never bind Enter to it or strip matching user text.
+  if (isWorkingContextRow(lineText(lines[box.statusRow]!)) && isWorkingQueueRow(lineText(lines[end - 1]!))) {
+    end--;
+    while (end > box.promptRow + 1 && isBlank(lineText(lines[end - 1]!))) end--;
+  }
+  return end;
+}
+
 /**
  * The user's draft stranded in the composer: the `› ` row's text plus wrapped continuation
  * rows, joined with single spaces (Codex word-wraps — verified against the typed original on
@@ -218,9 +230,8 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
   const texts = lines.map((l) => rstrip(lineText(l)));
   const first = promptText(texts[box.promptRow]!) ?? "";
   const parts = [first.trim()];
-  const workingStatus = isWorkingContextRow(texts[box.statusRow]!);
-  for (let i = box.promptRow + 1; i < box.statusRow; i++) {
-    if (workingStatus && isWorkingQueueRow(texts[i]!)) continue;
+  const end = draftEnd(lines, box);
+  for (let i = box.promptRow + 1; i < end; i++) {
     parts.push(texts[i]!.trim());
   }
   const draft = parts.filter((p) => p !== "").join(" ");
@@ -243,8 +254,7 @@ export function composerPrompt(lines: StyledLine[]): string | null {
   lines = normalizeComposerParticles(lines);
   const box = locateComposer(lines);
   if (box === null) return commandInput(lines)?.prompt ?? null;
-  let end = box.statusRow;
-  while (end > box.promptRow + 1 && isBlank(lineText(lines[end - 1]!))) end--;
+  const end = draftEnd(lines, box);
   return lines
     .slice(box.promptRow, end)
     .map((line) => rstrip(lineText(line)))
