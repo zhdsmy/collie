@@ -134,6 +134,7 @@ const PINNED = [
   "codex--v0154-statusline-single-idle.txt",
   "codex--v0154-statusline-single-muted-default.txt",
   "codex--v0154-submitted-fill.txt",
+  "codex--v0156-empty-composer.txt",
   "codex--working.txt",
 ];
 

@@ -81,6 +81,14 @@ after saving disabled, single-item and muted multi-item statuslines, with both
 default and Plan-mode footer variants. They pin continued composer recognition
 after a statusline edit.
 
+## Codex 0.156 empty composer (synthetic, 2026-09-23)
+
+`codex--v0156-empty-composer.txt` pins Codex 0.156.0's idle input: a bare bold `›` with no
+trailing space and no `Ask Codex to do anything` placeholder, two painted blank rows under the
+prompt, and a status row that still carries `Context N% left` plus version / cwd / branch.
+The transcript above is fabricated. It pins the failure where `promptText` required `› <body>`,
+so locateComposer returned null, the phone mirrored the input box, and replies were refused.
+
 ## Codex 0.154 saved-session picker (captured 2026-09-16)
 
 `codex--v0154-resume-*.txt` capture the `/resume` screen in an isolated Codex 0.154.0 pane
