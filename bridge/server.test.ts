@@ -139,6 +139,7 @@ function cfg(overrides: Partial<Config> = {}): Config {
     journalRoots: {
       claude: ["/tmp/claude-projects"],
       codex: ["/nope/codex"],
+      cursor: ["/nope/cursor"],
       pi: ["/nope/pi"],
       opencode: ["/nope/opencode"],
       grok: ["/nope/grok"],

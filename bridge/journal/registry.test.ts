@@ -12,13 +12,22 @@ import {
 // two properties that keep it from rotting: keys come from the adapters themselves, and a hostile
 // agent name can't resolve to something that isn't an adapter.
 
-const roots = { claude: ["/c"], codex: ["/x"], pi: ["/p"], opencode: ["/o"], grok: ["/g"], hermes: ["/h"] };
+const roots = {
+  claude: ["/c"],
+  codex: ["/x"],
+  cursor: ["/u"],
+  pi: ["/p"],
+  opencode: ["/o"],
+  grok: ["/g"],
+  hermes: ["/h"],
+};
 
 describe("buildJournalRegistry", () => {
-  test("serves the six verified harnesses", () => {
+  test("serves the seven verified harnesses", () => {
     expect(journalAgents(buildJournalRegistry(roots))).toEqual([
       "claude",
       "codex",
+      "cursor",
       "grok",
       "hermes",
       "opencode",
@@ -35,11 +44,11 @@ describe("buildJournalRegistry", () => {
 describe("adapterFor", () => {
   const registry = buildJournalRegistry(roots);
 
-  test.each(["claude", "codex", "pi", "opencode", "grok", "hermes"])("resolves %s", (agent) => {
+  test.each(["claude", "codex", "cursor", "pi", "opencode", "grok", "hermes"])("resolves %s", (agent) => {
     expect(adapterFor(registry, agent)?.agent).toBe(agent);
   });
 
-  // An alias is a second NAME for one adapter, never a sixth adapter — derived from the map so a
+  // An alias is a second NAME for one adapter, never an adapter of its own — derived from the map so a
   // new pair is covered the day it is added.
   test.each(Object.entries(AGENT_ALIASES))("resolves the %s alias to %s", (alias, canonical) => {
     expect(adapterFor(registry, alias)?.agent).toBe(canonical);
@@ -65,7 +74,7 @@ describe("adapterFor", () => {
 // `web/src/lib/journal-agents.ts` carries the same names, because the browser must tell an agent
 // that COULD have a transcript (and reported no session — the case an operator can fix) from one
 // that never could. The list is not on the wire, so the mirror is kept by hand — and this test is
-// what makes "by hand" safe: adding a sixth adapter above fails here until the frontend follows.
+// what makes "by hand" safe: adding another adapter above fails here until the frontend follows.
 describe("the frontend mirror", () => {
   test("web/src/lib/journal-agents.ts names exactly these agents", async () => {
     const source = await Bun.file(new URL("../../web/src/lib/journal-agents.ts", import.meta.url)).text();

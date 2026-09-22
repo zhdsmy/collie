@@ -12,6 +12,7 @@
 
 import { claudeJournal } from "./claude.ts";
 import { codexJournal } from "./codex.ts";
+import { cursorJournal } from "./cursor.ts";
 import { grokJournal } from "./grok.ts";
 import { hermesJournal } from "./hermes.ts";
 import { opencodeJournal } from "./opencode.ts";
@@ -32,6 +33,8 @@ export interface JournalRoots {
   claude: readonly string[];
   /** Codex's `$CODEX_HOME/sessions`. */
   codex: readonly string[];
+  /** Cursor Agent's `~/.cursor/projects`, one per config dir. */
+  cursor: readonly string[];
   /** pi's `$PI_CODING_AGENT_DIR/sessions`, or both of `~/.omp/agent/sessions` (Oh My Pi, which
    *  writes pi's format under its own name) and `~/.pi/agent/sessions` when that is unset. */
   pi: readonly string[];
@@ -53,6 +56,7 @@ export function buildJournalRegistry(roots: JournalRoots): Record<string, Journa
   const adapters = [
     claudeJournal(roots.claude),
     codexJournal(roots.codex),
+    cursorJournal(roots.cursor),
     piJournal(roots.pi),
     opencodeJournal(roots.opencode),
     grokJournal(roots.grok),
@@ -71,7 +75,7 @@ export function buildJournalRegistry(roots: JournalRoots): Record<string, Journa
  * COULD have a transcript (registry.test.ts fails when the two drift).
  *
  * An alias never adds an adapter, so it is absent from {@link KNOWN_HARNESS_NAMES}: that list
- * answers "which adapters does this build have", and the answer is still five.
+ * answers "which adapters does this build have", and the answer is still the adapters themselves.
  */
 export const AGENT_ALIASES = { omp: "pi" } as const;
 
@@ -118,5 +122,13 @@ export function journalAgents(registry: Record<string, JournalAdapter>): string[
  * identity off a match against it — see `bridge/mux/types.ts` § `MuxPane.agent`.
  */
 export const KNOWN_HARNESS_NAMES: readonly string[] = journalAgents(
-  buildJournalRegistry({ claude: [], codex: [], pi: [], opencode: [], grok: [], hermes: [] }),
+  buildJournalRegistry({
+    claude: [],
+    codex: [],
+    cursor: [],
+    pi: [],
+    opencode: [],
+    grok: [],
+    hermes: [],
+  }),
 );

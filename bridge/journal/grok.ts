@@ -27,7 +27,14 @@ import { join } from "node:path";
 
 import type { JsonObject, JsonValue } from "../json.ts";
 import { containedRealpath, exists, loadTail, rootList, statFile } from "./files.ts";
-import { clamp, MAX_RESULT_CHARS, MAX_TEXT_CHARS, stripAnsi, summarizeToolInput } from "./text.ts";
+import {
+  clamp,
+  extractUserQuery,
+  MAX_RESULT_CHARS,
+  MAX_TEXT_CHARS,
+  stripAnsi,
+  summarizeToolInput,
+} from "./text.ts";
 import type {
   AgentSessionRef,
   JournalAdapter,
@@ -42,13 +49,9 @@ export function isGrokSessionId(value: string): boolean {
   return SESSION_ID_RE.test(value);
 }
 
-/** Inner text of the first `<user_query>…</user_query>`, trimmed; null when the tag isn't present. */
-export function extractUserQuery(text: string): string | null {
-  const m = /<user_query>\s*([\s\S]*?)\s*<\/user_query>/.exec(text);
-  if (!m) return null;
-  const inner = (m[1] ?? "").trim();
-  return inner === "" ? null : inner;
-}
+// Grok's envelope is not Grok's alone — the helper moved to text.ts when Cursor's adapter met the
+// same `<user_query>` wrapper. Re-exported so this adapter's own vocabulary still reads whole.
+export { extractUserQuery };
 
 /** Flatten a Grok content list (`{type,text}` blocks) into plain text. */
 function contentText(content: JsonValue | undefined): string {

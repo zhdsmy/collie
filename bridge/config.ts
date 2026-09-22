@@ -505,6 +505,9 @@ export function resolveJournalRoots(
         : [join(home, ".omp", "agent", "sessions"), join(home, ".pi", "agent", "sessions")],
       env,
     ),
+    // Cursor Agent keeps its transcripts under the same projects-by-slug shape Claude uses —
+    // `~/.cursor/projects/<slug>/agent-transcripts/<session>/<session>.jsonl`.
+    cursor: envRoots("COLLIE_CURSOR_ROOT", join(home, ".cursor", "projects"), env),
     // OpenCode keeps one SQLite database at the top of its XDG data dir, not per-session files.
     opencode: envRoots(
       "COLLIE_OPENCODE_ROOT",

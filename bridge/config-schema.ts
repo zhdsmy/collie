@@ -488,6 +488,15 @@ export const CONFIG_SETTINGS: readonly ConfigSetting[] = [
     configField: "journalRoots",
   },
   {
+    key: "cursor_root",
+    env: "COLLIE_CURSOR_ROOT",
+    section: "journal",
+    kind: "roots",
+    default: [],
+    doc: "Where Cursor keeps its transcripts. Empty takes ~/.cursor/projects.",
+    configField: "journalRoots",
+  },
+  {
     key: "pi_root",
     env: "COLLIE_PI_ROOT",
     section: "journal",

@@ -36,6 +36,21 @@ export function clamp(text: string, max: number): Clamped {
   return { text: text.slice(0, max), truncated: true };
 }
 
+/**
+ * Inner text of the first `<user_query>…</user_query>`, trimmed; null when the tag isn't present.
+ *
+ * Shared because the envelope is: Grok and Cursor both wrap the operator's words in it and log the
+ * injected plumbing around them (skills lists, MCP banners, a bare `<timestamp>`) as the SAME user
+ * role. The tag is what separates speech from the system prompt, so a row without one is not
+ * rendered as "You" by either adapter.
+ */
+export function extractUserQuery(text: string): string | null {
+  const m = /<user_query>\s*([\s\S]*?)\s*<\/user_query>/.exec(text);
+  if (!m) return null;
+  const inner = (m[1] ?? "").trim();
+  return inner === "" ? null : inner;
+}
+
 /** Collapse to a single capped line — what a tool-call summary is by definition. */
 export function oneLine(value: string): string {
   const line = value.replace(/\s+/g, " ").trim();
