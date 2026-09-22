@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Cursor hides its input box again after the app changed colours.** Cursor now paints its input box and submitted queries in darker shades than the ones the adapter had pinned, so the box was mirrored below the transcript, the status strip stayed empty and the query rectangles disappeared. The box, the query block and the status rows are found by their full-width shape instead of a fixed palette, so a future re-skin cannot silently turn them off.
+
 ## [1.11.1+collie.4] - 2026-09-22
 
 ### Fixed

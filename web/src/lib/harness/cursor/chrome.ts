@@ -1,6 +1,6 @@
 import { isBlank, lineText, trimTrailingBlank, type StyledLine } from "../../blocks";
+import { fillBackground } from "./display";
 
-const INPUT_BACKGROUND = "rgb(39,39,52)";
 const MAX_STATUS_ROWS = 2;
 const MAX_INPUT_ROWS = 100;
 
@@ -10,18 +10,6 @@ interface CursorChrome {
   inputEnd: number;
   statusStart: number;
   statusEnd: number;
-}
-
-function paintedLength(line: StyledLine, background: string): number {
-  return line.segments.reduce(
-    (length, segment) => length + (segment.bg === background ? segment.text.length : 0),
-    0,
-  );
-}
-
-function inputFill(line: StyledLine): boolean {
-  const text = lineText(line);
-  return paintedLength(line, INPUT_BACKGROUND) >= Math.max(1, text.length - 2);
 }
 
 function locateChrome(lines: StyledLine[]): CursorChrome | null {
@@ -41,21 +29,24 @@ function locateChrome(lines: StyledLine[]): CursorChrome | null {
 
   let inputEnd = statusStart;
   // Cursor separates status from the box with unpainted whitespace; the box's own bottom row is
-  // blank too, so style is the only thing that keeps this walk from swallowing the anchor itself.
+  // blank too, so paint is the only thing that keeps this walk from swallowing the anchor itself.
   while (
     inputEnd > 0 &&
     isBlank(lineText(lines[inputEnd - 1]!)) &&
-    !inputFill(lines[inputEnd - 1]!)
+    fillBackground(lines[inputEnd - 1]!) === null
   ) {
     inputEnd--;
   }
-  if (inputEnd === 0 || !inputFill(lines[inputEnd - 1]!)) return null;
+  // The box wears whichever colour this Cursor paints it, read off the anchor row rather than
+  // pinned here, so a theme or release that re-picks it still hides the box instead of mirroring it.
+  const background = inputEnd > 0 ? fillBackground(lines[inputEnd - 1]!) : null;
+  if (background === null) return null;
 
   let inputStart = inputEnd;
   while (
     inputStart > 0 &&
     inputEnd - inputStart < MAX_INPUT_ROWS &&
-    inputFill(lines[inputStart - 1]!)
+    fillBackground(lines[inputStart - 1]!) === background
   ) {
     inputStart--;
   }

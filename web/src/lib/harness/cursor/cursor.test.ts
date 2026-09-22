@@ -16,6 +16,10 @@ const workingCapture = readFileSync(
   join(import.meta.dirname, "..", "..", "..", "fixtures", "panes", "cursor--working-status-sanitized.txt"),
   "utf8",
 );
+const reskinnedCapture = readFileSync(
+  join(import.meta.dirname, "..", "..", "..", "fixtures", "panes", "cursor--1.11-chrome-sanitized.txt"),
+  "utf8",
+);
 
 function parsed(text: string): StyledLine[] {
   return splitLines(parseAnsi(text));
@@ -43,6 +47,18 @@ describe("Cursor display", () => {
       "rgb(47,47,64)",
       "rgb(47,47,64)",
     ]);
+  });
+
+  it("marks the query block after Cursor re-picked its colour", () => {
+    const lines = decorateCursorDisplay(parsed(reskinnedCapture));
+    expect(lines.slice(0, 3).map((line) => line.surface)).toEqual(
+      Array.from({ length: 3 }, () => ({ kind: "user", background: "rgb(31,31,37)" })),
+    );
+  });
+
+  it("leaves a short painted fragment alone rather than calling it a block", () => {
+    const lines = decorateCursorDisplay(parsed("\x1b[48;2;31;31;37mok\x1b[0m"));
+    expect(lines[0]?.surface).toBeUndefined();
   });
 
   it("marks red and green diff rows while preserving their character-level highlights", () => {
@@ -99,6 +115,18 @@ describe("Cursor chrome", () => {
     ]);
     expect(statuses[0]?.segments.some((segment) => segment.fg === "var(--ansi-4)")).toBe(true);
     expect(statuses[1]?.segments.some((segment) => segment.fg === "var(--ansi-6)")).toBe(true);
+  });
+
+  it("hides the input box Cursor now paints in a different colour", () => {
+    const lines = parsed(reskinnedCapture);
+    expect(stripChrome(lines).map(lineText)).not.toContainEqual(
+      expect.stringContaining("Add a follow-up"),
+    );
+    expect(extractStatusLines(lines).map((line) => lineText(line).trim())).toEqual([
+      "1 task",
+      expect.stringContaining("Auto Balance · sample main ·"),
+    ]);
+    expect(extractInputDraft(lines)).toBeNull();
   });
 
   it("is tail-anchored and refuses neutral, incomplete, or arrowless lookalikes", () => {

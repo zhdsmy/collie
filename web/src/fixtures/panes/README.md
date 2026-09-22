@@ -43,6 +43,11 @@ captures the working input tail with its separate task-count and metrics rows. H
 addresses, commands and project content were replaced before either fixture entered the
 repository; the SGR boundaries and Cursor's background colours are unchanged.
 
+`cursor--1.11-chrome-sanitized.txt` is the same tail after Cursor re-picked those colours — the
+query block moved from `rgb(47,47,64)` to `rgb(31,31,37)` and the input box from `rgb(39,39,52)`
+to `rgb(18,18,18)`, which left the box mirrored and the strip empty. It pins the detection to the
+blocks' full-width shape rather than to either palette, so the two captures must both pass.
+
 ## Codex native QA and plan dialogs (captured 2026-09-13 through 2026-09-15)
 
 `codex--async-qa-*.txt`, `codex--v0154-question-*.txt`, and
