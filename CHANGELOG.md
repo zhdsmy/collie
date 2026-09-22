@@ -30,6 +30,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.11.1+collie.6] - 2026-09-22
+
 ### Added
 
 - **Cursor panes get the History button.** Collie reads Cursor Agent's own transcript
@@ -37,7 +39,7 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
   `COLLIE_CURSOR_ROOT`), so a Cursor pane shows the whole conversation instead of the one screen the
   terminal keeps. Needs `herdr integration install cursor`, which is what reports the session id.
   Cursor logs no tool output and no machine timestamps, so a tool call shows without its result and
-  a turn shows without a time.
+  a turn shows without a time. ([74a8c431](https://github.com/AltanS/collie/commit/74a8c431))
 
 ## [1.11.1+collie.5] - 2026-09-22
 
