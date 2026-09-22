@@ -30,11 +30,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.11.1+collie.8] - 2026-09-23
+
 ### Fixed
 
 - **Codex 0.156 keeps the input box hidden and the statusline live.** An empty composer is now a
   bare `›` with no placeholder text; Collie still finds that pair, strips the painted band, and
-  lifts the status row — including version, project and branch — into the phone strip.
+  lifts the status row — including version, project and branch — into the phone strip. ([ae00bddc](https://github.com/AltanS/collie/commit/ae00bddc))
 
 ## [1.11.1+collie.7] - 2026-09-22
 
