@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.11.1+collie.7] - 2026-09-22
+
 ### Fixed
 
-- **Codex keeps replies submittable when a turn finishes.** Bind Enter to the editable draft without the temporary “tab to queue message” footer, so a working-to-idle transition no longer refuses an unchanged message. Preserve that phrase when it is part of the user's text; existing draft and dialog checks still apply.
+- **Codex keeps replies submittable when a turn finishes.** Bind Enter to the editable draft without the temporary “tab to queue message” footer, so a working-to-idle transition no longer refuses an unchanged message. Preserve that phrase when it is part of the user's text; existing draft and dialog checks still apply. ([c5d285d4](https://github.com/zhdsmy/collie/commit/c5d285d4))
 
 ## [1.11.1+collie.6] - 2026-09-22
 
