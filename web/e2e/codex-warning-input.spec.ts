@@ -9,7 +9,7 @@ const empty = readFileSync(new URL("../src/fixtures/panes/codex--v0154-particles
   .replace(/\n$/, `${" ".repeat(32)}⚠ 1 warning · f2 to view\n`);
 const paint = "\u001b[0m\u001b[48;2;57;57;71m";
 const uploadPaths = ["/test-state/uploads/one.png", "/test-state/uploads/two.png", "/test-state/uploads/three.png", "/test-state/uploads/four.png"];
-const longText = `BEGIN ${"请检查这个输入问题".repeat(120)} END`;
+const longText = `BEGIN ${"请检查这个输入问题".repeat(1200)} END`;
 const cases = [
   { name: "image only", uploads: 1, draft: "[Image #1] ", sent: uploadPaths[0]!, shown: "[Image #1]" },
   {
@@ -47,6 +47,7 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
   let uploads = 0;
   const keys: string[][] = [];
   const replies: Array<{ text: string; submit: boolean; expected_prompt?: string }> = [];
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a2ioAAAAASUVORK5CYII=", "base64");
 
   await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
     ...fixtureSnapshot,
@@ -72,6 +73,10 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
     return route.fulfill({ json: { ok: true } });
   });
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/upload", (route) => {
+    const body = route.request().postDataBuffer();
+    expect(body).not.toBeNull();
+    expect(body!.includes(png)).toBe(true);
+    expect(body!.toString("latin1")).toContain('filename="photo-');
     return route.fulfill({ json: { ok: true, path: uploadPaths[uploads++] } });
   });
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/reply", (route) => {
@@ -97,7 +102,6 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
   expect(keys).toEqual([["f2"], ["Escape"]]);
 
   const input = page.getByRole("textbox").first();
-  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a2ioAAAAASUVORK5CYII=", "base64");
   for (const [index, sample] of cases.entries()) {
     await test.step(sample.name, async () => {
       if (sample.uploads > 0) {
@@ -109,6 +113,7 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
       await input.fill(sample.draft);
       await expect(input).toBeEnabled();
       await expect(page.getByRole("button", { name: "Send", exact: true })).toBeInViewport();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.getByRole("button", { name: "Send", exact: true }).click();
       await expect.poll(() => replies.length).toBe(2 * (index + 1));
       expect(caseIndex).toBe(index + 1);

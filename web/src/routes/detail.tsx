@@ -88,6 +88,7 @@ export function DetailRoute() {
       agents={root.agents}
       shellPanes={root.shellPanes}
       tabs={root.tabs}
+      servers={root.servers}
       text={pane.text}
       codexSessionKey={pane.codexSessionKey}
       sessionModel={pane.sessionModel}
