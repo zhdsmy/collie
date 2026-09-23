@@ -433,7 +433,7 @@ describe("chrome", () => {
     expect(codexAdapter.extractInputDraft(lines)).toBe("[Image #1] 是的，输入这里也做同样的处理。");
     expect(codexAdapter.composerPrompt!(lines)).toBe(`› [Image #1]\n\n${caption}`);
     expect(codexAdapter.extractStatusLines(lines).map(lineText)).toEqual([status]);
-    expect(stripChrome(lines).map(lineText)).toEqual(["• Previous answer", ""]);
+    expect(stripChrome(lines).map(lineText)).toEqual(["• Previous answer"]);
   });
 
   it.each(["› old message", "\u001b[1;2m›\u001b[0m old message", "\u001b[2m›\u001b[0m old message"])(
@@ -566,7 +566,7 @@ describe("the Astra starfield (issue #245)", () => {
     expect(box!.promptRow).toBe(3);
     expect(box!.top).toBe(2);
     expect(extractInputDraft(lines)).toBe("fix the login bug");
-    expect(stripChrome(lines).map(lineText)).toEqual(["• Done.", ""]);
+    expect(stripChrome(lines).map(lineText)).toEqual(["• Done."]);
   });
 
   it("does not treat unpainted starfield lookalikes as a proven composer", () => {
@@ -973,7 +973,7 @@ describe("Codex mobile display cleanup", () => {
   // capture below prints its diffs as plain text.
   const FIXTURE = "codex--submitted-fill-labelled-rule.txt";
 
-  it("marks the fixture's user and diff surfaces while preserving their ANSI segments", () => {
+  it("marks the fixture's user and diff surfaces while preserving diff ANSI segments", () => {
     const lines = fixtureLines(FIXTURE);
     const decorated = decorateCodexDisplay(lines);
     const marked = decorated.filter((line) => line.surface?.kind === "user");
@@ -981,7 +981,10 @@ describe("Codex mobile display cleanup", () => {
     expect(lineText(marked[0]!)).toContain("move the screenshots across to the new blog post");
     expect(decorated.filter((line) => line.surface?.kind === "diff").map((line) => line.surface?.background))
       .toEqual(["rgb(33,58,43)", "rgb(74,34,34)"]);
-    decorated.forEach((line, index) => expect(line.segments).toBe(lines[index]!.segments));
+    expect(marked[0]!.segments.some((segment) => segment.mobileTransparentBg)).toBe(true);
+    decorated.forEach((line, index) => {
+      if (line.surface?.kind !== "user") expect(line.segments).toBe(lines[index]!.segments);
+    });
   });
 
   it("changes not one byte and leaves the already-refined labelled rule untouched", () => {
@@ -1023,7 +1026,7 @@ describe("Codex mobile display cleanup", () => {
     expect(lines.every((line) => !line.surface)).toBe(true);
   });
 
-  it("keeps ANSI metadata unchanged for both legacy and current diff backgrounds", () => {
+  it("keeps diff ANSI metadata and marks the light user fill", () => {
     const esc = String.fromCharCode(27);
     const text = [
       `${esc}[48;2;240;240;240m› submitted message${esc}[0m`,
@@ -1033,7 +1036,9 @@ describe("Codex mobile display cleanup", () => {
     const lines = splitLines(parseAnsi(text));
     const decorated = decorateCodexDisplay(lines);
     expect(decorated.map((line) => line.surface?.background)).toEqual(["#1c1c1c", "rgb(33,58,43)", "rgb(74,34,29)"]);
-    decorated.forEach((line, index) => expect(line.segments).toBe(lines[index]!.segments));
+    expect(decorated[0]!.segments[0]!.mobileTransparentBg).toBe(true);
+    expect(decorated[1]!.segments).toBe(lines[1]!.segments);
+    expect(decorated[2]!.segments).toBe(lines[2]!.segments);
   });
 
   // THE REGRESSION. Codex's submitted-message fill was rgb(240,240,240) when the black bar was
@@ -1053,7 +1058,7 @@ describe("Codex mobile display cleanup", () => {
     expect(userLine!.segments[0]!.bg).toBe(parsed);
     expect(userLine!.segments[0]!.style.backgroundColor).toBe(parsed);
     expect(userLine!.surface).toEqual({ kind: "user", background: "#1c1c1c" });
-    expect(userLine!.segments).toBe(lines[0]!.segments);
+    expect(userLine!.segments[0]!.mobileTransparentBg).toBe(true);
     expect(diffLine!.surface).toEqual({ kind: "diff", background: "rgb(33,58,43)" });
     expect(diffLine!.segments[0]!.bg).toBe("rgb(33,58,43)");
     expect(diffLine!.segments[0]!.mobileTransparentBg).toBeUndefined();

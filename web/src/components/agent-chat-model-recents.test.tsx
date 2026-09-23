@@ -260,7 +260,8 @@ it("keeps text and an uploaded image mounted and locked while switching, then re
   const draft = screen.getByRole<HTMLTextAreaElement>("textbox");
   await user.type(draft, "Keep this draft\nwith a second line");
   fireEvent.change(screen.getByTestId("attach-files"), { target: { files: [new File(["image"], "photo.png", { type: "image/png" })] } });
-  await waitFor(() => expect(draft.value).toContain("/tmp/preserved-photo.png"));
+  await waitFor(() => expect(draft.value).toContain("[Image #1]"));
+  const chip = screen.getByTitle("photo.png");
   const savedDraft = draft.value;
   const panel = await openRecents(user);
   expect(draft).not.toHaveFocus();
@@ -268,6 +269,7 @@ it("keeps text and an uploaded image mounted and locked while switching, then re
   await waitFor(() => expect(runCodexModelSwitch).toHaveBeenCalledOnce());
   expect(draft).toBeDisabled();
   expect(draft).toHaveValue(savedDraft);
+  expect(chip).toBeInTheDocument();
   expect(vi.mocked(runCodexModelSwitch).mock.calls[0]![0]).toMatchObject({
     paneId: "w1:p1", preset: { model: "gpt-5.6-luna", effort: "max" },
   });
@@ -275,6 +277,7 @@ it("keeps text and an uploaded image mounted and locked while switching, then re
   await waitFor(() => expect(screen.queryByRole("region", { name: "Recently used models" })).toBeNull());
   expect(draft).not.toBeDisabled();
   expect(draft).toHaveValue(savedDraft);
+  expect(chip).toBeInTheDocument();
 });
 
 it("disables the model entry while working and never opens or queues a switch", async () => {

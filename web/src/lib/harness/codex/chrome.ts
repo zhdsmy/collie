@@ -6,6 +6,7 @@
 
 import type { StyledLine } from "../../blocks";
 import { normalizeComposerParticles } from "./particles";
+import { trimTrailingBlank } from "../../blocks";
 import {
   isBlank,
   isComposerStatusRow,
@@ -25,7 +26,7 @@ export interface ComposerBox {
   top: number;
   /** The `› ` prompt row. */
   promptRow: number;
-  /** The status row under it (last non-blank row of the frame). */
+  /** The status row under it (a fullscreen shortcut hint may follow). */
   statusRow: number;
 }
 
@@ -41,6 +42,7 @@ const MAX_DRAFT_ROWS = 100;
 // (including tool/answer bullets) still cannot be crossed on the way to the live prompt.
 const CONTINUATION = /^ {2}\s*\S/;
 const PROMPT_PREFIX = "› ";
+const FULLSCREEN_HINT = /^ {2}(?:f4 inspect activity · )?\? shortcuts(?: +⚠ .+)?$/;
 
 /**
  * The live Codex composer paints its prompt arrow as a dedicated bold segment and fills the whole
@@ -131,7 +133,9 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   const original = lines;
   lines = normalizeComposerParticles(lines);
   const texts = lines.map((l) => rstrip(lineText(l)));
-  const statusRow = lastNonBlankIndex(texts);
+  const lastRow = lastNonBlankIndex(texts);
+  const statusRow = lastRow > 0 && FULLSCREEN_HINT.test(texts[lastRow]!) &&
+    isComposerStatusRow(texts[lastRow - 1]!, lines[lastRow - 1]) ? lastRow - 1 : lastRow;
   if (statusRow < 0) return null;
   const regularStatus = isComposerStatusRow(texts[statusRow]!, lines[statusRow]);
   const workingStatus = isWorkingContextRow(texts[statusRow]!);
@@ -207,7 +211,8 @@ function bandTop(lines: StyledLine[], texts: string[], promptRow: number): numbe
 export function stripChrome(lines: StyledLine[]): StyledLine[] {
   const box = locateComposer(lines);
   if (box === null) return lines;
-  return lines.slice(0, box.top);
+  // Shared mirror padding owns the gap above the status strip, as in Claude.
+  return trimTrailingBlank(lines.slice(0, box.top));
 }
 
 /** The status row, styled, for the strip above the phone composer. Empty when no composer. */

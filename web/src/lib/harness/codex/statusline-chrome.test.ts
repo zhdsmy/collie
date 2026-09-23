@@ -11,6 +11,7 @@ import {
   extractInputDraft,
   extractStatusLines,
   locateComposer,
+  stripChrome,
 } from "./chrome";
 
 describe("Codex working-to-idle submit binding", () => {
@@ -45,6 +46,28 @@ function lines(name: string) {
 }
 
 describe("Codex disabled-statusline chrome", () => {
+  it("anchors the fullscreen status row above its shortcut hint", () => {
+    const fill = "\x1b[48;2;57;57;71m";
+    const parsed = splitLines(parseAnsi([
+      "• Working (42m • esc to interrupt)",
+      "",
+      `${fill}${" ".repeat(80)}\x1b[0m`,
+      `${fill}\x1b[1m›\x1b[22m \x1b[2mAsk Codex to do anything\x1b[22m${" ".repeat(40)}\x1b[0m`,
+      `${fill}${" ".repeat(80)}\x1b[0m`,
+      "  GPT-6-Sol xhigh · Working · Context 63% left · Fast off · main · 0.156.1 · Main [default]",
+      "  f4 inspect activity · ? shortcuts" + " ".repeat(40) + "⚠ 2 warnings · f2 to view",
+    ].join("\n")));
+    expect(locateComposer(parsed)).toEqual({ top: 2, promptRow: 3, statusRow: 5 });
+    expect(composerReady(parsed)).toBe(true);
+    expect(extractInputDraft(parsed)).toBeNull();
+    expect(lineText(extractStatusLines(parsed)[0]!)).toContain("Context 63% left");
+    expect(stripChrome(parsed).map(lineText)).toEqual(["• Working (42m • esc to interrupt)"]);
+    expect(locateComposer(parsed.slice(0, 6))).toEqual({ top: 2, promptRow: 3, statusRow: 5 });
+    expect(locateComposer(parsed.slice(0, 5))).toBeNull();
+    const withoutStatus = parsed.slice();
+    withoutStatus[5] = splitLines(parseAnsi("  ordinary transcript text"))[0]!;
+    expect(locateComposer(withoutStatus)).toBeNull();
+  });
   it("anchors an empty composer on the shortcut/context footer", () => {
     const parsed = lines("codex--v0154-statusline-disabled-idle.txt");
 

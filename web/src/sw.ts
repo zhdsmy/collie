@@ -6,7 +6,14 @@ import { clientsClaim } from "workbox-core";
 import { decidePush, notificationPath, type NotifData, type PushPayload } from "./lib/push-decision";
 import { displayPush } from "./lib/push-display";
 import { openNotificationTarget, type OpenOutcome } from "./lib/notification-open";
-import { FONT_URLS, NAVIGATION_NETWORK_ONLY } from "./lib/sw-routes";
+import { FONT_URLS, navigationNetworkOnlyUnder } from "./lib/sw-routes";
+
+// Where this worker is mounted (ADR 0052): the directory it was fetched from, which is the mount
+// the app registered it under (lib/pwa.ts) — `/` at the origin root, `/collie/` behind a proxy that
+// gives Collie a path. One build serves any mount, so nothing here is a build-time constant: every
+// root-absolute path this file names is put under the mount with `under()`.
+const MOUNT = new URL("./", self.location.href).pathname;
+const under = (path: string): string => (MOUNT === "/" ? path : `${MOUNT.slice(0, -1)}${path}`);
 
 // Custom service worker (vite-plugin-pwa `injectManifest`). It does everything the old generated
 // Workbox SW did — precache the app shell + SPA-fallback navigations — PLUS the two handlers a
@@ -68,8 +75,8 @@ precacheAndRoute(PRECACHE_MANIFEST);
 // bar, has no reachable path to the proxy at all: every navigation, including a reload, is answered
 // by the cached app shell. See lib/sw-routes for the contract.
 registerRoute(
-  new NavigationRoute(createHandlerBoundToURL("/index.html"), {
-    denylist: [...NAVIGATION_NETWORK_ONLY],
+  new NavigationRoute(createHandlerBoundToURL(under("/index.html")), {
+    denylist: navigationNetworkOnlyUnder(MOUNT),
   }),
 );
 
@@ -82,7 +89,9 @@ registerRoute(
 // The cost, stated plainly: a device that installs the PWA and goes offline without ever painting a
 // Nerd Font glyph shows tofu until it is online once. Precaching would fix that by charging EVERY
 // install ~1.1 MB, including the installs that never need a glyph — the wrong way round.
-const FONT_CACHE = "collie-fonts";
+// Named per mount: two collies mounted at two paths on one origin share one Cache Storage, and
+// each one's sweep below would otherwise empty the other's fonts.
+const FONT_CACHE = MOUNT === "/" ? "collie-fonts" : `collie-fonts:${MOUNT}`;
 
 // WHAT MAY BE STORED. This cache is permanent, so a wrong entry is permanent too — the same shape as
 // the 401ing proxy that once froze an installed SW, one layer down. A fronting proxy with an expired
@@ -94,7 +103,7 @@ const storable = (r: Response) =>
   r.status === 200 && !r.redirected && (r.headers.get("content-type") ?? "").includes("font");
 
 registerRoute(
-  ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith("/fonts/"),
+  ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith(under("/fonts/")),
   async ({ request }) => {
     const cache = await caches.open(FONT_CACHE);
     const hit = await cache.match(request);
@@ -114,7 +123,7 @@ self.addEventListener("activate", (event: ExtendableEvent) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(FONT_CACHE);
-      const live = new Set<string>(FONT_URLS);
+      const live = new Set<string>(FONT_URLS.map(under));
       for (const req of await cache.keys()) {
         if (!live.has(new URL(req.url).pathname)) await cache.delete(req);
       }
@@ -137,6 +146,20 @@ self.addEventListener("message", (event: ExtendableMessageEvent) => {
 // ── Web Push ────────────────────────────────────────────────────────────────────────────────────
 // The branching (suppress vs show vs clear, tag/title/renotify) lives in lib/push-decision so it's
 // unit-tested; here we only parse the event, read client visibility, and run the side effect.
+// Keep the local displayPush policy (including silent retractions), but mount its root-absolute
+// artwork paths for installations served below a proxy prefix.
+const ICON = under("/notification-icon-192x192.png");
+const BADGE = under("/badge-96x96.png");
+
+const mountedNotificationDisplay = {
+  getNotifications: (filter: { tag: string }) => self.registration.getNotifications(filter),
+  showNotification: (title: string, options: NotificationOptions) =>
+    self.registration.showNotification(title, {
+      ...options,
+      icon: options.icon === "/notification-icon-192x192.png" ? ICON : options.icon,
+      badge: options.badge === "/badge-96x96.png" ? BADGE : options.badge,
+    }),
+};
 
 self.addEventListener("push", (event: PushEvent) => {
   event.waitUntil(handlePush(event));
@@ -161,7 +184,7 @@ async function handlePush(event: PushEvent): Promise<void> {
   }
 
   const decision = decidePush(payload, await anyVisibleClient());
-  await displayPush(decision, self.registration);
+  await displayPush(decision, mountedNotificationDisplay);
 }
 
 // Tap a notification: an update push routes to the Updates page under Settings; everything else deep-links to the agent's
@@ -196,7 +219,10 @@ self.addEventListener("notificationclick", (event: NotificationEvent) => {
 // opened before any discarded client is navigated (#147, and the Android regression that fix grew).
 // The `matchAll` below is deliberately the ONLY awaited call between the tap and `openWindow`.
 async function openPath(path: string): Promise<OpenOutcome> {
-  const url = new URL(path, self.location.origin).href;
+  // Resolved against the mount, not the origin: under `/collie/` an origin-relative target lands
+  // outside the manifest scope, Chrome matches no installed client and opens a browser tab at the
+  // root. At the root the two are the same address.
+  const url = new URL(path.replace(/^\/+/, ""), new URL("./", self.location.href)).href;
   const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
   return openNotificationTarget({
     url,

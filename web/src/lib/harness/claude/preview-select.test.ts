@@ -193,11 +193,16 @@ describe("detectPreviewSelectRegion + buildBlocks — render boundary and gating
     expect(blocks.map((b) => b.kind)).toEqual(["raw", "preview-select"]);
   });
 
-  it("buildBlocks keeps the pure raw mirror for every other agent", () => {
-    for (const agent of ["codex", "opencode", "pi", undefined]) {
+  it("buildBlocks lifts NOTHING from a Claude dialog for every other agent", () => {
+    // The fail-closed claim is that no foreign adapter READS this screen. `opencode` and `pi` have
+    // no adapter at all and `undefined` has none either, so all three keep the pure raw mirror.
+    for (const agent of ["opencode", "pi", undefined]) {
       const blocks = buildBlocks(fixtureLines("claude--select-preview.txt"), { agent });
       expect(blocks.map((b) => b.kind)).toEqual(["raw"]);
     }
+    // Codex keeps unfamiliar dialog screens native instead of offering a generic cancel card.
+    const codex = buildBlocks(fixtureLines("claude--select-preview.txt"), { agent: "codex" });
+    expect(codex.map((b) => b.kind)).toEqual(["raw"]);
   });
 });
 

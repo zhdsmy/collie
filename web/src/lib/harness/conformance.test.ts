@@ -67,6 +67,13 @@ const NEUTRAL = new Set([
   // Composer chrome, never a dialog — and the negative control that matters most here, because the row
   // reads as a key hint and used to hide the input box from every caller of `hasInputBox`.
   "claude--notification-paste-delete.txt",
+  // The `/effort` slider at 40 columns with `low` selected: a genuine dialog, but not one this
+  // adapter's own grammars can read — at 40 columns with the marker leftmost Claude draws no `▲` at
+  // all, marking `low` by colour alone, so every specific detector and the generic menu decline it.
+  // `adapter.buildBlocks` is therefore raw-only here exactly as it is on a true no-dialog screen; the
+  // unread-dialog post-pass (outside the adapter, harness/index.ts) is what offers Cancel over it,
+  // and that card is pinned separately in unread-dialog.test.ts, not by this suite.
+  "claude--menu-effort-slider--w40-low.txt",
 ]);
 
 const allClaudeFixtures = readdirSync(PANES_DIR)

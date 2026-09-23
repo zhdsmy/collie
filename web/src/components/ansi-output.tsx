@@ -9,14 +9,7 @@ import {
   lineText,
   splitLines,
   type Block,
-  type MenuModel,
-  type PickerModel,
-  type PickerIntent,
-  type MultiSelectModel,
-  type PreviewSelectModel,
-  type PromptModel,
   type StyledLine,
-  type WizardModel,
 } from "@/lib/blocks";
 import { tableRuns, type TableRun } from "@/lib/table-run";
 import {
@@ -38,33 +31,10 @@ import {
 } from "@/components/mirror-space";
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks } from "@/lib/links";
-import { PromptSelectBlock, type PromptBlockAction } from "@/components/prompt-select-block";
-import { WizardBlock } from "@/components/wizard-block";
-import { PreviewSelectBlock, type PreviewBlockAction } from "@/components/preview-select-block";
-import { MultiSelectBlock } from "@/components/multi-select-block";
-import { MenuBlock, type MenuBlockAction } from "@/components/menu-block";
-import { AutocompleteBlock } from "@/components/autocomplete-block";
-import { PickerBlock } from "@/components/picker-block";
 import { SessionInfoCard } from "@/components/session-info-card";
-import type { MultiSelectIntent } from "@/lib/multi-select-action";
 
 /** A raw block, narrowed off the Block union (the highlight/offset paths only touch these). */
 type RawBlock = Extract<Block, { kind: "raw" }>;
-/** The (at most one) prompt-select block — always at the tail. */
-type PromptBlock = Extract<Block, { kind: "prompt-select" }>;
-/** The (at most one) wizard block — always at the tail, mutually exclusive with prompt-select. */
-type WizBlock = Extract<Block, { kind: "wizard" }>;
-/** The (at most one) preview-select block — tail, mutually exclusive with the other two. */
-type PrevBlock = Extract<Block, { kind: "preview-select" }>;
-/** The (at most one) multi-select block — tail, mutually exclusive with the other dialog blocks. */
-type MultiBlock = Extract<Block, { kind: "multi-select" }>;
-/** The (at most one) generic-menu block — tail, and only ever lifted when all four above declined. */
-type GenericMenuBlock = Extract<Block, { kind: "menu" }>;
-/** The (at most one) completion-popup block — tail, and the only non-raw kind that is NOT a modal:
- *  the agent's input box is live under it, so it renders with no controls and locks nothing. */
-type AutoBlock = Extract<Block, { kind: "autocomplete" }>;
-type NativePickerBlock = Extract<Block, { kind: "picker" }>;
-
 export interface AnsiOutputProps {
   text: string;
   /** The same rows with soft wraps undone, when the bridge sent them: the autolinker uses it to give
@@ -108,29 +78,13 @@ export interface AnsiOutputProps {
    * on an ordinary screen, so the common case reports zero once and asks for nothing.
    */
   onImageClusterCount?: (count: number) => void;
-  /** Injected handler for a prompt-select tap (the race guard lives in AgentChat). Absent (or with a
-   *  disabled block) means the buttons render but don't act — AnsiOutput never touches the network. */
-  onPromptAction?: (
-    action: PromptBlockAction,
-    prompt: PromptModel,
-  ) => boolean | void | Promise<boolean | void>;
-  /** Injected handler for a wizard tap — one race-guarded keystroke per control (see
-   *  lib/wizard-action.ts). Same presentational contract as onPromptAction. */
-  onWizardAction?: (keys: string[], wizard: WizardModel) => void | Promise<void>;
-  /** Injected handler for a preview-dialog tap (option / note / step-nav intents — the race-guarded
-   *  choreography lives in lib/preview-action.ts). Same presentational contract as onPromptAction. */
-  onPreviewAction?: (action: PreviewBlockAction, preview: PreviewSelectModel) => void | Promise<void>;
-  /** Injected handler for a multi-select tap (toggle / submit / escape / confirm / cancel — the
-   *  race-guarded choreography lives in lib/multi-select-action.ts). Same presentational contract. */
-  onMultiSelectAction?: (action: MultiSelectIntent, multi: MultiSelectModel) => void | Promise<void>;
-  /** Injected handler for a generic-menu tap (a footer-named key, or an arrow — the race-guarded
-   *  send lives in lib/menu-action.ts). Same presentational contract as onPromptAction. */
-  onMenuAction?: (action: MenuBlockAction, menu: MenuModel) => void | Promise<void>;
-  onPickerAction?: (action: PickerIntent, picker: PickerModel) => void | Promise<void>;
-  /** Disable the prompt-select/wizard/preview/multi-select/menu buttons (read-only / gone pane). */
-  promptDisabled?: boolean;
-  /** Mask only the native picker while a parent-owned automatic action is in progress. */
-  pickerAutomating?: boolean;
+  /**
+   * Per-pane override of the light-theme inversion (lib/mirror-invert.ts), resolved by the caller
+   * because this component is presentational and never reads storage. `true` renders natively even
+   * for an inverting agent, `false` forces the inverting mirror back on, and `undefined` — the
+   * normal case — leaves the agent bit from .adr/0047 to decide.
+   */
+  nativeMirror?: boolean;
   /**
    * Hide this many screen rows off the TOP of the mirror. Default 0.
    *
@@ -141,6 +95,17 @@ export interface AnsiOutputProps {
    * why AgentChat sets this to 0 whenever the find bar is open.
    */
   hideLeadingLines?: number;
+  /**
+   * The blocks, already built from `text` by the caller. AgentChat builds them once per poll and
+   * hands the SAME array to this component (raw blocks only) and to `CardDock` (the one lifted card,
+   * .adr/0059), so the grammars never run twice for one screen. Absent, this component builds them
+   * itself from `text`, `agent`, `grammars` and `nativeMirror`, which is what a standalone mirror
+   * (and every test of this file) wants.
+   *
+   * Either way ONLY the raw blocks render here. A lifted card is never drawn inside the mirror any
+   * more: inside the scroller its bottom edge moved with the text above it.
+   */
+  blocks?: readonly Block[];
 }
 
 // Stable empty result so the "not searching" path keeps the same `matches` reference across polls
@@ -191,8 +156,13 @@ function surfaceSegmentStyle(s: AnsiSegment, surface: StyledLine["surface"]): CS
   return rest;
 }
 
-function preClass(wrap: boolean, className?: string, agent?: string): string {
-  const native = rendersNativeMirror(agent);
+function preClass(
+  wrap: boolean,
+  className?: string,
+  agent?: string,
+  nativeMirror?: boolean,
+): string {
+  const native = rendersNativeMirror(agent, nativeMirror);
   return cn(
     "m-0 font-mono leading-[1.25] tracking-normal text-foreground [font-variant-ligatures:none]",
     native ? MUSE_MIRROR : MIRROR_SPACE,
@@ -245,7 +215,8 @@ const TABLE_RUN_CLASS =
 // For a Claude pane the AST may lift the tail into a `prompt-select` block (native buttons) and strip
 // the agent's own input-box chrome; everything else stays a `raw` block that reproduces exactly what
 // the flat renderer produced (one <span> per segment, "\n" text nodes between lines). Raw blocks go
-// inside the <pre>; the prompt-select block renders after it as its own button group.
+// inside the <pre>. The lifted card does NOT render here: it docks above the actions belt, in
+// `CardDock` (card-dock.tsx, .adr/0059), from the same blocks array.
 //
 // Find-in-output highlights matches over the RAW blocks only — the prompt-select block's text is
 // rendered as buttons, not searchable mirror text. The haystack is the concatenation of the raw
@@ -327,25 +298,21 @@ export const AnsiOutput = memo(function AnsiOutput({
   onMatchCount,
   agent,
   grammars = true,
-  onPromptAction,
-  onWizardAction,
-  onPreviewAction,
-  onMultiSelectAction,
-  onMenuAction,
-  onPickerAction,
-  promptDisabled,
-  pickerAutomating = false,
+  nativeMirror,
   hideLeadingLines = 0,
+  blocks: builtBlocks,
   images,
   onImageClusterCount,
 }: AnsiOutputProps) {
   // The mirror is agent output and is not translated — but the two strings the image cluster
   // renders are Collie's own words, so this subscribes for the same reason every t() caller does.
   useLocale();
-  const segments = useMemo(() => parseAnsi(text), [text]);
+  // Built here only when the caller did not already build them (see the prop). Skipping the parse
+  // too is the point: AgentChat's polling path pays for one parse per screen, not two.
   const blocks = useMemo(
-    () => buildBlocks(splitLines(segments), { agent, grammars }),
-    [segments, agent, grammars],
+    () =>
+      builtBlocks ?? buildBlocks(splitLines(parseAnsi(text)), { agent, grammars, nativeMirror }),
+    [builtBlocks, text, agent, grammars, nativeMirror],
   );
 
   const rawBlocks = useMemo(
@@ -356,35 +323,6 @@ export const AnsiOutput = memo(function AnsiOutput({
       ),
     [blocks, hideLeadingLines],
   );
-  const promptBlock = useMemo(
-    () => blocks.find((b): b is PromptBlock => b.kind === "prompt-select") ?? null,
-    [blocks],
-  );
-  const wizardBlock = useMemo(
-    () => blocks.find((b): b is WizBlock => b.kind === "wizard") ?? null,
-    [blocks],
-  );
-  const previewBlock = useMemo(
-    () => blocks.find((b): b is PrevBlock => b.kind === "preview-select") ?? null,
-    [blocks],
-  );
-  const multiBlock = useMemo(
-    () => blocks.find((b): b is MultiBlock => b.kind === "multi-select") ?? null,
-    [blocks],
-  );
-  const menuBlock = useMemo(
-    () => blocks.find((b): b is GenericMenuBlock => b.kind === "menu") ?? null,
-    [blocks],
-  );
-  const autoBlock = useMemo(
-    () => blocks.find((b): b is AutoBlock => b.kind === "autocomplete") ?? null,
-    [blocks],
-  );
-  const pickerBlock = useMemo(
-    () => blocks.find((b): b is NativePickerBlock => b.kind === "picker") ?? null,
-    [blocks],
-  );
-
   // The table runs of each raw block, by block index. Only while wrapping: with Wrap off the whole
   // <pre> already pans column-faithfully, and a nested scroller would just trap the gesture — so
   // that branch computes nothing at all and every block falls through to NO_RUNS below.
@@ -459,55 +397,6 @@ export const AnsiOutput = memo(function AnsiOutput({
   // Muted = box-drawing / rule glyphs. Drop ANSI dim opacity so table borders stay visible —
   // var(--border) + dim made them nearly invisible on mobile. See styleFor in mirror-space.ts.
 
-  const prompt = promptBlock ? (
-    <PromptSelectBlock
-      prompt={promptBlock.prompt}
-      disabled={promptDisabled || !onPromptAction}
-      onAction={(action) => onPromptAction?.(action, promptBlock.prompt) ?? false}
-    />
-  ) : wizardBlock ? (
-    <WizardBlock
-      wizard={wizardBlock.wizard}
-      disabled={promptDisabled || !onWizardAction}
-      onAction={(keys) => onWizardAction?.(keys, wizardBlock.wizard)}
-    />
-  ) : previewBlock ? (
-    <PreviewSelectBlock
-      preview={previewBlock.preview}
-      disabled={promptDisabled || !onPreviewAction}
-      onAction={(action) => onPreviewAction?.(action, previewBlock.preview)}
-    />
-  ) : multiBlock ? (
-    <MultiSelectBlock
-      multi={multiBlock.multi}
-      disabled={promptDisabled || !onMultiSelectAction}
-      onAction={(action) => onMultiSelectAction?.(action, multiBlock.multi)}
-    />
-  ) : menuBlock ? (
-    <MenuBlock
-      menu={menuBlock.menu}
-      lines={menuBlock.lines}
-      disabled={promptDisabled || !onMenuAction}
-      onAction={(action) => onMenuAction?.(action, menuBlock.menu)}
-    />
-  ) : pickerBlock ? (
-    <div inert={pickerAutomating}
-      className={cn("relative isolate my-1.5 rounded-xl [&>[role=group]]:my-0", pickerAutomating &&
-        "after:absolute after:inset-0 after:z-10 after:rounded-[inherit] after:bg-background/10 after:backdrop-blur-[1px] after:ring-1 after:ring-inset after:ring-white/10")}>
-      <PickerBlock
-        picker={pickerBlock.picker}
-        disabled={promptDisabled || !onPickerAction}
-        onAction={(action) => onPickerAction?.(action, pickerBlock.picker)}
-      />
-    </div>
-  ) : autoBlock ? (
-    // No handler and no `disabled`: the completion popup emits no keystroke, so there is nothing for
-    // a read-only device to be refused. It is last in the chain only because it is the least
-    // specific tail shape; the grammars above are mutually exclusive with it anyway (a popup means an
-    // input box, and every dialog above means there isn't one).
-    <AutocompleteBlock autocomplete={autoBlock.autocomplete} />
-  ) : null;
-
   // Thread a running global offset through raw blocks → lines → segments (advancing by 1 for each
   // inter-line/inter-block "\n" separator) so both splits below can map a segment's slices back to
   // the haystack. With no query and no links this costs one addition per segment and allocates
@@ -550,7 +439,7 @@ export const AnsiOutput = memo(function AnsiOutput({
             // fully-specified yellow as-is: re-applying the filter there would blue-shift it in
             // light and no-op in dark. Correct in both themes without a theme branch.
             isCurrent
-              ? cn(!mirror || rendersNativeMirror(agent) ? null : MIRROR_INVERT, "bg-yellow-400 text-black")
+              ? cn(!mirror || rendersNativeMirror(agent, nativeMirror) ? null : MIRROR_INVERT, "bg-yellow-400 text-black")
               : "bg-yellow-400/30",
           )}
         >
@@ -714,6 +603,7 @@ export const AnsiOutput = memo(function AnsiOutput({
     );
   };
 
+  if (rawBlocks.length === 0) return null;
   const hasSessionInfo = rawBlocks.some((block) => block.sessionInfo && block.sessionInfo.kind !== "startup-tail");
   // Render in source order for find/link offsets, then move verified welcome text into its card.
   const rawContent = hasSessionInfo ? rawBlocks.map((block, bi) => {
@@ -725,7 +615,7 @@ export const AnsiOutput = memo(function AnsiOutput({
         {info.tips?.map((tip) => <p key={tip.start}>{renderSegment(tip.text, blockOffsets[bi]! + tip.start, false)}</p>)}
       </div> : null;
     }
-    return <pre key={bi} className={preClass(wrap, className, agent)} style={{ fontSize: `${fontSize}px` }}>
+    return <pre key={bi} className={preClass(wrap, className, agent, nativeMirror)} style={{ fontSize: `${fontSize}px` }}>
       {renderBlock(block, bi)}
     </pre>;
   }) : [];
@@ -753,11 +643,10 @@ export const AnsiOutput = memo(function AnsiOutput({
           </SessionInfoCard>
         ) : <Fragment key={bi}>{rawContent[bi]}</Fragment>;
       }) : rawBlocks.length > 0 && (
-        <pre className={preClass(wrap, className, agent)} style={{ fontSize: `${fontSize}px` }}>
+        <pre className={preClass(wrap, className, agent, nativeMirror)} style={{ fontSize: `${fontSize}px` }}>
           {rawBlocks.map(renderBlock)}
         </pre>
       )}
-      {prompt}
     </>
   );
 });

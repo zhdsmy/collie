@@ -37,8 +37,7 @@ describe("Hermes history preview", () => {
   });
   it("starts folded, opens without sending keys, and keeps the fold open across polling", async () => {
     const user = userEvent.setup();
-    const onPromptAction = vi.fn();
-    const { rerender } = render(<AnsiOutput text={capture} agent="hermes" onPromptAction={onPromptAction} />);
+    const { rerender } = render(<AnsiOutput text={capture} agent="hermes" />);
     const toggle = screen.getByRole("button", { name: "Previous conversation" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(toggle).not.toHaveFocus();
@@ -46,9 +45,8 @@ describe("Hermes history preview", () => {
     await user.click(toggle);
     const body = await screen.findByRole("region", { name: "Previous conversation" });
     expect(within(body).getAllByRole("heading", { name: "Hermes" }).length).toBeGreaterThan(0);
-    expect(onPromptAction).not.toHaveBeenCalled();
     body.scrollTop = 80;
-    rerender(<AnsiOutput text={`Older output\n${capture}\nNew output`} agent="hermes" onPromptAction={onPromptAction} />);
+    rerender(<AnsiOutput text={`Older output\n${capture}\nNew output`} agent="hermes" />);
     expect(screen.getByRole("button", { name: "Previous conversation" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("region").scrollTop).toBe(80);
     await user.click(toggle);

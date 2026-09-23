@@ -1,5 +1,5 @@
 import { lineText, type StyledLine } from "../../blocks";
-import { isLightFill, NEAR_WHITE_FILL_LUMA } from "../light-fill";
+import { isLightFill, markLightFills, NEAR_WHITE_FILL_LUMA } from "../light-fill";
 
 // Dark-space gray also becomes a gentle gray after the light mirror's inversion.
 const USER_SURFACE = { kind: "user", background: "#1c1c1c" } as const;
@@ -46,5 +46,5 @@ export function decorateCodexDisplay(lines: StyledLine[]): StyledLine[] {
     return { ...line, surface };
   });
 
-  return changedLines ? decorated : lines;
+  return markLightFills(changedLines ? decorated : lines, NEAR_WHITE_FILL_LUMA);
 }
