@@ -30,6 +30,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.12.1+collie.1] - 2026-09-23
+
 ### Changed
 - **A chip whose marker you deleted now says it goes in front.** Send puts such an attachment's path in front of your text. The chip now shows this before you send: its border turns dashed, its number gains an arrow, and its title and screen-reader text say where the path will go. Type the marker back to clear it (ADR 0060). ([f61a3a4e](https://github.com/AltanS/collie/commit/f61a3a4e))
 - **A pane keeps its place when its state changes.** Every list of panes now keeps the order your multiplexer shows: the pane strip inside a pane, the space view, the Switch pane sheet and a crew's dashboard. Before, a pane that blocked jumped to the top of these lists and moved back when it resumed, and in a crew a peer's blocked pane pulled that whole machine above the lead. The Switch pane sheet now groups panes by workspace like the dashboard, with one line on top that counts what needs you and takes you to the first of it. In a crew, the pane strip also stops showing another machine's panes from a tab with the same id (ADR 0063). ([bac490b4](https://github.com/AltanS/collie/commit/bac490b4))
