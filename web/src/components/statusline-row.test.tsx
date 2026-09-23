@@ -545,6 +545,54 @@ it("orders Codex mode controls after the model and filters native mode fields", 
   expect([...strip.children].some((child) => child.className.includes("overflow-x-auto"))).toBe(false);
 });
 
+it.each(["⚠ 1 warning", "⚠ 3 warnings"])("renders %s as one accessible warning button", (warning) => {
+  const open = vi.fn();
+  const row = splitLines(parseAnsi(
+    `  gpt-6-astra · Context 85% left · main · 0.156.1${" ".repeat(32)}${warning} · f2 to view · other (shift+tab to cycle)`,
+  ))[0]!;
+  const view = render(<StatuslineRow agent="codex" row={row} codexControls={{
+    plan: { enabled: false, busy: false, onClick: vi.fn() },
+    fast: { enabled: false, busy: false, onClick: vi.fn() },
+  }} codexWarning={{ onClick: open }} />);
+  const button = view.getByRole("button", { name: `${warning} · f2 to view` });
+  expect(button).toHaveAttribute("title", `${warning} · f2 to view`);
+  expect(button).toHaveClass("text-amber-400");
+  expect(button).toHaveTextContent("");
+  expect(button.querySelector("svg")).toHaveClass("lucide-triangle-alert");
+  expect(view.container.textContent).toContain("0.156.1");
+  expect(view.container.textContent).toContain("other (shift+tab to cycle)");
+  expect(view.container.textContent).not.toContain("f2 to view");
+  fireEvent.click(button);
+  expect(open).toHaveBeenCalledExactlyOnceWith(Number(warning.match(/\d+/)![0]));
+});
+
+it("removes only the native Plan hint when its cycle text has separate ANSI paint", () => {
+  const row = splitLines(parseAnsi(
+    "  gpt-6-astra · Context 85% left · \x1b[35mPlan mode\x1b[0m\x1b[2m (shift+tab to cycle)\x1b[0m · other Shift+Tab hint",
+  ))[0]!;
+  const view = render(<StatuslineRow agent="codex" row={row} codexControls={{
+    plan: { enabled: true, busy: false, onClick: vi.fn() },
+    fast: { enabled: false, busy: false, onClick: vi.fn() },
+  }} />);
+  expect(view.container.textContent).not.toContain("(shift+tab to cycle)");
+  expect(view.container.textContent).toContain("other Shift+Tab hint");
+});
+
+it.each(["", "⚠ 2 warnings · f2 details", "⚠ 2 warnings · f2 to view later"])(
+  "keeps unrecognized warning tail %s as text", (tail) => {
+    const row = splitLines(parseAnsi(`gpt-6-astra · Context 85% left${tail ? ` · ${tail}` : ""}`))[0]!;
+    const view = render(<StatuslineRow agent="codex" row={row} codexControls={{
+      plan: { enabled: false, busy: false, onClick: vi.fn() },
+      fast: { enabled: false, busy: false, onClick: vi.fn() },
+    }} codexWarning={{ onClick: vi.fn() }} />);
+    expect(view.queryByRole("button", { name: /warning/ })).toBeNull();
+    if (tail) {
+      expect(view.container.textContent).toContain("⚠ 2 warnings");
+      expect(view.container.textContent).toContain(tail.split(" · ")[1]);
+    }
+  },
+);
+
 it("renders Plan and Fast controls even when the Codex row is empty", () => {
   const view = render(
     <StatuslineRow

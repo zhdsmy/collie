@@ -19,6 +19,7 @@ import {
   Tag,
   Target,
   Timer,
+  TriangleAlert,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -36,6 +37,8 @@ import { CodexModeToggle, type CodexModeToggleProps } from "@/components/codex-m
 import { parseCodexModelField, parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
 import { modeFieldOf, type ClaudeModeField } from "@/lib/harness/claude/mode";
 import { CLAUDE_NEW_TASK_HINT, isClaudeAsideRow } from "@/lib/harness/claude/chrome";
+import { stripCodexPlanHint } from "@/lib/codex-mode-switch";
+import { codexWarningCount } from "@/lib/codex-warning-action";
 
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
@@ -478,6 +481,7 @@ function CodexControlledStatusline({
   modelExpanded,
   modelDisabledReason,
   codexControls,
+  codexWarning,
 }: {
   row: StyledLine;
   leading?: ReactNode;
@@ -488,8 +492,10 @@ function CodexControlledStatusline({
   modelExpanded: boolean;
   modelDisabledReason?: string;
   codexControls: { plan: CodexControlProps; fast: CodexControlProps };
+  codexWarning?: { disabledReason?: string; onClick: (count: number) => void };
 }) {
-  const parts = lineText(row).split(/( \u00b7 )/);
+  row = { ...row, segments: stripCodexPlanHint(row.segments) };
+  const parts = lineText(row).split(/( \u00b7 |(?<=\S) {2,}(?=⚠ [1-9]\d* warnings?\b))/);
   const fields: CodexStatuslineField[] = [];
   let offset = 0;
   for (let index = 0; index < parts.length; index += 1) {
@@ -550,8 +556,25 @@ function CodexControlledStatusline({
   content.push(<CodexModeToggle key="plan" mode="plan" {...codexControls.plan} />);
   content.push(<StatuslineDivider key="plan-fast" />);
   content.push(<CodexModeToggle key="fast" mode="fast" {...codexControls.fast} />);
-  for (const field of rest) {
+  for (let index = 0; index < rest.length; index++) {
+    const field = rest[index]!;
     content.push(<StatuslineDivider key={`divider-${field.index}`} />);
+    const next = rest[index + 1];
+    const count = next?.index === field.index + 2
+      ? codexWarningCount(`${field.text} · ${next.text}`) : null;
+    if (count !== null && codexWarning) {
+      const label = `${field.text} · ${next!.text}`;
+      content.push(
+        <Button key={field.index} type="button" variant="ghost" title={label}
+          aria-label={label} disabled={codexWarning.disabledReason !== undefined}
+          onClick={() => codexWarning.onClick(count)}
+          className="h-5 w-5 shrink-0 rounded-sm border-0 p-0 text-amber-400 hover:bg-white/10 has-[>svg]:px-0">
+          <TriangleAlert aria-hidden="true" className="size-3.5" strokeWidth={2.25} />
+        </Button>,
+      );
+      index++;
+      continue;
+    }
     content.push(
       <CodexField
         key={field.index}
@@ -636,6 +659,7 @@ export function StatuslineRow({
   modelExpanded = false,
   modelDisabledReason,
   codexControls,
+  codexWarning,
   claudeMode,
 }: {
   agent?: string;
@@ -650,6 +674,7 @@ export function StatuslineRow({
   modelExpanded?: boolean;
   modelDisabledReason?: string;
   codexControls?: { plan: CodexControlProps; fast: CodexControlProps };
+  codexWarning?: { disabledReason?: string; onClick: (count: number) => void };
   /** Claude's statusline mode, when this pane shows one and the app may cycle it. */
   claudeMode?: { busy: boolean; disabledReason?: string; onClick: () => void };
 }) {
@@ -703,6 +728,7 @@ export function StatuslineRow({
         modelExpanded={modelExpanded}
         modelDisabledReason={modelDisabledReason}
         codexControls={codexControls}
+        codexWarning={codexWarning}
       />
     );
   }

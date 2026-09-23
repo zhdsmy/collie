@@ -80,7 +80,8 @@ import type { CodexModelTarget } from "@/lib/harness/codex/model-field";
 import { parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
 import { defaultSleep } from "@/lib/harness/guard";
 import { CodexModelRecentsPanel } from "@/components/codex-model-recents";
-import { isCodexPlanHint, readCodexModeState, runCodexModeSwitch, type CodexMode } from "@/lib/codex-mode-switch";
+import { readCodexModeState, runCodexModeSwitch, stripCodexPlanHint, type CodexMode } from "@/lib/codex-mode-switch";
+import { openCodexWarnings } from "@/lib/codex-warning-action";
 import { useHoldReload } from "@/lib/reload-guard";
 import type { PickerIntent, PickerModel } from "@/lib/harness/picker-model";
 import { sendGuardedKeys } from "@/lib/dialog-guard";
@@ -324,6 +325,7 @@ export function AgentChat({
   const [modeSwitching, setModeSwitching] = useState<CodexMode | null>(null);
   const [claudeModeSwitching, setClaudeModeSwitching] = useState(false);
   const modeSwitchAbort = useRef<AbortController | null>(null);
+  const warningOpening = useRef(false);
   const [lastModeState, setLastModeState] = useState<{ sessionKey?: string; plan: boolean | null; fast: boolean | null }>({ plan: null, fast: null });
   useHoldReload(`mode-switch:${paneScopeKey(scope, paneId)}`, modeSwitching !== null || claudeModeSwitching);
   useEffect(() => () => { modeSwitchAbort.current?.abort(); }, [codexSessionKey]);
@@ -722,7 +724,7 @@ export function AgentChat({
       segments: statusLines.flatMap((row, index) => [
         ...(index > 0 ? [{ text: " · ", style: {}, muted: false }] : []),
         ...(agent.agent === "codex"
-          ? row.segments.filter((segment) => !isCodexPlanHint(segment))
+          ? stripCodexPlanHint(row.segments)
           : row.segments),
       ]),
     }];
@@ -879,6 +881,10 @@ export function AgentChat({
     !liveCodexState || liveCodexState.fast === null || liveCodexState.draft !== null ? t("codexFast.blocked") :
     !codexIdle ? t("codexFast.idleRequired") : codexControlsBusy ? t("codexFast.busy") : undefined
   );
+  const warningDisabledReason = readOnly ? t("chat.status.readOnly") : hostBlock ?? (
+    connecting || !grammarsOn || !modelKeys.capable ? t("chat.status.sendFailed") :
+    codexControlsBusy ? t("codexPlan.busy") : undefined
+  );
   // Claude's mode row, read from the same live poll the mirror shows. Null covers three refusals at
   // once: no input box, no mode row, and a block that owns the keyboard — the last of which is a
   // safety gate rather than tidiness, because a permission dialog answers on `shift+tab` itself.
@@ -1001,6 +1007,24 @@ export function AgentChat({
     } finally {
       modeSwitchAbort.current = null;
       setModeSwitching(null);
+      revalidator.revalidate();
+    }
+  }
+
+  async function openWarnings(count: number) {
+    if (warningOpening.current) return;
+    if (warningDisabledReason || composerRef.current?.isWriting()) {
+      setStatus(warningDisabledReason ?? t("codexPlan.busy"), "error");
+      return;
+    }
+    warningOpening.current = true;
+    try {
+      const result = await openCodexWarnings({ paneId, scope, requestedLines, codexSessionKey, count });
+      if (activeCodexSession.current !== codexSessionKey) return;
+      if (result.status === "sent") setFollowing(true);
+      else setStatus(result.error ?? t(result.status === "changed" ? "chat.status.screenChanged" : "chat.status.sendFailed"), "error");
+    } finally {
+      warningOpening.current = false;
       revalidator.revalidate();
     }
   }
@@ -2492,6 +2516,10 @@ export function AgentChat({
                       codexControls={agent?.agent === "codex" ? {
                         plan: { enabled: planEnabled, busy: modeSwitching === "plan", disabledReason: planDisabledReason, onClick: () => void switchMode("plan") },
                         fast: { enabled: fastEnabled, busy: modeSwitching === "fast", disabledReason: fastDisabledReason, onClick: () => void switchMode("fast") },
+                      } : undefined}
+                      codexWarning={agent?.agent === "codex" ? {
+                        disabledReason: warningDisabledReason,
+                        onClick: (count) => void openWarnings(count),
                       } : undefined}
                       claudeMode={agent?.agent === "claude" ? {
                         busy: claudeModeSwitching,

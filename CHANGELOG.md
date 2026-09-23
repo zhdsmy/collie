@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex statusline keeps Plan and warnings concise.** Hide the duplicate Plan hint and open native warnings from a compact icon, including while Codex works.
+
 ## [1.12.0+collie.3] - 2026-09-23
 
 ### Changed

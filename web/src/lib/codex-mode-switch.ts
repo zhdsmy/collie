@@ -18,6 +18,17 @@ export function isCodexPlanHint(segment: AnsiSegment): boolean {
   return segment.fg === "var(--ansi-5)" && /^Plan mode(?: \([^()]+ to cycle\))?$/.test(segment.text.trim());
 }
 
+export function stripCodexPlanHint(segments: AnsiSegment[]): AnsiSegment[] {
+  return segments.flatMap((segment, index) => {
+    if (isCodexPlanHint(segment)) return [];
+    if (index > 0 && isCodexPlanHint(segments[index - 1]!)) {
+      const text = segment.text.replace(/^ \(shift\+tab to cycle\)/i, "");
+      return text ? [{ ...segment, text }] : [];
+    }
+    return [segment];
+  });
+}
+
 /** A Fast status item is a complete field, never a substring of another status item. */
 function readFastField(segments: readonly AnsiSegment[]): boolean | null {
   // Codex can append its coloured Plan hint directly after Fast without a middle-dot separator.
