@@ -229,22 +229,49 @@ function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
         if (!hasMessage || text.length !== header.length) break;
         let first = top;
         let session: Extract<NonNullable<RawBlock["sessionInfo"]>, { kind: "history" }>["session"];
-        // Rich can wrap the resume announcement. Only the immediately preceding, styled message
-        // belongs here; warnings and other output between it and the panel remain visible.
-        for (let candidate = Math.max(start, top - 3); candidate < top; candidate++) {
-          const rows = lines.slice(candidate, top);
-          const match = rows.map(lineText).map((s) => s.trim()).join(" ").match(/^↻ Resumed session ([\w-]+)(?: "(.*)")? \((\d+) user messages?, (\d+) total messages\)$/u);
+        // v0.21.4 can repaint the same panel several times as the pane scrolls: superseded panel
+        // fragments (bodies, wrapped headers, lone border rows, blanks) sit between the live
+        // panel and everything above. Absorb only that contiguous panel-shaped run — any other
+        // output (warnings, replies) stops the walk and stays visible. When the run reaches the
+        // resume announcement (optionally Rich-wrapped and/or followed by a `Model restored`
+        // line), parse it and carry the session metadata into the card.
+        while (first > start) {
+          const t = lineText(lines[first - 1]!).trim();
+          // Panel bodies and lone right borders are │-shaped; wrapped panel headers split into a
+          // `╭…Previous Conversation…` row plus a `──╮` tail (rejoinWrappedBorders only handles
+          // Hermes-branded rules, not these).
+          if (t === "" || t.startsWith("│") || t.endsWith("│") || /^─+╮$/u.test(t) || t.startsWith("╭─") && t.includes("Previous Conversation")) first--;
+          else break;
+        }
+        let probe = first;
+        while (probe > start && !lineText(lines[probe - 1]!).trim()) probe--;
+        for (let span = 1; span <= 3 && probe - span >= start; span++) {
+          const rows = lines.slice(probe - span, probe);
+          const joined = rows.map(lineText).map((s) => s.trim()).join(" ");
+          const restored = / Model restored from session: .+$/u.exec(joined);
+          const match = (restored ? joined.slice(0, restored.index) : joined)
+            .match(/^↻ Resumed session ([\w-]+)(?: "(.*)")? \((\d+) user messages?, (\d+) total messages\)$/u);
           if (!match || !rows.some((row) => row.segments.some((s) => s.bold && s.text.includes(match[1]!)))) continue;
           session = { id: match[1]!, title: match[2], userMessages: Number(match[3]), totalMessages: Number(match[4]) };
-          first = candidate;
+          first = probe - span;
           break;
         }
-        while (first > start && !lineText(lines[first - 1]!).trim()) first--;
+        while (first > start && !lineText(lines[first - 1]!).trim()) first--; // leading blanks join the card
+        if (!session) first = top; // no announcement above the fragment run: nothing may be absorbed
         if (first > start) blocks.push({ kind: "raw", lines: lines.slice(start, first) });
         const body = lines.slice(first, bottom + 1).map((line, index) => {
           const row = first + index;
-          if (row < top) return line;
           if (row === top || row === bottom) return Object.assign({}, line, { segments: [] });
+          if (row < top) {
+            // Superseded fragment rows carry the same 2-col border as panel rows; the announcement
+            // and restored rows pass through untouched (extraction skips them by prefix).
+            const value = lineText(line);
+            const t = value.trim();
+            if (t.startsWith("╭") || /^─+╮$/u.test(t)) return Object.assign({}, line, { segments: [] });
+            if (!t.startsWith("│")) return line;
+            const end = value.slice(0, -1).trimEnd().length;
+            return Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) });
+          }
           const value = lineText(line);
           const end = value.slice(0, -1).trimEnd().length;
           return Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) });

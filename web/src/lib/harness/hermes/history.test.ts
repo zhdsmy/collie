@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import capture from "@/fixtures/panes/hermes--resume-history.txt?raw";
+import fragments from "@/fixtures/panes/hermes--resume-fragments.txt?raw";
+import fragmentsRestored from "@/fixtures/panes/hermes--resume-fragments-restored.txt?raw";
 import startup from "@/fixtures/panes/hermes--startup-resume.txt?raw";
 import { parseAnsi } from "../../ansi";
 import { dropLeadingLines, lineText, splitLines, type RawBlock } from "../../blocks";
@@ -191,5 +193,47 @@ describe("Hermes resumed history", () => {
     expect(partial[0]!.sessionInfo).toBeUndefined();
     expect(partial[0]!.lines).toEqual(raw[0]!.lines.slice(2));
     expect(dropLeadingLines(raw, raw[0]!.lines.length)).toEqual([]);
+  });
+
+  it("absorbs superseded repaint fragments and the model-restored line into the history card", () => {
+    for (const text of [fragments, fragmentsRestored]) {
+      const output = blocks(text);
+      const history = histories(text);
+      expect(history).toHaveLength(1);
+      const info = history[0]!.sessionInfo;
+      if (info?.kind !== "history") throw new Error("Missing history");
+      expect(info.messages?.length).toBeGreaterThan(0);
+      const body = output.flatMap((b) => b.lines.map(lineText)).join("\n");
+      expect(body).not.toContain("● You:");
+      expect(body).not.toContain("◆ Hermes:");
+      expect(body).not.toContain("Previous Conversation");
+      expect(body).not.toContain("Resumed session");
+      expect(body).not.toContain("Model restored from session");
+      expect(body).not.toMatch(/[╭╮╰╯]/u);
+      // These captures include the 4-row footer chrome (statusline, rule, prompt, rule); the
+      // renderer owns those rows, so the block stream carries content rows only.
+      const footerRows = /❯ /u.test(text.trimEnd().split("\n").at(-2) ?? "") ? 4 : 0;
+      expect(output.flatMap((b) => b.lines)).toHaveLength(lines(text).length - footerRows);
+      expect(output.some(blockOwnsKeyboard)).toBe(false);
+    }
+    // The restored variant keeps the announcement metadata despite the interleaved line.
+    const info = histories(fragmentsRestored)[0]!.sessionInfo;
+    if (info?.kind !== "history") throw new Error("Missing history");
+    expect(info.session).toMatchObject({ id: "53593c56_3a463b_1a9f71", title: "General", userMessages: 61, totalMessages: 570 });
+    // The plain-fragments capture (no restored line) also resolves its announcement.
+    const plain = histories(fragments)[0]!.sessionInfo;
+    if (plain?.kind !== "history") throw new Error("Missing history");
+    expect(plain.session).toMatchObject({ id: "53593c56_3a463b_1a9f71", title: "General", userMessages: 61, totalMessages: 570 });
+  });
+
+  it("stops the fragment absorption at unrelated output", () => {
+    const rows = fragmentsRestored.trimEnd().split("\n");
+    const intruder = "Unrelated warning between repaints";
+    const spliced = [...rows.slice(0, 100), intruder, ...rows.slice(100)];
+    const text = spliced.join("\n");
+    const output = blocks(text);
+    const visible = output.filter((b) => b.kind === "raw" && !b.sessionInfo).flatMap((b) => b.lines.map(lineText)).join("\n");
+    expect(visible).toContain(intruder);
+    expect(histories(text)).toHaveLength(1);
   });
 });

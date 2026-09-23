@@ -152,7 +152,7 @@ export function extractHistoryMessages(lines: StyledLine[]) {
   for (let row = 0; row < lines.length; row++) {
     const text = lineText(lines[row]!);
     const prefix = /^ {2}(● You: |◆ Hermes: |◈ )/u.exec(text);
-    if (!prefix && (announcement || /^\s*↻ Resumed session /u.test(text))) {
+    if (!prefix && (announcement || /^\s*↻ Resumed session /u.test(text) || /^\s*Model restored from session: /u.test(text))) {
       announcement = !/\d+ total messages\)\s*$/u.test(text);
       continue;
     }
