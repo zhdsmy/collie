@@ -89,24 +89,6 @@ describe("Codex slash-command submission", () => {
   });
 });
 
-it("submits a Codex reply when the fullscreen shortcut row shrinks to a warning", async () => {
-  const text = "新的 codex tui 界面，只能看很小一段的历史对话，顶部就是 查看全部历史的按钮了";
-  const draftScreen = [
-    "• Working (3s • esc to interrupt)",
-    `› ${text}`,
-    "",
-    "  GPT-6-Sol xhigh · Working · Context 51% left · Fast off · main · 0.156.1",
-    `${" ".repeat(133)}⚠ 1 warning · f2 to view`,
-  ].join("\n");
-  const calls = harness(() => calls.length === 0 ? fixtureText("codex--v0156-empty-composer.txt") : draftScreen);
-
-  expect(await sendGuardedReply({ paneId: "w1:p1", text, agent: "codex", ...instant })).toEqual({ status: "sent" });
-  expect(calls).toEqual([
-    { text, submit: false },
-    { text: "", submit: true, expected_prompt: `› ${text}` },
-  ]);
-});
-
 describe("draftCarriesSend", () => {
   it("keeps Hermes display-only adaptation out of the send path", async () => {
     const calls = harness(() => "No identifiable composer");

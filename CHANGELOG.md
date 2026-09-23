@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Codex follows Scrollback input and status rows again.** Roll back the local bare-arrow and warning-only fullscreen handling while keeping shortcut hints and guarded sends.
+
 ## [1.12.0+collie.2] - 2026-09-23
 
 ### Fixed

@@ -43,7 +43,6 @@ const MAX_DRAFT_ROWS = 100;
 const CONTINUATION = /^ {2}\s*\S/;
 const PROMPT_PREFIX = "› ";
 const FULLSCREEN_HINT = /^ {2}(?:f4 inspect activity · )?\? shortcuts(?: +⚠ .+)?$/;
-const FULLSCREEN_WARNING = /^ {2,}⚠ [1-9]\d* warnings? · f2 to view$/;
 
 /**
  * The live Codex composer paints its prompt arrow as a dedicated bold segment and fills the whole
@@ -135,8 +134,7 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   lines = normalizeComposerParticles(lines);
   const texts = lines.map((l) => rstrip(lineText(l)));
   const lastRow = lastNonBlankIndex(texts);
-  const statusRow = lastRow > 0 &&
-    (FULLSCREEN_HINT.test(texts[lastRow]!) || FULLSCREEN_WARNING.test(texts[lastRow]!)) &&
+  const statusRow = lastRow > 0 && FULLSCREEN_HINT.test(texts[lastRow]!) &&
     isComposerStatusRow(texts[lastRow - 1]!, lines[lastRow - 1]) ? lastRow - 1 : lastRow;
   if (statusRow < 0) return null;
   const regularStatus = isComposerStatusRow(texts[statusRow]!, lines[statusRow]);
@@ -177,9 +175,7 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
 }
 
 /** The starfield rows directly above the prompt belong to the composer band, and leave the mirror
- *  with it. Only a row that holds sparkles and nothing else: such a row is never transcript.
- *  Codex also paints one empty background row above the `›` as composer chrome (required by
- *  {@link hasComposerChrome}); pull that into the band too so a dark bar does not stay in the mirror. */
+ *  with it. Only a row that holds sparkles and nothing else: such a row is never transcript. */
 function bandTop(lines: StyledLine[], texts: string[], promptRow: number): number {
   let top = promptRow;
   while (
@@ -187,19 +183,6 @@ function bandTop(lines: StyledLine[], texts: string[], promptRow: number): numbe
     promptRow - top < MAX_DRAFT_ROWS &&
     isBlank(texts[top - 1]!) &&
     !isBlank(lineText(lines[top - 1]!))
-  ) {
-    top--;
-  }
-  const background = lines[promptRow]?.segments.find((segment) => segment.text.startsWith("›"))?.bg;
-  if (background === undefined) return top;
-  while (
-    top > 0 &&
-    promptRow - top < MAX_DRAFT_ROWS &&
-    isBlank(texts[top - 1]!) &&
-    lines[top - 1]!.segments.length > 0 &&
-    lines[top - 1]!.segments.every(
-      (segment) => segment.bg === background && segment.text.trim() === "",
-    )
   ) {
     top--;
   }

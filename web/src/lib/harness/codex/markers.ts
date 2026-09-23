@@ -242,20 +242,14 @@ export function isWorkingContextRow(text: string): boolean {
   return WORKING_CONTEXT_ROW.test(rstrip(text));
 }
 
-// The `›` prompt row. Column 0 — but transcript ECHOES of submitted messages paint the same
+// The `› ` prompt row. Column 0 — but transcript ECHOES of submitted messages paint the same
 // prefix, so callers must only trust this at the located composer position.
-//
-// Codex 0.156 paints an empty composer as a bare `›` (no trailing space, no
-// "Ask Codex to do anything" placeholder). Older builds keep `› <body>`; both must match, or
-// locateComposer returns null and the phone mirrors the input box / refuses replies.
-const PROMPT = /^›(?: (.*))?$/;
+const PROMPT = /^› (.*)$/;
 
-/** Body of a `›` prompt-shaped row (rstripped), or null when the line is not one.
- *  A bare `›` is an empty body (`""`), not a miss — 0.156's idle composer. */
+/** Body of a `› ` prompt-shaped row (rstripped), or null when the line is not one. */
 export function promptText(text: string): string | null {
   const m = PROMPT.exec(rstrip(text));
-  if (m === null) return null;
-  return m[1] ?? "";
+  return m === null ? null : m[1]!;
 }
 
 /** The empty composer's placeholder, captured verbatim; chrome also requires its dim renderer style. */
