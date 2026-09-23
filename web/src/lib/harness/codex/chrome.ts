@@ -43,6 +43,7 @@ const MAX_DRAFT_ROWS = 100;
 const CONTINUATION = /^ {2}\s*\S/;
 const PROMPT_PREFIX = "› ";
 const FULLSCREEN_HINT = /^ {2}(?:f4 inspect activity · )?\? shortcuts(?: +⚠ .+)?$/;
+const FULLSCREEN_WARNING = /^ {2,}⚠ [1-9]\d* warnings? · f2 to view$/;
 
 /**
  * The live Codex composer paints its prompt arrow as a dedicated bold segment and fills the whole
@@ -134,7 +135,8 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   lines = normalizeComposerParticles(lines);
   const texts = lines.map((l) => rstrip(lineText(l)));
   const lastRow = lastNonBlankIndex(texts);
-  const statusRow = lastRow > 0 && FULLSCREEN_HINT.test(texts[lastRow]!) &&
+  const statusRow = lastRow > 0 &&
+    (FULLSCREEN_HINT.test(texts[lastRow]!) || FULLSCREEN_WARNING.test(texts[lastRow]!)) &&
     isComposerStatusRow(texts[lastRow - 1]!, lines[lastRow - 1]) ? lastRow - 1 : lastRow;
   if (statusRow < 0) return null;
   const regularStatus = isComposerStatusRow(texts[statusRow]!, lines[statusRow]);
