@@ -30,13 +30,15 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.12.0+collie.1] - 2026-09-23
+
 ### Changed
 
-- **Collie adopts the upstream composer and docked dialog cards.** Merge v1.12.0 with attachment chips, multi-photo upload, floating terminal-draft notice, subpath serving and update fixes. Codex keeps native QA, Plan and Review screens; guarded sends, compact statusline and iOS viewport behavior remain. See [the full upstream changes and merge decisions](./docs/upstream-v1.12.0.md).
+- **Collie adopts the upstream composer and docked dialog cards.** Merge v1.12.0 with attachment chips, multi-photo upload, floating terminal-draft notice, subpath serving and update fixes. Codex keeps native QA, Plan and Review screens; guarded sends, compact statusline and iOS viewport behavior remain. See [the full upstream changes and merge decisions](./docs/upstream-v1.12.0.md). ([435f3387](https://github.com/zhdsmy/collie/commit/435f3387))
 
 ### Fixed
 
-- **Codex fullscreen keeps its composer and statusline usable.** Recognize the shortcut hint below the native status row without binding a transcript echo as input.
+- **Codex fullscreen keeps its composer and statusline usable.** Recognize the shortcut hint below the native status row without binding a transcript echo as input. ([435f3387](https://github.com/zhdsmy/collie/commit/435f3387))
 
 ## [1.11.1+collie.8] - 2026-09-23
 
