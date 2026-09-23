@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.12.0+collie.3] - 2026-09-23
+
 ### Changed
 
-- **Codex follows Scrollback input and status rows again.** Roll back the local bare-arrow and warning-only fullscreen handling while keeping shortcut hints and guarded sends.
+- **Codex follows Scrollback input and status rows again.** Roll back the local bare-arrow and warning-only fullscreen handling while keeping shortcut hints and guarded sends. ([62b8017c](https://github.com/zhdsmy/collie/commit/62b8017c))
 
 ## [1.12.0+collie.2] - 2026-09-23
 
