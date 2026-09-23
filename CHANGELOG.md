@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **The resumed-history card absorbs superseded repaint fragments.** v0.21.4 repaints the resume panel as the pane scrolls; the leftovers no longer resurface above the card, and the card keeps the announcement's session metadata.
+
 ## [1.12.1+collie.2] - 2026-09-23
 
 ### Changed
