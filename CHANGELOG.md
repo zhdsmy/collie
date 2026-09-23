@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.12.1+collie.2] - 2026-09-23
+
 ### Changed
 
-- **Codex warnings show their count beside the status icon.** The compact warning button remains tappable and keeps its full hint for hover and screen readers.
+- **Codex warnings show their count beside the status icon.** The compact warning button remains tappable and keeps its full hint for hover and screen readers. ([317b4d6f](https://github.com/AltanS/collie/commit/317b4d6f))
 
 ## [1.12.1+collie.1] - 2026-09-23
 
