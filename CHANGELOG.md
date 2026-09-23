@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.12.0+collie.4] - 2026-09-23
+
 ### Fixed
 
-- **Codex statusline keeps Plan and warnings concise.** Hide the duplicate Plan hint and open native warnings from a compact icon, including while Codex works.
+- **Codex statusline keeps Plan and warnings concise.** Hide the duplicate Plan hint and open native warnings from a compact icon, including while Codex works. ([3d047df1](https://github.com/zhdsmy/collie/commit/3d047df1))
 
 ## [1.12.0+collie.3] - 2026-09-23
 
