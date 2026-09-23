@@ -568,8 +568,9 @@ function CodexControlledStatusline({
         <Button key={field.index} type="button" variant="ghost" title={label}
           aria-label={label} disabled={codexWarning.disabledReason !== undefined}
           onClick={() => codexWarning.onClick(count)}
-          className="h-5 w-5 shrink-0 rounded-sm border-0 p-0 text-amber-400 hover:bg-white/10 has-[>svg]:px-0">
+          className="h-5 w-auto shrink-0 gap-0.5 rounded-sm border-0 px-1 py-0 text-[length:inherit] font-normal leading-none text-amber-400 hover:bg-white/10 has-[>svg]:px-1">
           <TriangleAlert aria-hidden="true" className="size-3.5" strokeWidth={2.25} />
+          {count}
         </Button>,
       );
       index++;

@@ -92,7 +92,17 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
   });
 
   await page.goto("/pane/w1:p1");
-  await page.getByRole("button", { name: "⚠ 1 warning · f2 to view" }).click();
+  const warning = page.getByRole("button", { name: "⚠ 1 warning · f2 to view" });
+  await warning.scrollIntoViewIfNeeded();
+  await expect(warning).toHaveText("1");
+  await expect(warning).toBeInViewport();
+  expect(await warning.evaluate((button) => {
+    const bounds = button.getBoundingClientRect();
+    const previous = button.previousElementSibling?.getBoundingClientRect();
+    const next = button.nextElementSibling?.getBoundingClientRect();
+    return (!previous || previous.right <= bounds.left) && (!next || bounds.right <= next.left);
+  })).toBe(true);
+  await warning.click();
   await expect(page.getByText(/Warnings · 1 of 1/)).toBeVisible();
   const type = page.getByRole("button", { name: "Type into terminal" });
   await type.click();

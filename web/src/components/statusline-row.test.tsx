@@ -557,7 +557,7 @@ it.each(["⚠ 1 warning", "⚠ 3 warnings"])("renders %s as one accessible warni
   const button = view.getByRole("button", { name: `${warning} · f2 to view` });
   expect(button).toHaveAttribute("title", `${warning} · f2 to view`);
   expect(button).toHaveClass("text-amber-400");
-  expect(button).toHaveTextContent("");
+  expect(button).toHaveTextContent(Number(warning.match(/\d+/)![0]).toString());
   expect(button.querySelector("svg")).toHaveClass("lucide-triangle-alert");
   expect(view.container.textContent).toContain("0.156.1");
   expect(view.container.textContent).toContain("other (shift+tab to cycle)");

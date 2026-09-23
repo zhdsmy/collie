@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Codex warnings show their count beside the status icon.** The compact warning button remains tappable and keeps its full hint for hover and screen readers.
+
 ## [1.12.1+collie.1] - 2026-09-23
 
 ### Changed
