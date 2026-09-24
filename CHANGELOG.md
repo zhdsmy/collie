@@ -30,17 +30,19 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.1] - 2026-09-24
+
 ### Added
 
-- **Changes opens from the action belt.** Review changed files and diffs from the focused pane; the belt keeps its compact default and offers larger sizes in Settings.
+- **Changes opens from the action belt.** Review changed files and diffs from the focused pane; the belt keeps its compact default and offers larger sizes in Settings. ([93eecc46](https://github.com/zhdsmy/collie/commit/93eecc46))
 
 ### Changed
 
-- **Updates stay visible through every machine.** Merge the upstream update mode, dashboard Focus and Changes tabs, and translated navigation while preserving Collie's existing agent controls.
+- **Updates stay visible through every machine.** Merge the upstream update mode, dashboard Focus and Changes tabs, and translated navigation while preserving Collie's existing agent controls. ([93eecc46](https://github.com/zhdsmy/collie/commit/93eecc46))
 
 ### Fixed
 
-- **Phone-started Mac updates use the new install.** Merge the upstream updater correction and keep failure details visible in the update screen.
+- **Phone-started Mac updates use the new install.** Merge the upstream updater correction and keep failure details visible in the update screen. ([93eecc46](https://github.com/zhdsmy/collie/commit/93eecc46))
 
 ## [1.12.1+collie.5] - 2026-09-24
 
