@@ -13,9 +13,8 @@ import { installApiStub } from "./fixtures/api";
 //    the overflow; WebKit counted it as scrollable and let a thumb nudge the belt up. The fix made
 //    every box inside the scroller fit the band, and this case is the guard: `scrollHeight` equals
 //    `clientHeight`, and a `scrollTop` written by hand reads back as 0.
-//  * The last pill is reachable. The scroller ends in a spacer as wide as the pinned block plus 16px
-//    of air (`BELT_END_AIR`, operator, 2026-09-23), so at `scrollLeft` max the last real pill stops
-//    at least 16px LEFT of the pinned block, fade included, rather than hiding under it.
+//  * The last pill is reachable. The scroller ends in a spacer as wide as the pinned block,
+//    so at `scrollLeft` max the last action stays visible beside Changes.
 //
 // Runs under every `app-*` project, so Chromium and WebKit answer the same questions.
 
@@ -38,8 +37,9 @@ test("the belt scrolls sideways only, in this engine too", async ({ page }) => {
   expect(box.scrollTop).toBe(0);
 });
 
-test("the last pill stops 16px clear of the pinned block at the scroll end", async ({ page }) => {
-  await page.goto("/pane/w1:p1");
+test("the last pill stops beside the pinned block at the scroll end", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto("/pane/w2:p1");
   const switchButton = page.getByRole("button", { name: en["chat.switcher.aria"] });
   await expect(switchButton).toBeVisible();
 
@@ -59,7 +59,8 @@ test("the last pill stops 16px clear of the pinned block at the scroll end", asy
   });
   // A wide viewport may fit every pill; the promise only exists when the belt overflows.
   test.skip(!edges.overflows, "every pill fits at this width, nothing scrolls");
-  expect(edges.lastRight).toBeLessThanOrEqual(edges.blockLeft - 16);
+  expect(edges.lastRight).toBeLessThanOrEqual(edges.blockLeft - 6);
+  expect(edges.lastRight).toBeGreaterThanOrEqual(edges.blockLeft - 16);
 });
 
 // ONE SCALE FOR THE WHOLE BELT (operator, 2026-09-23). The Settings row "Action belt size" stores
@@ -127,7 +128,7 @@ test.describe("the belt's size setting", () => {
         const block = el.closest('[data-slot="composer-actions"]')!.querySelector(":scope > span")!;
         return { lastRight: last.getBoundingClientRect().right, blockLeft: block.getBoundingClientRect().left };
       });
-      expect(edges.lastRight).toBeLessThanOrEqual(edges.blockLeft - 16);
+      expect(edges.lastRight).toBeLessThanOrEqual(edges.blockLeft - 6);
     });
   }
 });

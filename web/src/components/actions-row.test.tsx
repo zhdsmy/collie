@@ -199,9 +199,7 @@ describe("ActionsRow", () => {
     expect(scroller.className).not.toMatch(/(?:^|\s)pr-3(?=\s|$)/);
     const spacer = scroller.lastElementChild!;
     expect(spacer.getAttribute("aria-hidden")).toBe("true");
-    // 117 (the block's first-frame fallback at the default scale: 85 + the 32px mark) + 16
-    // (BELT_END_AIR, the operator's wider right margin).
-    expect(spacer.getAttribute("style")).toBe("width: 133px;");
+    expect(spacer.getAttribute("style")).toBe("width: 61px;");
     // The masked wrapper one level out never carries a right-hand gradient stop — `edges="left"`
     // took effect.
     const masked = scroller.parentElement!;
@@ -228,9 +226,9 @@ describe("ActionsRow", () => {
     expect(pill).not.toHaveAttribute("aria-haspopup");
     await userEvent.click(pill);
     expect(onChanges).toHaveBeenCalledTimes(1);
-    // 155 (117 + the 32px pill + its 6px gap, at the default scale) + 16 of end air.
+    // The Changes pill adds its own width and gap to the pinned block.
     const scroller = document.querySelector<HTMLElement>(".overflow-x-auto")!;
-    expect(scroller.lastElementChild!.getAttribute("style")).toBe("width: 171px;");
+    expect(scroller.lastElementChild!.getAttribute("style")).toBe("width: 99px;");
   });
 
   it("has no Changes pill without the prop", () => {
@@ -313,9 +311,9 @@ describe("ActionsRow", () => {
       />,
     );
     expect(belt().style.getPropertyValue("--belt-scale")).toBe("1.5");
-    // 85 + the 48px mark + 16 of end air.
+    // 29px of fixed chrome and the 48px mark.
     const scroller = document.querySelector<HTMLElement>(".overflow-x-auto")!;
-    expect(scroller.lastElementChild!.getAttribute("style")).toBe("width: 149px;");
+    expect(scroller.lastElementChild!.getAttribute("style")).toBe("width: 77px;");
   });
 
   it("gives the scroller symmetric px-3 padding, no trailing spacer, and OverflowEdges its default edges when there is no handle", () => {

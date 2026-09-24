@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **The action belt leaves less empty space before Changes.** Its pinned buttons use a short fade without extra end padding.
+
 ## [1.13.1+collie.1] - 2026-09-24
 
 ### Added
