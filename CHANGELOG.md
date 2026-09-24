@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.2] - 2026-09-25
+
 ### Fixed
 
-- **The action belt leaves less empty space before Changes.** Its pinned buttons use a short fade without extra end padding.
+- **The action belt leaves less empty space before Changes.** Its pinned buttons use a short fade without extra end padding. ([5861bfb2](https://github.com/zhdsmy/collie/commit/5861bfb2))
 
 ## [1.13.1+collie.1] - 2026-09-24
 
