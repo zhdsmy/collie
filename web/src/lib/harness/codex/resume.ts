@@ -1,4 +1,4 @@
-// Codex 0.154's SAVED-SESSION picker — `/resume` inside a session, `codex resume`/`codex fork` from
+// Codex's SAVED-SESSION picker — `/resume` inside a session, `codex resume`/`codex fork` from
 // a shell. Unlike the bottom-pane model picker (picker.ts), this one is a FULL-SCREEN view with its
 // own search field, a filter/status/sort toolbar, two row densities and a footer progress rule.
 // RESUME_NOTES.md records the captures and the verified key recipes; parsing here stays I/O-free.
@@ -15,15 +15,16 @@ import { lastNonBlankIndex, painted, rstrip } from "./markers";
 
 /** `SessionPickerAction::title()` — the two actions that draw this screen. */
 const TITLE = /^(?:Resume|Fork) a previous session$/;
-/** The search row, left-chromed by one column. The toolbar follows it on the same row, so only the
- *  prefix is read, and Codex's own search keeps its text free of spaces. */
+/** The search row, left-chromed by one column. The toolbar may share it (0.154) or precede it
+ *  (0.156); Codex's own search keeps its text free of spaces. */
 const SEARCH = /^ (?:Type to search|Search: (\S*))/;
+const TOOLBAR = /^ Filter:\s+Cwd\s+All\s+Status:\s+Active\s+Archived\s+Sort:\s+Updated\s+Created$/;
 /** The footer's progress rule: a full-width `─` rail with its label painted over the right end. */
 const PROGRESS = /^─+ (\d+) ?\/ ?(\d+) · \d+% ?─$/;
 /** `format_relative_time` — everything the 12-column date cell can hold. */
 const RELATIVE_TIME = /^(?:now|\d+s ago|\d+m ago|\d+h ago|\d+d ago|-)$/;
-/** `selection_marker` inside the 4-column list inset: `❯ ` selected, `⌄ ` expanded, `  ` plain. */
-const ROW = /^ {2}([❯⌄] | {2})(.*)$/;
+/** `selection_marker` inside the 4-column list inset: `❯ ` or `› ` selected, `⌄ ` expanded. */
+const ROW = /^ {2}([❯›⌄] | {2})(.*)$/;
 /** Non-row chrome the list viewport itself paints. */
 const MORE = /^(?:↑ more|↓ more|↓ loading more)$/;
 const STATUS_LINE =
@@ -151,8 +152,10 @@ export function detectResumeRegion(lines: StyledLine[]): ResumeRegion | null {
   // The header owns the top of a screen it clears itself: nothing but blanks may precede it.
   if (texts.slice(0, start).some((text) => text.trim() !== "")) return null;
 
-  // [header, gap, search, gap, list …, rule, hints]
-  const searchIndex = start + 2;
+  // 0.156 moved the toolbar from the search row to its own row above the search.
+  const separateToolbar = TOOLBAR.test(texts[start + 2] ?? "");
+  const searchIndex = start + (separateToolbar ? 4 : 2);
+  if (separateToolbar && texts[start + 3]?.trim() !== "") return null;
   if (searchIndex + 1 > tail || texts[start + 1]?.trim() !== "" || texts[searchIndex + 1]?.trim() !== "") {
     return null;
   }

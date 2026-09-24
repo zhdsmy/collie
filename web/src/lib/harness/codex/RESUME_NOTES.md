@@ -1,5 +1,13 @@
 # Codex saved-session picker (`/resume`, `codex fork`)
 
+## Codex 0.156.1
+
+An isolated CLI capture and an in-session `/resume` show the toolbar on its own row before search,
+with `›` as the bold selected marker. The footer says `esc start new` from `codex resume` and
+`esc exit` in a conversation. Search still uses `Search: …`; selection and progress are unchanged.
+
+## Codex 0.154.0
+
 Captured and live-verified on **2026-09-16**, Codex **0.154.0**, in a disposable Herdr
 tab. Its `CODEX_HOME` was isolated under a temporary directory, holding a copy of the
 state database with every row deleted and four synthetic sessions written back, plus

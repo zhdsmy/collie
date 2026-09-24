@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex 0.156.1 saved sessions open as compact cards again.** Both `codex resume` and in-chat `/resume` use the existing guarded selection controls on phones.
+
 ## [1.12.1+collie.3] - 2026-09-24
 
 ### Fixed

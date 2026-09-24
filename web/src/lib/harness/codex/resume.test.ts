@@ -5,6 +5,8 @@ import { parseAnsi } from "../../ansi";
 import { lineText, splitLines } from "../../blocks";
 import { detectPickerRegion } from "./picker";
 import { detectResumeRegion } from "./resume";
+import { codexBuildBlocks } from "./index";
+import { codexResumeFrame } from "../../../test/codex-resume-frame";
 
 const PANES = join(import.meta.dirname, "../../../fixtures/panes");
 const text = (state: string) => readFileSync(join(PANES, `codex--v0154-resume-${state}.txt`), "utf8");
@@ -13,6 +15,26 @@ const fixture = (state: string) => parse(text(state));
 const model = (state: string) => detectResumeRegion(fixture(state))!.model;
 
 describe("Codex saved-session picker parsing", () => {
+  it.each(["start new", "exit"] as const)("lifts the 0.156.1 %s screen into a card", (exit) => {
+    const lines = parse(codexResumeFrame(exit));
+    const picker = detectResumeRegion(lines)!.model;
+    expect(picker.options.map((option) => option.label)).toEqual([
+      "Refactor the picker row formatter",
+      "Explain the fixture grammar",
+    ]);
+    expect(picker.options.map((option) => option.pointed)).toEqual([true, false]);
+    expect(codexBuildBlocks(lines)[0]).toMatchObject({ kind: "picker", picker });
+    const searched = detectResumeRegion(parse(codexResumeFrame(exit, "zz")))!.model;
+    expect(searched).toMatchObject({ query: "zz", options: [] });
+  });
+
+  it("refuses incomplete or unpainted 0.156.1 screens", () => {
+    const frame = codexResumeFrame("exit");
+    expect(detectResumeRegion(parse(frame.replace("Filter:", "Controls:")))).toBeNull();
+    expect(detectResumeRegion(parse(frame.replace("1 / 2", "3 / 2")))).toBeNull();
+    expect(detectResumeRegion(parse(frame.replace("\x1b[1m›", "\x1b[22m›")))).toBeNull();
+  });
+
   it("reads the dense rows, their dates and the native pointer", () => {
     const picker = model("dense");
     expect(picker.title).toBe("Resume a previous session");

@@ -5,6 +5,7 @@ import { fixtureSnapshot, paneTextWithDraft } from "../src/test/handlers";
 import { en } from "../src/lib/i18n/messages/en";
 import { zh } from "../src/lib/i18n/messages/zh";
 import { de } from "../src/lib/i18n/messages/de";
+import { codexResumeFrame } from "../src/test/codex-resume-frame";
 
 const fixture = (state: string) => readFileSync(new URL(
   `../src/fixtures/panes/codex--v0154-resume-${state}.txt`, import.meta.url,
@@ -76,6 +77,43 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     await expect(panel.locator('[data-slot="session-options"] button')).toHaveCount(1);
     expect(keys).toEqual([]);
     await panel.getByRole("button", { name: "Refactor the picker row formatter into three small helpers", exact: true }).click();
+    await expect(panel).toHaveCount(0);
+    expect(keys).toEqual([["Enter"]]);
+  });
+}
+
+for (const [entry, exit] of [["codex resume", "start new"], ["/resume", "exit"]] as const) {
+  test(`Codex 0.156.1 ${entry} opens a compact session card`, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 844 });
+    await page.addInitScript(() => localStorage.setItem("collie:locale:v1", "en"));
+    await installApiStub(page);
+    let chosen = false;
+    const keys: string[][] = [];
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+        ? Object.assign({}, agent, { agent: "codex", status: "idle", hasSession: true }) : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
+      (route) => route.fulfill({ json: {
+        paneId: "w1:p1", text: chosen ? paneTextWithDraft() : codexResumeFrame(exit), truncated: false, revision: 1,
+      } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
+      // SAFETY: this route receives the app's own sendKeys request body.
+      const body = route.request().postDataJSON() as { keys: string[]; expected_prompt?: string };
+      expect(body.keys).toEqual(["Enter"]);
+      expect(body.expected_prompt).toContain("Resume a previous session");
+      keys.push(body.keys);
+      chosen = true;
+      return route.fulfill({ json: { ok: true } });
+    });
+
+    await page.goto("/pane/w1:p1");
+    const panel = page.getByRole("group", { name: en["dialog.sessions.title"], exact: true });
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('[data-slot="session-options"] button')).toHaveCount(2);
+    expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await panel.getByRole("button", { name: "Refactor the picker row formatter" }).click();
     await expect(panel).toHaveCount(0);
     expect(keys).toEqual([["Enter"]]);
   });
