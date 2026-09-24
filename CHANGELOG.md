@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.3] - 2026-09-25
+
 ### Fixed
 
-- **Chinese action belts label compaction as compression.** The Compact control now reads 压缩 in Simplified Chinese and 壓縮 in Traditional Chinese.
+- **Chinese action belts label compaction as compression.** The Compact control now reads 压缩 in Simplified Chinese and 壓縮 in Traditional Chinese. ([5a2d7f33](https://github.com/zhdsmy/collie/commit/5a2d7f33))
 
 ## [1.13.1+collie.2] - 2026-09-25
 
