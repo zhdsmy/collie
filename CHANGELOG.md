@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.4] - 2026-09-25
+
 ### Fixed
 
-- **Hermes resume history folds repeated repaint fragments.** Split history headers and repeated earlier-message notices now join the single history card instead of cluttering the mirror.
+- **Hermes resume history folds repeated repaint fragments.** Split history headers and repeated earlier-message notices now join the single history card instead of cluttering the mirror. ([d842f9d9](https://github.com/zhdsmy/collie/commit/d842f9d9))
 
 ## [1.13.1+collie.3] - 2026-09-25
 
