@@ -30,39 +30,9 @@ export function painted(line: StyledLine, flag: "bold" | "dim"): boolean {
   return text.length > 0 && text.every((segment) => segment[flag] === true);
 }
 
-// The status row under the composer. v0.149.0 put at least two fields before Context:
-// `  <model> · <cwd> · Context N% left[ · weekly N% left]`. v0.150.1 moved Context directly
-// after the model and put branch/change fields after it:
-// `  <model> · Context N% left · <branch> · <changes> · weekly N% left`.
-//
-// Everything around the Context token is OPAQUE — model names, directories and branch names
-// change per session and release. What IS the grammar: the two-space indent, the model field,
-// the Context token (`left`, with `used` also accepted), plus either another field before Context
-// (the old shape) or one after it (the new shape). Requiring that extra field keeps a minimal
-// status-like prose row from claiming the composer; requiring the indent keeps a transcript line
-// that merely mentions a context percentage from claiming it at column 0.
-//
-// KNOWN LIMIT — what the `Context` token can and cannot decide.
-//
-// The token is present only when the operator has `context-remaining` in `tui.status_line`.
-// 0.149.0 shipped it in the default; 0.150.1 does NOT. Its default row is TWO fields —
-// `  <model> · <cwd>` — so this regex alone leaves every plain 0.150.1 pane dark: no composer
-// located, no draft, no status strip, replies refused. Hence the second acceptor below.
-//
-// STATUS_ROW stays as the fast path for rows that still carry `Context`, and it is the ONLY
-// text-shaped acceptor. The styled acceptor keys on RENDERER PAINT — an unstyled two-space
-// indent, coloured non-dim fields, and dim ` · ` separators — and never on field names, because
-// field names are exactly the part the operator configures. Current Codex may paint one final
-// low-priority field together with its separator as a single dim segment (` · Main [default]`);
-// that suffix is accepted only after two ordinary coloured fields and only at the end. A text-only
-// lookalike pasted or echoed into the transcript (`  model · Context 50% left` typed by hand, or
-// prose that happens to contain ` · `) carries no SGR at all, so it is still refused.
-//
-// Still unsupported: a DISABLED status line (`tui.status_line = null`). There is then no row
-// under the prompt to anchor on, and the rows that remain are transcript. Anchoring the composer
-// on the `› ` prompt alone is not available — Codex ECHOES submitted messages into the
-// transcript with the same prefix, so a prompt-only anchor would bind to an echo and reply into
-// the wrong place. Such a pane falls back to the raw mirror with replies refused: safe, and dark.
+// Context-bearing status rows also appear without field paint in the current fullscreen footer.
+// Other configurable status rows are identified by renderer paint. The final low-priority field
+// may share one dim segment with its separator (` · Main [default]`).
 const STATUS_ROW =
   /^ {2}\S.* · (?:(?:.* · )+Context \d+% (?:left|used)\b|Context \d+% (?:left|used)\b · \S)/;
 
@@ -155,7 +125,7 @@ function foldTrailingPadding(segments: AnsiSegment[]): AnsiSegment[] | null {
 }
 
 /**
- * The 0.150.1 default status row, recognised by its PAINT. All of these must hold, or the row is
+ * A native status row, recognised by its PAINT. All of these must hold, or the row is
  * refused: the styled line must be the same row as `text`; the segments must read as an unstyled
  * two-space indent then `field (sep field)*`, optionally ending with one combined dim
  * `sep + field` segment after two ordinary fields; and the field count must stay in bounds. Prose
@@ -194,7 +164,7 @@ function isStyledStatusRow(text: string, line: StyledLine): boolean {
 
 /** True when the row could be the composer's status line. Never decisive alone — the composer
  *  is located by the prompt-row-above-status shape at the buffer tail, not by any single row.
- *  `line` is the same row, styled; without it only the `Context`-bearing shape can be accepted. */
+ *  `line` is the same row, styled; Context and working queue rows also have text shapes. */
 export function isStatusRow(text: string, line?: StyledLine): boolean {
   const row = rstrip(text);
   if (STATUS_ROW.test(row) || INLINE_QUEUE_CONTEXT_ROW.test(row)) return true;

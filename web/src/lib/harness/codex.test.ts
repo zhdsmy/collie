@@ -74,18 +74,6 @@ const PLANS = [
   "codex--v0154-plan-short.txt",
 ];
 
-// The saved-session picker. `expanded` is deliberately NOT here: a row opened with ctrl+e carries a
-// detail block that is not a row grammar, so the screen is meant to stay raw and it gates that as a
-// neutral capture instead.
-const RESUME = [
-  "codex--v0154-resume-comfortable.txt",
-  "codex--v0154-resume-dense.txt",
-  "codex--v0154-resume-dense-moved.txt",
-  "codex--v0154-resume-list.txt",
-  "codex--v0154-resume-search.txt",
-  "codex--v0154-resume-search-none.txt",
-];
-
 const ASYNC_QUESTIONS = [
   "codex--async-qa-options.txt", "codex--async-qa-selected.txt", "codex--async-qa-other-empty.txt",
   "codex--async-qa-other-text.txt", "codex--async-qa-other-stored.txt", "codex--async-qa-freeform.txt",
@@ -123,8 +111,6 @@ const PINNED = [
   "codex--v0154-plan-stayed.txt",
   "codex--v0154-question-completed.txt",
   ...QUESTIONS,
-  ...RESUME,
-  "codex--v0154-resume-expanded.txt",
   "codex--v0154-statusline-disabled-default.txt",
   "codex--v0154-statusline-disabled-draft.txt",
   "codex--v0154-statusline-disabled-idle.txt",
@@ -144,7 +130,6 @@ const DIALOG = [
   ...PICKERS,
   ...PLANS,
   ...QUESTIONS,
-  ...RESUME,
   "codex--approval-exec.txt",
   "codex--ask-fruit.txt",
   "codex--ask-wizard-q1.txt",
@@ -152,7 +137,7 @@ const DIALOG = [
   "codex--trust-prompt.txt",
 ];
 
-const ownFixtures = [...PICKERS, ...RESUME, "codex--approval-exec.txt"];
+const ownFixtures = [...PICKERS, "codex--approval-exec.txt"];
 const neutralFixtures = allCodexFixtures.filter((f) => !ownFixtures.includes(f));
 
 describeAdapterConformance(codexAdapter, {
@@ -754,7 +739,7 @@ describe("the styled status-row acceptor fails closed", () => {
     expect(isStatusRow(text, line)).toBe(false);
   });
 
-  it("still accepts a Context-bearing row on text alone — the old fast path", () => {
+  it("accepts the Context-bearing fullscreen footer on text alone", () => {
     expect(isStatusRow("  model x · /some/dir · Context 50% left")).toBe(true);
   });
 });

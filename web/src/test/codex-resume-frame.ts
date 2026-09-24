@@ -1,5 +1,5 @@
 // Sanitized 0.156.1 screen shape observed in isolated `codex resume` and in-session `/resume`.
-export function codexResumeFrame(exit: "start new" | "exit", query = ""): string {
+export function codexResumeFrame(exit: "start new" | "exit", query = "", matches = false): string {
   return [
     " \x1b[1mResume a previous session\x1b[0m",
     "",
@@ -7,11 +7,11 @@ export function codexResumeFrame(exit: "start new" | "exit", query = ""): string
     "",
     query ? ` Search: ${query}` : " Type to search",
     "",
-    ...(query ? ["  No results for your search"] : [
+    ...(query && !matches ? ["  No results for your search"] : [
       "  \x1b[1m› \x1b[22m4d ago      Refactor the picker row formatter",
-      "    5d ago      Explain the fixture grammar",
+      ...(!query ? ["    5d ago      Explain the fixture grammar"] : []),
     ]),
-    `\x1b[2m${"─".repeat(60)} ${query ? "0 / 0" : "1 / 2"} · 100% ─\x1b[0m`,
+    `\x1b[2m${"─".repeat(60)} ${query ? matches ? "1 / 1" : "0 / 0" : "1 / 2"} · 100% ─\x1b[0m`,
     ` enter resume   ${query ? "esc clear search" : `esc ${exit}`}   ctrl+c quit   tab focus   ←/→ option`,
     " ctrl+o comfy   ctrl+t preview   ctrl+e exp   ↑/↓ browse",
   ].join("\n");

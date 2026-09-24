@@ -1,5 +1,5 @@
 /**
- * The reasoning levels Codex 0.154 actually offers, and no others: its "Select Reasoning Level"
+ * The reasoning levels Codex offers, and no others: its "Select Reasoning Level"
  * picker lists Low / Medium / High / Extra high plus a "More reasoning…" step holding Max and Ultra
  * (`codex--v0154-picker-effort.txt`). There is no `none` and no `minimal` row to choose, so a switch
  * asking for one could only ever come back `unsupported-effort`.
@@ -55,7 +55,7 @@ const GPT_MODEL = /^gpt-[a-z0-9][a-z0-9._:/-]*$/i;
 /**
  * One statusline field, with the level Codex prints BESIDE it rather than inside it.
  *
- * Codex 0.154 splits the two: the row reads `gpt-5.6-sol · high`, so the field that carries the model
+ * Codex splits the two: the row reads `gpt-5.6-sol · high`, so the field that carries the model
  * carries no level at all and `parseCodexModelField` alone reports `effort: null`. Older statuslines
  * (and the "Model changed to …" line) keep them together. Passing the neighbour covers both without
  * guessing: the join only succeeds when the neighbour really is a level, because

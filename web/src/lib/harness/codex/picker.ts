@@ -1,4 +1,4 @@
-// Codex 0.154 pickers: verified title + painted rows + exact tail footer. PICKER_NOTES.md
+// Codex model/statusline pickers: verified title + painted rows + exact tail footer. PICKER_NOTES.md
 // records the native keyboard recipes; parsing here remains I/O-free.
 import { lineText, type StyledLine } from "../../blocks";
 import type { PickerModel, PickerOption } from "../picker-model";

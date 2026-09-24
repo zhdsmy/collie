@@ -2,7 +2,7 @@ import type { AnsiSegment } from "../../ansi";
 import { lineText, type StyledLine } from "../../blocks";
 import { isComposerStatusRow, lastNonBlankIndex } from "./markers";
 
-// Codex 0.154 paints single-dot Braille particles into SPACE cells, including spaces inside
+// Codex paints single-dot Braille particles into SPACE cells, including spaces inside
 // real drafts. Each particle has its own RGB ink on the composer background. Typed Braille
 // keeps the text area's normal ink; matching the glyph alone would corrupt real input.
 const PARTICLE = /^[⠁⠂⠄⠈⠐⠠⡀⢀]+$/u;

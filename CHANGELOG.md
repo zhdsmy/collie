@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Codex session cards follow the current picker layout.** Remove retired resume screens and fixtures while retaining guarded selection.
+
 ## [1.12.1+collie.4] - 2026-09-24
 
 ### Fixed

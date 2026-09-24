@@ -49,7 +49,7 @@ const FULLSCREEN_HINT = /^ {2}(?:f4 inspect activity · )?\? shortcuts(?: +⚠ .
  * composer row with one background. Picker selections also use a bold arrow, but keep the option
  * text in the same segment; submitted echoes are dim and unpainted. Advanced reasoning may color
  * the live arrow amber. This distinction is the proof
- * needed by the broad 0.150.1 footer grammars, whose text is intentionally configurable.
+ * needed by configurable footer grammars, including the text-shaped Context row.
  */
 function hasComposerChrome(lines: StyledLine[], promptRow: number, statusRow: number): boolean {
   const prompt = lines[promptRow];

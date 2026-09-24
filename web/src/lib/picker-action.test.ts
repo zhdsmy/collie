@@ -17,6 +17,7 @@ import { parseAnsi } from "./ansi";
 import { splitLines, type StyledLine } from "./blocks";
 import { adapterFor } from "./harness/registry";
 import { codexAdapter } from "./harness/codex";
+import { codexResumeFrame } from "../test/codex-resume-frame";
 import type { HarnessAdapter } from "./harness/types";
 import {
   PICKER_SEARCH_MAX_LENGTH,
@@ -256,18 +257,21 @@ describe("submitPickerIntent", () => {
   });
 
   it("resumes the second identical title by its native row position", async () => {
-    const duplicate = (state: string) => {
-      const source = fixtureText(`codex--v0154-resume-${state}.txt`).replaceAll(
-        "Explain how the fixture grammar decides a picked row",
-        "Refactor the picker row formatter into three small helpers",
+    const duplicate = (moved: boolean) => {
+      let source = codexResumeFrame("exit").replace(
+        "Explain the fixture grammar", "Refactor the picker row formatter",
       );
+      if (moved) source = source
+        .replace("\x1b[1m› \x1b[22m4d ago", "  4d ago")
+        .replace("    5d ago", "  \x1b[1m› \x1b[22m5d ago")
+        .replace("1 / 2", "2 / 2");
       const block = codexAdapter.buildBlocks(splitLines(parseAnsi(source)))
         .find((candidate) => candidate.kind === "picker");
       if (!block || block.kind !== "picker") throw new Error("missing duplicate resume picker");
       return block.picker;
     };
-    const first = duplicate("dense");
-    const second = duplicate("dense-moved");
+    const first = duplicate(false);
+    const second = duplicate(true);
     scriptWithClosedPicker(first, first, first, second, second, null);
     const result = await submitPickerIntent(args(first, {
       kind: "choose", id: first.options[1]!.id,
@@ -365,10 +369,14 @@ describe("submitPickerIntent", () => {
   });
 
   it("accepts only the session search hint changes, including an empty result", async () => {
-    const original = fixturePicker("codex--v0154-resume-dense.txt");
-    const empty = fixturePicker("codex--v0154-resume-search-none.txt");
-    original.footer = " enter resume   ctrl+a archive   esc start new   ctrl+c quit";
-    empty.footer = " enter resume   esc clear search   ctrl+c quit";
+    const resume = (source: string) => {
+      const block = codexAdapter.buildBlocks(splitLines(parseAnsi(source)))
+        .find((candidate) => candidate.kind === "picker");
+      if (!block || block.kind !== "picker") throw new Error("missing resume picker");
+      return block.picker;
+    };
+    const original = resume(codexResumeFrame("exit"));
+    const empty = resume(codexResumeFrame("exit", "zzz"));
     script(original, original, empty);
     expect(await submitPickerIntent(args(original, { kind: "search", query: "zzz" })))
       .toEqual({ status: "sent" });
