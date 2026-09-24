@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hermes resume history folds repeated repaint fragments.** Split history headers and repeated earlier-message notices now join the single history card instead of cluttering the mirror.
+
 ## [1.13.1+collie.3] - 2026-09-25
 
 ### Fixed

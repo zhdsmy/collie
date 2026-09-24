@@ -226,6 +226,20 @@ describe("Hermes resumed history", () => {
     expect(plain.session).toMatchObject({ id: "53593c56_3a463b_1a9f71", title: "General", userMessages: 61, totalMessages: 570 });
   });
 
+  it("absorbs a split repaint header and leaves one earlier-messages notice", () => {
+    const rows = fragmentsRestored.trimEnd().split("\n");
+    const titles = rows.flatMap((row, index) => row.includes("Previous Conversation") ? [index] : []);
+    rows[titles[1]!] = rows[titles[1]!]!.replace("╭", "");
+    const output = blocks(rows.join("\n"));
+    const history = output.filter((block): block is RawBlock => block.kind === "raw" && block.sessionInfo?.kind === "history");
+    expect(history).toHaveLength(1);
+    expect(history[0]!.sessionInfo).toMatchObject({ session: { title: "General" } });
+    const visible = output.flatMap((block) => block.lines.map(lineText)).join("\n");
+    expect(visible).not.toContain("Previous Conversation");
+    expect(visible.match(/299 earlier messages/gu)).toHaveLength(1);
+    expect(output.flatMap((block) => block.lines)).toHaveLength(lines(rows.join("\n")).length - 4);
+  });
+
   it("stops the fragment absorption at unrelated output", () => {
     const rows = fragmentsRestored.trimEnd().split("\n");
     const intruder = "Unrelated warning between repaints";

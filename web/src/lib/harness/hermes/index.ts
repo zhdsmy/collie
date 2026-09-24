@@ -214,6 +214,8 @@ function inputChrome(lines: StyledLine[]): StyledLine[] {
   return result;
 }
 
+const SPLIT_HISTORY_HEADER = /^─+ Previous Conversation ─+╮?$/u;
+
 /** Only a complete native resume panel folds. Keep its row count for latest-reply subtraction. */
 function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
   const blocks: RawBlock[] = [];
@@ -237,10 +239,11 @@ function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
         // line), parse it and carry the session metadata into the card.
         while (first > start) {
           const t = lineText(lines[first - 1]!).trim();
-          // Panel bodies and lone right borders are │-shaped; wrapped panel headers split into a
-          // `╭…Previous Conversation…` row plus a `──╮` tail (rejoinWrappedBorders only handles
-          // Hermes-branded rules, not these).
-          if (t === "" || t.startsWith("│") || t.endsWith("│") || /^─+╮$/u.test(t) || t.startsWith("╭─") && t.includes("Previous Conversation")) first--;
+          // Wrapped repaint headers can leave a title row without its left corner, sometimes
+          // without the right corner too. The final complete panel and resume announcement below
+          // bound the fragment run; unrelated output still stops this walk.
+          if (t === "" || t.startsWith("│") || t.endsWith("│") || /^─+╮$/u.test(t)
+            || SPLIT_HISTORY_HEADER.test(t) || t.startsWith("╭─") && t.includes("Previous Conversation")) first--;
           else break;
         }
         let probe = first;
@@ -263,11 +266,12 @@ function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
           const row = first + index;
           if (row === top || row === bottom) return Object.assign({}, line, { segments: [] });
           if (row < top) {
-            // Superseded fragment rows carry the same 2-col border as panel rows; the announcement
-            // and restored rows pass through untouched (extraction skips them by prefix).
+            // Superseded borders and earlier-message counts are chrome. Keep their rows for source
+            // offsets; the announcement and restored rows pass through for metadata extraction.
             const value = lineText(line);
             const t = value.trim();
-            if (t.startsWith("╭") || /^─+╮$/u.test(t)) return Object.assign({}, line, { segments: [] });
+            if (t.startsWith("╭") || /^─+╮$/u.test(t) || SPLIT_HISTORY_HEADER.test(t)
+              || /^│\s+\.\.\. \d+ earlier messages \.\.\.(?:\s+│)?$/u.test(t)) return Object.assign({}, line, { segments: [] });
             if (!t.startsWith("│")) return line;
             const end = value.slice(0, -1).trimEnd().length;
             return Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) });
