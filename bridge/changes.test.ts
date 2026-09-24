@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -682,7 +682,7 @@ describe("shared reads (ADR 0065 rule 8)", () => {
 
 describe("repoOfFolder", () => {
   test("names the deepest listed repo that holds the folder", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "collie-changes-panerepo-"));
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "collie-changes-panerepo-")));
     try {
       mkdirSync(join(dir, "one", "deep"), { recursive: true });
       mkdirSync(join(dir, "two"), { recursive: true });
