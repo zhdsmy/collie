@@ -602,7 +602,7 @@ export const zh: Dictionary = {
   "harnessBar.label": "Harness 快捷键",
   "harnessBar.model": "模型",
   "harnessBar.effort": "Effort",
-  "harnessBar.compact": "紧凑",
+  "harnessBar.compact": "压缩",
   "harnessBar.summarize": "总结",
   "harnessBar.resume": "恢复",
   "harnessBar.tree": "树",

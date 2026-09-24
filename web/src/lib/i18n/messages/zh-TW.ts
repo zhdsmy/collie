@@ -598,7 +598,7 @@ export const zhTW: Dictionary = {
   "harnessBar.label": "Harness 捷徑",
   "harnessBar.model": "模型",
   "harnessBar.effort": "Effort",
-  "harnessBar.compact": "精簡",
+  "harnessBar.compact": "壓縮",
   "harnessBar.summarize": "摘要",
   "harnessBar.resume": "繼續",
   "harnessBar.tree": "樹狀圖",

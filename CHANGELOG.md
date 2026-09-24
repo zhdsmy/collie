@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Chinese action belts label compaction as compression.** The Compact control now reads 压缩 in Simplified Chinese and 壓縮 in Traditional Chinese.
+
 ## [1.13.1+collie.2] - 2026-09-25
 
 ### Fixed
