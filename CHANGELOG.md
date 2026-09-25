@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.9] - 2026-09-26
+
 ### Changed
 
-- **Dashboard glass shows more of the screen beneath it.** Reduce the floating navigation's translucent tint.
+- **Dashboard glass shows more of the screen beneath it.** Reduce the floating navigation's translucent tint. ([6d51e20a](https://github.com/zhdsmy/collie/commit/6d51e20a))
 
 ## [1.13.1+collie.8] - 2026-09-26
 
