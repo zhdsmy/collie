@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.7] - 2026-09-25
+
 ### Changed
 
-- **Dashboard navigation floats above the list with switchable glass styles.** Choose liquid-glass-react or liquid-dom in Settings; the latter uses a CSS fallback until browser backdrop capture is available.
+- **Dashboard navigation floats above the list with switchable glass styles.** Choose liquid-glass-react or liquid-dom in Settings; the latter uses a CSS fallback until browser backdrop capture is available. ([f9231891](https://github.com/zhdsmy/collie/commit/f9231891))
 
 ## [1.13.1+collie.6] - 2026-09-25
 
