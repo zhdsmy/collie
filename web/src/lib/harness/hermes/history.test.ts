@@ -4,7 +4,7 @@ import fragments from "@/fixtures/panes/hermes--resume-fragments.txt?raw";
 import fragmentsRestored from "@/fixtures/panes/hermes--resume-fragments-restored.txt?raw";
 import startup from "@/fixtures/panes/hermes--startup-resume.txt?raw";
 import { parseAnsi } from "../../ansi";
-import { dropLeadingLines, lineText, splitLines, type RawBlock } from "../../blocks";
+import { dropLeadingLines, lineText, splitLines, type RawBlock, type StyledLine } from "../../blocks";
 import { buildBlocks } from "..";
 import { blockOwnsKeyboard } from "../dialog-contract";
 import { hermesAdapter } from ".";
@@ -14,6 +14,15 @@ import { displayWidth } from "../../text-width";
 const lines = (text: string) => splitLines(parseAnsi(text.trimEnd()));
 const blocks = (text: string) => hermesAdapter.buildBlocks(lines(text));
 const histories = (text: string) => blocks(text).filter((b): b is RawBlock => b.kind === "raw" && b.sessionInfo?.kind === "history");
+const sliceLine = (line: StyledLine, start: number, end: number) => {
+  let offset = 0;
+  return line.segments.flatMap((segment) => {
+    const from = Math.max(0, start - offset);
+    const to = Math.min(segment.text.length, end - offset);
+    offset += segment.text.length;
+    return from < to ? [{ ...segment, text: segment.text.slice(from, to) }] : [];
+  });
+};
 
 describe("Hermes resumed history", () => {
   it("folds the v0.21.3 startup count with MCP servers and preserves semantic fields", () => {
@@ -243,15 +252,6 @@ describe("Hermes resumed history", () => {
   it("folds rewrapped startup and history panels after a pane resize", () => {
     const original = lines(startup);
     const baseline = blocks(startup);
-    const slice = (line: (typeof original)[number], start: number, end: number) => {
-      let offset = 0;
-      return line.segments.flatMap((segment) => {
-        const from = Math.max(0, start - offset);
-        const to = Math.min(segment.text.length, end - offset);
-        offset += segment.text.length;
-        return from < to ? [{ ...segment, text: segment.text.slice(from, to) }] : [];
-      });
-    };
     let panel: "startup" | "history" | null = null;
     let clipped = false;
     const wrapped = original.flatMap((line) => {
@@ -260,8 +260,8 @@ describe("Hermes resumed history", () => {
       if (text.startsWith("╭─") && text.includes("Previous Conversation")) panel = "history";
       if (!panel || !/^[╭│╰]/u.test(text)) return [line];
       const cut = text.length - 3;
-      const first = { ...line, segments: slice(line, 0, cut) };
-      const tail = { ...line, segments: slice(line, cut, text.length) };
+      const first = { ...line, segments: sliceLine(line, 0, cut) };
+      const tail = { ...line, segments: sliceLine(line, cut, text.length) };
       const omitTail = panel === "history" && !clipped && text.startsWith("│") && text.endsWith("    │");
       if (omitTail) clipped = true;
       if (text.startsWith("╰")) panel = null;
@@ -276,6 +276,92 @@ describe("Hermes resumed history", () => {
     expect(history?.sessionInfo).toEqual(expected?.sessionInfo);
     const visible = output.flatMap((b) => b.lines.map(lineText)).join("\n");
     expect(visible).not.toMatch(/Previous Conversation|Resumed session|Hermes Agent v/u);
+  });
+
+  it.each([11, 23, 47])("folds styled panels wrapped every %i characters", (width) => {
+    let panel = false;
+    const wrapped = lines(startup).flatMap((line) => {
+      const text = lineText(line);
+      if (text.startsWith("╭─") && /Hermes Agent|Previous Conversation/u.test(text)) panel = true;
+      if (!panel || !/^[╭│╰]/u.test(text)) return [line];
+      if (text.startsWith("╰")) panel = false;
+      return Array.from({ length: Math.ceil(text.length / width) }, (_, index) => ({
+        ...line, segments: sliceLine(line, index * width, (index + 1) * width),
+      }));
+    });
+    const output = hermesAdapter.buildBlocks(wrapped);
+    expect(output.filter((block) => block.kind === "raw").map((block) => block.sessionInfo?.kind))
+      .toEqual(["startup", "history", "startup-tail"]);
+    expect(output.flatMap((block) => block.lines)).toHaveLength(wrapped.length);
+    const history = output.find((block): block is RawBlock => block.kind === "raw" && block.sessionInfo?.kind === "history");
+    const expected = histories(startup)[0]!.sessionInfo;
+    if (history?.sessionInfo?.kind !== "history" || expected?.kind !== "history") throw new Error("Missing history");
+    expect(history.sessionInfo.session).toEqual(expected.session);
+    expect(history.sessionInfo.messages?.map(({ role, content }) => [role, content.text]))
+      .toEqual(expected.messages?.map(({ role, content }) => [role, content.text]));
+    const searchable = history.lines.map(lineText).join("\n");
+    for (const { content } of history.sessionInfo.messages ?? []) {
+      expect(searchable.slice(content.start, content.start + content.text.length)).toBe(content.text);
+    }
+  });
+
+  it("accepts a real panel width change without requiring a missing border", () => {
+    const original = lines(capture);
+    const footer = original.findLastIndex((line) => lineText(line).startsWith("╰─"));
+    const body = original.findIndex((line, index) => index > 3 && lineText(line).startsWith("│")
+      && lineText(line).endsWith("    │"));
+    expect(body).toBeGreaterThan(3);
+    const resized = original.map((line, index) => {
+      if (index !== body && index !== footer) return line;
+      const text = lineText(line);
+      return Object.assign({}, line, { segments: [
+        ...sliceLine(line, 0, text.length - 4), ...sliceLine(line, text.length - 1, text.length),
+      ] });
+    });
+    const output = hermesAdapter.buildBlocks(resized);
+    expect(output.flatMap((block) => block.lines)).toHaveLength(resized.length);
+    const history = output.find((block): block is RawBlock => block.kind === "raw" && block.sessionInfo?.kind === "history");
+    expect(history?.sessionInfo).toEqual(histories(capture)[0]?.sessionInfo);
+  });
+
+  it("leaves a wrapped panel raw when its closing corner is missing", () => {
+    let inHistory = false;
+    const wrapped = lines(capture).flatMap((line) => {
+      const text = lineText(line);
+      if (text.startsWith("╭─") && text.includes("Previous Conversation")) inHistory = true;
+      if (!inHistory || !/^[╭│╰]/u.test(text)) return [line];
+      if (text.startsWith("╰")) inHistory = false;
+      return Array.from({ length: Math.ceil(text.length / 17) }, (_, index) => ({
+        ...line, segments: sliceLine(line, index * 17, (index + 1) * 17),
+      }));
+    });
+    const corner = wrapped.findLastIndex((line) => lineText(line).endsWith("╯"));
+    expect(corner).toBeGreaterThan(0);
+    const row = wrapped[corner]!;
+    wrapped[corner] = { ...row, segments: sliceLine(row, 0, lineText(row).length - 1) };
+    const output = hermesAdapter.buildBlocks(wrapped);
+    expect(output.some((block) => block.kind === "raw" && block.sessionInfo?.kind === "history")).toBe(false);
+    const source = wrapped.map(lineText);
+    while (source.at(-1)?.trim() === "") source.pop();
+    expect(output.flatMap((block) => block.lines.map(lineText))).toEqual(source);
+  });
+
+  it("does not rejoin a styled frame without Hermes history messages", () => {
+    const altered = capture.replaceAll("● You:", "○ You:").replaceAll("◆ Hermes:", "◇ Hermes:").replaceAll("◈ ", "◇ ");
+    const wrapped = lines(altered).flatMap((line) => {
+      const text = lineText(line);
+      if (!/^[╭│╰]/u.test(text)) return [line];
+      const cut = text.length - 3;
+      return [
+        { ...line, segments: sliceLine(line, 0, cut) },
+        { ...line, segments: sliceLine(line, cut, text.length) },
+      ];
+    });
+    const output = hermesAdapter.buildBlocks(wrapped);
+    expect(output.some((block) => block.kind === "raw" && block.sessionInfo)).toBe(false);
+    const source = wrapped.map(lineText);
+    while (source.at(-1)?.trim() === "") source.pop();
+    expect(output.flatMap((block) => block.lines.map(lineText))).toEqual(source);
   });
 
   it("stops the fragment absorption at unrelated output", () => {
