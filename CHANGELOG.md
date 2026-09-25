@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.5] - 2026-09-25
+
 ### Fixed
 
-- **Hermes history cards survive wrapped terminal panels.** Resized panes restore history and startup cards instead of showing their terminal borders.
+- **Hermes history cards survive wrapped terminal panels.** Resized panes restore history and startup cards instead of showing their terminal borders. ([3d012073](https://github.com/zhdsmy/collie/commit/3d012073))
 
 ## [1.13.1+collie.4] - 2026-09-25
 
