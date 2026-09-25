@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Dashboard glass shows more of the screen beneath it.** Reduce the floating navigation's translucent tint.
+
 ## [1.13.1+collie.8] - 2026-09-26
 
 ### Fixed

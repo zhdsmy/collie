@@ -5,7 +5,7 @@ export function GlassSurface({ children }: { children: ReactNode }) {
   return (
     <div className="relative h-[66px] w-full">
       <LiquidGlass
-        className="[&>.glass]:w-full [&>.glass]:bg-foreground/15 [&>.glass>div:last-child]:w-full"
+        className="[&>.glass]:w-full [&>.glass]:bg-foreground/10 [&>.glass>div:last-child]:w-full"
         cornerRadius={30}
         displacementScale={48}
         blurAmount={0.1}
