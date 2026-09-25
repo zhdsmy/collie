@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.6] - 2026-09-25
+
 ### Fixed
 
-- **Hermes history cards survive terminal resizing.** Styled panels with split titles and changing widths still fold; damaged output remains visible.
+- **Hermes history cards survive terminal resizing.** Styled panels with split titles and changing widths still fold; damaged output remains visible. ([e8f5c9ed](https://github.com/zhdsmy/collie/commit/e8f5c9ed))
 
 ## [1.13.1+collie.5] - 2026-09-25
 
