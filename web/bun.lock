@@ -5,8 +5,10 @@
     "": {
       "name": "herdr-bridge-web",
       "dependencies": {
+        "@liquid-dom/react": "0.1.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "liquid-glass-react": "1.1.1",
         "lucide-react": "^1.22.0",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
@@ -278,6 +280,12 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
+
+    "@liquid-dom/core": ["@liquid-dom/core@0.1.1", "", { "dependencies": { "@liquid-dom/layout": "0.2.0" } }, "sha512-Q+Agxas90pMz+Az3vd/wlNAbxOXBz7dQDDZl2lRCARm6TrqeKYVUoWM+Q/JmlBNoTM8z0tYMkguhmFz75ZiogQ=="],
+
+    "@liquid-dom/layout": ["@liquid-dom/layout@0.2.0", "", {}, "sha512-bdKWF2MVF7qv4+Db0e9JPE4aKXAmIEubFF4bivluFAGNJBZklLr45qggg5D2THy/gqwuuCNP5uxnOJZfi+UaHA=="],
+
+    "@liquid-dom/react": ["@liquid-dom/react@0.1.1", "", { "dependencies": { "@liquid-dom/core": "0.1.1", "@liquid-dom/layout": "0.2.0" }, "peerDependencies": { "react": ">=19", "react-dom": ">=19" } }, "sha512-5ZYEkxj/QqHk8U7gsGMbhrcfbzQ+03UGeasElGjREo30qEcBGJ+tPyoxEr1XR+JwrfXpEFhHuxAuBzrbvHeVbw=="],
 
     "@mswjs/interceptors": ["@mswjs/interceptors@0.41.9", "", { "dependencies": { "@open-draft/deferred-promise": "^2.2.0", "@open-draft/logger": "^0.3.0", "@open-draft/until": "^2.0.0", "is-node-process": "^1.2.0", "outvariant": "^1.4.3", "strict-event-emitter": "^0.5.1" } }, "sha512-VVPPgHyQ6ShqnrmDWuxjmUIsO9gWyOZFmuOfLd9LfBGQJwZfy0gvv9pbHSJuoFNIYC7ZDX9aoFwowjcdSC4E8w=="],
 
@@ -838,6 +846,8 @@
     "lightningcss-win32-arm64-msvc": ["lightningcss-win32-arm64-msvc@1.32.0", "", { "os": "win32", "cpu": "arm64" }, "sha512-8SbC8BR40pS6baCM8sbtYDSwEVQd4JlFTOlaD3gWGHfThTcABnNDBda6eTZeqbofalIJhFx0qKzgHJmcPTnGdw=="],
 
     "lightningcss-win32-x64-msvc": ["lightningcss-win32-x64-msvc@1.32.0", "", { "os": "win32", "cpu": "x64" }, "sha512-Amq9B/SoZYdDi1kFrojnoqPLxYhQ4Wo5XiL8EVJrVsB8ARoC1PWW6VGtT0WKCemjy8aC+louJnjS7U18x3b06Q=="],
+
+    "liquid-glass-react": ["liquid-glass-react@1.1.1", "", { "peerDependencies": { "react": ">=19", "react-dom": ">=19" } }, "sha512-pKzaktaMAEztd93wpWcz2Z5Z9qdLJUNJdMX+n00Ca4XsnrLTQ5xJzm/+GQXZUeuFXe/PQ8ziVMZO6531PyaFJw=="],
 
     "lodash.debounce": ["lodash.debounce@4.0.8", "", {}, "sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow=="],
 

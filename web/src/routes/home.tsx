@@ -15,6 +15,7 @@ import { BuildStamp } from "@/components/build-stamp";
 import { CrewFooterLink } from "@/components/crew-footer-link";
 import { UpdateBanner } from "@/components/update-banner";
 import { TabBar } from "@/components/ui/tab-bar";
+import { GlassSurface } from "@/components/ui/glass-surface";
 import { WorkspaceChangesList, type WorkspaceChangesRow } from "@/components/workspace-changes-list";
 import { useDashPrefs, openForCount } from "@/hooks/use-dash-prefs";
 import { useLocale } from "@/hooks/use-locale";
@@ -158,7 +159,7 @@ export function HomeRoute() {
   const scrollRef = useScrollMemory<HTMLDivElement>(`home:${scopeKey(data.scope)}`);
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-screen-sm flex-1 flex-col">
+    <div className="relative mx-auto flex min-h-0 w-full max-w-screen-sm flex-1 flex-col">
       {/* The dashboard header: wordmark + the session switcher (dashboard-only), then the shared pill
           and the Settings gear. The switcher self-hides on a single-session install. */}
       <RouteHeader
@@ -180,7 +181,7 @@ export function HomeRoute() {
           load-bearing: it makes this scroller the containing block for its absolutely-positioned
           descendants. Tailwind's `sr-only` is `position: absolute`, so every status label in the
           list would otherwise escape this scroller's clip and grow the document's own scrollbar. */}
-      <div ref={scrollRef} className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+      <div ref={scrollRef} className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {/* A notice BELOW the header is content, not viewport chrome: it is an inset box on the
             page gutter, not a full-bleed strip. Full-bleed it ran its left edge 16px outside the
             list it sat on top of — two left edges stacked, the loudest misalignment on the page. */}
@@ -247,32 +248,37 @@ export function HomeRoute() {
             with a stale-cache nudge). The crew line self-hides on a solo install. */}
         <CrewFooterLink scope={data.scope} className="px-4 pt-3" />
         <UpdateBanner className="px-4 pt-3" />
-        {/* The footer below owns the safe area now, so the stamp only keeps its own air. */}
+        {/* The floating navigation has its own safe-area offset; the scroller reserves room below. */}
         <BuildStamp className="px-4 pt-3 pb-2" />
       </div>
 
-      {/* The dashboard's footer (ADR 0066, ADR 0068): three lists, each named for what it holds. It sits
-          OUTSIDE the scroller, so the content scrolls above it and a switch moves neither it nor the
-          strip and summary line at the top of the list. At every width: the dashboard has no
-          sidebar on a wide screen (it is one centred column), so nothing else offers these views. */}
-      <TabBar<DashView>
-        label={t("home.tabs.aria")}
-        active={view}
-        onSelect={setDashView}
-        items={[
-          { value: "panes", label: t("home.tabs.panes"), icon: <Rows3 className="size-5" /> },
-          {
-            value: "focus",
-            label: t("home.tabs.focus"),
-            icon: <CircleDot className="size-5" />,
-            badge: blockedCount,
-            dot: readyUnseen,
-            badgeLabel: blockedCount > 0 ? tn("home.tabs.blocked", blockedCount) : t("home.tabs.unseen"),
-          },
-          // GitCompare is the one Changes icon: the pane belt's Changes pill and the Settings row wear it.
-          { value: "changes", label: t("changes.title"), icon: <GitCompare className="size-5" /> },
-        ]}
-      />
+      {/* Floating dashboard navigation stays above the scroller while content remains scrollable beneath it. */}
+      <div
+        data-nav-glass={prefs.navGlass}
+        className="absolute inset-x-4 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-20 mx-auto max-w-[28rem]"
+      >
+        <GlassSurface variant={prefs.navGlass}>
+          <TabBar<DashView>
+            label={t("home.tabs.aria")}
+            active={view}
+            onSelect={setDashView}
+            floating
+            items={[
+              { value: "panes", label: t("home.tabs.panes"), icon: <Rows3 className="size-5" /> },
+              {
+                value: "focus",
+                label: t("home.tabs.focus"),
+                icon: <CircleDot className="size-5" />,
+                badge: blockedCount,
+                dot: readyUnseen,
+                badgeLabel: blockedCount > 0 ? tn("home.tabs.blocked", blockedCount) : t("home.tabs.unseen"),
+              },
+              // GitCompare is the one Changes icon: the pane belt's Changes pill and the Settings row wear it.
+              { value: "changes", label: t("changes.title"), icon: <GitCompare className="size-5" /> },
+            ]}
+          />
+        </GlassSurface>
+      </div>
 
       {/* Status overlay, anchored to the bottom of the viewport (no input here) — same slim line,
           floating so it never shifts the list. Stays outside the scroller so it never scrolls away.
@@ -281,8 +287,8 @@ export function HomeRoute() {
           screen docks its own to the top for the opposite reason. The positioning — the portal, the
           z-rung, the safe-area inset — belongs to ToastViewport and is stated there once, which is
           what stopped it being three hand-rolled copies of the same four utilities. DESIGN.md §1. */}
-      {/* Lifted by the footer's 56px row and its 1px rule, so a toast floats above the tabs. */}
-      <ToastViewport className="bottom-[calc(3.5rem+1px)]">
+      {/* Lifted above the floating navigation and the bottom safe area. */}
+      <ToastViewport className="bottom-[calc(5.25rem+env(safe-area-inset-bottom))] pb-0">
         <StatusArea />
       </ToastViewport>
 

@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Dashboard navigation floats above the list with switchable glass styles.** Choose liquid-glass-react or liquid-dom in Settings; the latter uses a CSS fallback until browser backdrop capture is available.
+
 ## [1.13.1+collie.6] - 2026-09-25
 
 ### Fixed

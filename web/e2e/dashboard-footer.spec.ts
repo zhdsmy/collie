@@ -49,15 +49,39 @@ test("switching tabs moves neither the footer nor the summary line", async ({ pa
   await expect(tab(page, PANES)).toHaveAttribute("aria-current", "page");
   const f0 = await box(footer(page));
   const s0 = await box(summary(page));
-  // The footer sits on the viewport's bottom edge.
-  expect(Math.round(f0.y + f0.height)).toBe(812);
+  // The floating navigation leaves a 12px gap above the bottom safe area.
+  expect(Math.round(f0.y + f0.height)).toBe(800);
 
   for (const name of [FOCUS, CHANGES, PANES]) {
     await tab(page, name).click();
     await expect(tab(page, name)).toHaveAttribute("aria-current", "page");
-    expect(await box(footer(page))).toEqual(f0);
+    const next = await box(footer(page));
+    for (const edge of ["x", "y", "width", "height"] as const) {
+      expect(Math.abs(next[edge] - f0[edge])).toBeLessThan(3);
+    }
     expect(await box(summary(page))).toEqual(s0);
   }
+});
+
+test("glass navigation switches in Settings and remains usable at 320px", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("/");
+  await expect(page.locator("[data-nav-glass]")).toHaveAttribute("data-nav-glass", "react");
+  let navBox = await box(footer(page));
+  expect(navBox.width).toBeLessThanOrEqual(288);
+  expect(Math.round(navBox.y + navBox.height)).toBe(688);
+
+  await page.goto("/settings");
+  const choice = page.getByRole("radiogroup", { name: en["settings.navGlass.title"] });
+  await choice.getByRole("radio", { name: en["settings.navGlass.dom"] }).click();
+  await page.goto("/");
+
+  await expect(page.locator("[data-nav-glass]")).toHaveAttribute("data-nav-glass", "dom");
+  navBox = await box(footer(page));
+  expect(navBox.width).toBeLessThanOrEqual(288);
+  expect(Math.round(navBox.y + navBox.height)).toBe(688);
+  await tab(page, FOCUS).click();
+  await expect(tab(page, FOCUS)).toHaveAttribute("aria-current", "page");
 });
 
 test("Focus shows only the panes that need you, and survives a reload", async ({ page }) => {
