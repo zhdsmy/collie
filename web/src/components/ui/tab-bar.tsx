@@ -38,7 +38,7 @@ export function TabBar<V extends string>({ items, active, onSelect, label, class
       data-slot="tab-bar"
       className={cn(
         floating
-          ? "w-full shrink-0 overflow-hidden rounded-[30px] border border-foreground/15 bg-background/35 shadow-lg backdrop-blur-xl"
+          ? "w-full shrink-0 overflow-hidden rounded-[30px]"
           : "shrink-0 border-t border-rule bg-background pb-[env(safe-area-inset-bottom)]",
         className,
       )}

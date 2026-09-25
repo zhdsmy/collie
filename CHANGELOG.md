@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dashboard glass reveals scrolling content behind the navigation.** Remove the opaque tab backing and the unused alternate glass mode.
+
 ## [1.13.1+collie.7] - 2026-09-25
 
 ### Changed

@@ -22,7 +22,6 @@ import { LanguageControl } from "@/components/language-control";
 import { FontSettingsControl } from "@/components/font-settings";
 import { HarnessBarControl } from "@/components/harness-bar-control";
 import { BeltSizeControl } from "@/components/belt-size-control";
-import { NavGlassControl } from "@/components/nav-glass-control";
 import { TypefaceControl } from "@/components/typeface-control";
 import { UpdatesSettingsCard } from "@/components/updates-settings-card";
 import { Switch } from "@/components/ui/switch";
@@ -131,7 +130,6 @@ export function SettingsRoute() {
         {/* First of the SETTINGS: it's the one people come here to change, and below the
             notification stack it sat off-screen on a phone, a scroll into a 1240px page. */}
         <ThemeControl />
-        <NavGlassControl />
 
         {/* Language sits right beside appearance — both are "how this phone presents itself" — and
             ahead of device behaviour, which is more of a per-device tweak than a standing choice. */}

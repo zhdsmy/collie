@@ -1,23 +1,11 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import LiquidGlass from "liquid-glass-react";
 
-import type { NavGlass } from "@/hooks/use-dash-prefs";
-
-const LiquidDomGlass = lazy(() => import("@/components/ui/liquid-dom-glass"));
-
-export function GlassSurface({ variant, children }: { variant: NavGlass; children: ReactNode }) {
-  if (variant === "dom") {
-    return (
-      <Suspense fallback={children}>
-        <LiquidDomGlass>{children}</LiquidDomGlass>
-      </Suspense>
-    );
-  }
-
+export function GlassSurface({ children }: { children: ReactNode }) {
   return (
     <div className="relative h-[66px] w-full">
       <LiquidGlass
-        className="[&>.glass]:w-full [&>.glass>div:last-child]:w-full"
+        className="[&>.glass]:w-full [&>.glass]:bg-foreground/15 [&>.glass>div:last-child]:w-full"
         cornerRadius={30}
         displacementScale={48}
         blurAmount={0.1}

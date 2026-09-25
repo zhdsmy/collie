@@ -52,7 +52,6 @@ export interface DashPrefs {
   beltScale: BeltScale;
   /** The dashboard's footer tab: Panes, Focus or Changes (ADR 0066, renamed by ADR 0068). Panes by default. */
   dashView: DashView;
-  navGlass: NavGlass;
 }
 
 const STORAGE_KEY = "collie:dash-prefs:v1";
@@ -63,7 +62,6 @@ export const CHANGES_DEPTHS = [1, 2, 3, 4] as const;
 /** The belt sizes the Settings row offers: Default, Large, Larger. */
 export const BELT_SCALES = [1, 1.3, 1.5] as const;
 export type BeltScale = (typeof BELT_SCALES)[number];
-export type NavGlass = "react" | "dom";
 
 /** Above this many rows, an un-chosen foldable section starts collapsed. */
 export const COLLAPSE_THRESHOLD = 8;
@@ -80,7 +78,6 @@ const DEFAULTS: DashPrefs = {
   changesLayout: "list",
   beltScale: 1,
   dashView: "panes",
-  navGlass: "react",
 };
 
 function coerceDepth(raw: JsonValue | undefined): number {
@@ -129,7 +126,6 @@ export function coerceDashPrefs(raw: JsonValue | undefined): DashPrefs {
     changesLayout: p.changesLayout === "tree" ? "tree" : DEFAULTS.changesLayout,
     beltScale: coerceBeltScale(p.beltScale),
     dashView: coerceDashView(p.dashView),
-    navGlass: p.navGlass === "dom" ? "dom" : "react",
   };
 }
 
@@ -166,7 +162,6 @@ export interface UseDashPrefsReturn {
   setChangesLayout: (layout: ChangesLayout) => void;
   setBeltScale: (scale: number) => void;
   setDashView: (view: DashView) => void;
-  setNavGlass: (glass: NavGlass) => void;
 }
 
 export function useDashPrefs(): UseDashPrefsReturn {
@@ -199,7 +194,6 @@ export function useDashPrefs(): UseDashPrefsReturn {
   );
 
   const setDashView = useCallback((dashView: DashView) => update({ dashView }), [update]);
-  const setNavGlass = useCallback((navGlass: NavGlass) => update({ navGlass }), [update]);
 
   const setIsolatedSpace = useCallback((isolatedSpace: string | null) => update({ isolatedSpace }), [update]);
   const toggleHiddenSpace = useCallback((key: string) => {
@@ -226,6 +220,5 @@ export function useDashPrefs(): UseDashPrefsReturn {
     setChangesLayout,
     setBeltScale,
     setDashView,
-    setNavGlass,
   };
 }

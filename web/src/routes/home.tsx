@@ -249,15 +249,14 @@ export function HomeRoute() {
         <CrewFooterLink scope={data.scope} className="px-4 pt-3" />
         <UpdateBanner className="px-4 pt-3" />
         {/* The floating navigation has its own safe-area offset; the scroller reserves room below. */}
-        <BuildStamp className="px-4 pt-3 pb-2" />
+        <BuildStamp className="mt-10 px-4 pt-3 pb-2" />
       </div>
 
       {/* Floating dashboard navigation stays above the scroller while content remains scrollable beneath it. */}
       <div
-        data-nav-glass={prefs.navGlass}
         className="absolute inset-x-4 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-20 mx-auto max-w-[28rem]"
       >
-        <GlassSurface variant={prefs.navGlass}>
+        <GlassSurface>
           <TabBar<DashView>
             label={t("home.tabs.aria")}
             active={view}

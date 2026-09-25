@@ -39,7 +39,6 @@ describe("coerceDashPrefs", () => {
       changesLayout: "list",
       beltScale: 1,
       dashView: "panes",
-      navGlass: "react",
     });
   });
 
@@ -57,7 +56,6 @@ describe("coerceDashPrefs", () => {
         changesLayout: "tree",
         beltScale: 1.5,
         dashView: "changes",
-        navGlass: "dom",
       }),
     ).toEqual({
       spacesOpen: false,
@@ -71,7 +69,6 @@ describe("coerceDashPrefs", () => {
       changesLayout: "tree",
       beltScale: 1.5,
       dashView: "changes",
-      navGlass: "dom",
     });
   });
 
@@ -129,7 +126,6 @@ describe("coerceDashPrefs", () => {
       changesLayout: "list",
       beltScale: 1,
       dashView: "panes",
-      navGlass: "react",
     });
   });
 });
@@ -151,7 +147,6 @@ describe("useDashPrefs", () => {
       changesLayout: "list",
       beltScale: 1,
       dashView: "panes",
-      navGlass: "react",
     });
   });
 
@@ -170,7 +165,6 @@ describe("useDashPrefs", () => {
     act(() => first.result.current.setChangesLayout("tree"));
     act(() => first.result.current.setBeltScale(1.3));
     act(() => first.result.current.setDashView("focus"));
-    act(() => first.result.current.setNavGlass("dom"));
 
     const second = renderHook(() => useDashPrefs());
     expect(second.result.current.prefs).toEqual({
@@ -185,7 +179,6 @@ describe("useDashPrefs", () => {
       changesLayout: "tree",
       beltScale: 1.3,
       dashView: "focus",
-      navGlass: "dom",
     });
   });
 

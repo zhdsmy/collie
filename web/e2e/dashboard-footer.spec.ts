@@ -63,23 +63,19 @@ test("switching tabs moves neither the footer nor the summary line", async ({ pa
   }
 });
 
-test("glass navigation switches in Settings and remains usable at 320px", async ({ page }) => {
+test("glass navigation stays transparent and usable at 320px", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto("/");
-  await expect(page.locator("[data-nav-glass]")).toHaveAttribute("data-nav-glass", "react");
-  let navBox = await box(footer(page));
+  const navBox = await box(footer(page));
   expect(navBox.width).toBeLessThanOrEqual(288);
-  expect(Math.round(navBox.y + navBox.height)).toBe(688);
-
-  await page.goto("/settings");
-  const choice = page.getByRole("radiogroup", { name: en["settings.navGlass.title"] });
-  await choice.getByRole("radio", { name: en["settings.navGlass.dom"] }).click();
-  await page.goto("/");
-
-  await expect(page.locator("[data-nav-glass]")).toHaveAttribute("data-nav-glass", "dom");
-  navBox = await box(footer(page));
-  expect(navBox.width).toBeLessThanOrEqual(288);
-  expect(Math.round(navBox.y + navBox.height)).toBe(688);
+  expect(Math.abs(navBox.y + navBox.height - 688)).toBeLessThanOrEqual(1);
+  const stamp = page.getByText(/^v\d+\.\d+\.\d+\+collie\./u);
+  expect((await box(stamp)).y).toBeGreaterThan(navBox.y + navBox.height);
+  await expect(footer(page)).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(page.locator(".glass__warp")).toHaveCSS("backdrop-filter", /blur\(/u);
+  await expect(page.locator(".glass")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await page.getByRole("main").locator("..").evaluate((scroller) => { scroller.scrollTop = scroller.scrollHeight; });
+  expect((await box(stamp)).y + (await box(stamp)).height).toBeLessThan(navBox.y);
   await tab(page, FOCUS).click();
   await expect(tab(page, FOCUS)).toHaveAttribute("aria-current", "page");
 });
