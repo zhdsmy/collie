@@ -216,8 +216,55 @@ function inputChrome(lines: StyledLine[]): StyledLine[] {
 
 const SPLIT_HISTORY_HEADER = /^─+ Previous Conversation ─+╮?$/u;
 
+/** Herdr can rewrap a complete Rich panel into a long row plus a short trailing row. */
+function rejoinInfoPanels(lines: StyledLine[]) {
+  const result = [...lines];
+  const continuations = new WeakSet<StyledLine>();
+  for (let top = 0; top < lines.length; top++) {
+    if (!/^╭─+ (?:Previous Conversation|Hermes Agent v)/u.test(lineText(lines[top]!))) continue;
+    const joins: [number, number][] = [];
+    let bottom = top;
+    let complete = false;
+    while (bottom < lines.length) {
+      const text = lineText(lines[bottom]!);
+      const border = bottom === top || text.startsWith("╰─");
+      if (bottom !== top && !border && !text.startsWith("│")) break;
+      const endGlyph = bottom === top ? "╮" : border ? "╯" : "│";
+      let end = bottom;
+      let joined = text;
+      let clippedBody = false;
+      while (!joined.endsWith(endGlyph) && end - bottom < BORDER_MAX_ROWS && end + 1 < lines.length) {
+        const next = lineText(lines[end + 1]!);
+        if (border ? !/^─+[╮╯]?$/u.test(next) : next.startsWith("│") || next.startsWith("╭") || next.startsWith("╰")) {
+          clippedBody = !border && joined.endsWith("  ") && next.startsWith("│");
+          break;
+        }
+        joined += next;
+        end++;
+      }
+      if (!joined.endsWith(endGlyph) && !clippedBody) break;
+      if (end > bottom) joins.push([bottom, end]);
+      if (border && bottom !== top) {
+        complete = true;
+        break;
+      }
+      bottom = end + 1;
+    }
+    if (!complete) continue;
+    for (const [first, last] of joins) {
+      result[first] = { ...lines[first]!, segments: lines.slice(first, last + 1).flatMap((line) => line.segments) };
+      for (let row = first + 1; row <= last; row++) {
+        result[row] = { ...lines[row]!, segments: [] };
+        continuations.add(result[row]!);
+      }
+    }
+    top = bottom;
+  }
+  return { lines: result, continuations };
+}
+
 /** Only a complete native resume panel folds. Keep its row count for latest-reply subtraction. */
-function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
+function foldResumedHistory(lines: StyledLine[], continuations: WeakSet<StyledLine>): RawBlock[] {
   const blocks: RawBlock[] = [];
   let start = 0;
   for (let top = 0; top < lines.length; top++) {
@@ -228,7 +275,11 @@ function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
     for (let bottom = top + 1; bottom < lines.length; bottom++) {
       const text = lineText(lines[bottom]!);
       if (/^╰─+╯$/u.test(text)) {
-        if (!hasMessage || text.length !== header.length) break;
+        const resized = lines.slice(top + 1, bottom).some((line) => {
+          const value = lineText(line);
+          return value.startsWith("│ ") && !value.endsWith("│") && value.endsWith("  ");
+        });
+        if (!hasMessage || (text.length !== header.length && !resized)) break;
         let first = top;
         let session: Extract<NonNullable<RawBlock["sessionInfo"]>, { kind: "history" }>["session"];
         // v0.21.4 can repaint the same panel several times as the pane scrolls: superseded panel
@@ -262,32 +313,35 @@ function foldResumedHistory(lines: StyledLine[]): RawBlock[] {
         while (first > start && !lineText(lines[first - 1]!).trim()) first--; // leading blanks join the card
         if (!session) first = top; // no announcement above the fragment run: nothing may be absorbed
         if (first > start) blocks.push({ kind: "raw", lines: lines.slice(start, first) });
-        const body = lines.slice(first, bottom + 1).map((line, index) => {
+        const joinedRows = lines.slice(first, bottom + 1).filter((line) => continuations.has(line));
+        const body = lines.slice(first, bottom + 1).flatMap((line, index) => {
+          if (continuations.has(line)) return [];
           const row = first + index;
-          if (row === top || row === bottom) return Object.assign({}, line, { segments: [] });
+          if (row === top || row === bottom) return [Object.assign({}, line, { segments: [] })];
           if (row < top) {
             // Superseded borders and earlier-message counts are chrome. Keep their rows for source
             // offsets; the announcement and restored rows pass through for metadata extraction.
             const value = lineText(line);
             const t = value.trim();
             if (t.startsWith("╭") || /^─+╮$/u.test(t) || SPLIT_HISTORY_HEADER.test(t)
-              || /^│\s+\.\.\. \d+ earlier messages \.\.\.(?:\s+│)?$/u.test(t)) return Object.assign({}, line, { segments: [] });
-            if (!t.startsWith("│")) return line;
-            const end = value.slice(0, -1).trimEnd().length;
-            return Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) });
+              || /^│\s+\.\.\. \d+ earlier messages \.\.\.(?:\s+│)?$/u.test(t)) return [Object.assign({}, line, { segments: [] })];
+            if (!t.startsWith("│")) return [line];
+            const end = (value.endsWith("│") ? value.slice(0, -1) : value).trimEnd().length;
+            return [Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) })];
           }
           const value = lineText(line);
-          const end = value.slice(0, -1).trimEnd().length;
-          return Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) });
+          const end = (value.endsWith("│") ? value.slice(0, -1) : value).trimEnd().length;
+          return [Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) })];
         });
         const extracted = extractHistoryMessages(body);
-        blocks.push({ kind: "raw", lines: extracted.lines, sessionInfo: { kind: "history", messages: extracted.messages, ...(session && { session }) } });
+        blocks.push({ kind: "raw", lines: [...extracted.lines, ...joinedRows], sessionInfo: { kind: "history", messages: extracted.messages, ...(session && { session }) } });
         start = bottom + 1;
         top = bottom;
         break;
       }
       // A repaint can open another panel before the previous one closes. Leave the old fragment raw.
-      if (!text.startsWith("│ ") || !text.endsWith(" │")) break;
+      if (continuations.has(lines[bottom]!)) continue;
+      if (!text.startsWith("│ ") || (!text.endsWith(" │") && !text.endsWith("  "))) break;
       hasMessage ||= /^│\s+(?:● You:|◆ Hermes:|◈ )/u.test(text);
     }
   }
@@ -300,7 +354,7 @@ const LOGO_ROW = /^[ █╔╗╚╝║═]+$/u;
 const WELCOME = "Welcome to Hermes Agent! Type your message or /help for commands.";
 
 /** Fold only a complete branded startup panel. Never absorb intervening warnings or replies. */
-function foldStartupInfo(blocks: RawBlock[]): RawBlock[] {
+function foldStartupInfo(blocks: RawBlock[], continuations: WeakSet<StyledLine>): RawBlock[] {
   const result: RawBlock[] = [];
   let hasStartup = false;
   let afterHistory = false;
@@ -335,10 +389,11 @@ function foldStartupInfo(blocks: RawBlock[]): RawBlock[] {
             if (sessionId && command && /^(?:➜|❯|\$)\s/u.test(command)
               && command.endsWith(`hermes --resume ${sessionId}`) && !/[;&|<>]/u.test(command)) first--;
           }
-          const extracted = extractStartupDetails(lines.slice(first, bottom + 1));
+          const panel = lines.slice(first, bottom + 1);
+          const extracted = extractStartupDetails(panel.filter((line) => !continuations.has(line)));
           if (!extracted) break;
           if (first > start) result.push({ kind: "raw", lines: lines.slice(start, first) });
-          result.push({ kind: "raw", lines: extracted.lines, sessionInfo: {
+          result.push({ kind: "raw", lines: [...extracted.lines, ...panel.filter((line) => continuations.has(line))], sessionInfo: {
             kind: "startup", version: heading[1]!, tools: Number(counts[1]), skills: Number(counts[2]), details: extracted.details,
           } });
           start = bottom + 1;
@@ -346,6 +401,7 @@ function foldStartupInfo(blocks: RawBlock[]): RawBlock[] {
           hasStartup = true;
           break;
         }
+        if (continuations.has(lines[bottom]!)) continue;
         if (!text.startsWith("│") || !text.endsWith("│")) break;
         hasTools ||= /\bAvailable Tools\s*│$/u.test(text);
         counts ||= text.match(/\b(\d+) tools · (\d+) skills · (?:\d+ MCP servers? · )?\/help for commands\s*│$/u);
@@ -392,8 +448,9 @@ export function hermesBuildBlocks(lines: StyledLine[]): Block[] {
   const clarify = footer?.clarify && footer.empty ? detectClarify(lines, footer.statusStart) : null;
   if (clarify) {
     const before = trimTrailingBlank(lines.slice(0, clarify.start));
+    const joined = rejoinInfoPanels([...decorateHermesDiff(inputChrome(responseChrome(before, 0))), ...clarify.questionLines]);
     return [
-      ...foldStartupInfo(foldResumedHistory([...decorateHermesDiff(inputChrome(responseChrome(before, 0))), ...clarify.questionLines])),
+      ...foldStartupInfo(foldResumedHistory(joined.lines, joined.continuations), joined.continuations),
       { kind: "prompt-select", prompt: clarify.model, lines: lines.slice(clarify.start) },
     ];
   }
@@ -401,7 +458,8 @@ export function hermesBuildBlocks(lines: StyledLine[]): Block[] {
     ? [...lines.slice(0, footer.statusStart), ...(footer.empty ? [] : lines.slice(footer.top))]
     : lines;
   const closingWidth = footer?.empty ? lineText(lines[footer.top]!).trim().length : 0;
-  return foldStartupInfo(foldResumedHistory(decorateHermesDiff(inputChrome(responseChrome(trimTrailingBlank(content), closingWidth)))));
+  const joined = rejoinInfoPanels(decorateHermesDiff(inputChrome(responseChrome(trimTrailingBlank(content), closingWidth))));
+  return foldStartupInfo(foldResumedHistory(joined.lines, joined.continuations), joined.continuations);
 }
 
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {

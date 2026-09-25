@@ -240,6 +240,44 @@ describe("Hermes resumed history", () => {
     expect(output.flatMap((block) => block.lines)).toHaveLength(lines(rows.join("\n")).length - 4);
   });
 
+  it("folds rewrapped startup and history panels after a pane resize", () => {
+    const original = lines(startup);
+    const baseline = blocks(startup);
+    const slice = (line: (typeof original)[number], start: number, end: number) => {
+      let offset = 0;
+      return line.segments.flatMap((segment) => {
+        const from = Math.max(0, start - offset);
+        const to = Math.min(segment.text.length, end - offset);
+        offset += segment.text.length;
+        return from < to ? [{ ...segment, text: segment.text.slice(from, to) }] : [];
+      });
+    };
+    let panel: "startup" | "history" | null = null;
+    let clipped = false;
+    const wrapped = original.flatMap((line) => {
+      const text = lineText(line);
+      if (text.startsWith("╭─") && text.includes("Hermes Agent")) panel = "startup";
+      if (text.startsWith("╭─") && text.includes("Previous Conversation")) panel = "history";
+      if (!panel || !/^[╭│╰]/u.test(text)) return [line];
+      const cut = text.length - 3;
+      const first = { ...line, segments: slice(line, 0, cut) };
+      const tail = { ...line, segments: slice(line, cut, text.length) };
+      const omitTail = panel === "history" && !clipped && text.startsWith("│") && text.endsWith("    │");
+      if (omitTail) clipped = true;
+      if (text.startsWith("╰")) panel = null;
+      return omitTail ? [first] : [first, tail];
+    });
+    expect(clipped).toBe(true);
+    const output = hermesAdapter.buildBlocks(wrapped);
+    expect(output.filter((b) => b.kind === "raw").map((b) => b.sessionInfo?.kind)).toEqual(["startup", "history", "startup-tail"]);
+    expect(output.flatMap((b) => b.lines)).toHaveLength(wrapped.length);
+    const history = output.find((b): b is RawBlock => b.kind === "raw" && b.sessionInfo?.kind === "history");
+    const expected = baseline.find((b): b is RawBlock => b.kind === "raw" && b.sessionInfo?.kind === "history");
+    expect(history?.sessionInfo).toEqual(expected?.sessionInfo);
+    const visible = output.flatMap((b) => b.lines.map(lineText)).join("\n");
+    expect(visible).not.toMatch(/Previous Conversation|Resumed session|Hermes Agent v/u);
+  });
+
   it("stops the fragment absorption at unrelated output", () => {
     const rows = fragmentsRestored.trimEnd().split("\n");
     const intruder = "Unrelated warning between repaints";

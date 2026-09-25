@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hermes history cards survive wrapped terminal panels.** Resized panes restore history and startup cards instead of showing their terminal borders.
+
 ## [1.13.1+collie.4] - 2026-09-25
 
 ### Fixed
