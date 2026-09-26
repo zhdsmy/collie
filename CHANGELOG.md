@@ -30,10 +30,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.2+collie.1] - 2026-09-26
+
 ### Fixed
 
-- **Codex 0.156 panes accept replies and approvals again.** Read the new status paint, wrapped drafts, trust prompt and approval options while retaining Collie's current picker and guarded action behavior.
-- **Claude 2.1.283 dialogs remain readable and safe to answer.** Restore permission and question cards, pasted drafts, slash menus, custom plan paths, and startup or exit handling.
+- **Codex 0.156 panes accept replies and approvals again.** Read the new status paint, wrapped drafts, trust prompt and approval options while retaining Collie's current picker and guarded action behavior. ([22c4e499](https://github.com/zhdsmy/collie/commit/22c4e499))
+- **Claude 2.1.283 dialogs remain readable and safe to answer.** Restore permission and question cards, pasted drafts, slash menus, custom plan paths, and startup or exit handling. ([22c4e499](https://github.com/zhdsmy/collie/commit/22c4e499))
 
 ## [1.13.1+collie.12] - 2026-09-26
 
