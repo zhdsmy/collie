@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.10] - 2026-09-26
+
 ### Fixed
 
-- **Codex resume cards recognize the native progress rail.** Accept its colored count between dim rule ends while rejecting incomplete pickers.
+- **Codex resume cards recognize the native progress rail.** Accept its colored count between dim rule ends while rejecting incomplete pickers. ([bf0f28d3](https://github.com/zhdsmy/collie/commit/bf0f28d3))
 
 ## [1.13.1+collie.9] - 2026-09-26
 
