@@ -76,6 +76,9 @@ describe("Codex saved-session picker parsing", () => {
     const source = frame();
     const lines = parse(source);
     const rule = lines.findIndex((line) => lineText(line).trim().startsWith("──"));
+    const bareRule = parse(source);
+    bareRule[rule]!.segments[0]!.dim = false;
+    expect(detectResumeRegion(bareRule)).toBeNull();
     expect(detectResumeRegion(lines.slice(0, rule))).toBeNull();
     expect(detectResumeRegion(parse(`${source}\nNew output after the picker`))).toBeNull();
     expect(detectResumeRegion(parse(source.replace("Filter:", "Controls:")))).toBeNull();

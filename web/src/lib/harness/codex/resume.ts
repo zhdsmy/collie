@@ -165,7 +165,8 @@ export function detectResumeRegion(lines: StyledLine[]): ResumeRegion | null {
 
   let rule = -1;
   for (let index = tail; index > searchIndex; index--) {
-    if (PROGRESS.test(texts[index]!.trim()) && painted(lines[index]!, "dim")) {
+    const segments = lines[index]!.segments.filter((segment) => segment.text.trim());
+    if (PROGRESS.test(texts[index]!.trim()) && segments[0]?.dim === true && segments.at(-1)?.dim === true) {
       rule = index;
       break;
     }
