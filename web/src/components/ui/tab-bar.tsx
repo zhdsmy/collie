@@ -27,21 +27,29 @@ export interface TabBarProps<V extends string> {
   /** ALREADY TRANSLATED. The nav landmark's name. */
   label: string;
   className?: string;
-  floating?: boolean;
 }
 
-/** Shared dashboard tabs. The floating version leaves safe-area spacing to its parent. */
-export function TabBar<V extends string>({ items, active, onSelect, label, className, floating = false }: TabBarProps<V>) {
+/**
+ * A bottom tab bar: equal tabs in one row, each an icon over a one-line word, on the page colour
+ * with one rule above (DESIGN.md §4, chrome is never a fill). It owns the band, the safe area under
+ * it and the tabs' look; it owns no words and no state. The dashboard's footer is its first caller
+ * (ADR 0066).
+ *
+ * NOTHING MOVES ON A SWITCH (DESIGN.md §2). The active mark is a 2px top edge that every tab
+ * reserves, transparent, so a switch recolours an edge and re-lays-out nothing. The word never
+ * changes weight. A badge floats on the icon's corner, absolutely placed, so a count arriving,
+ * changing width or leaving moves no label. The quiet dot takes the same absolutely placed corner
+ * slot, so a count turning into a dot, or either leaving, moves nothing either. The row is `min-h-14` (56px, above the 44px floor of
+ * §6), and each word is one truncated line, so no locale can make one tab taller than the others.
+ *
+ * The safe area sits UNDER the row, inside the band, so the home indicator never covers a tab.
+ */
+export function TabBar<V extends string>({ items, active, onSelect, label, className }: TabBarProps<V>) {
   return (
     <nav
       aria-label={label}
       data-slot="tab-bar"
-      className={cn(
-        floating
-          ? "w-full shrink-0 overflow-hidden rounded-[30px]"
-          : "shrink-0 border-t border-rule bg-background pb-[env(safe-area-inset-bottom)]",
-        className,
-      )}
+      className={cn("shrink-0 border-t border-rule bg-background pb-[env(safe-area-inset-bottom)]", className)}
     >
       <div className="flex">
         {items.map((it) => {
@@ -58,11 +66,8 @@ export function TabBar<V extends string>({ items, active, onSelect, label, class
               className={cn(
                 // `-mt-px` lays the 2px edge over the band's 1px rule, so the active tab's mark IS
                 // the top edge there rather than a second line under it.
-                "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 text-[11px] font-medium select-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
-                floating ? "min-h-16" : "-mt-px min-h-14 border-t-2 border-transparent",
-                on
-                  ? floating ? "bg-foreground/10 text-foreground" : "border-foreground text-foreground"
-                  : "text-muted-foreground",
+                "relative -mt-px flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 border-t-2 border-transparent px-1 text-[11px] font-medium select-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                on ? "border-foreground text-foreground" : "text-muted-foreground",
               )}
             >
               <span className="relative flex size-5 items-center justify-center" aria-hidden>

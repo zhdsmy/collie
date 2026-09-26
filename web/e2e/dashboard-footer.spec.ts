@@ -49,31 +49,26 @@ test("switching tabs moves neither the footer nor the summary line", async ({ pa
   await expect(tab(page, PANES)).toHaveAttribute("aria-current", "page");
   const f0 = await box(footer(page));
   const s0 = await box(summary(page));
-  // The floating navigation leaves a 12px gap above the bottom safe area.
-  expect(Math.round(f0.y + f0.height)).toBe(800);
+  // The footer sits on the viewport's bottom edge.
+  expect(Math.round(f0.y + f0.height)).toBe(812);
 
   for (const name of [FOCUS, CHANGES, PANES]) {
     await tab(page, name).click();
     await expect(tab(page, name)).toHaveAttribute("aria-current", "page");
-    const next = await box(footer(page));
-    for (const edge of ["x", "y", "width", "height"] as const) {
-      expect(Math.abs(next[edge] - f0[edge])).toBeLessThan(3);
-    }
+    expect(await box(footer(page))).toEqual(f0);
     expect(await box(summary(page))).toEqual(s0);
   }
 });
 
-test("glass navigation stays transparent and usable at 320px", async ({ page }) => {
+test("solid navigation stays fixed and usable at 320px", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await page.goto("/");
   const navBox = await box(footer(page));
-  expect(navBox.width).toBeLessThanOrEqual(288);
-  expect(Math.abs(navBox.y + navBox.height - 688)).toBeLessThanOrEqual(1);
+  expect(navBox.width).toBe(320);
+  expect(Math.round(navBox.y + navBox.height)).toBe(700);
   const stamp = page.getByText(/^v\d+\.\d+\.\d+\+collie\./u);
-  expect((await box(stamp)).y).toBeGreaterThan(navBox.y + navBox.height);
-  await expect(footer(page)).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(page.locator(".glass__warp")).toHaveCSS("backdrop-filter", /blur\(/u);
-  await expect(page.locator(".glass")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(footer(page)).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(page.locator(".glass__warp")).toHaveCount(0);
   await page.getByRole("main").locator("..").evaluate((scroller) => { scroller.scrollTop = scroller.scrollHeight; });
   expect((await box(stamp)).y + (await box(stamp)).height).toBeLessThan(navBox.y);
   await tab(page, FOCUS).click();
