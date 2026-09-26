@@ -1,7 +1,5 @@
-// Codex keeps its native QA, plan, review, and folder-trust screens.
-// The upstream raw/chrome path handles those; only model/statusline/resume pickers
-// and command approvals are lifted. Keep composerReady/composerPrompt independent
-// of card rendering so native dialogs still reject ordinary chat submissions.
+// Codex keeps native QA, plan and review screens. Collie lifts current resume/model pickers,
+// trust and approvals while composerReady/composerPrompt guard ordinary chat submissions.
 
 import { trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { HarnessAdapter } from "../types";
@@ -13,6 +11,7 @@ import {
   stripChrome,
 } from "./chrome";
 import { detectApprovalRegion } from "./approval";
+import { detectTrustRegion } from "./trust";
 import { detectPickerRegion } from "./picker";
 import { detectResumeRegion } from "./resume";
 import { decorateCodexDisplay } from "./display";
@@ -32,15 +31,15 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
       { kind: "picker", picker: picker.model, lines: lines.slice(picker.startLine) },
     ];
   }
-  const approval = detectApprovalRegion(lines);
-  if (approval) {
-    const before = trimTrailingBlank(lines.slice(0, approval.startLine));
+  const prompt = detectTrustRegion(lines) ?? detectApprovalRegion(lines);
+  if (prompt) {
+    const before = trimTrailingBlank(lines.slice(0, prompt.startLine));
     const blocks: Block[] = [];
     if (before.length > 0) blocks.push(raw(before));
     blocks.push({
       kind: "prompt-select",
-      prompt: approval.model,
-      lines: lines.slice(approval.startLine),
+      prompt: prompt.model,
+      lines: lines.slice(prompt.startLine),
     });
     return blocks;
   }
