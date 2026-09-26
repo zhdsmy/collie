@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex's native input stays hidden in resumed panes.** Recognize the bold agents shortcut in its status footer.
+
 ## [1.13.1+collie.10] - 2026-09-26
 
 ### Fixed

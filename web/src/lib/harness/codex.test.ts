@@ -6,7 +6,7 @@ import { parseAnsi } from "../ansi";
 import { splitLines } from "../blocks";
 import { codexAdapter } from "./codex";
 import { composerPrompt, extractInputDraft, locateComposer, stripChrome } from "./codex/chrome";
-import { isStatusRow, lineText, PLACEHOLDER } from "./codex/markers";
+import { isComposerStatusRow, isStatusRow, lineText, PLACEHOLDER } from "./codex/markers";
 import { detectApprovalRegion } from "./codex/approval";
 import { detectAskRegion } from "./codex/ask";
 import { detectTrustRegion } from "./codex/trust";
@@ -287,6 +287,24 @@ describe("chrome", () => {
     expect(text).not.toContain("Ask Codex to do anything");
     expect(text).not.toContain("Context 1");
     expect(text).toContain("OpenAI Codex");
+  });
+
+  it("strips the composer with Codex 0.157.0's bold agents shortcut", () => {
+    const lines = fixtureLines("codex--fresh-idle.txt");
+    const statusRow = locateComposer(lines)!.statusRow;
+    const footer = [
+      "  \x1b[38;2;246;226;183mGPT-6-Sol xhigh\x1b[0m",
+      "\x1b[38;2;135;140;164m · \x1b[0m\x1b[38;2;200;169;238mReady\x1b[0m",
+      "\x1b[38;2;135;140;164m · \x1b[0m\x1b[38;2;148;153;174m0.157.0\x1b[0m",
+      "\x1b[38;2;135;140;164m · \x1b[0m\x1b[1;38;2;205;214;244m←\x1b[0m",
+      "\x1b[38;2;135;140;164m for agents\x1b[0m",
+    ].join("");
+    const current = lines.with(statusRow, splitLines(parseAnsi(footer))[0]!);
+
+    expect(codexAdapter.composerReady!(current)).toBe(true);
+    expect(codexAdapter.extractStatusLines(current).map(lineText).join("")).toContain("← for agents");
+    expect(codexAdapter.buildBlocks(current).flatMap((block) => block.lines).map(lineText).join("\n"))
+      .not.toContain(PLACEHOLDER);
   });
 
   it("extracts a one-line draft, and null for the placeholder", () => {
@@ -722,6 +740,7 @@ describe("the styled status-row acceptor fails closed", () => {
   it("refuses a bold field", () => {
     const { text, line } = row(`  ${BOLD}${FG2}model${OFF}${SEP}${FG}/dir${OFF}`);
     expect(isStatusRow(text, line)).toBe(false);
+    expect(isComposerStatusRow(text, line)).toBe(false);
   });
 
   it("holds the field count between two and twelve", () => {

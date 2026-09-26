@@ -187,8 +187,10 @@ export function isComposerStatusRow(text: string, line?: StyledLine): boolean {
 
   let hasField = false;
   for (const segment of segments.slice(1)) {
+    const shortcutIcon = hasField && segment.text === "←" && segment.bold === true &&
+      segment.fg !== undefined && segment.dim !== true;
     if (
-      segment.bg !== undefined || segment.bold === true || segment.italic === true ||
+      segment.bg !== undefined || (segment.bold === true && !shortcutIcon) || segment.italic === true ||
       segment.underline === true || segment.strike === true
     ) return false;
     if (!segment.text.trim()) {
