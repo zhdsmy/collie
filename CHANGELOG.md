@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.1+collie.12] - 2026-09-26
+
 ### Changed
 
-- **The dashboard uses its solid bottom navigation again.** Remove the liquid glass effect and its dependency to avoid slow tab switching.
+- **The dashboard uses its solid bottom navigation again.** Remove the liquid glass effect and its dependency to avoid slow tab switching. ([cdff9a59](https://github.com/zhdsmy/collie/commit/cdff9a59))
 
 ## [1.13.1+collie.11] - 2026-09-26
 
