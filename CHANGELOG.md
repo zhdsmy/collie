@@ -30,8 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.1+collie.2] - 2026-09-28
+
 ### Changed
-- **Tabs show the agent running inside them.** A 16px mark appears beside the name when every pane in a tab uses the same agent; mixed and empty tabs keep their text-only label without making the strip taller.
+- **Tabs show the agent running inside them.** A 16px mark appears beside the name when every pane in a tab uses the same agent; mixed and empty tabs keep their text-only label without making the strip taller. ([ee144f0a](https://github.com/zhdsmy/collie/commit/ee144f0a))
 
 ## [1.14.1+collie.1] - 2026-09-27
 
