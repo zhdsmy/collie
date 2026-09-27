@@ -30,19 +30,21 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.13.3+collie.1] - 2026-09-27
+
 ### Added
 
-- **A ledger records the agent versions verified by each reader.** `bun run harness:drift` compares those versions with installed agents without changing their state.
-- **A canary checks real agent screens and reply handling.** `bun run canary` exercises drafts and sends in its own Herdr session using Collie's production readers and reply guard.
+- **A ledger records the agent versions verified by each reader.** `bun run harness:drift` compares those versions with installed agents without changing their state. ([fcc3cc7d](https://github.com/zhdsmy/collie/commit/fcc3cc7d))
+- **A canary checks real agent screens and reply handling.** `bun run canary` exercises drafts and sends in its own Herdr session using Collie's production readers and reply guard. ([fcc3cc7d](https://github.com/zhdsmy/collie/commit/fcc3cc7d))
 
 ### Fixed
 
-- **Codex panes without an attached Herdr client show input again.** Accept the unpainted separator in their status row so an idle pane does not show the unread-dialog card (#294).
-- **New Codex panes explain when session history becomes available.** The note says Codex reports its session after the first message, and gives hook repair steps if it stays missing (#294).
+- **Codex panes without an attached Herdr client show input again.** Accept the unpainted separator in their status row so an idle pane does not show the unread-dialog card (#294). ([fcc3cc7d](https://github.com/zhdsmy/collie/commit/fcc3cc7d))
+- **New Codex panes explain when session history becomes available.** The note says Codex reports its session after the first message, and gives hook repair steps if it stays missing (#294). ([fcc3cc7d](https://github.com/zhdsmy/collie/commit/fcc3cc7d))
 
 ### Docs
 
-- **Screen issue reports include the pane's raw ANSI output.** The bug report form and troubleshooting guide request a pane capture that preserves colors and dim text.
+- **Screen issue reports include the pane's raw ANSI output.** The bug report form and troubleshooting guide request a pane capture that preserves colors and dim text. ([fcc3cc7d](https://github.com/zhdsmy/collie/commit/fcc3cc7d))
 
 ## [1.13.2+collie.1] - 2026-09-26
 
