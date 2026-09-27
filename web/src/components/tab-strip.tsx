@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 
 import { AddButton } from "@/components/ui/add-button";
+import { AgentIcon } from "@/components/agent-icon";
 import { STRIP_TAP_TARGET, TAB_ROW_SQUARE_TAP_TARGET } from "@/components/ui/labelled-strip";
 import { TabActionsSheet } from "@/components/tab-actions-sheet";
 import { StatusDot } from "@/components/status-badge";
@@ -100,10 +101,9 @@ interface TabStripProps {
 //
 // A CELL NAMES WHAT THE HEADER NAMES (lib/pane-name.ts § tabCellTitle). A one-pane tab reads its
 // pane's name — `plumbing`, the same word the pane header shows — not the tab's own label, so the
-// open cell and the header agree. The tab label stays for a tab that is a real group. And no brand
-// tile: the header already carries the agent's mark once, and a tile on every cell repeated it four
-// times across the row, which is what made the belt read as a list of agents rather than as a row of
-// tabs. The status dot stays; it is the one fact the eye scans the whole row for.
+// open cell and the header agree. The tab label stays for a tab that is a real group. A 16px agent
+// mark identifies tabs whose panes all run the same agent; mixed or empty tabs keep only their label.
+// The status dot stays; it is the one fact the eye scans the whole row for.
 //
 // This row draws no name. The shape announces itself — that is the operator's reason for choosing
 // it — so `LabelledStrip` is gone from here and the structure it provided lives inline: the <nav>,
@@ -220,21 +220,27 @@ export function TabStrip({
             )}
             {wsTabs.map((t) => {
               const inTab = here.filter((a) => a.tabId === t.tabId);
+              const first = inTab[0];
+              const iconAgent = first && first.kind !== "shell" &&
+                inTab.every((a) => a.kind !== "shell" && a.agent === first.agent)
+                  ? first.agent
+                  : undefined;
               return (
-              <Tab
-                key={t.tabId}
-                label={t.label}
-                title={tabCellTitle(t.label, inTab)}
-                active={selected === t.tabId}
-                // What's actually going on in there — blocked / ready / working / idle — instead of a
-                // dot that only ever appeared for blocked and left every other state unreadable.
-                status={worstTriage(inTab)}
-                onClick={() => onSelect(t.tabId)}
-                // Long-press (and a tap on the already-active tab) opens the actions sheet — only when
-                // the parent wired the actions; otherwise the tabs stay plain tap-to-switch.
-                onLongPress={actionsEnabled ? () => setSheetTab(t) : undefined}
-                onTapActive={actionsEnabled ? () => setSheetTab(t) : undefined}
-              />
+                <Tab
+                  key={t.tabId}
+                  label={t.label}
+                  title={tabCellTitle(t.label, inTab)}
+                  active={selected === t.tabId}
+                  // What's actually going on in there — blocked / ready / working / idle — instead of a
+                  // dot that only ever appeared for blocked and left every other state unreadable.
+                  status={worstTriage(inTab)}
+                  iconAgent={iconAgent}
+                  onClick={() => onSelect(t.tabId)}
+                  // Long-press (and a tap on the already-active tab) opens the actions sheet — only when
+                  // the parent wired the actions; otherwise the tabs stay plain tap-to-switch.
+                  onLongPress={actionsEnabled ? () => setSheetTab(t) : undefined}
+                  onTapActive={actionsEnabled ? () => setSheetTab(t) : undefined}
+                />
               );
             })}
           </div>
@@ -293,6 +299,7 @@ interface TabProps {
    * that's not the same as idle, and a resting dot would claim otherwise.
    */
   status?: TriageKey | null;
+  iconAgent?: string;
   onClick: () => void;
   /** Long-press (or right-click / Android contextmenu) opens actions. Inert when unset. */
   onLongPress?: () => void;
@@ -306,6 +313,7 @@ function Tab({
   title: titleProp,
   active,
   status,
+  iconAgent,
   onClick,
   onLongPress,
   onTapActive,
@@ -387,6 +395,11 @@ function Tab({
           {/* The dot is colour-only; say it in words for screen readers. */}
           <span className="sr-only">{statusLabel(TRIAGE_STATUS[status])}</span>
         </>
+      )}
+      {iconAgent && (
+        <span aria-hidden="true" className="inline-flex shrink-0">
+          <AgentIcon agent={iconAgent} className="size-4" />
+        </span>
       )}
       {title === null ? (
         <>

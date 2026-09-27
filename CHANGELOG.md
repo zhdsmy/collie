@@ -30,6 +30,9 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+- **Tabs show the agent running inside them.** A 16px mark appears beside the name when every pane in a tab uses the same agent; mixed and empty tabs keep their text-only label without making the strip taller.
+
 ## [1.14.1+collie.1] - 2026-09-27
 
 ### Added

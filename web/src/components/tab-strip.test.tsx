@@ -434,10 +434,10 @@ describe("TabStrip — status on the chips", () => {
   // A CELL NAMES WHAT THE HEADER NAMES (lib/pane-name.ts § tabCellTitle). A one-pane tab reads its
   // pane's name, the word the pane header shows, so the open cell and the header agree. The tab's
   // own label stays where the tab is a real group, where it holds no pane, and where its sole pane
-  // has only a kind to its name. And no brand tile any more: the header carries the agent's mark
-  // once, and a tile on every cell made the belt read as a list of agents.
+  // has only a kind to its name. The compact agent mark is decorative and must not rename the tab.
   const logos = (el: HTMLElement) =>
-    Array.from(el.querySelectorAll('[role="img"]')).map((n) => n.getAttribute("aria-label"));
+    Array.from(el.querySelectorAll('svg[role="img"], img'))
+      .map((n) => n.getAttribute("aria-label") ?? n.getAttribute("alt"));
 
   it("names a one-pane tab after its pane, the way the header does", () => {
     strip([pane("w1:t1", "working", { sessionName: "plumbing", terminalTitle: "plumbing" })]);
@@ -461,10 +461,34 @@ describe("TabStrip — status on the chips", () => {
     expect(screen.queryByRole("button", { name: /one|two/ })).toBeNull();
   });
 
-  it("draws no brand tile on any cell", () => {
+  it("shows a 16px agent mark without changing the tab's accessible name", () => {
     strip([pane("w1:t1", "idle", { terminalTitle: "one" })]);
-    expect(logos(screen.getByRole("button", { name: /one/ }))).toEqual([]);
+    const cell = screen.getByRole("button", { name: /one/ });
+    expect(logos(cell)).toEqual(["claude logo"]);
+    expect(cell.querySelector('svg[role="img"]')).toHaveClass("size-4");
+    expect(cell.querySelector('svg[role="img"]')?.parentElement)
+      .toHaveAttribute("aria-hidden", "true");
     expect(logos(screen.getByRole("button", { name: /empty/ }))).toEqual([]);
+  });
+
+  it("shows one mark for a same-agent group, but none for mixed agents or shell panes", () => {
+    const first = pane("w1:t1", "idle");
+    const second = { ...first, paneId: "w1:t1:p2" };
+    const { rerender } = strip([first, second]);
+    expect(logos(screen.getByRole("button", { name: /code/ }))).toEqual(["claude logo"]);
+
+    const props = {
+      workspaceId: "w1",
+      tabs: chipTabs,
+      selected: null,
+      onSelect: vi.fn(),
+      onNewTab: vi.fn(),
+    };
+    rerender(<TabStrip {...props} agents={[first, { ...second, agent: "codex" }]} />);
+    expect(logos(screen.getByRole("button", { name: /code/ }))).toEqual([]);
+
+    rerender(<TabStrip {...props} agents={[{ ...first, kind: "shell" }]} />);
+    expect(logos(screen.getByRole("button", { name: /code/ }))).toEqual([]);
   });
 });
 
