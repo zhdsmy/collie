@@ -393,6 +393,8 @@ export const ko: Dictionary = {
   "chat.sessionInfo.toolActivity": "도구 활동",
   "chat.sessionInfo.totalMessages": "전체 메시지",
   "chat.startupPreview.summary": "Hermes {version} · 도구 {tools}개 · 스킬 {skills}개",
+  "chat.scrollback.noSessionYet":
+    "{agent}는 첫 메시지를 보낸 뒤에만 세션을 Herdr에 보고하므로 아직 기록이 없습니다. {agent}가 답변한 뒤에도 이 안내가 남아 있다면 {agent}에서 /hooks로 훅을 확인하거나 Herdr 연동을 업데이트한 다음 에이전트를 재시작하세요.",
   "chat.fullReply.title": "답변 전체",
   "chat.fullReply.fromTranscript": "로그에서",
   "chat.fullReply.showingTerminal": "터미널 표시 중",

@@ -388,6 +388,8 @@ export const zhTW: Dictionary = {
   "chat.sessionInfo.toolActivity": "工具活動",
   "chat.sessionInfo.totalMessages": "訊息總數",
   "chat.startupPreview.summary": "Hermes {version} · {tools} 工具 · {skills} 技能",
+  "chat.scrollback.noSessionYet":
+    "{agent} 只有在傳送第一則訊息後才會向 Herdr 回報工作階段，因此目前沒有歷史記錄。如果 {agent} 回覆後這則提示仍然顯示，請在 {agent} 執行 /hooks 檢查 hooks，或更新 Herdr 整合並重新啟動 Agent。",
   "chat.fullReply.title": "完整回覆",
   "chat.fullReply.fromTranscript": "來自記錄",
   "chat.fullReply.showingTerminal": "正在顯示終端機",

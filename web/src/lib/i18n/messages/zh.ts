@@ -382,6 +382,8 @@ export const zh: Dictionary = {
   "chat.sessionInfo.toolActivity": "工具活动",
   "chat.sessionInfo.totalMessages": "总消息数",
   "chat.startupPreview.summary": "Hermes {version} · {tools} 工具 · {skills} 技能",
+  "chat.scrollback.noSessionYet":
+    "{agent} 只有在发送首条消息后才会向 Herdr 上报会话，因此目前没有历史记录。如果 {agent} 回复后这条提示仍然显示，请在 {agent} 中运行 /hooks 检查 hooks，或更新 Herdr 集成并重启 Agent。",
   "chat.fullReply.title": "完整回复",
   "chat.fullReply.fromTranscript": "来自日志",
   "chat.fullReply.showingTerminal": "正在显示终端",

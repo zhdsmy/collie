@@ -400,6 +400,8 @@ export const de: Dictionary = {
   "chat.sessionInfo.toolActivity": "Werkzeugaktivität",
   "chat.sessionInfo.totalMessages": "Nachrichten insgesamt",
   "chat.startupPreview.summary": "Hermes {version} · {tools} Werkzeuge · {skills} Fähigkeiten",
+  "chat.scrollback.noSessionYet":
+    "{agent} meldet seine Sitzung erst nach der ersten Nachricht an Herdr; bis dahin gibt es keinen Verlauf. Wenn dieser Hinweis nach einer Antwort von {agent} bleibt, überprüfe die Hooks mit /hooks in {agent} oder aktualisiere die Herdr-Integration und starte den Agenten neu.",
   "chat.fullReply.title": "Vollständige Antwort",
   "chat.fullReply.fromTranscript": "aus dem Protokoll",
   "chat.fullReply.showingTerminal": "Terminal wird gezeigt",

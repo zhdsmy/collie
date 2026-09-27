@@ -395,6 +395,8 @@ export const ja: Dictionary = {
   "chat.sessionInfo.toolActivity": "ツールの実行",
   "chat.sessionInfo.totalMessages": "メッセージ総数",
   "chat.startupPreview.summary": "Hermes {version} · ツール {tools} · スキル {skills}",
+  "chat.scrollback.noSessionYet":
+    "{agent} は最初のメッセージを送信した後にのみセッションを Herdr に報告するため、まだ履歴はありません。{agent} が返信した後もこのメッセージが表示される場合は、{agent} で /hooks を実行してフックを確認するか、Herdr 連携を更新してエージェントを再起動してください。",
   "chat.fullReply.title": "返答の全文",
   "chat.fullReply.fromTranscript": "ログより",
   "chat.fullReply.showingTerminal": "ターミナルを表示中",

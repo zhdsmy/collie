@@ -420,6 +420,8 @@ export const en = {
   "chat.sessionInfo.toolActivity": "Tool activity",
   "chat.sessionInfo.totalMessages": "Total messages",
   "chat.startupPreview.summary": "Hermes {version} · {tools} tools · {skills} skills",
+  "chat.scrollback.noSessionYet":
+    "{agent} reports its session to Herdr only after its first message, so there is no history yet. If this note stays after {agent} has replied, review its hooks with /hooks in {agent}, or update the Herdr integration and restart the agent.",
   "chat.fullReply.title": "Full reply",
   "chat.fullReply.fromTranscript": "from transcript",
   "chat.fullReply.showingTerminal": "showing the terminal",
