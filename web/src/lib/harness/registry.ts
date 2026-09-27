@@ -4,8 +4,8 @@
 // pipeline (harness/index buildBlocks) and agent-chat's status strip — so the policy can't drift, and
 // adding a further verified agent is a one-line change to ADAPTERS. Full adapters may lift native
 // dialogs and verify composer sends; display-only adapters such as Cursor and Hermes restrict
-// themselves to transcript presentation and status extraction. Adapters register by their EXACT
-// agent string only —
+// themselves to transcript presentation and status extraction. OpenCode now has its own live
+// adapter. Adapters register by their EXACT agent string only —
 // prefix-matching here was the AltanS/collie#99 reject: it would hand a harness's live keystroke
 // recipes to any agent string sharing the prefix. `hasBlockGrammar` replaces the old
 // grammar/agents predicate:
@@ -17,6 +17,7 @@ import { claudeAdapter } from "./claude";
 import { codexAdapter } from "./codex";
 import { grokAdapter } from "./grok";
 import { ompAdapter } from "./omp";
+import { opencodeAdapter } from "./opencode";
 import { agyAdapter, antigravityAdapter } from "./agy";
 import { hermesAdapter } from "./hermes";
 import { cursorAdapter } from "./cursor";
@@ -29,6 +30,7 @@ const ADAPTERS: Record<string, HarnessAdapter> = Object.fromEntries(
     codexAdapter,
     grokAdapter,
     ompAdapter,
+    opencodeAdapter,
     agyAdapter,
     antigravityAdapter,
     hermesAdapter,
@@ -46,6 +48,13 @@ const ADAPTERS: Record<string, HarnessAdapter> = Object.fromEntries(
  *  prefix. Variant tolerance for slash catalogs belongs in `canonicalAgent`. */
 export function adapterFor(agent: string | undefined): HarnessAdapter | undefined {
   return agent !== undefined && Object.hasOwn(ADAPTERS, agent) ? ADAPTERS[agent] : undefined;
+}
+
+/** Every agent string the registry maps, in registration order. For the checks that must cover
+ *  every adapter (the version ledger, `verified-versions.test.ts`) without keeping a second,
+ *  hand-written list that drifts from this one. */
+export function registeredAgents(): string[] {
+  return Object.keys(ADAPTERS);
 }
 
 /** Whether `agent` has block grammars (an adapter). The gate agent-chat's status strip shares with

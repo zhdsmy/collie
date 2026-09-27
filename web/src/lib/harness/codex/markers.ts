@@ -79,12 +79,27 @@ export function painted(line: StyledLine, flag: "bold" | "dim"): boolean {
 // (codex.test.ts pins both halves). The right-aligned notice still wants every segment painted;
 // no headless capture shows one yet.
 //
+// While the first turn of a thread runs, 0.156.1 ends the row with a spinner: one more ` · ` in the
+// row's separator paint, then ONE braille frame in a colour of its own (`  GPT-6-Luna low ·
+// /tmp/collie-canary-project · ⠧`, codex--v0156-busy-streaming.txt). It holds the place of the
+// thread's title: a few seconds on, the same spot and colour read `Write a sheepdog story`, an
+// ordinary third field. The frame is a single coloured braille glyph, which is also what a starfield
+// sparkle is, so generic Braille cleanup used to paint it over; the row then ended in a bare separator and
+// was refused, and a busy Codex had no composer: the unread-dialog card, and a send refused as
+// `blocked` where Codex would have queued it. The spinner is now the row's TAIL (`isSpinnerFrame`,
+// `trailingSpinnerIndex`): not a field, so it never counts toward the two, and not a sparkle. It is
+// accepted only as the last segment, straight after an ordinary separator in the row's one paint,
+// and only when the row before that separator is already a whole status row on its own, so it adds
+// no way in for a row that was refused without it. A spinner anywhere else is still painted over as
+// a sparkle, exactly as before; no capture shows one there.
+//
 // Why a dialog cannot pass: every 0.156.1 dialog footer (`enter continue · esc quit`, `enter select
 // · esc back`, `Press enter to confirm or esc to cancel`) paints its key names BOLD, and its glue
 // text SGR 2 in the SAME segment as the ` · `, so neither a field nor a separator can be read off
 // it. The update prompt's heading row sits on a background fill. codex.test.ts pins composerReady
 // false on every 0.156.1 dialog capture, and the tail shape still has to hold on top: this row
-// last, a column-0 `› ` row above, and nothing at column 0 in between.
+// last (or straight above the one 0.157.0 hint row, `isHintRow`), a column-0 `› ` row above, and
+// nothing at column 0 in between.
 //
 // Still unsupported: a DISABLED status line (`tui.status_line = null`). There is then no row
 // under the prompt to anchor on, and the rows that remain are transcript. Anchoring the composer
@@ -93,6 +108,9 @@ export function painted(line: StyledLine, flag: "bold" | "dim"): boolean {
 // the wrong place. Such a pane falls back to the raw mirror with replies refused: safe, and dark.
 const STATUS_ROW =
   /^ {2}\S.* · (?:(?:.* · )+Context \d+% (?:left|used)\b|Context \d+% (?:left|used)\b · \S)/;
+// At 50 columns Codex 0.157.1 truncates Context and drops status paint entirely.
+const NARROW_STATUS_ROW =
+  /^ {2}\S.+ · Ready · Context \d+%…(?:  ⚠ \d+ · f2)?$/;
 
 // While a turn is running Codex replaces the normal status row with a two-line footer:
 // `tab to queue message` followed by `50% context left`. It is still composer chrome,
@@ -107,6 +125,7 @@ const INLINE_QUEUE_CONTEXT_ROW =
 
 /** The exact separator paint Codex renders between status fields. */
 const STATUS_SEPARATOR = " \u00b7 ";
+const BRAILLE = /^[⠀-⣿]$/u;
 /** Bounds. A status field is a model name, a path or a branch — never a paragraph. */
 const MAX_STATUS_FIELD_CHARS = 160;
 const MAX_STATUS_ROW_CHARS = 512;
@@ -136,7 +155,9 @@ function hasControlChar(text: string): boolean {
 function isFieldSegment(segment: AnsiSegment): boolean {
   if (segment.fg === undefined || segment.bg !== undefined) return false;
   if (segment.bold === true || segment.dim === true) return false;
-  if (segment.text.length === 0 || segment.text !== segment.text.trim()) return false;
+  if (
+    segment.text.length === 0 || segment.text !== segment.text.trim() || BRAILLE.test(segment.text)
+  ) return false;
   return codePointCount(segment.text) <= MAX_STATUS_FIELD_CHARS;
 }
 
@@ -199,6 +220,22 @@ function isGapSegment(segment: AnsiSegment): boolean {
   return /^ {2,}$/.test(segment.text) && isUnstyled(segment);
 }
 
+// The busy row's spinner frames: the ten of the dots spinner, the only run of them in the 0.156.1
+// binary (beside its status-surface code). The canary's busy captures hold `⠋` and `⠧`. The starfield
+// draws from eight single-dot glyphs instead (`⠁⠂⠄⠈⠐⠠⡀⢀`, every sparkle in
+// codex--v0154-submitted-fill.txt), so no sparkle is a spinner frame. The frame's colour changes
+// from thread to thread (three captures, three colours), so it is never matched by value.
+const SPINNER_FRAME = /^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]$/u;
+
+/** One spinner frame as Codex paints it on a busy status row: a single glyph of the ten, in a
+ *  foreground of its own, with no background and no emphasis. */
+function isSpinnerFrame(segment: AnsiSegment): boolean {
+  if (segment.fg === undefined || segment.bg !== undefined) return false;
+  if (segment.bold === true || segment.dim === true) return false;
+  if (segment.italic === true || segment.underline === true) return false;
+  return SPINNER_FRAME.test(segment.text);
+}
+
 // 0.156.1 right-aligns a notice on the status row when it has one — seen as `⚠ 1 warning · f2 to
 // view` (codex--v0156-draft-multiline.txt). Its paint is mixed (a bold key, quiet glue text), so
 // its segments are not read as fields. It is bounded instead: short, every segment painted (a
@@ -237,7 +274,8 @@ function foldTrailingPadding(segments: AnsiSegment[]): AnsiSegment[] | null {
  * The default status row, recognised by its PAINT. All of these must hold, or the row is refused:
  * the styled line must be the same row as `text`; the segments must read as an unstyled two-space
  * indent then `field (sep field)*`, optionally ending with one combined quiet `sep + field` segment
- * after two ordinary fields, or with a gap and a right-aligned notice after two ordinary fields;
+ * after two ordinary fields, or with a gap and a right-aligned notice after two ordinary fields, or
+ * with a separator and a spinner frame after two ordinary fields (a busy row, not a field);
  * every separator must carry ONE quiet paint, which no field may share; and the field count must
  * stay in bounds. Prose that happens to contain ` \u00b7 ` fails on the paint, which is the whole
  * point of the guard.
@@ -280,6 +318,12 @@ function isStyledStatusRow(text: string, line: StyledLine): boolean {
       fields++;
       break;
     }
+    // A busy row: this separator, then a spinner frame as the very last segment. The frame is not a
+    // field; every check after the loop sees exactly the row before this separator.
+    if (i === segments.length - 2 && isSpinnerFrame(segments[i + 1]!)) {
+      if (fields < MIN_STATUS_FIELDS) return false;
+      break;
+    }
     if (i === segments.length - 1) return false;
     i++;
   }
@@ -293,7 +337,7 @@ function isStyledStatusRow(text: string, line: StyledLine): boolean {
  *  `line` is the same row, styled; Context and working queue rows also have text shapes. */
 export function isStatusRow(text: string, line?: StyledLine): boolean {
   const row = rstrip(text);
-  if (STATUS_ROW.test(row) || INLINE_QUEUE_CONTEXT_ROW.test(row)) return true;
+  if (STATUS_ROW.test(row) || NARROW_STATUS_ROW.test(row) || INLINE_QUEUE_CONTEXT_ROW.test(row)) return true;
   return line !== undefined && isStyledStatusRow(text, line);
 }
 
@@ -340,6 +384,32 @@ export function isWorkingContextRow(text: string): boolean {
   return WORKING_CONTEXT_ROW.test(rstrip(text));
 }
 
+// Codex 0.157.0 turned `tui.fullscreen_transcript` on by default. In that layout the status line
+// gets a row of its own and ONE more row sits under it: the key hints (`? for shortcuts`, `tab to
+// queue message`, and `← for agents · ? for shortcuts` when the TUI is attached to a local Codex
+// daemon), plus a right-aligned notice (`⚠ 1 warning · f2 to view`). With a draft and no notice
+// the row is blank. When it was not blank, the status row was no longer the last row, and every
+// such pane had no composer: the unread-dialog card, and every send refused (#294, the reporter's
+// pane and codex--v0157-idle.txt). Its known key-hint and warning grammar is stable; a generic
+// indentation test would also claim modal footers such as `Press space to toggle`. The status row
+// straight above it is the evidence. The hint row's muted colour is theme paint that a client-less
+// Codex does not get, and invariants.test.ts repaints the whole band, this row included.
+const HINT_ROW =
+  /^ {2,}(?:(?:(?:← for agents · )?(?:f4 inspect activity · )?\? (?:for )?shortcuts|tab to queue message(?: · \? (?:for )?shortcuts)?)|⚠ \d+(?: warnings?)?)(?: {2,}⚠ \d+(?: warnings?)?(?: · f2(?: to view)?)?| · f2(?: to view)?)?$/;
+
+/**
+ * True when the row could be the key-hint row under a 0.157.0 status row: indented (column 0 is
+ * blank, which no transcript bullet and no prompt row is), bounded, no control bytes, and not a
+ * status row itself. Never decisive alone: locateComposer accepts it only as the last non-blank row
+ * and only straight under a status row.
+ */
+export function isHintRow(text: string, line?: StyledLine): boolean {
+  const row = rstrip(text);
+  if (!HINT_ROW.test(row) || hasControlChar(row)) return false;
+  if (codePointCount(row) > MAX_STATUS_ROW_CHARS) return false;
+  return !isStatusRow(text, line);
+}
+
 // The `› ` prompt row. Column 0 — but transcript ECHOES of submitted messages paint the same
 // prefix, so callers must only trust this at the located composer position.
 const PROMPT = /^› (.*)$/;
@@ -381,4 +451,15 @@ export function regionSignature(lines: StyledLine[], from: number, to: number): 
     .slice(from, to)
     .map((l) => rstrip(lineText(l)))
     .join("\n");
+}
+// Codex's Astra models paint a starfield over the composer band: single-dot Braille glyphs
+// scattered across the row above the prompt, the prompt row after the draft, and the rows under it,
+// repainted every frame (issue #245, and codex--v0154-submitted-fill.txt, captured on gpt-6-astra).
+// Each sparkle is ONE glyph in its own segment with its own grey foreground. A typed draft is painted
+// in the default foreground, so the colour is what tells a sparkle from a braille character someone
+// typed, the same renderer-evidence rule isEmptyPlaceholder uses in chrome.ts.
+/** One starfield sparkle: a single braille glyph carrying its own foreground colour. */
+export function isSparkle(segment: AnsiSegment): boolean {
+  return segment.fg !== undefined && !segment.bold && !segment.dim &&
+    /^[⠁⠂⠄⠈⠐⠠⡀⢀]$/u.test(segment.text);
 }

@@ -10,9 +10,11 @@ import { trimTrailingBlank } from "../../blocks";
 import {
   isBlank,
   isComposerStatusRow,
+  isHintRow,
+  isSparkle,
+  isStatusRow,
   isWorkingContextRow,
   isWorkingQueueRow,
-  isStatusRow,
   lastNonBlankIndex,
   lineText,
   PLACEHOLDER,
@@ -26,7 +28,7 @@ export interface ComposerBox {
   top: number;
   /** The `› ` prompt row. */
   promptRow: number;
-  /** The status row under it (a fullscreen shortcut hint may follow). */
+  /** The status row under it, directly above any 0.157.0 key-hint row. */
   statusRow: number;
 }
 
@@ -42,7 +44,21 @@ const MAX_DRAFT_ROWS = 100;
 // (including tool/answer bullets) still cannot be crossed on the way to the live prompt.
 const CONTINUATION = /^ {2}\s*\S/;
 const PROMPT_PREFIX = "› ";
-const FULLSCREEN_HINT = /^ {2}(?:f4 inspect activity · )?\? shortcuts(?: +⚠ .+)?$/;
+
+function normalizeParticles(lines: StyledLine[]): StyledLine[] {
+  const texts = lines.map(lineText);
+  const last = lastNonBlankIndex(texts);
+  if (
+    last > 0 &&
+    isHintRow(texts[last]!, lines[last]) &&
+    isComposerStatusRow(texts[last - 1]!, lines[last - 1])
+  ) {
+    const composer = lines.slice(0, last);
+    const normalized = normalizeComposerParticles(composer);
+    return normalized === composer ? lines : [...normalized, ...lines.slice(last)];
+  }
+  return normalizeComposerParticles(lines);
+}
 
 /**
  * The live Codex composer paints its prompt arrow as a dedicated bold segment and fills the whole
@@ -131,11 +147,9 @@ function commandInput(lines: StyledLine[]): { draft: string; prompt: string } | 
 /** The composer with a status footer. Command completion is recognized separately below. */
 export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   const original = lines;
-  lines = normalizeComposerParticles(lines);
+  lines = normalizeParticles(lines);
   const texts = lines.map((l) => rstrip(lineText(l)));
-  const lastRow = lastNonBlankIndex(texts);
-  const statusRow = lastRow > 0 && FULLSCREEN_HINT.test(texts[lastRow]!) &&
-    isComposerStatusRow(texts[lastRow - 1]!, lines[lastRow - 1]) ? lastRow - 1 : lastRow;
+  const statusRow = locateStatusRow(texts, lines);
   if (statusRow < 0) return null;
   const regularStatus = isComposerStatusRow(texts[statusRow]!, lines[statusRow]);
   const workingStatus = isWorkingContextRow(texts[statusRow]!);
@@ -174,15 +188,27 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   return null;
 }
 
-/** The starfield rows directly above the prompt belong to the composer band, and leave the mirror
- *  with it. Only a row that holds sparkles and nothing else: such a row is never transcript. */
+/** The status row is at the buffer tail, or directly above the 0.157.0 key-hint row. */
+function locateStatusRow(texts: string[], clean: StyledLine[]): number {
+  const last = lastNonBlankIndex(texts);
+  if (last < 0) return -1;
+  const above = last - 1;
+  if (
+    above >= 0 &&
+    isHintRow(texts[last]!, clean[last]) &&
+    (isComposerStatusRow(texts[above]!, clean[above]) || isWorkingContextRow(texts[above]!))
+  ) return above;
+  return isComposerStatusRow(texts[last]!, clean[last]) || isWorkingContextRow(texts[last]!) ? last : -1;
+}
+
+/** Starfield rows directly above the prompt belong to the composer band and leave with it. */
 function bandTop(lines: StyledLine[], texts: string[], promptRow: number): number {
   let top = promptRow;
   while (
     top > 0 &&
     promptRow - top < MAX_DRAFT_ROWS &&
     isBlank(texts[top - 1]!) &&
-    !isBlank(lineText(lines[top - 1]!))
+    lines[top - 1]!.segments.some(isSparkle)
   ) {
     top--;
   }
@@ -202,6 +228,7 @@ export function stripChrome(lines: StyledLine[]): StyledLine[] {
 
 /** The status row, styled, for the strip above the phone composer. Empty when no composer. */
 export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
+  lines = normalizeParticles(lines);
   const box = locateComposer(lines);
   if (box === null) return [];
   return [lines[box.statusRow]!];
@@ -223,13 +250,13 @@ function draftEnd(lines: StyledLine[], box: ComposerBox): number {
  * The user's draft stranded in the composer: the `› ` row's text plus wrapped continuation
  * rows, joined with single spaces (Codex word-wraps — verified against the typed original on
  * the draft-wrapped capture). The placeholder is not a draft. Null = no composer / empty.
- * Sparkles are painted over first, and a blank row between the prompt and the status row is skipped.
+ * Proven composer particles are replaced with spaces first; blank rows before status are skipped.
  *
  * Load-bearing: registering this adapter switches Codex panes from one-shot send to
  * type-then-verify, and THIS is the verify half.
  */
 export function extractInputDraft(lines: StyledLine[]): string | null {
-  lines = normalizeComposerParticles(lines);
+  lines = normalizeParticles(lines);
   const box = locateComposer(lines);
   if (box === null) return commandInput(lines)?.draft ?? null;
   const texts = lines.map((l) => rstrip(lineText(l)));
@@ -248,7 +275,7 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
 
 /** Typing reaches the composer only when the composer is on screen — every dialog replaces it. */
 export function composerReady(lines: StyledLine[]): boolean {
-  return locateComposer(lines) !== null || commandInput(normalizeComposerParticles(lines)) !== null;
+  return locateComposer(lines) !== null || commandInput(normalizeParticles(lines)) !== null;
 }
 
 /** The literal on-screen prompt/draft run a destructive write is bound to. Ending at the last draft
@@ -256,9 +283,12 @@ export function composerReady(lines: StyledLine[]): boolean {
  * first `›` row would permanently 409 once six or more non-blank wrap rows sat beneath it.
  * Particle spaces use the same normalization in the bridge, so animated drafts stay bound. */
 export function composerPrompt(lines: StyledLine[]): string | null {
-  lines = normalizeComposerParticles(lines);
+  lines = normalizeParticles(lines);
   const box = locateComposer(lines);
   if (box === null) return commandInput(lines)?.prompt ?? null;
+  for (let i = box.promptRow; i < box.statusRow; i++) {
+    if (lines[i]!.segments.some(isSparkle)) return null;
+  }
   const end = draftEnd(lines, box);
   return lines
     .slice(box.promptRow, end)
