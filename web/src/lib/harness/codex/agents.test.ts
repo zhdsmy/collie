@@ -27,7 +27,7 @@ describe("Codex agent command center", () => {
 
   it("refuses missing paint, partial frames, duplicate names, other modes and stale output", () => {
     const lines = parse(source());
-    expect(detectAgentsRegion(lines.map((line) => ({ segments: [{ text: lineText(line) }] })))).toBeNull();
+    expect(detectAgentsRegion(lines.map((line) => ({ segments: [{ text: lineText(line), style: {}, muted: false }] })))).toBeNull();
     for (const fragment of ["Agent command center", "›", "? help"]) {
       const unpainted = lines.map((line) => lineText(line).includes(fragment)
         ? { segments: line.segments.map((segment) => ({ ...segment, bold: false, dim: false })) } : line);

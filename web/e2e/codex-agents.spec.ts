@@ -44,11 +44,16 @@ test("Codex command center selects and cancels safely at 320px", async ({ page }
   const panel = page.getByRole("group", { name: "Agent command center", exact: true });
   await expect(panel).toBeVisible();
   await expect(panel.locator('[data-slot="picker-options"] button')).toHaveCount(2);
-  await expect(page.getByRole("textbox")).toHaveCount(0);
   expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("codex-agents-320.png"), fullPage: true });
-  await panel.getByRole("button", { name: "Fixture beta", exact: true }).click();
+  const input = page.getByRole("textbox").first();
+  await input.fill("Fixture draft");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.getByText(en["composer.status.dialogWaiting"], { exact: true })).toBeVisible();
+  await expect(input).toHaveValue("Fixture draft");
+  await input.fill("");
+  await panel.getByRole("button", { name: /^Fixture beta / }).click();
   await expect(panel).toHaveCount(0);
   expect(keys).toEqual([["Down"], ["Enter"]]);
   await expect(page.getByRole("textbox").first()).toBeEnabled();
