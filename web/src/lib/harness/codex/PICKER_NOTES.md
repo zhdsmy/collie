@@ -1,5 +1,27 @@
 # Codex model and statusline pickers
 
+## Agent chooser (2026-09-28)
+
+Codex 0.158.0's daemon `Agent command center` is lifted through the existing
+single picker. The `codex--v0158-agents-overview*.txt` files are byte-preserved
+ANSI captures from an isolated canary and app-server, using synthetic tasks and
+an unavailable local fixture provider. The bold title, Project grouping,
+filters, table columns, painted pointer and exact default navigation footer
+must agree. The current task and the pointed row are separate.
+
+Up/Down moves the native pointer, Enter opens once, and Escape cancels. Names
+and project paths identify visible rows; the terminal exposes no UUID column.
+Duplicate visible identities, partial frames, other grouping modes and search,
+rename or management dialogs remain native. Updated ages and the changing
+right-hand preview are excluded from row facts but remain in the bound region.
+
+The native view was opened with `/agents` in the isolated remote TUI. The
+0.158.0 `app/input.rs` Left handler routes to the same `open_agents_overview()`
+when the composer is empty and viewing an external writer on a shared daemon.
+The standalone fixture app-server does not reproduce that writer state.
+The actual `submitPickerIntent` and bridge `keysPane` verified Up/Down + Enter
+opening both tasks and Escape cancellation, with prompt binding on every write.
+
 Captured and live-verified on **2026-09-13**, Codex **0.154.0**, in a disposable Herdr
 tab. Its Codex configuration and working directory were isolated under a temporary
 directory, with a local unavailable test provider. No model request was made and no
@@ -26,7 +48,7 @@ metadata, without copying authentication or changing the user's configuration.
 
 ## Scope (2026-09-17)
 
-Only model/reasoning, statusline configuration, saved-session pickers, and command
+Model/reasoning, statusline configuration, saved-session and agent pickers, and command
 approvals are cardified. QA (including asynchronous questions and notes), plan
 decisions, review selection, and folder trust stay in the native terminal view.
 Their captured text and keyboard hints remain visible; Collie does not expand,

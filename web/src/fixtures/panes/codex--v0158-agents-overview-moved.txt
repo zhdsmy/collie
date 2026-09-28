@@ -1,0 +1,40 @@
+  [0m[1mAgent command center[0m[2m  Group: Project  g[0m
+  [0m[1m[4m All 2 [0m [0m[2m Needs you 2 [0m [0m[2m Working 0 [0m [0m[2m Ready 0 [0m [0m[2m Inactive 0                                        [0m[1mtab/shift+tab [0mfilter
+  [0m[2m───────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+      [0m[2mTasks[0m                                          [0m[2mStatus         Updated  │ [0m[1mTask details[0m
+  [0m[2m/private/tmp/collie-codex-overview-F3TZH9  2[0m                               [0m[2m│[0m
+    ! Fixture alpha                        current   Error        [0m[2m   3m ago[0m  [0m[2m│ [0m[1mFixture beta[0m
+  [0m[1m[7m› ! Fixture beta                                   Error           3m ago  [0m[2m│ [0m! Error
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│ [0mNeeds attention
+                                                                             [0m[2m│ Open task to review.[0m
+                                                                             [0m[2m│ [0mTask encountered an error.
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│ Project[0m
+                                                                             [0m[2m│ [0m/private/tmp/collie-codex-overview-
+                                                                             [0m[2m│ [0mF3TZH9
+                                                                             [0m[2m│[0m [0m[2mModel: [0mfixture-model
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│ Branch[0m
+                                                                             [0m[2m│ [0mmain
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│ Prompt[0m
+                                                                             [0m[2m│ [0mFixture history. Reply READY.
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+  [0m[1m? [0mhelp[0m[2m  [0m[1mesc [0mback[0m[2m  [0m[1m↑/↓ [0mmove[0m[2m  [0m[1menter [0mopen[0m[2m  [0m[1mn [0mnew

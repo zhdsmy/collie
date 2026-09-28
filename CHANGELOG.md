@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Codex's agent command center opens as a touch-friendly card.** The daemon's `← for agents` list preserves task names, projects, statuses and the current task; browsing, opening and cancelling use guarded native keys. Incomplete or ambiguous lists keep their terminal view.
+
 ## [1.14.2+collie.1] - 2026-09-28
 
 ### Docs

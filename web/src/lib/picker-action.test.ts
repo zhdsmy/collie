@@ -194,6 +194,22 @@ describe("sanitizePickerSearchQuery", () => {
 });
 
 describe("submitPickerIntent", () => {
+  it.each([false, true])("guards the real command center through a pointer walk (target changed: %s)", async (changed) => {
+    const model = fixturePicker("codex--v0158-agents-overview.txt");
+    let text = fixtureText("codex--v0158-agents-overview.txt");
+    mockAdapterFor.mockReturnValue(codexAdapter);
+    mockFetchPane.mockImplementation(async () => ({ paneId: "w1:p1", text, truncated: false, revision: 7 }));
+    mockSendKeys.mockImplementation(async (_pane, keys) => {
+      text = keys[0] === "Down" ? fixtureText("codex--v0158-agents-overview-moved.txt") : "";
+      if (changed) text = text.replaceAll("Fixture beta", "Replacement task");
+      return { ok: true };
+    });
+    expect(await submitPickerIntent(args(model, { kind: "choose", id: model.options[1]!.id })))
+      .toEqual({ status: changed ? "changed" : "sent" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual(changed ? [["Down"]] : [["Down"], ["Enter"]]);
+    expect(mockSendKeys.mock.calls.every((call) => call[3]?.includes("Agent command center"))).toBe(true);
+  });
+
   it("uses the real Codex /model fixture for a guarded cancel", async () => {
     const model = fixturePicker("codex--v0154-picker-model.txt");
     mockAdapterFor.mockReturnValue(fakeAdapter());

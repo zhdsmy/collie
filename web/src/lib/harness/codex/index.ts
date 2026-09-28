@@ -1,4 +1,4 @@
-// Codex keeps native QA, plan and review screens. Collie lifts current resume/model pickers,
+// Codex keeps native QA, plan and review screens. Collie lifts current resume/model/agent pickers,
 // trust and approvals while composerReady/composerPrompt guard ordinary chat submissions.
 
 import { trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
@@ -14,6 +14,7 @@ import { detectApprovalRegion } from "./approval";
 import { detectTrustRegion } from "./trust";
 import { detectPickerRegion } from "./picker";
 import { detectResumeRegion } from "./resume";
+import { detectAgentsRegion } from "./agents";
 import { decorateCodexDisplay } from "./display";
 import { codexDraftCarriesSend } from "./paste";
 import { draftCarriesSend } from "../../draft-match";
@@ -23,7 +24,7 @@ function raw(lines: StyledLine[]): Block {
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
-  const picker = detectResumeRegion(lines) ?? detectPickerRegion(lines);
+  const picker = detectResumeRegion(lines) ?? detectAgentsRegion(lines) ?? detectPickerRegion(lines);
   if (picker) {
     const before = trimTrailingBlank(lines.slice(0, picker.startLine));
     return [

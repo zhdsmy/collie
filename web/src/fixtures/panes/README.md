@@ -67,6 +67,15 @@ ordinary chat submissions into modal input. Collapsed async questions retain
 their native Alt+Up hint and ordinary composer. See
 [`PICKER_NOTES.md`](../../lib/harness/codex/PICKER_NOTES.md) for the supported card scope.
 
+## Codex 0.158 agent chooser (captured 2026-09-28)
+
+`codex--v0158-agents-overview.txt` and `codex--v0158-agents-overview-moved.txt`
+preserve real ANSI captures from an isolated Herdr canary and Codex app-server.
+Two synthetic tasks use an unavailable local fixture provider. Fixture alpha
+remains `current` as Down points to Fixture beta; the right-hand details change
+too. The terminal lists task names and projects rather than UUIDs. These contain
+no user conversations or credentials. See `lib/harness/codex/PICKER_NOTES.md`.
+
 ## Codex 0.154 model and statusline pickers (captured 2026-09-13)
 
 `codex--v0154-picker-*.txt` capture a disposable Codex pane with isolated configuration
