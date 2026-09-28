@@ -30,6 +30,14 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Docs
+
+- **A walkthrough for running Claude Code from your phone.** `docs/claude-code-on-your-phone.md`
+  keeps Claude Code alive in tmux, Herdr or zellij when SSH drops, covers parallel sessions,
+  installation, pairing, replies, the Keys tray and push notifications.
+  `collie docs claude-code-on-your-phone` prints it. The complete upstream comparison is recorded
+  in `docs/upstream-v1.14.2.md`.
+
 ## [1.14.1+collie.2] - 2026-09-28
 
 ### Changed
