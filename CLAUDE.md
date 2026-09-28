@@ -250,6 +250,29 @@ command where the resolved prefix names one, and the boundary sentence alone whe
 on more than one kind must come from the install kind (`cli/install-kind.ts`), never assume one —
 and "which kinds are there" is now three answers, not two.
 
+## Deployment Backups
+
+These rules cover backups and staging created by agents during manual deployments; do not change
+the application's own updater behavior as part of housekeeping.
+
+- **One backup location.** Put rollback bundles under the configured Collie state directory's
+  `deploy-backups/`, in a unique directory named for the deployment. A bundle holds the previous
+  binary, frontend, checkout SHA, and build identifier. Record the SHA instead of copying a whole
+  source checkout. Do not leave backup files or directories in `bin/`, `web/`, or beside the install.
+- **One retained rollback.** After the deployed build and APIs pass local and configured access URL
+  checks, retain only the most recent complete rollback bundle and remove older agent-managed
+  bundles. This routine maintenance needs no further confirmation. Preserve operator-pinned backups
+  and files whose ownership or purpose is unclear.
+- **Staging is temporary.** Prepare new artifacts beside their destination when an atomic rename
+  needs the same filesystem. Record those exact paths and remove them after successful activation
+  or verified rollback. Active artifacts must not depend on a staging or backup path.
+- **Check files as well as directories.** Cleanup must also find standalone previous binaries,
+  `.old` / `.bak` files, and symlinks. Inspect candidates and process/config references, then delete
+  exact obsolete paths; never sweep the current binary, frontend (including retained PWA assets),
+  Git metadata, configuration, uploads, or user changes.
+- **Verify cleanup.** Confirm the selected paths are gone and the service's build and health are
+  unchanged. Backup cleanup alone needs no service restart, release, or build/test run.
+
 ## Docs style (`docs/*.md`, published to colliepwa.dev)
 
 The website re-quotes these pages, so they are read on a phone: the renderer scrolls a code block
