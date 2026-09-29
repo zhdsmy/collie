@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.4] - 2026-09-29
+
 ### Changed
 
-- **Codex agents lists scroll above their task controls.** At most five rows fit in the list; a guarded delete button reads the native shortcut and opens Codex's explicit permanent-delete confirmation.
+- **Codex agents lists scroll above their task controls.** At most five rows fit in the list; a guarded delete button reads the native shortcut and opens Codex's explicit permanent-delete confirmation. ([bcdfbf5e](https://github.com/zhdsmy/collie/commit/bcdfbf5e))
 
 ## [1.14.2+collie.3] - 2026-09-29
 
