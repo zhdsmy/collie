@@ -1,4 +1,4 @@
-// Codex picker actions. A picker is deliberately driven through the terminal's own focus model:
+// Shared picker actions. A picker is deliberately driven through the terminal's own focus model:
 // the browser may render a row as a card, but the only safe way to activate it is to walk the
 // native pointer there, verify the resulting screen, and then send the committing key once.
 //
@@ -6,6 +6,8 @@
 // keys are Up/Down (focus), Space (toggle), Left/Right (reorder), Enter (save), and Escape
 // (cancel). Search is an input inside the picker: replace it with Backspace + raw unsubmitted text;
 // Enter must never be used to apply a search because Codex reserves it for saving the picker.
+// Claude's background-session launcher also focuses group headings; its navigation order includes
+// those stops, while only actual sessions are selectable options on the phone.
 
 import { sendReply } from "./api";
 import { describeApiError, describeThrownError } from "./api-error-message";
@@ -118,10 +120,15 @@ function argsFor(
 }
 
 function optionIdAt(model: PickerModel, index: number): string | null {
+  if (model.navigation) return model.navigation.order[index] ?? null;
   return model.options[index]?.id ?? null;
 }
 
 function pointedOption(model: PickerModel): { id: string; index: number } | null {
+  if (model.navigation) {
+    const index = model.navigation.order.indexOf(model.navigation.id);
+    return index >= 0 ? { id: model.navigation.id, index } : null;
+  }
   let found: { id: string; index: number } | null = null;
   for (let i = 0; i < model.options.length; i++) {
     const option = model.options[i]!;
@@ -212,6 +219,7 @@ function samePickerExceptPointer(a: PickerModel, b: PickerModel): boolean {
     return false;
   }
   if (a.query !== b.query || a.footer !== b.footer || !samePreview(a, b)) return false;
+  if (!sameStrings(a.navigation?.order ?? [], b.navigation?.order ?? [])) return false;
   const af = optionFacts(a);
   const bf = optionFacts(b);
   return af.length === bf.length && af.every((value, index) => sameOptionFacts(value, bf[index]!));
@@ -439,11 +447,14 @@ async function walkTo(
   id: string,
 ): Promise<Flow<PickerRead>> {
   let current = initial;
-  const maxSteps = current.model.options.length + 2;
+  const maxSteps = (current.model.navigation?.order.length ?? current.model.options.length) + 2;
   for (let step = 0; step < maxSteps; step++) {
     if (aborted(args)) return changed();
     const pointer = pointedOption(current.model);
-    const targetIndex = current.model.options.findIndex((option) => option.id === id);
+    if (!current.model.options.some((option) => option.id === id)) return changed();
+    const targetIndex = current.model.navigation
+      ? current.model.navigation.order.indexOf(id)
+      : current.model.options.findIndex((option) => option.id === id);
     if (!pointer || targetIndex < 0) return changed();
     if (pointer.id === id) return result(current);
 
@@ -579,7 +590,7 @@ async function runNavigate(
     const nextPointer = pointedOption(model);
     if (!nextPointer) return false;
     const atVisibleEdge = direction === "down"
-      ? pointer.index === initial.value.model.options.length - 1
+      ? pointer.index === (initial.value.model.navigation?.order.length ?? initial.value.model.options.length) - 1
       : pointer.index === 0;
 
     // A native list may clamp at a boundary or wrap to the opposite edge. Accept either only
@@ -589,7 +600,7 @@ async function runNavigate(
       if (nextPointer.id === pointer.id) return true;
       return direction === "down"
         ? nextPointer.index === 0
-        : nextPointer.index === model.options.length - 1;
+        : nextPointer.index === (model.navigation?.order.length ?? model.options.length) - 1;
     }
 
     if (expectedId !== null) {

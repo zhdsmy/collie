@@ -16,6 +16,7 @@ import { detectMultiSelectRegion } from "./multi-select";
 import { detectPreviewSelectRegion } from "./preview-select";
 import { detectPromptSelectRegion } from "./prompt-select";
 import { detectWizardRegion } from "./wizard";
+import { detectAgentsRegion } from "./agents";
 
 // The input box is found by its own frame (ADR 0048): the lowest bare bottom border, a "❯" line and a
 // top border above it, then every row below accounted for. These tests pin the safety half of that
@@ -48,6 +49,7 @@ const box = (draft: string) => [RULE, `❯ ${draft}`, RULE];
 
 function claimedByADialog(lines: StyledLine[]): boolean {
   return (
+    detectAgentsRegion(lines) !== null ||
     detectPreviewSelectRegion(lines) !== null ||
     detectWizardRegion(lines) !== null ||
     detectMultiSelectRegion(lines) !== null ||
@@ -124,7 +126,7 @@ describe("a stale box above a live dialog is never the composer", () => {
   it.each(DIALOGS)("%s with an echoed box triple above it", (name) => {
     const original = load(name);
     const kinds = claudeBuildBlocks(original).map((b) => b.kind);
-    const lines = fromTexts(["● earlier turn", ...box("please run the migration"), "", ...textRows(original)]);
+    const lines = [...fromTexts(["● earlier turn", ...box("please run the migration"), ""]), ...original];
     expect(hasInputBox(lines)).toBe(false);
     expect(extractInputDraft(lines)).toBeNull();
     // The dialog grammars still read the full screen: the same interactive block comes back.

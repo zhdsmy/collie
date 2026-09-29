@@ -14,13 +14,15 @@
         "draft": null,
         "tail": "unknown",
         "dialogLive": true,
-        "blockKind": "menu",
+        "blockKind": "picker",
         "keys": [
-          "Enter"
+          "Down",
+          "Enter",
+          "Escape",
+          "Up"
         ]
       },
       "knownStall": "The background-agents screen is a modal that carries its OWN typeable box, so the truth table calls the box real. The locator refuses it, and that refusal is the safe read: a live dialog owns the keyboard. Pinned here so the critical rule (no box while a dialog is live) keeps covering this screen.",
-      "knownRaw": "The background-agents screen is a modal that carries its OWN typeable box, so the locator refuses the box and the generic menu declines any screen with one; the footer's own hints never become buttons. Candidate grammar: a modal-with-a-composer kind that owns the keyboard AND exposes the inner box. The hardest of the register and worth a design pass of its own.",
       "actualToday": {
         "hasInputBox": false,
         "draft": null,
@@ -38,14 +40,15 @@
         "draft": null,
         "tail": "unknown",
         "dialogLive": true,
-        "blockKind": "menu",
+        "blockKind": "picker",
         "keys": [
+          "Down",
           "Enter",
-          "ctrl+x"
+          "Escape",
+          "Up"
         ]
       },
       "knownStall": "The background-agents screen is a modal that carries its OWN typeable box, so the truth table calls the box real. The locator refuses it, and that refusal is the safe read: a live dialog owns the keyboard. Pinned here so the critical rule (no box while a dialog is live) keeps covering this screen.",
-      "knownRaw": "The background-agents screen is a modal that carries its OWN typeable box, so the locator refuses the box and the generic menu declines any screen with one; the footer's own hints never become buttons. Candidate grammar: a modal-with-a-composer kind that owns the keyboard AND exposes the inner box. The hardest of the register and worth a design pass of its own.",
       "actualToday": {
         "hasInputBox": false,
         "draft": null,

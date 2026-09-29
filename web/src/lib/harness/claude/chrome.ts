@@ -26,6 +26,7 @@ import { detectMultiSelectRegion } from "./multi-select";
 import { detectPreviewSelectRegion } from "./preview-select";
 import { detectPromptSelectRegion } from "./prompt-select";
 import { detectWizardRegion } from "./wizard";
+import { detectAgentsRegion } from "./agents";
 
 // Rows the view strips DIRECTLY under the input box's bottom border as a statusline: the statusline
 // plus its hint row(s) ("← for agents", "⏵⏵ bypass permissions on …"). A statusline is an arbitrary
@@ -618,6 +619,7 @@ function tailLooksModal(text: string): boolean {
  *  own footer and reads the full screen, independent of where this module thinks the box is. */
 function dialogOnScreen(lines: StyledLine[]): boolean {
   return (
+    detectAgentsRegion(lines) !== null ||
     detectPreviewSelectRegion(lines) !== null ||
     detectWizardRegion(lines) !== null ||
     detectMultiSelectRegion(lines) !== null ||

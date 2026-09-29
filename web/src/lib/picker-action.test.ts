@@ -17,6 +17,7 @@ import { parseAnsi } from "./ansi";
 import { splitLines, type StyledLine } from "./blocks";
 import { adapterFor } from "./harness/registry";
 import { codexAdapter } from "./harness/codex";
+import { claudeAdapter } from "./harness/claude";
 import { codexResumeFrame } from "../test/codex-resume-frame";
 import type { HarnessAdapter } from "./harness/types";
 import {
@@ -191,6 +192,48 @@ describe("sanitizePickerSearchQuery", () => {
       PICKER_SEARCH_MAX_LENGTH,
     );
   });
+});
+
+it.each(["header", "working-header"])("walks Claude's %s focus to a session before committing", async (name) => {
+  const source = (state: string) => fixtureText(`claude--v21284-agents-${state}.txt`);
+  let text = source(name);
+  const block = claudeAdapter.buildBlocks(splitLines(parseAnsi(text))).find((b) => b.kind === "picker");
+  if (block?.kind !== "picker") throw new Error("Missing Claude Agents picker");
+  mockAdapterFor.mockReturnValue(claudeAdapter);
+  mockFetchPane.mockImplementation(async () => ({ paneId: "w1:p1", text, truncated: false, revision: 7 }));
+  mockSendKeys.mockImplementation(async (_pane, keys) => {
+    expect(keys).toEqual([name === "header" ? "Down" : "Up"]);
+    text = source("list");
+    mockSendKeys.mockImplementation(async (_nextPane, nextKeys) => { expect(nextKeys).toEqual(["Enter"]); text = ""; return { ok: true }; });
+    return { ok: true };
+  });
+  const result = await submitPickerIntent({ ...args(block.picker, { kind: "choose", id: "session:Fixture alpha" }), agent: "claude" });
+  expect(result).toEqual({ status: "sent" });
+  expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([[name === "header" ? "Down" : "Up"], ["Enter"]]);
+  expect(mockSendKeys.mock.calls.every((call) => call[3]?.includes("Claude Code"))).toBe(true);
+});
+
+it.each([false, true])("walks through a heading and stops if native order changes (%s)", async (changed) => {
+  const at = (id: string, drift = false) => {
+    const model = pickerModel({ kind: "single", identity: "agents:fixture", pointer: id });
+    model.navigation = { order: drift ? ["alpha", "bravo", "group:Working", "charlie"] : ["alpha", "group:Working", "bravo", "charlie"], id };
+    return model;
+  };
+  const first = at("alpha");
+  const header = at("group:Working", changed);
+  const target = at("bravo");
+  scriptWithClosedPicker(first, first, first, header, header, target, target, null);
+  const result = await submitPickerIntent(args(first, { kind: "choose", id: "bravo" }));
+  expect(result.status).toBe(changed ? "changed" : "sent");
+  expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual(changed ? [["Down"]] : [["Down"], ["Down"], ["Enter"]]);
+});
+
+it("never commits a group heading as a selectable option", async () => {
+  const model = pickerModel({ kind: "single", pointer: "alpha" });
+  model.navigation = { order: ["alpha", "group:Working", "bravo", "charlie"], id: "alpha" };
+  script(model);
+  expect(await submitPickerIntent(args(model, { kind: "choose", id: "group:Working" }))).toEqual({ status: "changed" });
+  expect(mockSendKeys).not.toHaveBeenCalled();
 });
 
 describe("submitPickerIntent", () => {

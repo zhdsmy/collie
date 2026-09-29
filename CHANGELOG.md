@@ -30,6 +30,14 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Claude background agents become a compact navigable card.** The left-arrow session list reuses the shared five-row scrolling picker, walks native group headings before opening a session, and keeps earlier conversation outside the card.
+
+### Changed
+
+- **Escape controls use a quieter compact keycap.** Fixed scrolling cards retain a 44px touch target while the visible key loses its oversized frame.
+
 ## [1.14.2+collie.11] - 2026-09-29
 
 ### Changed

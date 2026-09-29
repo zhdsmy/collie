@@ -46,6 +46,9 @@ for (const [theme, width] of [["light", 320], ["dark", 320], ["light", 1280]] as
       expect(frame.height).toBe(320);
       expect(target.height).toBeGreaterThanOrEqual(44);
       expect(target.width).toBeGreaterThanOrEqual(44);
+      const keycap = await button.locator("span").boundingBox();
+      expect(keycap!.height).toBeLessThan(28);
+      expect(keycap!.width).toBeLessThan(40);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       if (screen.name === "Status") {
         const overflow = await body.evaluate((node) => ({

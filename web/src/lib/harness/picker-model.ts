@@ -25,6 +25,8 @@ export interface PickerModel {
   footer: string;
   signature: string;
   regionSignature: string;
+  /** Native focus stops can include headings omitted from the selectable option list. */
+  navigation?: { order: string[]; id: string };
   /** Presentation of a saved-session chooser; native labels and action guards stay untouched. */
   sessionAction?: "resume" | "fork";
   /** Delete shortcut reported by the agent command center's native help page. */

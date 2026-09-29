@@ -39,7 +39,7 @@ function centerPointedOption(list: HTMLDivElement | null): void {
 }
 
 export interface PickerBlockProps {
-  /** Parsed Codex picker; the terminal remains the source of all staged state. */
+  /** Parsed native picker; the terminal remains the source of all staged state. */
   picker: PickerModel;
   /** Race-guarded handler owned by AgentChat; this component only raises intents. */
   onAction: (intent: PickerIntent) => void | Promise<void>;
@@ -508,6 +508,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
   const locked = Boolean(disabled) || sending !== null;
   const filtered = picker.query !== null && picker.query.length > 0;
   const agents = picker.identity === "agents:command-center";
+  const compact = agents || picker.identity.startsWith("agents:claude:");
   const listRef = useRef<HTMLDivElement>(null);
   const pointed = picker.options.find((option) => option.pointed);
   useEffect(() => {
@@ -621,7 +622,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
       {search}
 
       {picker.options.length > 0 ? (
-        <OptionsGroup ref={listRef} data-slot="picker-options" className={cn("flex min-w-0 flex-col", scrollableListClass, picker.kind === "single" && "gap-1", agents ? "max-h-59" : "max-h-72")}>
+        <OptionsGroup ref={listRef} data-slot="picker-options" className={cn("flex min-w-0 flex-col", scrollableListClass, picker.kind === "single" && "gap-1", compact ? "max-h-59" : "max-h-72")}>
           {picker.options.map((option, index) => {
             const busy = sending === `option:${option.id}` || sending === `move:${option.id}`;
             if (picker.kind === "single") {
@@ -631,7 +632,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
                   option={option}
                   locked={locked}
                   busy={busy}
-                  compact={agents}
+                  compact={compact}
                   onChoose={() => chooseOption(option)}
                 />
               );

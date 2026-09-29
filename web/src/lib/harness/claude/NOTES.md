@@ -1,3 +1,20 @@
+# Left-arrow Agents launcher — 2026-09-29
+
+Claude Code 2.1.284 moves the current conversation into a launcher grouped by Needs input,
+Working, and Completed. `claude--v21284-agents-*.txt` are sanitized captures of that native
+screen: title, descriptions, and directory are replaced while ANSI and padding are preserved.
+The card reuses the shared compact five-row picker. A native highlighted session is selected;
+when no session is highlighted, the bold group heading owns focus. Up/Down visits headings as
+well as sessions, so `PickerModel.navigation` records those stops without making them selectable
+session buttons. Each arrow is read back before the next write; only a verified session gets Enter.
+
+Recognition requires the current launcher banner, summary, background-return notice, ordered
+groups, empty new-session placeholder, and a known native footer. Typed drafts, collapsed or
+management states, unknown footer actions, duplicate visible names, and partial frames remain
+native. Ages and spinner glyphs stay in the bound region but do not change session identity.
+The card offers selection, browsing, and Escape; native reply/delete/new-session actions remain
+available through Type and Keys. The older capture corpus now uses the same layout grammar.
+
 # Claude Code statusline adaptation — the mode field — 2026-09-14
 
 Claude Code prints its permission mode under the input box, on the statusline run the app already
@@ -125,4 +142,3 @@ they are not. Reproduced in an isolated scratch pane; every capture is synthetic
 - **Ceiling, accepted:** a user statusline whose own command right-aligns a row past column 8 with no
   pipes reads as an aside — it leaves the strip for the tip icon. One tap, nothing lost, unseen in
   practice. And an aside is shown as Claude wrote it: the app never synthesises or translates a tip.
-

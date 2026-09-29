@@ -102,6 +102,8 @@ const NEUTRAL = new Set([
   // The `/plugin` "Add Marketplace" source field: a text field no grammar reads. The unread card
   // covers it (unread-dialog.test.ts).
   "claude--v2283-plugin-marketplaces-add-form--w82.txt",
+  // Settings bodies are framed by the shared unread-dialog post-pass, outside this adapter suite.
+  "claude--v2283-slash-usage.txt",
 ]);
 
 const allClaudeFixtures = readdirSync(PANES_DIR)

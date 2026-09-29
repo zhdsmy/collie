@@ -31,6 +31,7 @@ import {
 import { isPastePlaceholderOnly, pasteCarriesSend } from "./paste";
 import { decorateClaudeDiff, decorateClaudeUser } from "./display";
 import { detectSettingsRegion } from "./settings";
+import { detectAgentsRegion } from "./agents";
 
 function raw(lines: StyledLine[]): Block {
   return { kind: "raw", lines: decorateClaudeUser(decorateClaudeDiff(lines)) };
@@ -43,6 +44,14 @@ function raw(lines: StyledLine[]): Block {
  * this function a Claude pane, so there is no per-agent gate here.
  */
 export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
+  const agentsRegion = detectAgentsRegion(lines);
+  if (agentsRegion) {
+    const before = trimTrailingBlank(lines.slice(0, agentsRegion.startLine));
+    return [
+      ...(before.length > 0 ? [raw(before)] : []),
+      { kind: "picker", picker: agentsRegion.model, lines: lines.slice(agentsRegion.startLine) },
+    ];
+  }
   // The preview variant runs FIRST: its footer is the most specific anchor ("n to add notes"),
   // and although the wizard/prompt-select detectors can't match its layout (their footer-gap
   // guards fail on the tall preview pane), ordering by specificity keeps the arbitration obvious.

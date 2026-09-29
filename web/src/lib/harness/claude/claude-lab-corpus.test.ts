@@ -76,6 +76,7 @@ type BlockKindName =
   | "wizard"
   | "preview-select"
   | "multi-select"
+  | "picker"
   | "autocomplete";
 
 interface Expectation extends Reading {
@@ -110,6 +111,7 @@ const KINDS = new Set<string>([
   "wizard",
   "preview-select",
   "multi-select",
+  "picker",
   "autocomplete",
 ]);
 const PANES_DIR = join(import.meta.dirname, "..", "..", "..", "fixtures", "panes");
@@ -260,11 +262,12 @@ describe("the pipeline lifts the kind the screen shows", () => {
   });
 
   it("every knownRaw carries a reason naming a candidate grammar, and pins its reading", () => {
-    // Four: the seven the register in M34 spec 03 argues, plus the 40-column /tasks panel the
+    // Two: the seven the register in M34 spec 03 argues, plus the 40-column /tasks panel the
     // 2026-09-22 capture-lab run added, less the WebFetch dialog and the three plan-approval
-    // captures the 2026-09-26 grammar work lifted. When a grammar lands, the repair is to delete that
+    // captures the 2026-09-26 grammar work lifted and both Agents launchers lifted on 2026-09-29.
+    // When a grammar lands, the repair is to delete that
     // entry's `knownRaw` and its `actualToday`, and to lower this number.
-    expect(RAW_GAPS.length).toBe(4);
+    expect(RAW_GAPS.length).toBe(2);
     for (const entry of RAW_GAPS) {
       expect(entry.knownRaw!.length, entry.fixture).toBeGreaterThan(40);
       expect(entry.expected.blockKind, entry.fixture).not.toBe("raw");
@@ -306,11 +309,8 @@ describe("an unread dialog is never silently raw", () => {
     expect(RAW_ONLY.map((e) => e.fixture)).not.toContain("claude-lab--menu-effort-slider--w82.txt");
   });
 
-  it("the exemptions are exactly the two agents-screen captures", () => {
-    expect(RAW_ONLY.map((e) => e.fixture).toSorted()).toEqual([
-      "claude-lab--agents-screen--w40.txt",
-      "claude-lab--agents-screen--w82.txt",
-    ]);
+  it("no key-naming modal remains raw after the Agents picker lands", () => {
+    expect(RAW_ONLY).toEqual([]);
   });
 
   it.each(ENTRIES.map((e) => [e.fixture, e] as const))("%s", (_name, entry) => {

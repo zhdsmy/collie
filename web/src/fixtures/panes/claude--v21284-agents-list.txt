@@ -1,0 +1,22 @@
+[0m[38;2;215;119;87m ▐[0m[38;2;215;119;87m[48;2;0;0;0m▛███▛█   [0m[1mClaude Code [0m[38;2;153;153;153mv2.1.284[0m
+[0m[38;2;215;119;87m▝▜[0m[38;2;215;119;87m[48;2;0;0;0m█████[0m[38;2;215;119;87m█▀  [0m[38;2;153;153;153mOpus 5.5 (1M context) · /tmp/claude-agents-fixture      [0m
+[0m[38;2;215;119;87m ▝▝   ▝▝   [0m[38;2;153;153;153m1 awaiting input · 0 working · 0 completed[0m
+
+[0m[38;2;153;153;153mYour conversation moved to the background — enter opens it · esc returns to it · ctrl+c twice quits[0m
+
+[0m[1m[38;2;153;153;153mNeeds input[0m
+ [0m[38;2;153;153;153mSessions that have a question or need your decision land here[0m
+[0m[48;2;55;55;55m [0m[38;2;255;193;7m[48;2;55;55;55m✻[0m[38;2;255;255;255m[48;2;55;55;55m [0m[1m[38;2;255;255;255m[48;2;55;55;55mFixture alpha           [0m[48;2;55;55;55m  [0m[38;2;153;153;153m[48;2;55;55;55mFixture agent ready for input.                                                                                          [0m[48;2;55;55;55m                                                                                                                                                                    [0m[38;2;153;153;153m[48;2;55;55;55m2h[0m
+
+[0m[38;2;153;153;153mWorking[0m
+ [0m[38;2;153;153;153mSessions Claude is actively working on — they keep running even if you close the terminal[0m
+
+[0m[38;2;153;153;153mCompleted[0m
+ [0m[38;2;153;153;153mFinished sessions wait here for you to review[0m
+
+ [0m[38;2;153;153;153mA different way to work with Claude: hand off a bigger task than you would chat through, and Claude organizes it in the sections above so you know when it needs you.[0m
+
+[0m[2m───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+[0m[38;2;153;153;153m❯ [0m[7md[0m[38;2;153;153;153mescribe a task for a new session[0m
+[0m[2m───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+  [0m[38;2;255;193;7m⏵⏵ auto mode[0m[38;2;153;153;153m · enter to return · space to reply · ctrl+x to delete · ? for shortcuts[0m

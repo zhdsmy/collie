@@ -968,6 +968,9 @@ describe("real corpus — pinned so any change to the walk shows up as a diff", 
     { fixture: "wizard-q2", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "wizard-submit", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "wizard-submit-unanswered", statusRows: 0, draft: null, stripped: 3 },
+    { fixture: "v21284-agents-list", statusRows: 0, draft: null, stripped: 0 },
+    { fixture: "v21284-agents-header", statusRows: 0, draft: null, stripped: 0 },
+    { fixture: "v21284-agents-working-header", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "working", statusRows: 2, draft: null, stripped: 6 },
   ];
 

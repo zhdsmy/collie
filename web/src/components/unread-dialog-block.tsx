@@ -5,6 +5,7 @@ import type { UnreadDialogBlock as UnreadBlock, UnreadDialogModel } from "@/lib/
 import { keyLabel } from "@/lib/key-queue";
 import { OptionGroupCaption, PromptPanel } from "@/components/option-button";
 import { RawMirror } from "@/components/raw-mirror";
+import { Button } from "@/components/ui/button";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 
@@ -61,18 +62,17 @@ export function UnreadDialogBlock({ cancel, viewport, onAction, disabled }: Unre
         <div className="min-w-0 [&>div>span:last-child]:truncate" title={caption}>
           <OptionGroupCaption>{caption}</OptionGroupCaption>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
           disabled={locked}
           aria-busy={sending}
           onClick={press}
-          className={cn(
-            "font-content flex min-h-11 shrink-0 items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium text-foreground transition-colors disabled:opacity-60",
-            sending ? "border-primary bg-primary/25" : "border-primary/60 bg-primary/15 active:bg-primary/25",
-          )}
+          className="font-content min-h-11 min-w-11 px-1 py-0 text-muted-foreground"
         >
-          {keyLabel(cancel.key)}
-        </button>
+          <span className={cn("rounded border px-1.5 py-0.5 text-[11px] font-medium transition-colors",
+            sending ? "border-primary bg-primary/15" : "border-border bg-muted/40")}>{keyLabel(cancel.key)}</span>
+        </Button>
       </div>
       {viewport && <RawMirror
         key={viewport.title}
