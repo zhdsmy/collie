@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.15] - 2026-09-30
+
 ### Changed
 
-- **The iOS home-screen icon uses a finished sable Collie.** Smooth vector edges, cream markings, and a transparent background preserve the existing silhouette and orbit. The 180 px and 512 px touch icons use the device-tested artwork; Android and development icons keep their existing appearance.
+- **The iOS home-screen icon uses a finished sable Collie.** Smooth vector edges, cream markings, and a transparent background preserve the existing silhouette and orbit. The 180 px and 512 px touch icons use the device-tested artwork; Android and development icons keep their existing appearance. ([f6fab37d](https://github.com/zhdsmy/collie/commit/f6fab37d))
 
 ## [1.14.2+collie.14] - 2026-09-29
 
