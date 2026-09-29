@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.11] - 2026-09-29
+
 ### Changed
 
-- **Claude settings content stays inside a fixed-size card.** Status, Config, Usage, and Stats share a bounded 320px viewport with horizontal and vertical scrolling, a fixed title and Escape control, and earlier conversation preserved outside the card.
+- **Claude settings content stays inside a fixed-size card.** Status, Config, Usage, and Stats share a bounded 320px viewport with horizontal and vertical scrolling, a fixed title and Escape control, and earlier conversation preserved outside the card. ([244a43cf](https://github.com/zhdsmy/collie/commit/244a43cf))
 
 ## [1.14.2+collie.10] - 2026-09-29
 

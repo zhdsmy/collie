@@ -23,7 +23,7 @@ for (const [theme, width] of [["light", 320], ["dark", 320], ["light", 1280]] as
       current = screen.text;
       if (screen.name === "Status") {
         const rows = screen.text.split("\n");
-        rows[0] = "▔".repeat(280);
+        rows[0] = "▔".repeat(320);
         rows.splice(rows.length - 1, 0, ...Array.from({ length: 30 }, (_, i) =>
           `Field ${i}: ${"Synthetic status value ".repeat(12)}`));
         current = rows.join("\n");
