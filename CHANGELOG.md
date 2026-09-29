@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.3] - 2026-09-29
+
 ### Fixed
 
-- **Codex agents cards survive preceding terminal scrollback.** Opening the command center from an existing conversation now recognizes the active list while preserving earlier output and guarded native navigation.
+- **Codex agents cards survive preceding terminal scrollback.** Opening the command center from an existing conversation now recognizes the active list while preserving earlier output and guarded native navigation. ([0c1312c5](https://github.com/zhdsmy/collie/commit/0c1312c5))
 
 ## [1.14.2+collie.2] - 2026-09-28
 
