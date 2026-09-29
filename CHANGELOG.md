@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **The iOS home-screen icon uses the existing artwork inverted.** The release touch icon keeps every pixel in place and reverses its colors to provide a light-source candidate for iOS appearance processing; automatic switching still requires real-device verification.
+
 ## [1.14.2+collie.13] - 2026-09-29
 
 ### Fixed
