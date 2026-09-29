@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.17] - 2026-09-30
+
 ### Fixed
 
-- **Codex input and Agents cards handle current terminal states.** A custom status line with a right-aligned warning no longer duplicates the input area, and repeated task names remain selectable in the Agents card.
+- **Codex input and Agents cards handle current terminal states.** A custom status line with a right-aligned warning no longer duplicates the input area, and repeated task names remain selectable in the Agents card. ([7fa4c8da](https://github.com/zhdsmy/collie/commit/7fa4c8da))
 
 ## [1.14.2+collie.16] - 2026-09-30
 
