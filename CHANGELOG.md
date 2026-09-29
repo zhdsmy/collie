@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.10] - 2026-09-29
+
 ### Fixed
 
-- **Claude settings tabs share one compact Escape card.** Keep Status, Config, Usage, and Stats in the full-width mirror with the same 50px docked control, including Stats loading and chart views, while rejecting historical or unhighlighted tab text.
+- **Claude settings tabs share one compact Escape card.** Keep Status, Config, Usage, and Stats in the full-width mirror with the same 50px docked control, including Stats loading and chart views, while rejecting historical or unhighlighted tab text. ([ef39c6a9](https://github.com/zhdsmy/collie/commit/ef39c6a9))
 
 ## [1.14.2+collie.9] - 2026-09-29
 
