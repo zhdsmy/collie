@@ -22,14 +22,15 @@ export interface UnreadDialogBlockProps {
 // The UNREAD-DIALOG CARD — one declared key over a screen Collie could not read (.adr/0053).
 //
 // This is the least confident block in the family and it must look it. It claims nothing about the
-// screen: no title lifted, no options, no footer parsed. The caption says what is true ("Collie
-// cannot read this dialog") and the single button says only the KEY, never what the key does — on
-// Muse that key steps back rather than dismisses, so a label promising "cancel" would be a lie on a
-// real harness.
+// screen: no title lifted, no options, no footer parsed. The caption says what is true ("Collie did
+// not recognize this interface") and the single button says only the KEY, never what the key does —
+// on Muse that key steps back rather than dismisses, so a label promising "cancel" would be a lie on
+// a real harness.
 //
 // The screen itself is NOT in the card (downstream): the post-pass leaves the raw blocks in place,
 // so the mirror above keeps drawing the pane verbatim and at full width. The card is only the
-// caption and the key, so it stays one row tall and never pushes the composer down.
+// caption and the key, compressed into one row so it stays ~50px tall and never pushes the composer
+// down.
 //
 // DESIGN.md §2: the in-flight state recolours the button and changes NOTHING else — no spinner child
 // appears, no border is added, no padding moves. The border is reserved in the base string and the
@@ -52,21 +53,24 @@ export function UnreadDialogBlock({ cancel, onAction, disabled }: UnreadDialogBl
   }
 
   return (
-    <PromptPanel ariaLabel={caption}>
-      <OptionGroupCaption>{caption}</OptionGroupCaption>
-
-      <button
-        type="button"
-        disabled={locked}
-        aria-busy={sending}
-        onClick={press}
-        className={cn(
-          "font-content flex min-h-11 w-full items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium text-foreground transition-colors disabled:opacity-60",
-          sending ? "border-primary bg-primary/25" : "border-primary/60 bg-primary/15 active:bg-primary/25",
-        )}
-      >
-        {keyLabel(cancel.key)}
-      </button>
+    <PromptPanel ariaLabel={caption} className="py-0.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 [&>div>span:last-child]:truncate" title={caption}>
+          <OptionGroupCaption>{caption}</OptionGroupCaption>
+        </div>
+        <button
+          type="button"
+          disabled={locked}
+          aria-busy={sending}
+          onClick={press}
+          className={cn(
+            "font-content flex min-h-11 shrink-0 items-center justify-center rounded-lg border px-4 py-2 text-sm font-medium text-foreground transition-colors disabled:opacity-60",
+            sending ? "border-primary bg-primary/25" : "border-primary/60 bg-primary/15 active:bg-primary/25",
+          )}
+        >
+          {keyLabel(cancel.key)}
+        </button>
+      </div>
     </PromptPanel>
   );
 }

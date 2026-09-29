@@ -307,7 +307,7 @@ export const zh: Dictionary = {
   "composer.draft.tooLong": "内容过长无法持久化保存为草稿。切换窗格会保留，但退出应用后将丢失。",
   "composer.status.dialogWaiting": "有等待响应的对话框，请先处理后再发送。",
   "composer.status.unreadDialog":
-    "Collie 无法读取此对话框。卡片上是 {key}。要继续键入，请再次点击“发送”。", // wordsmith
+    "Collie 未识别此界面。卡片上是 {key}。要继续键入，请再次点击“发送”。", // wordsmith
   "composer.status.paneNotWritable": "窗格已不可写，未发送任何内容",
   "composer.status.inputChanged": "清空输入框时内容发生变动，未写入任何内容。请检查窗格状态。",
   "composer.status.clearFailed": "无法清空终端当前输入",
@@ -829,7 +829,7 @@ export const zh: Dictionary = {
   "dialog.menu.levelAria": "{verb}至 {label}",
   // TODO wordsmith
   "dialog.menu.levelCurrentAria": "{label}，当前",
-  "unreadDialog.caption": "Collie 无法读取此对话框", // wordsmith
+  "unreadDialog.caption": "Collie 未识别此界面", // wordsmith
   "dialog.preview.currentAnswerAria": "当前回答",
   "dialog.preview.previewedBelowAria": "下方显示预览",
   "dialog.preview.previewLabel": "预览 · {label}",

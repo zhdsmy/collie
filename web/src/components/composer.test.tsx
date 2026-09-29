@@ -266,7 +266,7 @@ describe("Composer — send", () => {
 
     // The status names the key the way the Keys keypad names it, and the card is where it is.
     await waitFor(() =>
-      expect(screen.getByTestId("status")).toHaveTextContent(/Collie cannot read this dialog/i),
+      expect(screen.getByTestId("status")).toHaveTextContent(/Collie did not recognize this interface/i),
     );
     expect(screen.getByTestId("status")).toHaveTextContent(/Esc is on the card/);
     expect(calls).toEqual([]);
@@ -286,7 +286,7 @@ describe("Composer — send", () => {
     await user.type(box, "carry on");
     await user.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() =>
-      expect(screen.getByTestId("status")).toHaveTextContent(/Collie cannot read this dialog/i),
+      expect(screen.getByTestId("status")).toHaveTextContent(/Collie did not recognize this interface/i),
     );
 
     await user.click(screen.getByRole("button", { name: /type anyway/i }));

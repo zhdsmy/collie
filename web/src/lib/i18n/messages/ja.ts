@@ -318,7 +318,7 @@ export const ja: Dictionary = {
     "下書き保存の上限を超えています。ペイン切り替え時は保持されますが、アプリ終了時に破棄されます。",
   "composer.status.dialogWaiting": "対話プロンプトの応答待ちです。先に応答してから送信してください。",
   "composer.status.unreadDialog":
-    "Collie はこの対話を読み取れません。カードに {key} があります。それでも入力するには、もう一度送信をタップしてください。", // wordsmith
+    "Collie はこのインターフェースを認識しませんでした。カードに {key} があります。それでも入力するには、もう一度送信をタップしてください。", // wordsmith
   "composer.status.paneNotWritable": "ペインが書き込み不可になったため、送信を中止しました",
   "composer.status.inputChanged":
     "消去中に入力内容が変更されたため、入力を中断しました。ペインを確認してください。",
@@ -842,7 +842,7 @@ export const ja: Dictionary = {
   "dialog.menu.levelAria": "{label}に{verb}",
   // TODO wordsmith
   "dialog.menu.levelCurrentAria": "{label}、現在",
-  "unreadDialog.caption": "Collie はこの対話を読み取れません", // wordsmith
+  "unreadDialog.caption": "Collie はこのインターフェースを認識しませんでした", // wordsmith
   "dialog.preview.currentAnswerAria": "現在の回答",
   "dialog.preview.previewedBelowAria": "プレビューを下に表示中",
   "dialog.preview.previewLabel": "プレビュー · {label}",

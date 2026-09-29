@@ -337,7 +337,7 @@ export const en = {
     "Too long to keep as a saved draft — it survives switching panes, but not closing the app.",
   "composer.status.dialogWaiting": "A dialog is waiting — answer it first, then send.",
   "composer.status.unreadDialog":
-    "Collie cannot read this dialog. {key} is on the card. Tap Send again to type anyway.",
+    "Collie did not recognize this interface. {key} is on the card. Tap Send again to type anyway.",
   "composer.status.paneNotWritable": "Pane is no longer writable — nothing was sent",
   "composer.status.inputChanged":
     "The input box changed while clearing it — nothing was typed. Check the pane.",
@@ -874,7 +874,7 @@ export const en = {
   // the level, so the aria name adds what a tap DOES to it.
   "dialog.menu.levelAria": "{verb} to {label}",
   "dialog.menu.levelCurrentAria": "{label}, current",
-  "unreadDialog.caption": "Collie cannot read this dialog",
+  "unreadDialog.caption": "Collie did not recognize this interface",
   "dialog.preview.currentAnswerAria": "Current answer",
   "dialog.preview.previewedBelowAria": "Previewed below",
   "dialog.preview.previewLabel": "Preview · {label}",
