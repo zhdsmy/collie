@@ -387,19 +387,13 @@ function SingleOption({
   compact?: boolean;
 }) {
   const tone = busy ? "busy" : option.current ? "selected" : "default";
-  const separator = option.description.lastIndexOf(" · ");
   return (
     <div data-pointed={option.pointed} className={cn("grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] items-stretch gap-1", compact && "shrink-0 [&>button]:py-1 [&>button>span>span]:leading-tight")}>
       <PointerMark pointed={option.pointed} />
       <OptionButton
         tone={tone}
-        label={compact ? <span className="block truncate" title={option.label}>{option.label}</span> : option.label}
-        description={compact && separator >= 0 ? (
-          <span className="flex min-w-0 gap-1" title={option.description}>
-            <span className="min-w-0 truncate">{option.description.slice(0, separator)}</span>
-            <span className="shrink-0">{option.description.slice(separator)}</span>
-          </span>
-        ) : option.description}
+        label={option.label}
+        description={option.description}
         disabled={locked}
         onClick={onChoose}
         trailing={busy ? <Spinner size="md" /> : option.current ? <CurrentMark /> : null}

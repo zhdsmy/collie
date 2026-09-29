@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Agent card titles and message snippets wrap within their rows.** Compact pickers no longer treat text after a separator as a nonwrapping status badge, and shared option buttons constrain long words and paths to the card width while retaining bounded list scrolling.
+
 ## [1.14.2+collie.12] - 2026-09-29
 
 ### Added

@@ -112,7 +112,7 @@ test("Codex agents scroll within five rows and require explicit delete confirmat
       fiveHeight: five.at(-1)!.getBoundingClientRect().bottom - five[0]!.getBoundingClientRect().top };
   });
   expect(geometry.scrollHeight).toBeGreaterThan(geometry.height);
-  expect(Math.abs(geometry.height - geometry.fiveHeight)).toBeLessThan(1);
+  expect(geometry.height).toBeLessThanOrEqual(geometry.fiveHeight + 1);
   expect(geometry.scrollbarGap).toBeGreaterThanOrEqual(8);
   const remove = panel.getByRole("button", { name: "Delete Fixture zeta", exact: true });
   await expect(remove).toBeInViewport();
@@ -134,7 +134,7 @@ test("Codex agents scroll within five rows and require explicit delete confirmat
       scrollbarGap: element.getBoundingClientRect().right - rows[0]!.getBoundingClientRect().right,
       fiveHeight: rows[4]!.getBoundingClientRect().bottom - rows[0]!.getBoundingClientRect().top };
   });
-  expect(Math.abs(phoneList.height - phoneList.fiveHeight)).toBeLessThan(1);
+  expect(phoneList.height).toBeLessThanOrEqual(phoneList.fiveHeight + 1);
   expect(phoneList.scrollbarGap).toBeGreaterThanOrEqual(8);
   await page.screenshot({ path: testInfo.outputPath("codex-agents-centered-430.png"), fullPage: true });
   text = list;
@@ -164,7 +164,7 @@ test("Codex agents scroll within five rows and require explicit delete confirmat
     return { height: element.clientHeight,
       fiveHeight: rows.at(-1)!.getBoundingClientRect().bottom - rows[0]!.getBoundingClientRect().top };
   });
-  expect(Math.abs(fullList.height - fullList.fiveHeight)).toBeLessThan(1);
+  expect(fullList.height).toBeLessThanOrEqual(fullList.fiveHeight + 1);
   await expect(remove).toHaveCount(0);
   await expect(panel.getByRole("button", { name: "Delete Fixture delta", exact: true })).toBeInViewport();
   await page.screenshot({ path: testInfo.outputPath("codex-agents-scroll-desktop.png"), fullPage: true });

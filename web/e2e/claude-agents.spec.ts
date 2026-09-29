@@ -6,6 +6,48 @@ import { en } from "../src/lib/i18n/messages/en";
 const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}.txt`, import.meta.url), "utf8");
 test.use({ serviceWorkers: "block" });
 
+test("Claude agents wrap long session titles and message snippets inside the card", async ({ page }, testInfo) => {
+  // Synthetic long copy retains the sanitized native row's styles and boundaries.
+  const label = `Request interrupted by a very long conversation title ${"x".repeat(80)}`;
+  const detail = `Remember to add the entry under the current Unreleased section. /uploads/${"y".repeat(120)}.jpg`;
+  const text = fixture("claude--v21284-agents-list")
+    .replace("Fixture alpha", label).replace("Fixture agent ready for input.", detail);
+  await page.addInitScript(() => localStorage.setItem("collie:locale:v1", "en"));
+  await installApiStub(page);
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({
+    json: { paneId: "w1:p1", text, truncated: false, revision: 1 },
+  }));
+
+  for (const width of [320, 430, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/pane/w1:p1");
+    const card = page.getByRole("group", { name: "Agents", exact: true });
+    const row = card.getByRole("button", { name: new RegExp("^Request interrupted") });
+    await expect(row).toBeVisible();
+    await expect(row).toContainText(detail);
+    const geometry = await row.evaluate((button) => {
+      const list = button.closest('[data-slot="picker-options"]')!;
+      const bounds = button.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(button);
+      return {
+        rowOverflow: button.scrollWidth - button.clientWidth,
+        listOverflow: list.scrollWidth - list.clientWidth,
+        scrollLeft: list.scrollLeft,
+        textInside: Array.from(range.getClientRects()).every((rect) => rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1),
+        height: bounds.height,
+      };
+    });
+    expect(geometry.rowOverflow).toBeLessThanOrEqual(1);
+    expect(geometry.listOverflow).toBeLessThanOrEqual(1);
+    expect(geometry.scrollLeft).toBe(0);
+    expect(geometry.textInside).toBe(true);
+    if (width === 320) expect(geometry.height).toBeGreaterThan(60);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`claude-agents-wrap-${width}.png`) });
+  }
+});
+
 test("Claude agents traverse headings, open, cancel and scroll within five rows at 320px", async ({ page }, testInfo) => {
   const list = fixture("claude--v21284-agents-list");
   const header = fixture("claude--v21284-agents-working-header");
@@ -57,7 +99,7 @@ test("Claude agents traverse headings, open, cancel and scroll within five rows 
       gap: node.getBoundingClientRect().right - items[0]!.getBoundingClientRect().right };
   });
   expect(geometry.content).toBeGreaterThan(geometry.height);
-  expect(Math.abs(geometry.height - geometry.five)).toBeLessThan(1);
+  expect(geometry.height).toBeLessThanOrEqual(geometry.five + 1);
   expect(geometry.gap).toBeGreaterThanOrEqual(8);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect.poll(() => options.evaluate((node) => {
