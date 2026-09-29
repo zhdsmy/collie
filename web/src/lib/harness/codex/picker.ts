@@ -6,12 +6,33 @@ import { lastNonBlankIndex, painted, rstrip } from "./markers";
 
 const SINGLE_FOOTER = "Press enter to confirm or esc to go back";
 const MULTIPLE_FOOTER = "Press space to toggle; ←/→ to move; enter to confirm and close; esc to close";
+const COMPACT_SINGLE_FOOTER = "enter select · esc back";
+const COMPACT_MULTIPLE_FOOTER = "space toggle · ←/→ reorder · enter save · esc cancel";
+const COMPACT_EFFORT_FOOTER = "enter default · s session · esc back";
 const DELETE_TITLE = /^Permanently delete “.+”\?$/;
 const DELETE_DESCRIPTION = "This stops any running work in this task and its child agents, then permanently deletes their history. This cannot be undone.";
 const MODEL_TITLE = /^(?:Select Model(?: and Effort)?|Select Reasoning Level for .+|Advanced Reasoning|Apply reasoning change)$/;
+const EFFORT_TITLE = /^Select Reasoning Level for .+$/;
 const NUMBERED = /^(› | {2})([1-9]\d*)\. (\S.*)$/;
 const CHECKBOX = /^(› | {2})\[([ x])\] (\S.*)$/;
 const MAX_ROWS = 100;
+
+function compactFooterMatches(line: StyledLine, expectedActions: string): boolean {
+  const visible = line.segments.filter((segment) => segment.text.trim().length > 0);
+  return visible.filter((segment) => segment.bold).map((segment) => segment.text.trim()).join("|") === expectedActions &&
+    visible.filter((segment) => !segment.bold).every((segment) => segment.dim);
+}
+
+function paintedPrefix(line: StyledLine, length: number, flag: "bold" | "dim"): boolean {
+  let remaining = length;
+  for (const segment of line.segments) {
+    const text = segment.text.slice(0, remaining);
+    if (text.trim() && segment[flag] !== true) return false;
+    remaining -= Math.min(segment.text.length, remaining);
+    if (remaining === 0) return true;
+  }
+  return false;
+}
 
 export interface PickerRegion {
   startLine: number;
@@ -50,8 +71,11 @@ function readOptions(
     const match = (multiple ? CHECKBOX : NUMBERED).exec(text);
     if (match) {
       const pointed = match[1] === "› ";
-      if (pointed && !painted(lines[i]!, "bold")) return null;
       const copy = columns(match[3]!);
+      const optionText = multiple
+        ? `${match[1]}[${match[2]}] ${copy.label}`
+        : `${match[1]}${match[2]}. ${copy.label}`;
+      if (pointed && !paintedPrefix(lines[i]!, optionText.length, "bold")) return null;
       const current = copy.label.endsWith(" (current)");
       const label = copy.label.replace(/ \(current\)$/, "");
       const id = multiple ? label : match[2]!;
@@ -85,20 +109,34 @@ export function detectPickerRegion(lines: StyledLine[]): PickerRegion | null {
   const tail = lastNonBlankIndex(texts);
   if (tail < 0) return null;
   const footer = texts[tail]!.trim();
-  const multiple = footer === MULTIPLE_FOOTER;
-  const deleting = footer === "enter select · esc back";
-  if (deleting ? lines[tail]!.segments.filter((segment) => segment.bold).map((segment) => segment.text.trim()).join("|") !== "enter|esc"
-    : !painted(lines[tail]!, "dim")) return null;
-  if (!multiple && !deleting && footer !== SINGLE_FOOTER) return null;
+  const compactSingle = footer === COMPACT_SINGLE_FOOTER;
+  const compactMultiple = footer === COMPACT_MULTIPLE_FOOTER;
+  const compactEffort = footer === COMPACT_EFFORT_FOOTER;
+  const multiple = footer === MULTIPLE_FOOTER || compactMultiple;
+  if (compactSingle
+    ? !compactFooterMatches(lines[tail]!, "enter|esc")
+    : compactMultiple
+      ? !compactFooterMatches(lines[tail]!, "space|←/→|enter|esc")
+      : compactEffort
+        ? !compactFooterMatches(lines[tail]!, "enter|s|esc")
+      : !painted(lines[tail]!, "dim")) return null;
+  if (!multiple && !compactSingle && !compactEffort && footer !== SINGLE_FOOTER) return null;
 
   let start = tail - 1;
   for (; start >= Math.max(0, tail - MAX_ROWS); start--) {
     const title = texts[start]!.trim();
-    if ((multiple ? title === "Configure Status Line" : deleting ? DELETE_TITLE.test(title) : MODEL_TITLE.test(title)) &&
-      painted(lines[start]!, "bold")) break;
+    const expectedTitle = multiple
+      ? title === "Configure Status Line"
+      : compactEffort
+        ? EFFORT_TITLE.test(title)
+        : compactSingle
+          ? DELETE_TITLE.test(title) || (MODEL_TITLE.test(title) && !EFFORT_TITLE.test(title))
+          : MODEL_TITLE.test(title);
+    if (expectedTitle && painted(lines[start]!, "bold")) break;
   }
   if (start < Math.max(0, tail - MAX_ROWS)) return null;
   const title = texts[start]!.trim();
+  const deleting = compactSingle && DELETE_TITLE.test(title);
   let optionsStart = start + 1;
   let optionsEnd = tail;
   let query: string | null = null;
@@ -108,9 +146,10 @@ export function detectPickerRegion(lines: StyledLine[]): PickerRegion | null {
   if (multiple) {
     const search = texts.findIndex((text, index) => index > start && index < tail && text.trim() === "Type to search");
     if (search < 0 || !painted(lines[search]!, "dim")) return null;
-    const input = /^ {2}>(?: (.*))?$/.exec(texts[search + 1] ?? "");
-    if (!input) return null;
-    query = input[1] ?? "";
+    const inputLine = texts[search + 1] ?? "";
+    const input = /^ {2}>(?: (.*))?$/.exec(inputLine);
+    if (!input && !(compactMultiple && !inputLine.trim())) return null;
+    query = input?.[1] ?? "";
     optionsStart = search + 2;
     description.push(...texts.slice(start + 1, search).map((text) => text.trim()).filter(Boolean));
     // Codex omits the preview row entirely when nothing is selected. With a preview,
@@ -119,7 +158,8 @@ export function detectPickerRegion(lines: StyledLine[]): PickerRegion | null {
     if (!texts[tail - 1]!.trim()) {
       optionsEnd = tail - 1;
     } else {
-      if (texts[tail - 2]!.trim()) return null;
+      const previewScrollMarker = compactMultiple && texts[tail - 2]!.trim() === "↓";
+      if (texts[tail - 2]!.trim() && !previewScrollMarker) return null;
       optionsEnd = tail - 2;
       preview = [lines[tail - 1]!];
     }

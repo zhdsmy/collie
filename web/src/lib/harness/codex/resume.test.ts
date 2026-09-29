@@ -18,6 +18,14 @@ const moved = (source: string) => source
   .replace("1 / 2", "2 / 2");
 
 describe("Codex saved-session picker parsing", () => {
+  it("reads current resume and fork captures with their action-specific toolbars", () => {
+    for (const action of ["resume", "fork"]) {
+      const source = readFileSync(join(PANES, `codex--v0158-${action}.txt`), "utf8");
+      expect(model(source).sessionAction).toBe(action);
+      expect(model(source).options.length).toBeGreaterThan(0);
+      if (action === "fork") expect(detectResumeRegion(parse(source.replace("Fork a previous", "Resume a previous")))).toBeNull();
+    }
+  });
   it.each(["start new", "exit"] as const)("lifts the 0.156.1 %s screen into a card", (exit) => {
     const lines = parse(codexResumeFrame(exit));
     const picker = detectResumeRegion(lines)!.model;
@@ -90,7 +98,7 @@ describe("Codex saved-session picker parsing", () => {
   });
 
   it("keeps other pane captures and model/statusline pickers outside resume", () => {
-    for (const file of readdirSync(PANES).filter((name) => name.endsWith(".txt"))) {
+    for (const file of readdirSync(PANES).filter((name) => name.endsWith(".txt") && !/^codex--v0158-(?:resume|fork)\.txt$/.test(name))) {
       expect(detectResumeRegion(parse(readFileSync(join(PANES, file), "utf8"))), file).toBeNull();
     }
     expect(detectPickerRegion(parse(frame()))).toBeNull();

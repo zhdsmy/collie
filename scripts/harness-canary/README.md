@@ -8,6 +8,7 @@ and M37/03 in the workspace tracker.
 ```sh
 bun run canary                          # all four agents, the five screen and send scenarios
 bun run canary --dialogs                # plus dialogs and busy (more model turns)
+bun run canary --agent codex,claude --scenario cards # current card screens, one seed turn each
 bun run canary --agent claude,codex     # some agents
 bun run canary --scenario idle,drafts   # some scenarios, no model turns
 bun run canary --keep                   # leave the session up for a look
@@ -65,8 +66,27 @@ text. What the phone makes of that screen is judged with Collie's readers only.
   owns the fix. The fix deletes the entry. A listed scenario that passes prints as a stale entry.
 
 `--record` writes an agent into `web/src/lib/harness/verified-versions.json` (spec M37/01) with
-`how: "canary"`, only after a run with no fail in which that agent reached every scenario. It
+`how: "canary"`, only after a complete default baseline with no fail anywhere and every result
+for that agent passing. Partial runs, known gaps and unreached screens cannot certify a version. It
 refuses when `--readers` points at another checkout, and it never creates the ledger.
+
+## Cards and update checks
+
+The adaptation inventory and hourly update watcher are described in [ADAPTATIONS.md](./ADAPTATIONS.md).
+
+`cards` checks Codex model/reasoning, statusline configuration, Resume, Fork and Agents, plus
+Claude Status/Config/Usage/Stats, Resume and Agents. Native headings are reached independently
+of Collie's parser, then the real block and disabled composer are checked. Arrow moves only stage
+selection; native cancellation restores the empty composer (Fork quits to its shell).
+
+Opening the already-current Codex model can enter its reasoning picker; that picker is cancelled
+without confirmation. A single small model turn seeds an owned conversation for Resume and Agents.
+If a model returns an error, its outcome remains recorded separately; a saved error conversation
+can still exercise card recognition. A missing native screen is `not-reached`, never a pass.
+
+These probes use native keys in owned panes. Browser regressions separately cover guarded card
+actions, including the Recent Models to Select Model entry. Hermes currently has fixture replay
+and version-change reporting; its live card recipes remain pending.
 
 ## How it stays off the operator's panes
 

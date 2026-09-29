@@ -1,0 +1,39 @@
+ [0m[1mFork a previous session[0m
+
+ Filter: [0m[1m[4m Cwd  [0mAll    Sort: [0m[1m Updated  [0mCreated
+
+ Type to search
+
+  [0m[1m[7m› [0m[7m40s ago     [0m[1m[7mReply with only OK                                                                                    [0m
+    2h ago      Reply with only OK.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[0m[2m─────────────────────────────────────────────────────────────────────────────────────────────────────────[0m 1 / 2 · 100% [0m[2m─[0m
+ [0m[1menter [0mfork   [0m[1mesc [0mstart new   [0m[1mctrl+c [0mquit   [0m[1mtab [0mfocus sort/filter   [0m[1m←/→ [0mchange option
+ [0m[1mctrl+o [0mcomfortable view   [0m[1mctrl+t [0mtranscript   [0m[1mctrl+e [0mexpand   [0m[1m↑/↓ [0mbrowse

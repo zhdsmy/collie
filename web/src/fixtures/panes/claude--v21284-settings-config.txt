@@ -1,0 +1,31 @@
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Settings  Status  [0m[7m Config [0m  Usage   Stats
+
+
+  ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+  │ ⌕ [0m[7mS[0mearch settings…                                                                                               │
+  ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+    Auto-compact                               true
+    Continue automatically at usage limit      true
+    Switch models when a message is flagged    Switch automatically
+    Show tips                                  true
+    Reduce motion                              false
+    Thinking mode                              true
+    Session recap                              true
+    Rewind code (checkpoints)                  true
+    Dynamic workflows                          true
+    Ultracode keyword trigger                  true
+    Dynamic workflow size                      medium (default)
+    Verbose output                             false
+    Terminal progress bar                      true
+    Show turn duration                         true
+    Time format                                auto
+    Default permission mode                    Auto
+    Worktree base ref                          fresh
+    Use auto mode during plan                  true
+    Respect .gitignore in file picker          true
+    Skip the /copy picker                      false
+    ↓ 17 more below
+
+  Type to filter · Enter/↓ to select · ↑ to tabs · Esc to clear

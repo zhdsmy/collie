@@ -207,7 +207,7 @@ it.each(["header", "working-header"])("walks Claude's %s focus to a session befo
     mockSendKeys.mockImplementation(async (_nextPane, nextKeys) => { expect(nextKeys).toEqual(["Enter"]); text = ""; return { ok: true }; });
     return { ok: true };
   });
-  const result = await submitPickerIntent({ ...args(block.picker, { kind: "choose", id: "session:Fixture alpha" }), agent: "claude" });
+  const result = await submitPickerIntent({ ...args(block.picker, { kind: "choose", id: "session:0" }), agent: "claude" });
   expect(result).toEqual({ status: "sent" });
   expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([[name === "header" ? "Down" : "Up"], ["Enter"]]);
   expect(mockSendKeys.mock.calls.every((call) => call[3]?.includes("Claude Code"))).toBe(true);

@@ -12,6 +12,8 @@ export const codex: AgentProfile = {
   versionCommand: ["codex", "--version"],
   launch: (cols) => launchLine(cols, `codex -c 'model_reasoning_effort="low"'`),
   startupAnswer(texts) {
+    if (texts.some((t) => /^\s*Update available · \d+\.\d+\.\d+ → \d+\.\d+\.\d+\s*$/.test(t)) &&
+        texts.findLast((t) => t.trim())?.trim() === "enter continue · esc skip") return ["Escape"];
     // The folder trust question (0.156.1). `-c projects…trust_level` and `-a`/`-s` do not skip it,
     // measured 2026-09-26, so it is answered like a person would: pointer on "Trust and continue",
     // then Enter.

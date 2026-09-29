@@ -1,6 +1,7 @@
 import { lineText, type StyledLine } from "../../blocks";
 import { namesAMenuKey } from "../menu-hints";
 import { isModalEdge, MODAL_EDGE_WINDOW } from "./region-top";
+import { isHorizontalRule } from "./markers";
 
 /** The active Settings modal's boundary and highlighted tab, without parsing its body or actions. */
 export function detectSettingsRegion(lines: StyledLine[]): { startLine: number; title: string } | null {
@@ -17,7 +18,7 @@ export function detectSettingsRegion(lines: StyledLine[]): { startLine: number; 
     if (title === undefined) return null;
     let edge = i - 1;
     while (edge >= 0 && texts[edge]!.trim() === "") edge--;
-    if (edge < 0 || !isModalEdge(texts, edge, end)) return null;
+    if (edge < 0 || !(isModalEdge(texts, edge, end) || isHorizontalRule(texts[edge]!))) return null;
     for (let j = i + 1; j <= end; j++) {
       if (isModalEdge(texts, j, end)) return null;
     }

@@ -7,6 +7,7 @@ import { detectPickerRegion } from "./picker";
 
 const PANES = join(import.meta.dirname, "../../../fixtures/panes");
 const text = (state: string) => readFileSync(join(PANES, `codex--v0154-picker-${state}.txt`), "utf8");
+const v0158 = (state: string) => readFileSync(join(PANES, `codex--v0158-picker-${state}.txt`), "utf8");
 const parse = (source: string) => splitLines(parseAnsi(source));
 const fixture = (state: string) => parse(text(state));
 const model = (state: string) => detectPickerRegion(fixture(state))!.model;
@@ -49,6 +50,35 @@ describe("Codex native picker parsing", () => {
     const changed = detectPickerRegion(parse(text("model").replaceAll("gpt-5.6-sol", "future-model")));
     expect(changed!.model.options[1]!.label).toBe("future-model");
     expect(changed!.model.signature).not.toBe(picker.signature);
+  });
+
+  it("recognizes Codex 0.158 model pickers with the compact footer", () => {
+    const open = detectPickerRegion(parse(v0158("model")))!.model;
+    const navigated = detectPickerRegion(parse(v0158("model-navigated")))!.model;
+    expect(open.title).toBe("Select Model and Effort");
+    expect(open.footer).toBe("enter select · esc back");
+    expect(open.options[0]).toMatchObject({ id: "1", label: "GPT-6-Astra (default)" });
+    expect(open.options[1]).toMatchObject({ id: "2", label: "GPT-6-Sol", current: true, pointed: true });
+    expect(navigated.options.find((option) => option.pointed)?.label).toBe("GPT-6-Luna");
+  });
+
+  it("recognizes the captured Codex 0.158 reasoning picker footer", () => {
+    const lines = parse(v0158("effort"));
+    const picker = detectPickerRegion(lines)!.model;
+    expect(picker.title).toBe("Select Reasoning Level for GPT-6-Astra");
+    expect(picker.footer).toBe("enter default · s session · esc back");
+    expect(picker.options[0]).toMatchObject({
+      id: "1",
+      label: "Low (default)",
+      current: true,
+      pointed: true,
+    });
+    expect(picker.options[3]!.label).toBe("Extra high");
+
+    const tail = lines.findLastIndex((line) => lineText(line).trim().length > 0);
+    const unstyledFooter = [...lines];
+    unstyledFooter[tail] = { segments: [{ text: picker.footer, style: {}, muted: false }] };
+    expect(detectPickerRegion(unstyledFooter)).toBeNull();
   });
 
   it("retains reasoning defaults, advanced choices, and usage warnings", () => {
@@ -96,6 +126,25 @@ describe("Codex native picker parsing", () => {
     expect(scrolled.options.some((option) => option.id === "Use theme colors")).toBe(false);
   });
 
+  it("recognizes the exact compact Codex 0.158 statusline footer and key styling", () => {
+    const lines = parse(v0158("statusline"));
+    const picker = detectPickerRegion(lines)!.model;
+    expect(picker.title).toBe("Configure Status Line");
+    expect(picker.kind).toBe("multiple");
+    expect(picker.query).toBe("");
+    expect(picker.footer).toBe("space toggle · ←/→ reorder · enter save · esc cancel");
+    expect(picker.preview).toHaveLength(1);
+    expect(picker.options[0]).toMatchObject({ id: "Use theme colors", checked: true });
+    const unknownScrollMarker = lines.map((line) => lineText(line).trim() === "↓"
+      ? { segments: [{ text: "unknown scroll marker", style: {}, muted: false }] }
+      : line);
+    expect(detectPickerRegion(unknownScrollMarker)).toBeNull();
+    const tail = lines.findLastIndex((line) => lineText(line).trim().length > 0);
+    const unstyledFooter = [...lines];
+    unstyledFooter[tail] = { segments: [{ text: picker.footer, style: {}, muted: false }] };
+    expect(detectPickerRegion(unstyledFooter)).toBeNull();
+  });
+
   it("keeps an all-disabled picker interactive when Codex omits its preview row", () => {
     const empty = model("statusline-no-preview");
     expect(empty.preview).toEqual([]);
@@ -126,7 +175,7 @@ describe("Codex native picker parsing", () => {
   });
 
   it("leaves every pre-existing agent fixture outside the picker grammar", () => {
-    const others = readdirSync(PANES).filter((name) => name.endsWith(".txt") && !name.startsWith("codex--v0154-picker-") && !/^codex--v0158-agents-overview-delete(?:-pointed)?\.txt$/.test(name));
+    const others = readdirSync(PANES).filter((name) => name.endsWith(".txt") && !/^codex--v015[48]-picker-/.test(name) && !/^codex--v0158-agents-overview-delete(?:-pointed)?\.txt$/.test(name));
     for (const file of others) expect(detectPickerRegion(parse(readFileSync(join(PANES, file), "utf8"))), file).toBeNull();
   });
 });

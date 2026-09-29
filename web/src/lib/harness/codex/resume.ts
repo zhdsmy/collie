@@ -18,6 +18,7 @@ const TITLE = /^(?:Resume|Fork) a previous session$/;
 /** The search row, left-chromed by one column. Codex's own search keeps its text free of spaces. */
 const SEARCH = /^ (?:Type to search|Search: (\S*))/;
 const TOOLBAR = /^ Filter:\s+Cwd\s+All\s+Status:\s+Active\s+Archived\s+Sort:\s+Updated\s+Created$/;
+const FORK_TOOLBAR = /^ Filter:\s+Cwd\s+All\s+Sort:\s+Updated\s+Created$/;
 /** The footer's progress rule: a full-width `─` rail with its label painted over the right end. */
 const PROGRESS = /^─+ (\d+) ?\/ ?(\d+) · \d+% ?─$/;
 /** `format_relative_time` — everything the 12-column date cell can hold. */
@@ -29,7 +30,7 @@ const MORE = /^(?:↑ more|↓ more|↓ loading more)$/;
 const STATUS_LINE =
   /^(?:No sessions yet|No results for your search|Searching…|Loading sessions…|Loading older sessions…|Search scanned first \d+ sessions; more may exist)$/;
 /** `ctrl+o`'s label names the density you are NOT in — a cross-check on the geometry below. */
-const DENSITY_HINT = /ctrl\+o +(comfy|dense)\b/;
+const DENSITY_HINT = /ctrl\+o +(comfortable view|dense view|comfy|dense)\b/;
 
 /** `SESSION_META_DATE_WIDTH` — the fixed date cell both densities share. */
 const DATE_WIDTH = 12;
@@ -152,9 +153,11 @@ export function detectResumeRegion(lines: StyledLine[]): ResumeRegion | null {
   if (texts.slice(0, start).some((text) => text.trim() !== "")) return null;
 
   const searchIndex = start + 4;
+  const toolbar = texts[start + 2] ?? "";
+  const fork = texts[start]!.trim().startsWith("Fork");
   if (
     searchIndex + 1 > tail || texts[start + 1]?.trim() !== "" ||
-    !TOOLBAR.test(texts[start + 2] ?? "") || texts[start + 3]?.trim() !== "" ||
+    !(TOOLBAR.test(toolbar) || (fork && FORK_TOOLBAR.test(toolbar))) || texts[start + 3]?.trim() !== "" ||
     texts[searchIndex + 1]?.trim() !== ""
   ) {
     return null;
@@ -205,7 +208,7 @@ export function detectResumeRegion(lines: StyledLine[]): ResumeRegion | null {
 
   // The footer names the other density; when it is legible it must agree with the geometry.
   const hint = footer.join(" ").match(DENSITY_HINT)?.[1];
-  const named = hint === undefined ? null : hint === "dense" ? "comfortable" : "dense";
+  const named = hint === undefined ? null : hint.startsWith("dense") ? "comfortable" : "dense";
   if (named !== null && rows.density !== null && named !== rows.density) return null;
 
   const title = texts[start]!.trim();

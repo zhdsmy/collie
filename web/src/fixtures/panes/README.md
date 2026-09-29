@@ -16,6 +16,23 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Current card canary captures (2026-09-30)
+
+`codex--v0158-picker-model*.txt`, `codex--v0158-picker-effort.txt`, `codex--v0158-picker-statusline.txt`,
+`codex--v0158-resume.txt`, `codex--v0158-fork.txt` and
+`claude--v21284-settings-*.txt` preserve real isolated canary screens from Codex 0.158.0 and
+Claude Code 2.1.284. Paths, the disposable session ID and the provider address are sanitized;
+Settings captures begin at the modal boundary. ANSI styling and native rows are preserved.
+
+They cover compact Codex footers, label-only bold selection, the scrolled statusline preview,
+Fork's action-specific toolbar, and Claude's plain horizontal Settings boundary. The canary
+made one small model turn per agent; Claude returned an API limit error. No daily conversation
+was captured, and the model/statusline/Settings probes did not confirm persistent changes.
+
+`claude--v21284-agents-canary-{open,navigate}.txt` capture a later successful canary seed
+with native styling enabled. They preserve hidden empty groups, repeated truncated session
+titles and background selection before/after Down; only the scratch directory is sanitized.
+
 ## Claude statusline hint over a multi-line draft (captured 2026-09-19)
 
 `claude--draft-multiline-vim-hint.txt` is a byte-faithful capture of Claude Code 2.1.278 in an

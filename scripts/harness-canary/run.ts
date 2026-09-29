@@ -17,6 +17,7 @@ import { loadKnownGaps } from "./known-gaps";
 import { LEDGER_FILE, recordVerified } from "./ledger";
 import { loadReaders } from "./readers";
 import { runBusy, runDialogs } from "./dialogs";
+import { runCards } from "./cards";
 import { runAgent } from "./scenarios";
 import { installTransport } from "./transport";
 import { applyKnownGaps, exitCode, notReachedCase, recordable, renderTable, scenarioResult, type ScenarioResult } from "./verdict";
@@ -64,6 +65,9 @@ function freshProject(): string {
 }
 
 async function main(options: CanaryOptions): Promise<number> {
+  if (listSessions().some((s) => s.name === CANARY_SESSION)) {
+    throw new Error(`session ${CANARY_SESSION} already exists; leave its project and panes untouched`);
+  }
   const gaps = loadKnownGaps();
   const started = new Date();
   const id = runId(started);
@@ -129,6 +133,7 @@ async function main(options: CanaryOptions): Promise<number> {
       // Spec M37/03, after the screens and sends: each opens panes of its own.
       if (options.scenarios.includes("dialogs")) own.push(scenarioResult(agent, "dialogs", await runDialogs(ctx)));
       if (options.scenarios.includes("busy")) own.push(scenarioResult(agent, "busy", await runBusy(ctx)));
+      if (options.scenarios.includes("cards")) own.push(scenarioResult(agent, "cards", await runCards(ctx)));
       for (const r of own) {
         const judged = applyKnownGaps(r, gaps);
         results.push(judged);
@@ -180,7 +185,7 @@ function record(
   const ledger = options.ledger ?? LEDGER_FILE;
   for (const agent of options.agents) {
     if (!recordable(agent, results)) {
-      log(`--record: ${agent} not recorded (a fail in the run, or a scenario not reached)`);
+      log(`--record: ${agent} not recorded (partial baseline or a result other than pass)`);
       continue;
     }
     const passed = results.filter((r) => r.agent === agent && r.verdict === "pass").map((r) => r.scenario);

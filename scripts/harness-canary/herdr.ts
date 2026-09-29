@@ -17,8 +17,9 @@ export const CANARY_SESSION = "collie-canary";
 
 /** Environment variables a pane must not inherit from the process that started the canary. The
  *  HERDR_* ones name the operator's session and pane; the CLAUDE* ones mark a nested Claude Code
- *  session, which makes a Claude started in a pane behave as a child (no transcript saved). */
-const INHERITED = /^(HERDR_|CLAUDECODE$|CLAUDE_CODE_|CLAUDE_PID$|CLAUDE_EFFORT$)/;
+ *  session, which makes a Claude started in a pane behave as a child (no transcript saved).
+ *  NO_COLOR from the runner would erase the native selection styling the card checks need. */
+const INHERITED = /^(HERDR_|CLAUDECODE$|CLAUDE_CODE_|CLAUDE_PID$|CLAUDE_EFFORT$|NO_COLOR$)/;
 
 export function cleanEnv(env: NodeJS.ProcessEnv, socket: string | null, config: string | null = null) {
   const kept = Object.entries(env).filter((e): e is [string, string] => e[1] !== undefined && !INHERITED.test(e[0]));

@@ -14,7 +14,7 @@ describe("Claude left-arrow agents", () => {
     const region = detectAgentsRegion(parse(fixture("list")))!;
     expect(region.model).toMatchObject({ title: "Agents", kind: "single", query: null,
       options: [{ label: "Fixture alpha", pointed: true, description: "Needs input · Fixture agent ready for input." }],
-      navigation: { order: ["group:Needs input", "session:Fixture alpha", "group:Working", "group:Completed"], id: "session:Fixture alpha" } });
+      navigation: { order: ["group:Needs input", "session:0", "group:Working", "group:Completed"], id: "session:0" } });
     const blocks = claudeBuildBlocks(parse("Earlier conversation\n" + fixture("list")));
     expect(blocks.map((block) => block.kind)).toEqual(["raw", "picker"]);
     expect(blocks[0]!.lines.map(lineText)).toEqual(["Earlier conversation"]);
@@ -31,6 +31,41 @@ describe("Claude left-arrow agents", () => {
       expect(model.signature).not.toBe(first.signature);
       expect(model.footer).toBe(first.footer);
     }
+  });
+
+  it("reads hidden empty groups and repeated truncated titles without losing native positions", () => {
+    const opened = detectAgentsRegion(parse(fixture("canary-open")))!.model;
+    const moved = detectAgentsRegion(parse(fixture("canary-navigate")))!.model;
+    expect(opened.options).toHaveLength(3);
+    expect(opened.options[0]!.label).toBe(opened.options[1]!.label);
+    expect(opened.navigation).toEqual({ order: ["group:Needs input", "session:0", "session:1", "session:2"], id: "session:0" });
+    expect(moved.navigation).toEqual({ order: opened.navigation!.order, id: "session:1" });
+    expect(moved.options.filter((option) => option.current).map((option) => option.id)).toEqual(["session:0"]);
+    expect(claudeBuildBlocks(parse(fixture("canary-open"))).map((block) => block.kind)).toEqual(["picker"]);
+  });
+
+  it("checks the bold title after a leading brand mark", () => {
+    const lines = parse(fixture("list"));
+    const headerIndex = lines.findIndex((line) => lineText(line).includes("Claude Code v"));
+    const header = lines[headerIndex]!;
+    const wordmark = header.segments.find((segment) => segment.text.includes("Claude Code"))!;
+    const title = lineText(header).trim();
+    expect(wordmark.bold).toBe(true);
+
+    lines[headerIndex] = {
+      ...header,
+      segments: [
+        { text: " ▐▛███▛█   ", style: {}, muted: false },
+        { ...wordmark, text: title },
+      ],
+    };
+    expect(detectAgentsRegion(lines)).not.toBeNull();
+
+    lines[headerIndex] = {
+      ...lines[headerIndex]!,
+      segments: [lines[headerIndex]!.segments[0]!, { ...wordmark, text: title, bold: false, style: {} }],
+    };
+    expect(detectAgentsRegion(lines)).toBeNull();
   });
 
   it("excludes elapsed ages and spinner paint from action identity", () => {

@@ -1,0 +1,29 @@
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Settings  Status   Config   Usage  [0m[7m Stats [0m
+
+  [0m[7m Overview   [0mModels
+
+
+      Oct Nov Dec Jan Feb Mar Apr May Jun Jul Aug Sep
+      ···································▒·········▓···█··
+  Mon ·······························▒·▒···········▒···█·░
+      ·································▓█··········░···█·█
+  Wed ································▒▓▒··············█··
+      ··································▓············█▒░░
+  Fri ······························▓··░█··········░·▓·▓·
+      ······························▓░··█·············▒░·
+
+      Less ░ ▒ ▓ █ More
+
+  All time · Last 7 days · Last 30 days
+
+  Favorite model: deepseek/de…    Total tokens: 1.0b
+
+  Sessions: 45                    Longest session: 11d 22h 45m
+  Active days: 33/146             Longest streak: 8 days
+  Most active day: Sep 13         Current streak: 2 days
+  Input 55.9m · Output 2.6m · Cache read 955.0m · Cache write 7.6m
+
+  Your longest session is ~88x longer than watching Titanic
+
+    ↓ stats

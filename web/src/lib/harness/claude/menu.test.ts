@@ -79,6 +79,13 @@ describe("detectMenuRegion — the /model picker", () => {
 });
 
 describe("detectMenuRegion — what it must decline", () => {
+  it.each(claudeSettingsModalScreens)("frames $name with a plain horizontal modal boundary", ({ name, text }) => {
+    const screen = lines(text.replace(/^▔+.*$/m, "─".repeat(120)));
+    expect(detectMenu(screen)).toBeNull();
+    expect(buildBlocks(screen, { agent: "claude" }).at(-1)).toMatchObject({
+      kind: "unread-dialog", viewport: { title: name === "Stats loading" ? "Stats" : name },
+    });
+  });
   it.each(claudeSettingsModalScreens)("frames $name in the card with the declared Escape key", ({ name, text }) => {
     const screen = lines(text);
     expect(detectMenu(screen)).toBeNull();

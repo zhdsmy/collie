@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { KnownGap } from "./known-gaps";
 import {
   applyKnownGaps,
+  DEFAULT_SCENARIOS,
   exitCode,
   failCase,
   notReachedCase,
@@ -75,6 +76,7 @@ describe("applyKnownGaps", () => {
 
 describe("exitCode and recordable", () => {
   const ok = scenarioResult("claude", "idle", [passCase("idle")]);
+  const baseline = DEFAULT_SCENARIOS.map((s) => scenarioResult("claude", s, [passCase(s)]));
   const bad = scenarioResult("codex", "idle", [failCase("idle", "composer not found")]);
   const unseen = scenarioResult("pi", "sends", [notReachedCase("01", "turn did not finish")]);
   const known = applyKnownGaps(scenarioResult("codex", "start-exit", [failCase("s", "card")]), [gap]);
@@ -90,7 +92,14 @@ describe("exitCode and recordable", () => {
 
   test("an agent with an unreached scenario is not recorded", () => {
     expect(recordable("pi", [ok, unseen])).toBe(false);
-    expect(recordable("claude", [ok, unseen])).toBe(true);
+    expect(recordable("claude", [...baseline, unseen])).toBe(true);
+  });
+
+  test("partial card checks and known gaps cannot certify a CLI version", () => {
+    expect(recordable("claude", [ok])).toBe(false);
+    expect(recordable("claude", [scenarioResult("claude", "cards", [passCase("claude.resume")])])).toBe(false);
+    expect(recordable("claude", baseline)).toBe(true);
+    expect(recordable("codex", [...DEFAULT_SCENARIOS.map((s) => scenarioResult("codex", s, [passCase(s)])), known])).toBe(false);
   });
 
   test("an agent with no results is not recorded", () => {

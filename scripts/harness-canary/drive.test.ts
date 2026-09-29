@@ -58,6 +58,14 @@ describe("parseArgs", () => {
   test("--help", () => {
     expect(parseArgs(["--help"], "/repo")).toBe("help");
   });
+
+  test("--cards adds card checks once, independent of argument order", () => {
+    for (const argv of [["--cards", "--scenario", "idle"], ["--scenario", "idle", "--cards", "--cards"]]) {
+      const o = parseArgs(argv, "/repo");
+      if (o === "help") throw new Error("unexpected help");
+      expect(o.scenarios).toEqual(["idle", "cards"]);
+    }
+  });
 });
 
 describe("startup answers", () => {
@@ -80,6 +88,11 @@ describe("startup answers", () => {
   test("Codex is never cleared with Ctrl+C", () => {
     expect(codex.clearFallback).toBeNull();
     for (const m of MESSAGES) expect(codex.clearKeys(m.text)).not.toContain("ctrl+c");
+  });
+
+  test("Codex update notice is skipped without running the updater", () => {
+    expect(codex.startupAnswer(["Update available · 0.158.0 → 0.159.0", "enter continue · esc skip"])).toEqual(["Escape"]);
+    expect(codex.startupAnswer(["A transcript says Update available", "enter continue · esc skip"])).toBeNull();
   });
 });
 
@@ -125,7 +138,7 @@ describe("the canary's client answers colour queries", () => {
 
 test("cleanEnv drops the operator's Herdr and Claude Code markers and points at the canary socket", () => {
   const env = cleanEnv(
-    { PATH: "/bin", HERDR_PANE_ID: "w3Q:p27", HERDR_SOCKET_PATH: "/op.sock", CLAUDECODE: "1", CLAUDE_CODE_CHILD_SESSION: "1" },
+    { PATH: "/bin", HERDR_PANE_ID: "w3Q:p27", HERDR_SOCKET_PATH: "/op.sock", CLAUDECODE: "1", CLAUDE_CODE_CHILD_SESSION: "1", NO_COLOR: "1" },
     "/canary.sock",
     "/cfg.toml",
   );

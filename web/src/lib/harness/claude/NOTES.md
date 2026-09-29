@@ -9,8 +9,10 @@ well as sessions, so `PickerModel.navigation` records those stops without making
 session buttons. Each arrow is read back before the next write; only a verified session gets Enter.
 
 Recognition requires the current launcher banner, summary, background-return notice, ordered
-groups, empty new-session placeholder, and a known native footer. Typed drafts, collapsed or
-management states, unknown footer actions, duplicate visible names, and partial frames remain
+visible groups, empty new-session placeholder, and a known native footer. Empty groups may be
+hidden, and truncated titles can repeat; session IDs use visible ordinal positions. Current
+conversation bold and selection background are distinct, including when no heading is bold.
+Typed drafts, collapsed or management states, unknown footer actions, and partial frames remain
 native. Ages and spinner glyphs stay in the bound region but do not change session identity.
 The card offers selection, browsing, and Escape; native reply/delete/new-session actions remain
 available through Type and Keys. The older capture corpus now uses the same layout grammar.

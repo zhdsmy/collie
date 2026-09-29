@@ -79,6 +79,8 @@ const EFFORT_TITLE = /^Select Reasoning Level for (.+)$/;
 const ADVANCED_TITLE = "Advanced Reasoning";
 const SCOPE_TITLE = "Apply reasoning change";
 const MAX_MODEL_BROWSE_STEPS = 128;
+// Only native versioned GPT IDs have a case-folded identity; custom IDs stay exact.
+const CASE_INSENSITIVE_CODEX_MODEL = /^gpt-\d[\da-z._-]*$/i;
 
 function result(status: CodexModelSwitchStatus, error?: string): CodexModelSwitchResult {
   return error === undefined ? { status } : { status, error };
@@ -98,7 +100,7 @@ function isEffortPicker(model: PickerModel): boolean {
 
 function isEffortPickerFor(model: PickerModel, requestedModel: string): boolean {
   const match = EFFORT_TITLE.exec(model.title);
-  return isEffortPicker(model) && match?.[1] === requestedModel;
+  return isEffortPicker(model) && match !== null && sameModelIdentity(match[1]!, requestedModel);
 }
 
 function isAdvancedPicker(model: PickerModel): boolean {
@@ -113,6 +115,20 @@ function stripNativeSuffix(label: string): string {
   return label.trim().replace(/(?:\s+\((?:default|current)\))+$/i, "");
 }
 
+function sameModelIdentity(actual: string, requested: string): boolean {
+  if (actual === requested) return true;
+  return CASE_INSENSITIVE_CODEX_MODEL.test(actual) && CASE_INSENSITIVE_CODEX_MODEL.test(requested) &&
+    actual.toLowerCase() === requested.toLowerCase();
+}
+
+function findModelOption(model: PickerModel, requested: string): PickerModel["options"][number] | undefined {
+  const label = (option: PickerModel["options"][number]) => stripNativeSuffix(option.label);
+  const exact = model.options.find((option) => label(option) === requested);
+  if (exact) return exact;
+  const folded = model.options.filter((option) => sameModelIdentity(label(option), requested));
+  return folded.length === 1 ? folded[0] : undefined;
+}
+
 function modelField(lines: ReturnType<typeof splitLines>, model: string): { model: string; effort: CodexReasoningEffort | null } | null {
   const statusLines = codexAdapter.extractStatusLines(lines);
   for (const row of statusLines) {
@@ -120,7 +136,7 @@ function modelField(lines: ReturnType<typeof splitLines>, model: string): { mode
     const parts = text.split(/\s+·\s+/);
     for (let index = 0; index < parts.length; index++) {
       const parsed = parseCodexStatuslineField(parts[index]!, parts[index + 1], [model]);
-      if (parsed?.model === model) return parsed;
+      if (parsed !== null && sameModelIdentity(parsed.model, model)) return parsed;
     }
   }
   return null;
@@ -360,7 +376,7 @@ async function locateModel(
   for (let step = 0; step < MAX_MODEL_BROWSE_STEPS; step++) {
     if (isCancelled(args.signal)) return result("cancelled");
     if (!isModelPicker(current.model)) return result("changed");
-    const option = current.model.options.find((candidate) => stripNativeSuffix(candidate.label) === preset.model);
+    const option = findModelOption(current.model, preset.model);
     if (option) return current;
     const fingerprint = current.model.signature;
     if (seen.has(fingerprint)) return result("unsupported-model");
@@ -474,7 +490,7 @@ async function drive(
 
   const modelRead = await locateModel(args, owner, modelPicker, args.preset, rememberConfirmation);
   if ("status" in modelRead) return modelRead;
-  const modelOption = modelRead.model.options.find((option) => stripNativeSuffix(option.label) === args.preset!.model);
+  const modelOption = findModelOption(modelRead.model, args.preset!.model);
   if (!modelOption) return result("unsupported-model");
   const choseModel = await chooseVisible(args, owner, modelRead, modelOption.id);
   if (choseModel) return choseModel;

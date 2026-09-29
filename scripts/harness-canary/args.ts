@@ -42,6 +42,7 @@ screen and send with Collie's own readers. See scripts/harness-canary/README.md.
   --agent a,b        agents to run (default: ${CANARY_AGENTS.join(",")})
   --scenario a,b     scenarios to run (default: ${DEFAULT_SCENARIOS.join(",")}; known: ${SCENARIOS.join(",")})
   --dialogs          also run ${DIALOG_SCENARIOS.join(" and ")}: real dialogs and a send to a busy agent (more model turns)
+  --cards            also probe Resume, Agents, model/statusline pickers and Settings (one seed turn per supported agent)
   --cols N           terminal width for the wide scenarios, 40 to ${MAX_COLS} (default: the pane's own)
   --keep             leave the collie-canary session and the project up after the run
   --record           after a run with no fail, write each agent's version into the ledger
@@ -55,6 +56,7 @@ export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOpti
   let agents: CanaryAgent[] = [...CANARY_AGENTS];
   let scenarios: ScenarioId[] = [...DEFAULT_SCENARIOS];
   let dialogs = false;
+  let cards = false;
   let cols: number | null = null;
   let keep = false;
   let record = false;
@@ -96,6 +98,9 @@ export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOpti
       case "--dialogs":
         dialogs = true;
         break;
+      case "--cards":
+        cards = true;
+        break;
       case "--keep":
         keep = true;
         break;
@@ -120,5 +125,6 @@ export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOpti
   }
   if (agents.length === 0) throw new Error("--agent names no agent");
   if (dialogs) for (const s of DIALOG_SCENARIOS) if (!scenarios.includes(s)) scenarios.push(s);
+  if (cards && !scenarios.includes("cards")) scenarios.push("cards");
   return { agents, scenarios, cols, keep, record, readers, out, ledger };
 }

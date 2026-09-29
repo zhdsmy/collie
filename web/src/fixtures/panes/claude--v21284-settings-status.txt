@@ -1,0 +1,20 @@
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Settings [0m[7m Status [0m  Config   Usage   Stats 
+                                
+  Version:                    2.1.284
+  Session name:               /rename to add a name
+  Session ID:                 00000000-0000-0000-0000-000000000001
+  Session kind:               interactive
+  Peer address:               uds:/tmp/cc-socks/3248.sock
+  cwd:                        /tmp/collie-canary-project
+  Auth token:                 ANTHROPIC_AUTH_TOKEN
+  Anthropic base URL:         https://api.example.test
+
+  Model:                      haiku (claude-haiku-4-5-20251001)
+  MCP servers:                1 connected · /mcp
+  Setting sources:            User settings
+  Managed settings (remote):  not fetched — not available with a custom ANTHROPIC_BASE_URL
+  Organization policy:        not fetched with a custom ANTHROPIC_BASE_URL
+  Auto mode server:           Disabled
+
+  Esc to cancel

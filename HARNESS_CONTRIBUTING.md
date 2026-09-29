@@ -9,6 +9,10 @@ Read first: [`ARCHITECTURE.md`](./ARCHITECTURE.md) (the interaction loop + secur
 [`HERDR_API.md`](./HERDR_API.md) (the verified socket + `pane.send_keys` key grammar), and
 [`web/src/fixtures/panes/README.md`](./web/src/fixtures/panes/README.md) (the fixture corpus).
 
+Track new and repaired adaptations in [the adaptation inventory](./scripts/harness-canary/ADAPTATIONS.md)
+alongside their source, captured evidence and tests. Current-version live checks and old fixture
+replay are separate results; neither a partial canary nor a known gap certifies an agent version.
+
 ## Architecture in one paragraph
 
 An adapter is a [`HarnessAdapter`](./web/src/lib/harness/types.ts) —

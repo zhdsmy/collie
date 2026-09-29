@@ -15,7 +15,7 @@ export type Verdict = CaseVerdict | "known-gap";
  * M37/02, then the two of M37/03 (`dialogs`, `busy`), which make more model turns and run only when
  * asked for (`--dialogs` or `--scenario`).
  */
-export const SCENARIOS = ["idle", "drafts", "sends", "narrow", "start-exit", "dialogs", "busy"] as const;
+export const SCENARIOS = ["idle", "drafts", "sends", "narrow", "start-exit", "dialogs", "busy", "cards"] as const;
 export type ScenarioId = (typeof SCENARIOS)[number];
 
 /** What a run without `--scenario` does: the five screens and sends of spec M37/02. */
@@ -105,12 +105,12 @@ export function exitCode(results: readonly ScenarioResult[]): number {
   return results.some((r) => r.verdict === "fail") ? 1 : 0;
 }
 
-/** Whether a run may be recorded in the ledger for `agent`: no fail anywhere in the run, and every
- *  scenario of this agent reached a verdict. */
+/** An agent-wide certification needs the complete default baseline and only passing results. */
 export function recordable(agent: string, results: readonly ScenarioResult[]): boolean {
   if (exitCode(results) !== 0) return false;
   const own = results.filter((r) => r.agent === agent);
-  return own.length > 0 && own.every((r) => r.verdict !== "not-reached");
+  return DEFAULT_SCENARIOS.every((scenario) => own.some((r) => r.scenario === scenario && r.verdict === "pass"))
+    && own.every((r) => r.verdict === "pass");
 }
 
 /** The printed summary: one row per agent and scenario, fixed columns, no colour. */

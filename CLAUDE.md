@@ -17,6 +17,15 @@ untracked [`CLAUDE.local.md`](./CLAUDE.local.md).
 
 @CLAUDE.local.md
 
+## Harness adaptation maintenance
+
+New or repaired harness cards update [`scripts/harness-canary/adaptations.json`](./scripts/harness-canary/adaptations.json)
+with their source, provenance, relevant tests and sanitized captured evidence. Reuse existing
+card primitives and live canary recipes; an unreachable screen remains pending. Old fixture
+replay and current-version live verification are separate results, and a card-only check never
+certifies the whole CLI. Commands and maintenance steps:
+[`scripts/harness-canary/ADAPTATIONS.md`](./scripts/harness-canary/ADAPTATIONS.md).
+
 ## Decision records — read before reopening a settled question
 
 [`.adr/`](./.adr/) holds the decisions whose reasoning would otherwise live only in a PR thread —

@@ -1,0 +1,26 @@
+
+
+  >_ [0m[1mOpenAI Codex[0m[2m (v0.158.0)[0m
+     [0m[2m/tmp/codex-project[0m
+
+  All right. What have you got?
+
+  [0m[1mTip:[0m [0m[3mNew[0m Build faster with the [0m[1mDesktop app[0m. Run 'codex app' or visit [0m[4mhttps://chatgpt.com/codex?app-landing-page=true[0m
+ 
+ 
+  [0m[1mConfigure Status Line[0m
+  [0m[2mSelect which items to display in the status line.[0m
+ 
+  [0m[2mType to search[0m
+ 
+[0m[1m[7m› [x] Use theme colors      [0m[7mApply colors from the active /theme[0m[1m[7m                                                         [0m
+[0m[2m  ───────────────────────[0m
+  [x] model-with-reasoning  [0m[2mCurrent model name with reasoning level[0m
+  [x] run-state             [0m[2mCompact session run-state text (Ready, Working, Thinking)[0m
+  [x] context-remaining     [0m[2mPercentage of context window remaining (omitted when unknown)[0m
+  [x] fast-mode             [0m[2mWhether Fast mode is currently active[0m
+  [x] git-branch            [0m[2mCurrent Git branch (omitted when unavailable)[0m
+  [x] codex-version         [0m[2mCodex application version[0m
+↓
+  GPT-6-Sol low · Ready · Context 100% left · Fast off · main · 0.158.0
+  [0m[1mspace[0m[2m toggle · [0m[1m←/→[0m[2m reorder · [0m[1menter[0m[2m save · [0m[1mesc[0m[2m cancel                                                                  [0m

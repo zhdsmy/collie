@@ -102,6 +102,18 @@ disabled, single-item and muted multi-item configurations in default and Plan
 modes. These are input-compatibility fixtures: a custom footer must not prevent
 the next command, and a menu's selected arrow must never qualify as a composer.
 
+Codex 0.158.0 retains the model and statusline titles but shortens their footers
+to `enter select · esc back` and `space toggle · ←/→ reorder · enter save · esc
+cancel`. Footer keys are bold and the action text is dim. A pointed row bolds its
+label; its description may be inverse-highlighted without being bold. Its empty
+statusline search keeps a blank row after `Type to search` but omits the `>` input
+row. The captured statusline view places a `↓` marker immediately before the
+preview and omits the blank gap before its footer. Model names still come from the
+visible rows. The reasoning page uses `enter default · s session · esc back`;
+Enter applies the default and `s` applies only to the current session. The existing
+card confirmation uses Enter. Recent-model selection matches exact spelling first,
+then accepts a unique case-folded match for versioned GPT IDs; custom IDs stay exact.
+
 ## Verified recipes
 
 | Intent | Native keys and result |

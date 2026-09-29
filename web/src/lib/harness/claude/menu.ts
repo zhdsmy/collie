@@ -33,6 +33,7 @@ import { hasInputBox } from "./chrome";
 import { classifyFooter, isBlank, lineText } from "./markers";
 import { regionSignature } from "./prompt-select";
 import { findRegionTop } from "./region-top";
+import { detectSettingsRegion } from "./settings";
 import type { MenuAction, MenuModel, MenuNav } from "../menu-model";
 import { capitaliseMenuLabel, MENU_ARROW_ROW, parseKeyHintFooter, parseSingleHint, readKeyHintFooter } from "../menu-hints";
 
@@ -96,7 +97,7 @@ export function detectMenuRegion(lines: StyledLine[]): MenuRegion | null {
   const hints = footer.trim().split(/\s+·\s+/);
   if (actions.length > 0 && (hints.includes("←/→/tab to switch") ||
       (hints.includes("↓ stats") && hints.includes("r to cycle dates")))) return null;
-  if (hasInputBox(lines)) return null;
+  if (hasInputBox(lines) || detectSettingsRegion(lines) !== null) return null;
 
   // The region's top: the nearest rule/border above the footer, or the `▔` edge a newer Claude opens
   // its modal with. The picker draws one full-width row across the screen where its modal begins,

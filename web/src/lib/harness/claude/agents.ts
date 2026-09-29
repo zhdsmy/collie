@@ -21,7 +21,7 @@ export function detectAgentsRegion(lines: StyledLine[]): { startLine: number; mo
   if (hints.at(-1) !== "? for shortcuts" || hints.some((hint) => !HINTS.has(hint))) return null;
 
   const start = texts.findLastIndex((text) => /\bClaude Code v\d+\.\d+\.\d+\b/.test(text));
-  if (start < 0 || end - start > 200 || !lines[start]!.segments.some((s) => s.bold && s.text.trim() === "Claude Code")) return null;
+  if (start < 0 || end - start > 200 || !lines[start]!.segments.some((s) => s.bold && s.text.includes("Claude Code"))) return null;
   const firstGroup = texts.findIndex((text, i) => i > start && GROUPS.includes(text.trim()));
   if (firstGroup < 0 || firstGroup >= bottom - 2) return null;
   const heading = texts.slice(start, firstGroup).map((row) => row.trim()).join(" ").replace(/\s+/g, " ");
@@ -45,22 +45,25 @@ export function detectAgentsRegion(lines: StyledLine[]): { startLine: number; mo
       if (segments.some((s) => s.bold)) selectedGroups.push(id);
       continue;
     }
-    const labelAt = segments.findIndex((s) => s.bold && s.text.trim() !== "");
-    if (labelAt < 0) continue;
-    const label = segments[labelAt]!.text.trim();
-    if (!/^ ?\S /u.test(texts[i]!)) return null;
-    const detail = segments.slice(labelAt + 1).map((s) => s.text).join("").trim();
-    const description = /^(?:now|\d+[smhd])$/.test(detail) ? "" : /^(.*?)\s{2,}(?:now|\d+[smhd])$/.exec(detail)?.[1];
-    if (description === undefined || options.some((option) => option.label === label)) return null;
-    const id = `session:${label}`;
-    const pointed = segments[labelAt]!.bg !== undefined;
+    if (!text) continue;
+    if (!/^ ?[^\p{L}\p{N}\s] /u.test(texts[i]!)) {
+      if (!/^\s/.test(texts[i]!)) return null;
+      continue;
+    }
+    const row = /^ ?\S (.+?)\s{2,}(.*?)\s{2,}(?:now|\d+[smhd])$/u.exec(texts[i]!);
+    if (!row) return null;
+    const label = row[1]!.trim();
+    const description = row[2]!.trim();
+    // Claude truncates titles; native arrow positions distinguish repeated visible names.
+    const id = `session:${options.length}`;
+    const pointed = segments.some((s) => s.bg !== undefined && s.text.trim() !== "");
+    const current = segments.some((s) => s.bold && s.text.trim() === label);
     options.push({ id, label, description: `${group}${description ? ` · ${description}` : ""}`,
-      pointed, current: false, checked: false, orderable: false });
+      pointed, current, checked: false, orderable: false });
     order.push(id);
   }
-  if (!groups.includes("Needs input") || !groups.includes("Working") || !groups.includes("Completed")) return null;
   const pointed = options.filter((option) => option.pointed);
-  if (pointed.length > 1 || selectedGroups.length !== 1) return null;
+  if (pointed.length > 1 || selectedGroups.length > 1 || (pointed.length === 0 && selectedGroups.length !== 1)) return null;
   const id = pointed[0]?.id ?? selectedGroups[0]!;
   if (pointed.length === 1 && !hints.some((hint) => /^enter to (?:return|open)$/.test(hint))) return null;
   if (pointed.length === 0 && hints.some((hint) => hint.startsWith("enter to "))) return null;

@@ -1,0 +1,39 @@
+ [0m[1mResume a previous session[0m
+
+ Filter: [0m[1m[4m Cwd  [0mAll    Status: [0m[1m Active  [0mArchived    Sort: [0m[1m Updated  [0mCreated
+
+ Type to search
+
+  [0m[1m[7m› [0m[7m12s ago     [0m[1m[7mReply with only OK                                                                                    [0m
+    2h ago      Reply with only OK.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[0m[2m─────────────────────────────────────────────────────────────────────────────────────────────────────────[0m 1 / 2 · 100% [0m[2m─[0m
+ [0m[1menter [0mresume   [0m[1mctrl+a[0m archive   [0m[1mesc[0m exit   [0m[1mctrl+c [0mexit   [0m[1mtab[0m focus sort/filter   [0m[1m←/→ [0mchange option
+ [0m[1mctrl+o [0mcomfortable view   [0m[1mctrl+t [0mtranscript   [0m[1mctrl+e [0mexpand   [0m[1m↑/↓ [0mbrowse

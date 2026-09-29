@@ -132,6 +132,77 @@ describe("runCodexModelSwitch", () => {
     expect(intentKinds()).toEqual([]);
   });
 
+  it("selects a recent lowercase model slug from Codex 0.158's title-cased row", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    script(
+      idle,
+      idle,
+      idle,
+      commandPicker(),
+      fixture("codex--v0158-picker-model.txt"),
+      fixture("codex--v0154-picker-effort.txt"),
+      fixture("codex--v0154-picker-scope.txt"),
+    );
+
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
+      status: "scope-required",
+    });
+    expect(intentKinds()).toEqual(["choose", "choose"]);
+    expect(mockSubmitPickerIntent.mock.calls[0]?.[0].intent).toEqual({ kind: "choose", id: "1" });
+  });
+
+  it("confirms the lowercase recent preset from Codex 0.158's title-cased statusline", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    const titleCasedStatus = splitStatusline(
+      idle.replaceAll("gpt-5.6-sol", "GPT-6-Astra"),
+      "GPT-6-Astra",
+      "xhigh",
+    );
+    script(
+      idle,
+      idle,
+      idle,
+      commandPicker(),
+      fixture("codex--v0158-picker-model.txt"),
+      fixture("codex--v0158-picker-effort.txt"),
+      titleCasedStatus,
+    );
+
+    await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
+      status: "switched",
+    });
+    expect(intentKinds()).toEqual(["choose", "choose"]);
+  });
+
+  it("keeps custom model IDs case-sensitive when verifying the statusline", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    const customModel = "Acme/Foo";
+    const picker = fixture("codex--v0154-picker-model.txt").replaceAll("gpt-6-astra", customModel);
+    const effort = fixture("codex--v0154-picker-effort.txt").replaceAll("gpt-6-astra", customModel);
+    const differentlyCasedStatus = splitStatusline(
+      idle.replaceAll("gpt-5.6-sol", "acme/foo"),
+      "acme/foo",
+      "xhigh",
+    );
+    script(idle, idle, idle, commandPicker(), picker, effort, differentlyCasedStatus);
+
+    await expect(runCodexModelSwitch(args({ model: customModel, effort: "xhigh" }))).resolves.toEqual({
+      status: "unconfirmed",
+    });
+    expect(intentKinds()).toEqual(["choose", "choose"]);
+  });
+
+  it("does not choose a custom model by a case-only match", async () => {
+    const idle = fixture("codex--v0154-statusline-single-idle.txt");
+    const picker = fixture("codex--v0154-picker-model.txt").replaceAll("gpt-6-astra", "Acme/Foo");
+    script(idle, idle, idle, commandPicker(), picker);
+
+    await expect(runCodexModelSwitch(args({ model: "acme/foo", effort: "xhigh" }))).resolves.toEqual({
+      status: "unsupported-model",
+    });
+    expect(intentKinds()).toEqual(["navigate", "navigate"]);
+  });
+
   it("matches a split model and effort statusline after a direct commit", async () => {
     const idle = fixture("codex--v0154-statusline-single-idle.txt");
     const final = splitStatusline(idle);

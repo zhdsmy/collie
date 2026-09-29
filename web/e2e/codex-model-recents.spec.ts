@@ -23,6 +23,39 @@ test.use({ serviceWorkers: "block" });
 
 const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}`, import.meta.url), "utf8");
 
+test("recent models opens the current Codex model card at 320px", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.addInitScript((key) => {
+    localStorage.setItem("collie:theme:v1", "dark");
+    localStorage.setItem("collie:locale:v1", "zh");
+    localStorage.setItem(key, JSON.stringify([{ model: "gpt-6-astra", effort: "low" }]));
+  }, RECENTS_KEY);
+  await installApiStub(page);
+  let current = pane;
+  let revision = 1;
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0 ? { ...agent, agent: "codex", status: "idle" } : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: SESSION_KEY,
+  } }));
+  await page.route("**/api/pane/*/reply*", (route) => {
+    current = route.request().postDataJSON().submit ? fixture("codex--v0158-picker-model.txt")
+      : fixture("codex--v0154-command-status.txt").replaceAll("/status", "/model");
+    revision++;
+    return route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/pane/w1:p1");
+  await page.getByRole("button", { name: new RegExp(`^${zh["codexModel.openAria"]}:`) }).click();
+  await page.getByRole("button", { name: zh["codexModel.native"], exact: true }).click();
+  const card = page.getByRole("group", { name: "Select Model and Effort", exact: true });
+  await expect(card).toBeVisible();
+  await expect(card.getByRole("button", { name: /GPT-6-Sol/ })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("codex-0158-select-model.png") });
+});
+
 for (const theme of ["light", "dark"]) test(`plan controls: ${theme}`, async ({ page }, testInfo) => {
   const enabledPane = pane.trimEnd() + " \u001b[35mPlan mode (shift+tab to cycle)\u001b[0m\n";
   let current = pane;
