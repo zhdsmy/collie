@@ -48,6 +48,7 @@ describe("iconLinksFor", () => {
       "/favicon-96x96.png",
       "/favicon.svg",
       "/favicon.ico",
+      "/apple-touch-icon-512.png",
       "/apple-touch-icon.png",
     ]);
   });
@@ -60,6 +61,7 @@ describe("iconLinksFor", () => {
       "/favicon-dev-96x96.png",
       "/favicon-dev.svg",
       "/favicon-dev.ico",
+      "/web-app-manifest-dev-512x512.png",
       "/apple-touch-icon-dev.png",
     ]);
     // rel/type/sizes travel unchanged — only the href moves.
@@ -121,18 +123,20 @@ describe("transformIndexIcons — the release build stays byte-identical", () =>
     expect(transformIndexIcons(indexHtml, "release")).toBe(indexHtml);
   });
 
-  it("dev: rewrites all four icon hrefs to the -dev files, nothing else", () => {
+  it("dev: rewrites all icon hrefs to the dev files, nothing else", () => {
     const out = transformIndexIcons(indexHtml, "dev");
     expect(out).toContain('href="/favicon-dev-96x96.png"');
     expect(out).toContain('href="/favicon-dev.svg"');
     expect(out).toContain('href="/favicon-dev.ico"');
+    expect(out).toContain('href="/web-app-manifest-dev-512x512.png"');
     expect(out).toContain('href="/apple-touch-icon-dev.png"');
     // The originals are gone, not merely joined by the dev ones.
     expect(out).not.toContain('href="/favicon-96x96.png"');
     expect(out).not.toContain('href="/favicon.svg"');
     expect(out).not.toContain('href="/favicon.ico"');
+    expect(out).not.toContain('href="/apple-touch-icon-512.png"');
     expect(out).not.toContain('href="/apple-touch-icon.png"');
-    // Everything past the four <link> tags is untouched (e.g. the title, the boot splash CSS).
+    // Everything past the icon <link> tags is untouched (e.g. the title, the boot splash CSS).
     expect(out).toContain("<title>Collie</title>");
   });
 });

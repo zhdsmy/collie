@@ -181,7 +181,7 @@ const buildInfoPlugin: Plugin = {
   },
 };
 
-// A release build must ship index.html byte-for-byte unchanged, so this only rewrites the four
+// A release build must ship index.html byte-for-byte unchanged, so this only rewrites the
 // icon <link> hrefs, and only for index.html — never playground.html, which carries its own
 // -playground links statically instead (see playground.html itself). vite-icons.ts's
 // transformIndexIcons is a no-op on the release channel, so the `if` here is belt-and-braces: it

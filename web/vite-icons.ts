@@ -4,8 +4,7 @@
 // same functions to assert the release/dev/playground shapes without running a Vite build. Keeping
 // this file dependency-free is what makes that second import cheap.
 //
-// The release shapes below are BYTE-IDENTICAL to what `index.html` and the manifest already
-// declared before channels existed — the release build must render no diff at all.
+// Release links match index.html; its source is already the release build's markup.
 
 export type Channel = "release" | "dev";
 
@@ -45,12 +44,13 @@ export interface IconLink {
   readonly sizes?: string;
 }
 
-// Order matches the four `<link>` tags in index.html — kept as arrays (not a Map) so
+// Order matches the icon `<link>` tags in index.html — kept as arrays (not a Map) so
 // `transformIndexIcons` can zip release ↔ dev by index.
 const RELEASE_ICON_LINKS: readonly IconLink[] = [
   { rel: "icon", type: "image/png", href: "/favicon-96x96.png", sizes: "96x96" },
   { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
   { rel: "shortcut icon", href: "/favicon.ico" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon-512.png", sizes: "512x512" },
   { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
 ];
 
@@ -58,10 +58,11 @@ const DEV_ICON_LINKS: readonly IconLink[] = [
   { rel: "icon", type: "image/png", href: "/favicon-dev-96x96.png", sizes: "96x96" },
   { rel: "icon", type: "image/svg+xml", href: "/favicon-dev.svg" },
   { rel: "shortcut icon", href: "/favicon-dev.ico" },
+  { rel: "apple-touch-icon", href: "/web-app-manifest-dev-512x512.png", sizes: "512x512" },
   { rel: "apple-touch-icon", href: "/apple-touch-icon-dev.png", sizes: "180x180" },
 ];
 
-/** The four `<link>` icon tags index.html should carry for this channel. */
+/** The `<link>` icon tags index.html should carry for this channel. */
 export function iconLinksFor(channel: Channel): readonly IconLink[] {
   return channel === "dev" ? DEV_ICON_LINKS : RELEASE_ICON_LINKS;
 }
@@ -70,6 +71,7 @@ const RELEASE_INCLUDE_ASSETS: readonly string[] = [
   "favicon.svg",
   "favicon.ico",
   "favicon-96x96.png",
+  "apple-touch-icon-512.png",
   "apple-touch-icon.png",
 ];
 
