@@ -21,6 +21,20 @@ Read-only sampling against the local 0.158.0 daemon on 2026-09-29 reproduced
 this prefix in `codex agents --no-alt-screen`. Output after the footer still
 invalidates the card. The 320px browser test includes a synthetic prefix.
 
+The list shows at most five fixed-height rows in its own scroll area, shrinking
+with the dock on short screens; pointer movement keeps the focused row visible.
+Delete operates on the pointed task. It opens `?`, reads the native Tasks/Delete
+shortcut, returns to and revalidates the same row, then opens the confirmation.
+Codex 0.158.0 defaults this shortcut to Backspace (`keymap.rs`); on this macOS
+TUI help prints `delete`. The exact permanent-delete warning and both choices
+are lifted as a single picker. Cancel is initially focused, and deletion needs
+a separate user choice.
+The six-row/help/delete captures use an isolated home/app-server and synthetic
+tasks. Live client/bridge verification opened the confirmation with bound keys
+`?`, Escape, Backspace, then explicitly deleted only a fixture task and observed
+the native list shrink from six to five on 2026-09-29. This action also deletes
+child-agent history and stops running work; native warnings remain visible.
+
 The native view was opened with `/agents` in the isolated remote TUI. The
 0.158.0 `app/input.rs` Left handler routes to the same `open_agents_overview()`
 when the composer is empty and viewing an external writer on a shared daemon.

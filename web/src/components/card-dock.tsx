@@ -222,7 +222,8 @@ export function CardDock(props: CardDockProps) {
         props.composing ? "max-h-[40dvh]" : "max-h-[55dvh]",
         props.faceClassName,
       )}
-      style={props.faceStyle}
+      // SAFETY: this adds one CSS custom property to the existing typed style.
+      style={{ ...props.faceStyle, "--card-dock-max-height": props.composing ? "40dvh" : "55dvh" } as CSSProperties}
       onClick={props.onClick}
     >
       {card}

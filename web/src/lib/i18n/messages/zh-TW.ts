@@ -857,6 +857,7 @@ export const zhTW: Dictionary = {
   "dialog.picker.moveDownAria": "將 {label} 下移",
   "dialog.picker.noResults": "沒有符合的選項",
   "dialog.picker.confirm": "確認並關閉",
+  "dialog.agents.deleteAria": "刪除 {label}",
 
   "dialog.sessions.title": "恢復對話",
   "dialog.sessions.forkTitle": "建立對話分支",

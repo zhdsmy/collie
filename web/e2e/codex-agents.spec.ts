@@ -65,3 +65,79 @@ test("Codex command center selects and cancels safely at 320px", async ({ page }
   await expect(panel).toHaveCount(0);
   expect(keys).toEqual([["Down"], ["Enter"], ["Escape"]]);
 });
+
+test("Codex agents scroll within five rows and require explicit delete confirmation", async ({ page }, testInfo) => {
+  const list = fixture("codex--v0158-agents-overview-six");
+  const help = fixture("codex--v0158-agents-overview-help");
+  const confirmation = fixture("codex--v0158-agents-overview-delete");
+  const pointed = fixture("codex--v0158-agents-overview-delete-pointed");
+  const deleted = fixture("codex--v0158-agents-overview-deleted");
+  let text = list;
+  const keys: string[][] = [];
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.addInitScript(() => localStorage.setItem("collie:locale:v1", "en"));
+  await installApiStub(page);
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+      ? Object.assign({}, agent, { agent: "codex", status: "idle", hasSession: true }) : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({
+    json: { paneId: "w1:p1", text, truncated: false, revision: 1 },
+  }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
+    // SAFETY: this mock accepts only the bound native keys asserted below.
+    const body = route.request().postDataJSON() as { keys: string[]; expected_prompt: string };
+    expect(body.expected_prompt).toContain(text.includes("Permanently delete") ? "Permanently delete" : "Agent command center");
+    if (body.keys[0] === "?") { expect(text).toBe(list); text = help; }
+    else if (body.keys[0] === "Escape") { expect([help, confirmation]).toContain(text); text = list; }
+    else if (body.keys[0] === "Backspace") { expect(text).toBe(list); text = confirmation; }
+    else if (body.keys[0] === "Down") { expect(text).toBe(confirmation); text = pointed; }
+    else { expect(body.keys).toEqual(["Enter"]); expect(text).toBe(pointed); text = deleted; }
+    keys.push(body.keys);
+    return route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/pane/w1:p1");
+  const panel = page.getByRole("group", { name: "Agent command center", exact: true });
+  const options = panel.locator('[data-slot="picker-options"]');
+  await expect(options.locator("button")).toHaveCount(6);
+  const geometry = await options.evaluate((element) => {
+    const rows = Array.from(element.children);
+    const five = rows.slice(0, 5);
+    return { height: element.clientHeight, scrollHeight: element.scrollHeight,
+      fiveHeight: five.at(-1)!.getBoundingClientRect().bottom - five[0]!.getBoundingClientRect().top };
+  });
+  expect(geometry.scrollHeight).toBeGreaterThan(geometry.height);
+  expect(geometry.height).toBeLessThanOrEqual(geometry.fiveHeight);
+  const remove = panel.getByRole("button", { name: "Delete Fixture zeta", exact: true });
+  await expect(remove).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("codex-agents-scroll-320.png"), fullPage: true });
+  await options.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+  await expect(options.getByRole("button", { name: /^Fixture alpha / })).toBeInViewport();
+  await expect(remove).toBeInViewport();
+  await remove.click();
+  const confirm = page.getByRole("group", { name: "Permanently delete “Fixture zeta”?", exact: true });
+  await expect(confirm).toBeVisible();
+  expect(keys).toEqual([["?"], ["Escape"], ["Backspace"]]);
+  await confirm.locator('[data-slot="prompt-actions"]').getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(panel).toBeVisible();
+  expect(text).toBe(list);
+  await remove.click();
+  await confirm.getByRole("button", { name: "Permanently delete task and child agents", exact: true }).click();
+  await expect(panel).toBeVisible();
+  await expect(options.locator("button")).toHaveCount(5);
+  expect(keys.slice(-2)).toEqual([["Down"], ["Enter"]]);
+  expect(text).toBe(deleted);
+  await page.setViewportSize({ width: 1280, height: 1080 });
+  await expect(options).toBeVisible();
+  const fullList = await options.evaluate((element) => {
+    const rows = Array.from(element.children);
+    return { height: element.clientHeight,
+      fiveHeight: rows.at(-1)!.getBoundingClientRect().bottom - rows[0]!.getBoundingClientRect().top };
+  });
+  expect(Math.abs(fullList.height - fullList.fiveHeight)).toBeLessThan(1);
+  await expect(remove).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "Delete Fixture delta", exact: true })).toBeInViewport();
+  await page.screenshot({ path: testInfo.outputPath("codex-agents-scroll-desktop.png"), fullPage: true });
+});

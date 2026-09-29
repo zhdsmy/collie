@@ -27,6 +27,8 @@ export interface PickerModel {
   regionSignature: string;
   /** Presentation of a saved-session chooser; native labels and action guards stay untouched. */
   sessionAction?: "resume" | "fork";
+  /** Delete shortcut reported by the agent command center's native help page. */
+  deleteKey?: string;
 }
 
 /** Maximum query length accepted from a native search control. */
@@ -49,6 +51,7 @@ export function sanitizePickerSearchQuery(
 
 export type PickerIntent =
   | { kind: "choose"; id: string }
+  | { kind: "delete"; id: string }
   | { kind: "toggle"; id: string }
   | { kind: "move"; id: string; direction: "up" | "down" }
   | { kind: "navigate"; direction: "up" | "down" }
@@ -61,5 +64,5 @@ export function pickersEqual(a: PickerModel, b: PickerModel): boolean {
 }
 
 export function pickersSameIdentity(a: PickerModel, b: PickerModel): boolean {
-  return a.kind === b.kind && a.identity === b.identity && a.sessionAction === b.sessionAction;
+  return a.kind === b.kind && a.identity === b.identity && a.sessionAction === b.sessionAction && a.deleteKey === b.deleteKey;
 }

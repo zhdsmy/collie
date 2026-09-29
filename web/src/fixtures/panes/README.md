@@ -76,6 +76,11 @@ remains `current` as Down points to Fixture beta; the right-hand details change
 too. The terminal lists task names and projects rather than UUIDs. These contain
 no user conversations or credentials. See `lib/harness/codex/PICKER_NOTES.md`.
 
+The `-six`, `-help`, `-delete`, `-delete-pointed`, and `-deleted` companion
+captures (2026-09-29) use six disposable tasks. They preserve the native delete
+shortcut, default Cancel focus, explicit permanent-delete choice, and the five
+remaining rows after deleting only Fixture zeta. No real session is involved.
+
 ## Codex 0.154 model and statusline pickers (captured 2026-09-13)
 
 `codex--v0154-picker-*.txt` capture a disposable Codex pane with isolated configuration

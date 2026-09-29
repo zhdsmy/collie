@@ -7,6 +7,7 @@ import {
   Keyboard,
   Loader2,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
 
@@ -366,20 +367,28 @@ function SingleOption({
   locked,
   busy,
   onChoose,
+  compact = false,
 }: {
   option: PickerOption;
   locked: boolean;
   busy: boolean;
   onChoose: () => void;
+  compact?: boolean;
 }) {
   const tone = busy ? "busy" : option.current ? "selected" : "default";
+  const separator = option.description.lastIndexOf(" · ");
   return (
-    <div className="grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] items-stretch gap-1">
+    <div data-pointed={option.pointed} className={cn("grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] items-stretch gap-1", compact && "shrink-0 [&>button]:h-16")}>
       <PointerMark pointed={option.pointed} />
       <OptionButton
         tone={tone}
-        label={option.label}
-        description={option.description}
+        label={compact ? <span className="line-clamp-2" title={option.label}>{option.label}</span> : option.label}
+        description={compact && separator >= 0 ? (
+          <span className="flex min-w-0 gap-1" title={option.description}>
+            <span className="min-w-0 truncate">{option.description.slice(0, separator)}</span>
+            <span className="shrink-0">{option.description.slice(separator)}</span>
+          </span>
+        ) : option.description}
         disabled={locked}
         onClick={onChoose}
         trailing={busy ? <Spinner size="md" /> : option.current ? <CurrentMark /> : null}
@@ -493,6 +502,19 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
 
   const locked = Boolean(disabled) || sending !== null;
   const filtered = picker.query !== null && picker.query.length > 0;
+  const agents = picker.identity === "agents:command-center";
+  const listRef = useRef<HTMLDivElement>(null);
+  const pointed = picker.options.find((option) => option.pointed);
+  useEffect(() => {
+    if (!agents) return;
+    const list = listRef.current;
+    const row = list?.querySelector<HTMLElement>('[data-pointed="true"]');
+    if (!list || !row) return;
+    const frame = list.getBoundingClientRect();
+    const item = row.getBoundingClientRect();
+    if (item.top < frame.top) list.scrollTop += item.top - frame.top;
+    else if (item.bottom > frame.bottom) list.scrollTop += item.bottom - frame.bottom;
+  }, [agents, pointed?.id]);
 
   async function press(id: string, intent: PickerIntent): Promise<void> {
     if (locked) return;
@@ -556,6 +578,15 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
         onPress={(direction) => void press(`navigate:${direction}`, { kind: "navigate", direction })}
       />
     </div>
+    {agents ? (
+      <Button type="button" variant="outline" size="icon" className="size-11 text-destructive"
+        disabled={locked || !pointed}
+        aria-label={t("dialog.agents.deleteAria", { label: pointed?.label ?? "" })}
+        title={t("dialog.agents.deleteAria", { label: pointed?.label ?? "" })}
+        onClick={() => pointed && void press("delete", { kind: "delete", id: pointed.id })}>
+        {sending === "delete" ? <Spinner /> : <Trash2 aria-hidden className="size-4" />}
+      </Button>
+    ) : null}
     <Button
       type="button"
       variant="outline"
@@ -584,6 +615,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
   return (
     <PromptPanel
       ariaLabel={picker.title}
+      className={agents ? "max-h-[calc(var(--card-dock-max-height,55dvh)-2rem)] [&>[data-slot=prompt-header]]:shrink-0 [&>[data-slot=prompt-actions]]:shrink-0 [&>[data-slot=prompt-footer]]:shrink-0" : undefined}
       header={heading}
       actions={actions}
       footer={<KeyboardHelp footer={picker.footer} />}
@@ -591,7 +623,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
       {search}
 
       {picker.options.length > 0 ? (
-        <OptionsGroup data-slot="picker-options" className={cn("flex min-w-0 flex-col", picker.kind === "single" && "gap-1")}>
+        <OptionsGroup ref={listRef} data-slot="picker-options" className={cn("flex min-w-0 flex-col", picker.kind === "single" && "gap-1", agents && "max-h-84 min-h-0 overflow-y-scroll overscroll-y-contain [scrollbar-gutter:stable] [scrollbar-width:thin]")}>
           {picker.options.map((option, index) => {
             const busy = sending === `option:${option.id}` || sending === `move:${option.id}`;
             if (picker.kind === "single") {
@@ -601,6 +633,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
                   option={option}
                   locked={locked}
                   busy={busy}
+                  compact={agents}
                   onChoose={() => chooseOption(option)}
                 />
               );
@@ -619,11 +652,11 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
             );
           })}
         </OptionsGroup>
-      ) : (
+      ) : picker.identity !== "agents:help" ? (
         <p data-slot="picker-empty" className="py-4 text-center text-sm text-muted-foreground">
           {t("dialog.picker.noResults")}
         </p>
-      )}
+      ) : null}
 
       <Preview lines={picker.preview} />
     </PromptPanel>

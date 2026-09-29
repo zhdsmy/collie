@@ -12,6 +12,16 @@ const fixture = (state: string) => parse(text(state));
 const model = (state: string) => detectPickerRegion(fixture(state))!.model;
 
 describe("Codex native picker parsing", () => {
+  it("keeps native permanent-delete confirmation explicit and rejects altered warnings", () => {
+    const source = readFileSync(join(PANES, "codex--v0158-agents-overview-delete.txt"), "utf8");
+    const pointed = readFileSync(join(PANES, "codex--v0158-agents-overview-delete-pointed.txt"), "utf8");
+    expect(detectPickerRegion(parse(source))!.model.options.find((option) => option.pointed)?.label).toBe("Cancel");
+    expect(detectPickerRegion(parse(pointed))!.model.options.find((option) => option.pointed)?.id).toBe("2");
+    expect(detectPickerRegion(parse(source.replace("be undone.", "be reversed.")))).toBeNull();
+    expect(detectPickerRegion(parse(source.replace("task and child agents", "task and child agents  Extra action")))).toBeNull();
+    expect(detectPickerRegion(parse(source + "\nNew output"))).toBeNull();
+  });
+
   it("keeps the card when scrolling the theme row out and pointing at model", () => {
     // Derived from the captured native picker: only the viewport's first option and pointer move.
     const lines = fixture("statusline-leading-rule");
@@ -116,7 +126,7 @@ describe("Codex native picker parsing", () => {
   });
 
   it("leaves every pre-existing agent fixture outside the picker grammar", () => {
-    const others = readdirSync(PANES).filter((name) => name.endsWith(".txt") && !name.startsWith("codex--v0154-picker-"));
+    const others = readdirSync(PANES).filter((name) => name.endsWith(".txt") && !name.startsWith("codex--v0154-picker-") && !/^codex--v0158-agents-overview-delete(?:-pointed)?\.txt$/.test(name));
     for (const file of others) expect(detectPickerRegion(parse(readFileSync(join(PANES, file), "utf8"))), file).toBeNull();
   });
 });

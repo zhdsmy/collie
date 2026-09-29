@@ -861,6 +861,7 @@ export const zh: Dictionary = {
   "dialog.picker.moveDownAria": "将 {label} 下移",
   "dialog.picker.noResults": "没有匹配的选项",
   "dialog.picker.confirm": "确认并关闭",
+  "dialog.agents.deleteAria": "删除 {label}",
 
   "dialog.sessions.title": "恢复会话",
   "dialog.sessions.forkTitle": "创建会话分支",

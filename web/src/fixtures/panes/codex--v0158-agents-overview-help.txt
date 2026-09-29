@@ -1,0 +1,40 @@
+  [0m[1mAgent command center[0m[2m  Group: Project  g[0m
+  [0m[1m[4m All 6  [0m[2m Needs you 0   Working 0   Ready 6   Inactive 0                                        [0m[1mtab/shift+tab [0mfilter
+  [0m[2m───────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+  [0m[1mTask shortcuts[0m
+
+  [0m[1mNavigate[0m             [0m[1mTasks[0m              [0m[1mView[0m
+  ↑       Up           n       New        tab/shift+tab  Filter
+  ↓       Down         o       Resume     f              Search
+  enter   Open         r       Rename     g              Group
+  pgup    Page up      x       Stop
+  pgdn    Page down    a       Archive
+  ctrl+c  Quit         h       Hide
+                       delete  Delete
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [0m[1mesc[0m back

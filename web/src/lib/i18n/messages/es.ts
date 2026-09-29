@@ -881,6 +881,7 @@ export const es: Dictionary = {
   "dialog.picker.moveDownAria": "Mover {label} abajo",
   "dialog.picker.noResults": "No hay opciones coincidentes",
   "dialog.picker.confirm": "Confirmar y cerrar",
+  "dialog.agents.deleteAria": "Eliminar {label}",
 
   "dialog.sessions.title": "Reanudar sesión",
   "dialog.sessions.forkTitle": "Bifurcar sesión",

@@ -92,6 +92,7 @@ const ghostControl =
  */
 export function PromptPanel({
   ariaLabel,
+  className,
   raw,
   rawMode = "reveal",
   header,
@@ -100,6 +101,7 @@ export function PromptPanel({
   footer,
 }: {
   ariaLabel: string;
+  className?: string;
   /** The region this card replaced — every block variant already carries it as `lines`. */
   raw?: StyledLine[];
   /** What the Terminal control actually does on this card — see the ADR 0056 note above. */
@@ -139,7 +141,7 @@ export function PromptPanel({
     <div
       role="group"
       aria-label={ariaLabel}
-      className="my-1.5 flex flex-col gap-1.5 rounded-xl border border-border bg-card p-1.5 shadow-sm"
+      className={cn("my-1.5 flex flex-col gap-1.5 rounded-xl border border-border bg-card p-1.5 shadow-sm", className)}
     >
       {raw !== undefined && !showRaw && (
         <button

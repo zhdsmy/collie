@@ -80,6 +80,19 @@ const multiplePicker: PickerModel = {
 };
 
 describe("PickerBlock", () => {
+  it("offers a guarded delete intent for the pointed agent and disables it with the card", async () => {
+    const picker = { ...singlePicker, identity: "agents:command-center" };
+    const onAction = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(<PickerBlock picker={picker} onAction={onAction} />);
+    await user.click(screen.getByRole("button", { name: "Delete gpt-5" }));
+    expect(onAction).toHaveBeenCalledExactlyOnceWith({ kind: "delete", id: "gpt-5" });
+    rerender(<PickerBlock picker={picker} onAction={onAction} disabled />);
+    expect(screen.getByRole("button", { name: "Delete gpt-5" })).toBeDisabled();
+    rerender(<PickerBlock picker={singlePicker} onAction={onAction} />);
+    expect(screen.queryByRole("button", { name: "Delete gpt-5" })).toBeNull();
+  });
+
   const sessions: PickerModel = {
     ...singlePicker,
     identity: "resume:Resume a previous session",

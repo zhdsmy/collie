@@ -42,6 +42,11 @@ const REVIEWS = [
 const PICKERS = [
   "codex--v0158-agents-overview.txt",
   "codex--v0158-agents-overview-moved.txt",
+  "codex--v0158-agents-overview-six.txt",
+  "codex--v0158-agents-overview-help.txt",
+  "codex--v0158-agents-overview-delete.txt",
+  "codex--v0158-agents-overview-delete-pointed.txt",
+  "codex--v0158-agents-overview-deleted.txt",
   "codex--v0154-picker-advanced.txt",
   "codex--v0154-picker-effort.txt",
   "codex--v0154-picker-model.txt",

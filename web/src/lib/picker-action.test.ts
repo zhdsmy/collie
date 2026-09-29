@@ -194,6 +194,26 @@ describe("sanitizePickerSearchQuery", () => {
 });
 
 describe("submitPickerIntent", () => {
+  it.each(["normal", "stale", "unbound", "wrong-target"])("opens native delete confirmation safely (%s)", async (scenario) => {
+    const original = fixtureText("codex--v0158-agents-overview-six.txt");
+    const model = fixturePicker("codex--v0158-agents-overview-six.txt");
+    let text = scenario === "stale" ? original.replaceAll("Fixture zeta", "Replacement task") : original;
+    mockAdapterFor.mockReturnValue(codexAdapter);
+    mockFetchPane.mockImplementation(async () => ({ paneId: "w1:p1", text, truncated: false, revision: 7 }));
+    mockSendKeys.mockImplementation(async (_pane, keys) => {
+      text = keys[0] === "?" ? fixtureText("codex--v0158-agents-overview-help.txt")
+        : keys[0] === "Escape" ? original : fixtureText("codex--v0158-agents-overview-delete.txt");
+      if (scenario === "unbound") text = text.replace("delete  Delete", "delete  Other");
+      return { ok: true };
+    });
+    const id = model.options[scenario === "wrong-target" ? 1 : 0]!.id;
+    expect(await submitPickerIntent(args(model, { kind: "delete", id })))
+      .toEqual({ status: scenario === "normal" ? "sent" : "changed" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual(scenario === "normal" ? [["?"], ["Escape"], ["Backspace"]]
+      : scenario === "unbound" ? [["?"], ["Escape"]] : []);
+    expect(mockSendKeys.mock.calls.every((call) => Boolean(call[3]))).toBe(true);
+  });
+
   it.each([false, true])("guards the real command center through a pointer walk (target changed: %s)", async (changed) => {
     const model = fixturePicker("codex--v0158-agents-overview.txt");
     let text = fixtureText("codex--v0158-agents-overview.txt");

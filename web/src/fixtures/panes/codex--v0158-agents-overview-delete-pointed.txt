@@ -1,0 +1,40 @@
+
+  [0m[1mPermanently delete “Fixture zeta”?[0m
+  [0m[2mThis stops any running work in this task and its child agents, then permanently deletes their history. This cannot[0m
+  [0m[2mbe undone.[0m
+
+
+  1. Cancel
+[0m[1m[7m› 2. Permanently delete task and child agents                                                                          [0m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [0m[1menter[0m[2m select · [0m[1mesc[0m[2m back                                                                                              [0m

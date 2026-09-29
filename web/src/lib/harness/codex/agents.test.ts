@@ -20,6 +20,14 @@ describe("Codex agent command center", () => {
     expect(detectAgentsRegion(parse(source() + "\nEarlier terminal output"))).toBeNull();
   });
 
+  it("reads the delete shortcut only from the painted native help page", () => {
+    const help = readFileSync(join(PANES, "codex--v0158-agents-overview-help.txt"), "utf8");
+    expect(detectAgentsRegion(parse(help))!.model).toMatchObject({ identity: "agents:help", deleteKey: "Backspace", options: [] });
+    expect(detectAgentsRegion(parse(help.replace("delete  Delete", "d  Delete")))!.model.deleteKey).toBe("d");
+    expect(detectAgentsRegion(parse(help.replace("delete  Delete", "delete  Other")))!.model.deleteKey).toBeUndefined();
+    expect(detectAgentsRegion(parse(help + "\nNew output"))).toBeNull();
+  });
+
   it("keeps current task separate from focus while the native detail pane changes", () => {
     const first = detectAgentsRegion(parse(source()))!.model;
     const moved = detectAgentsRegion(parse(source(true)))!.model;

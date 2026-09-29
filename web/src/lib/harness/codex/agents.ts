@@ -1,5 +1,5 @@
 // The daemon's Agent command center, opened by the empty composer's Left shortcut.
-import { lineText, type StyledLine } from "../../blocks";
+import { lineText, trimTrailingBlank, type StyledLine } from "../../blocks";
 import type { PickerOption } from "../picker-model";
 import { lastNonBlankIndex, rstrip } from "./markers";
 import type { PickerRegion } from "./picker";
@@ -19,15 +19,32 @@ function left(text: string): string {
 export function detectAgentsRegion(lines: StyledLine[]): PickerRegion | null {
   const texts = lines.map((line) => rstrip(lineText(line)));
   const tail = lastNonBlankIndex(texts);
-  if (tail < 0 || texts[tail]!.trim().replace(/\s+/g, " ") !== FOOTER) return null;
+  if (tail < 0) return null;
+  const footer = texts[tail]!.trim().replace(/\s+/g, " ");
+  const help = footer === "esc back";
+  if (!help && footer !== FOOTER) return null;
   const keys = lines[tail]!.segments.filter((segment) => segment.bold).map((segment) => segment.text.trim());
-  if (keys.join("|") !== "?|esc|↑/↓|enter|n") return null;
+  if (keys.join("|") !== (help ? "esc" : "?|esc|↑/↓|enter|n")) return null;
 
   const start = texts.findLastIndex((text) => HEADER.test(text));
   if (start < 0 || tail - start > 200) return null;
   if (lines[start]!.segments.find((segment) => segment.text.trim())?.bold !== true) return null;
   const filters = FILTERS.exec(texts[start + 1] ?? "");
   if (!filters || !/^ {2}─+$/.test(texts[start + 2] ?? "")) return null;
+  const region = texts.slice(start, tail + 1).join("\n");
+  if (help) {
+    if (texts[start + 3] !== "  Task shortcuts" ||
+      !lines[start + 3]!.segments.some((segment) => segment.bold && segment.text === "Task shortcuts")) return null;
+    const bindings = texts.slice(start + 4, tail).flatMap((text) => {
+      const match = /(?:^| {2,})((?:(?:ctrl|alt|shift)\+)*(?:delete|backspace|[a-z0-9])) {2,}Delete(?: {2,}|$)/.exec(text);
+      return match ? [match[1]!.replace(/(?:delete|backspace)$/, "Backspace")] : [];
+    });
+    return { startLine: start, model: {
+      kind: "single", identity: "agents:help", title: "Task shortcuts", description: [],
+      options: [], query: null, preview: trimTrailingBlank(lines.slice(start + 4, tail)), footer: texts[tail]!.trim(),
+      signature: region, regionSignature: region, deleteKey: bindings.length === 1 ? bindings[0] : undefined,
+    } };
+  }
   if (!/^ {6}Tasks {2,}Status {2,}Updated$/.test(left(texts[start + 3] ?? ""))) return null;
 
   const options: PickerOption[] = [];
@@ -55,7 +72,6 @@ export function detectAgentsRegion(lines: StyledLine[]): PickerRegion | null {
       current: row[4] === "current", checked: false, orderable: false });
   }
   if (options.filter((option) => option.pointed).length !== 1 || options.filter((option) => option.current).length > 1) return null;
-  const region = texts.slice(start, tail + 1).join("\n");
   return {
     startLine: start,
     model: {

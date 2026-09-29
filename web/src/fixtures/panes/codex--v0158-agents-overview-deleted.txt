@@ -1,0 +1,40 @@
+  [0m[1mAgent command center[0m[2m  Group: Project  g[0m
+  [0m[1m[4m All 5 [0m [0m[2m Needs you 0 [0m [0m[2m Working 0 [0m [0m[2m Ready 5 [0m [0m[2m Inactive 0 [0m                                       [0m[1mtab/shift+tab [0mfilter
+  [0m[2m───────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+      [0m[2mTasks                                          Status         Updated  │ [0m[1mTask details[0m
+  [0m[2m/private/tmp/collie-codex-overview-RjHMjv  5                               │[0m
+  [0m[1m[7m› ○ Fixture delta                                  Ready           7m ago  [0m[2m│ [0m[1mFixture delta[0m
+    ○ Fixture epsilon                                Ready        [0m[2m   7m ago  │ [0m○ Ready
+    ○ Fixture beta                                   Ready        [0m[2m   7m ago  │[0m
+    ○ Fixture gamma                                  Ready        [0m[2m   7m ago  │ Project[0m
+    ○ Fixture alpha                                  Ready        [0m[2m   7m ago  │ [0m/private/tmp/collie-codex-overview-
+                                                                             [0m[2m│ [0mRjHMjv
+                                                                             [0m[2m│ Model: [0mfixture-model
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│ Branch[0m
+                                                                             [0m[2m│ [0mmain
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│ Prompt[0m
+                                                                             [0m[2m│ [0mNo prompt available.
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+                                                                             [0m[2m│[0m
+  [0m[1m? [0mhelp[0m[2m  [0m[1mesc [0mback[0m[2m  [0m[1m↑/↓ [0mmove[0m[2m  [0m[1menter [0mopen[0m[2m  [0m[1mn [0mnew

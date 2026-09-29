@@ -872,6 +872,7 @@ export const ko: Dictionary = {
   "dialog.picker.moveDownAria": "{label} 아래로 이동",
   "dialog.picker.noResults": "일치하는 옵션이 없습니다",
   "dialog.picker.confirm": "확인하고 닫기",
+  "dialog.agents.deleteAria": "{label} 삭제",
 
   "dialog.sessions.title": "세션 재개",
   "dialog.sessions.forkTitle": "세션 분기",

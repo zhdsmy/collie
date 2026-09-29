@@ -874,6 +874,7 @@ export const ja: Dictionary = {
   "dialog.picker.moveDownAria": "{label} を下へ移動",
   "dialog.picker.noResults": "一致する項目がありません",
   "dialog.picker.confirm": "確定して閉じる",
+  "dialog.agents.deleteAria": "{label} を削除",
 
   "dialog.sessions.title": "セッションを再開",
   "dialog.sessions.forkTitle": "セッションを分岐",

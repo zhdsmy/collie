@@ -882,6 +882,7 @@ export const de: Dictionary = {
   "dialog.picker.moveDownAria": "{label} nach unten verschieben",
   "dialog.picker.noResults": "Keine passenden Optionen",
   "dialog.picker.confirm": "Bestätigen und schließen",
+  "dialog.agents.deleteAria": "{label} löschen",
 
   "dialog.sessions.title": "Sitzung fortsetzen",
   "dialog.sessions.forkTitle": "Sitzung verzweigen",

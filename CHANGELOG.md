@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Codex agents lists scroll above their task controls.** At most five rows fit in the list; a guarded delete button reads the native shortcut and opens Codex's explicit permanent-delete confirmation.
+
 ## [1.14.2+collie.3] - 2026-09-29
 
 ### Fixed

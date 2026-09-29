@@ -6,6 +6,8 @@ import { lastNonBlankIndex, painted, rstrip } from "./markers";
 
 const SINGLE_FOOTER = "Press enter to confirm or esc to go back";
 const MULTIPLE_FOOTER = "Press space to toggle; ←/→ to move; enter to confirm and close; esc to close";
+const DELETE_TITLE = /^Permanently delete “.+”\?$/;
+const DELETE_DESCRIPTION = "This stops any running work in this task and its child agents, then permanently deletes their history. This cannot be undone.";
 const MODEL_TITLE = /^(?:Select Model(?: and Effort)?|Select Reasoning Level for .+|Advanced Reasoning|Apply reasoning change)$/;
 const NUMBERED = /^(› | {2})([1-9]\d*)\. (\S.*)$/;
 const CHECKBOX = /^(› | {2})\[([ x])\] (\S.*)$/;
@@ -81,15 +83,18 @@ function readOptions(
 export function detectPickerRegion(lines: StyledLine[]): PickerRegion | null {
   const texts = lines.map((line) => rstrip(lineText(line)));
   const tail = lastNonBlankIndex(texts);
-  if (tail < 0 || !painted(lines[tail]!, "dim")) return null;
+  if (tail < 0) return null;
   const footer = texts[tail]!.trim();
   const multiple = footer === MULTIPLE_FOOTER;
-  if (!multiple && footer !== SINGLE_FOOTER) return null;
+  const deleting = footer === "enter select · esc back";
+  if (deleting ? lines[tail]!.segments.filter((segment) => segment.bold).map((segment) => segment.text.trim()).join("|") !== "enter|esc"
+    : !painted(lines[tail]!, "dim")) return null;
+  if (!multiple && !deleting && footer !== SINGLE_FOOTER) return null;
 
   let start = tail - 1;
   for (; start >= Math.max(0, tail - MAX_ROWS); start--) {
     const title = texts[start]!.trim();
-    if ((multiple ? title === "Configure Status Line" : MODEL_TITLE.test(title)) &&
+    if ((multiple ? title === "Configure Status Line" : deleting ? DELETE_TITLE.test(title) : MODEL_TITLE.test(title)) &&
       painted(lines[start]!, "bold")) break;
   }
   if (start < Math.max(0, tail - MAX_ROWS)) return null;
@@ -131,12 +136,15 @@ export function detectPickerRegion(lines: StyledLine[]): PickerRegion | null {
     texts[optionsStart]?.trim() === "no matches" && painted(lines[optionsStart]!, "dim");
   const options = emptySearch ? [] : readOptions(lines, texts, optionsStart, optionsEnd, multiple);
   if (!options || options.filter((option) => option.pointed).length !== (emptySearch ? 0 : 1)) return null;
+  if (deleting && (description.join(" ") !== DELETE_DESCRIPTION || options.length !== 2 ||
+    options[0]!.label !== "Cancel" || options[1]!.label !== "Permanently delete task and child agents" ||
+    options.some((option) => option.description))) return null;
   const regionSignature = texts.slice(start, tail + 1).join("\n");
   return {
     startLine: start,
     model: {
       kind: multiple ? "multiple" : "single",
-      identity: `${multiple ? "statusline" : "model"}:${title}\n${description.join("\n")}`,
+      identity: `${multiple ? "statusline" : deleting ? "agents:delete" : "model"}:${title}\n${description.join("\n")}`,
       title,
       description,
       options,

@@ -906,6 +906,7 @@ export const en = {
   "dialog.picker.moveDownAria": "Move {label} down",
   "dialog.picker.noResults": "No matching options",
   "dialog.picker.confirm": "Confirm and close",
+  "dialog.agents.deleteAria": "Delete {label}",
 
   "dialog.sessions.title": "Resume session",
   "dialog.sessions.forkTitle": "Fork session",

@@ -504,6 +504,38 @@ async function runChoose(args: PickerActionArgs, id: string): Promise<ActionResu
   return commitAt(args, walked.value, id, "Enter");
 }
 
+async function runDelete(args: PickerActionArgs, id: string): Promise<ActionResult> {
+  if (args.picker.identity !== "agents:command-center") return { status: "changed" };
+  const initial = await readCurrent(args);
+  if (!initial.ok) return initial.result;
+  const pointer = pointedOption(initial.value.model);
+  const option = initial.value.model.options.find((candidate) => candidate.id === id);
+  if (!option || pointer?.id !== id) return { status: "changed" };
+  const currentArgs = argsFor(args, initial.value);
+  const opened = await guardedKey(currentArgs, ["?"]);
+  if (opened.status !== "sent") return opened;
+  let help: PickerRead | null = null;
+  for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+    await (args.sleep ?? defaultSleep)(250);
+    if (aborted(args)) return { status: "changed" };
+    help = await readPicker(args);
+    if (help?.model.identity === "agents:help") break;
+    if (help && !pickersSameIdentity(initial.value.model, help.model)) return { status: "changed" };
+  }
+  if (help?.model.identity !== "agents:help") return { status: "changed" };
+  const closed = await guardedKey(argsFor(args, help), ["Escape"]);
+  if (closed.status !== "sent") return closed;
+  const restored = await readBack(currentArgs, initial.value.model, (model) =>
+    samePickerExceptPointer(initial.value.model, model) && pointedOption(model)?.id === id);
+  if (!restored || !help.model.deleteKey) return { status: "changed" };
+  const restoredArgs = argsFor(args, restored);
+  const sent = await guardedKey(restoredArgs, [help.model.deleteKey]);
+  if (sent.status !== "sent") return sent;
+  // Only open the native confirmation. Its delete choice still needs a separate user tap.
+  return readCommitOutcome(restoredArgs, restored.model, (model) =>
+    model.identity.startsWith("agents:delete:") && model.title === `Permanently delete “${option.label}”?`, false, false);
+}
+
 async function runToggle(args: PickerActionArgs, id: string): Promise<ActionResult> {
   if (args.picker.kind !== "multiple") return { status: "changed" };
   const option = args.picker.options.find((candidate) => candidate.id === id);
@@ -525,7 +557,8 @@ async function runClose(
   const key = intent === "confirm" ? "Enter" : "Escape";
   const sent = await guardedKey(args, [key]);
   if (sent.status !== "sent") return sent;
-  return readCommitOutcome(args, args.picker, () => false, true, false);
+  return readCommitOutcome(args, args.picker, () => false, true,
+    args.picker.identity === "agents:help" || args.picker.identity.startsWith("agents:delete:"));
 }
 
 async function runNavigate(
@@ -699,6 +732,8 @@ async function dispatch(args: PickerActionArgs): Promise<ActionResult> {
   switch (args.intent.kind) {
     case "choose":
       return runChoose(args, args.intent.id);
+    case "delete":
+      return runDelete(args, args.intent.id);
     case "toggle":
       return runToggle(args, args.intent.id);
     case "move":
