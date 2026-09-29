@@ -30,15 +30,17 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.16] - 2026-09-30
+
 ### Added
 
-- **Adaptation checks track card health after CLI updates.** An inventory links 46 adaptations to sources, tests and captured evidence. The optional macOS hourly watcher reuses isolated Codex and Claude card probes when versions or relevant sources change, reports unverified coverage separately, and notifies only on health changes. Partial canaries and known gaps cannot certify an entire CLI version.
+- **Adaptation checks track card health after CLI updates.** An inventory links 46 adaptations to sources, tests and captured evidence. The optional macOS hourly watcher reuses isolated Codex and Claude card probes when versions or relevant sources change, reports unverified coverage separately, and notifies only on health changes. Partial canaries and known gaps cannot certify an entire CLI version. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
 
 ### Fixed
 
-- **Codex model and fork cards read current terminal layouts.** Recognize compact model/reasoning/statusline footers and label-only bold selection, match recent versioned GPT model names uniquely across casing changes while keeping custom IDs exact, and accept Fork's action-specific toolbar and density hint.
-- **Claude Settings cards recognize plain horizontal modal boundaries.** Status, Config, Usage and Stats stay in their fixed scrolling cards instead of falling back or being claimed by the generic menu reader.
-- **Claude Agents cards preserve positions in compact native lists.** Hidden empty groups and repeated truncated titles retain native navigation order, while background selection and the current conversation remain distinct. The isolated probe cancels recognized native screens even when they include a new-session input box.
+- **Codex model and fork cards read current terminal layouts.** Recognize compact model/reasoning/statusline footers and label-only bold selection, match recent versioned GPT model names uniquely across casing changes while keeping custom IDs exact, and accept Fork's action-specific toolbar and density hint. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
+- **Claude Settings cards recognize plain horizontal modal boundaries.** Status, Config, Usage and Stats stay in their fixed scrolling cards instead of falling back or being claimed by the generic menu reader. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
+- **Claude Agents cards preserve positions in compact native lists.** Hidden empty groups and repeated truncated titles retain native navigation order, while background selection and the current conversation remain distinct. The isolated probe cancels recognized native screens even when they include a new-session input box. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
 
 ## [1.14.2+collie.15] - 2026-09-30
 
