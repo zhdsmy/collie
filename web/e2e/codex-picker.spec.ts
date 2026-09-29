@@ -208,6 +208,8 @@ for (const width of [320, 390]) {
               });
           });
           expect(overflow).toBe(false);
+          expect(await panel.locator('[data-slot="picker-options"] > div > button').evaluateAll((buttons) =>
+            buttons.every((button) => button.getBoundingClientRect().height >= 44))).toBe(true);
 
           if (scenario.name === "statusline empty") {
             await expect(panel.getByText(dictionary(locale)["dialog.picker.noResults"], { exact: true })).toBeVisible();

@@ -27,6 +27,17 @@ import { Collapse } from "@/components/ui/collapse";
 import { ListGroup } from "@/components/ui/list-group";
 import { OptionButton, PromptPanel, QuestionHeading } from "@/components/option-button";
 
+const listPanelClass = "max-h-[calc(var(--card-dock-max-height,55dvh)-2rem)] [&>[data-slot=prompt-header]]:shrink-0 [&>[data-slot=prompt-actions]]:shrink-0 [&>[data-slot=prompt-footer]]:shrink-0";
+const scrollableListClass = "-mr-1 min-h-0 overflow-y-auto overscroll-y-contain pr-3 [scrollbar-gutter:stable] [scrollbar-width:thin]";
+
+function centerPointedOption(list: HTMLDivElement | null): void {
+  const row = list?.querySelector<HTMLElement>('[data-pointed="true"], [aria-current="true"]');
+  if (!list || !row) return;
+  const frame = list.getBoundingClientRect();
+  const item = row.getBoundingClientRect();
+  list.scrollTop += (item.top + item.bottom - frame.top - frame.bottom) / 2;
+}
+
 export interface PickerBlockProps {
   /** Parsed Codex picker; the terminal remains the source of all staged state. */
   picker: PickerModel;
@@ -378,7 +389,7 @@ function SingleOption({
   const tone = busy ? "busy" : option.current ? "selected" : "default";
   const separator = option.description.lastIndexOf(" · ");
   return (
-    <div data-pointed={option.pointed} className={cn("grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] items-stretch gap-1", compact && "shrink-0 [&>button]:h-11 [&>button]:py-1 [&>button>span>span]:leading-tight")}>
+    <div data-pointed={option.pointed} className={cn("grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] items-stretch gap-1", compact && "shrink-0 [&>button]:py-1 [&>button>span>span]:leading-tight")}>
       <PointerMark pointed={option.pointed} />
       <OptionButton
         tone={tone}
@@ -420,19 +431,13 @@ function SessionPicker({ picker, locked, sending, search, onPress }: {
   const listRef = useRef<HTMLDivElement>(null);
   const pointedId = picker.options.find((option) => option.pointed)?.id;
   useEffect(() => {
-    const list = listRef.current;
-    const row = list?.querySelector<HTMLElement>('[aria-current="true"]');
-    if (!list || !row) return;
-    // Browse the terminal's list without scrolling the page or taking input focus.
-    const frame = list.getBoundingClientRect();
-    const item = row.getBoundingClientRect();
-    if (item.top < frame.top) list.scrollTop += item.top - frame.top;
-    else if (item.bottom > frame.bottom) list.scrollTop += item.bottom - frame.bottom;
+    centerPointedOption(listRef.current);
   }, [pointedId, picker.query]);
   const title = t(picker.sessionAction === "fork" ? "dialog.sessions.forkTitle" : "dialog.sessions.title");
   return (
     <PromptPanel
       ariaLabel={title}
+      className={listPanelClass}
       header={<>
         <QuestionHeading>{title}</QuestionHeading>
         <p className="font-content text-xs leading-snug text-muted-foreground">
@@ -450,7 +455,7 @@ function SessionPicker({ picker, locked, sending, search, onPress }: {
       footer={<>{search}<KeyboardHelp footer={picker.footer} /></>}
     >
       {picker.options.length ? (
-        <div ref={listRef} data-slot="session-options" className="max-h-72 min-w-0 overflow-y-auto overscroll-y-contain rounded-md border border-border divide-y divide-border">
+        <div ref={listRef} data-slot="session-options" className={cn("max-h-72 min-w-0 rounded-md border border-border divide-y divide-border", scrollableListClass)}>
           {picker.options.map((option) => {
             const meta = sessionMeta(option.description);
             const busy = sending === `option:${option.id}`;
@@ -506,14 +511,8 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const pointed = picker.options.find((option) => option.pointed);
   useEffect(() => {
-    if (!agents) return;
-    const list = listRef.current;
-    const row = list?.querySelector<HTMLElement>('[data-pointed="true"]');
-    if (!list || !row) return;
-    const frame = list.getBoundingClientRect();
-    const item = row.getBoundingClientRect();
-    list.scrollTop += (item.top + item.bottom - frame.top - frame.bottom) / 2;
-  }, [agents, pointed?.id]);
+    centerPointedOption(listRef.current);
+  }, [picker.identity, pointed?.id, picker.query]);
 
   async function press(id: string, intent: PickerIntent): Promise<void> {
     if (locked) return;
@@ -614,7 +613,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
   return (
     <PromptPanel
       ariaLabel={picker.title}
-      className={agents ? "max-h-[calc(var(--card-dock-max-height,55dvh)-2rem)] [&>[data-slot=prompt-header]]:shrink-0 [&>[data-slot=prompt-actions]]:shrink-0 [&>[data-slot=prompt-footer]]:shrink-0" : undefined}
+      className={listPanelClass}
       header={heading}
       actions={actions}
       footer={<KeyboardHelp footer={picker.footer} />}
@@ -622,7 +621,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
       {search}
 
       {picker.options.length > 0 ? (
-        <OptionsGroup ref={listRef} data-slot="picker-options" className={cn("flex min-w-0 flex-col", picker.kind === "single" && "gap-1", agents && "-mr-1 max-h-59 min-h-0 overflow-y-scroll overscroll-y-contain pr-3 [scrollbar-gutter:stable] [scrollbar-width:thin]")}>
+        <OptionsGroup ref={listRef} data-slot="picker-options" className={cn("flex min-w-0 flex-col", scrollableListClass, picker.kind === "single" && "gap-1", agents ? "max-h-59" : "max-h-72")}>
           {picker.options.map((option, index) => {
             const busy = sending === `option:${option.id}` || sending === `move:${option.id}`;
             if (picker.kind === "single") {

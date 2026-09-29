@@ -60,6 +60,11 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
     await expect(panel.locator("details")).not.toHaveAttribute("open", "");
     await expect(panel.locator('[data-slot="picker-footer"]')).not.toBeVisible();
     expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    expect(await panel.locator('[data-slot="session-options"]').evaluate((element) =>
+      element.getBoundingClientRect().right - element.firstElementChild!.getBoundingClientRect().right)).toBeGreaterThanOrEqual(8);
+    const actions = await panel.locator('[data-slot="prompt-actions"]').boundingBox();
+    const list = await panel.locator('[data-slot="session-options"]').boundingBox();
+    expect(actions!.y).toBeGreaterThanOrEqual(list!.y + list!.height);
     expect(await panel.locator('[data-slot="session-title"]').evaluateAll((elements) => elements.every((element) => {
       const style = getComputedStyle(element);
       return element.getBoundingClientRect().height <= parseFloat(style.lineHeight) * 2 + 1;

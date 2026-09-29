@@ -31,7 +31,7 @@ export type OptionTone = "default" | "selected" | "busy";
 /** Shared surface classes for a tappable option row. Applied verbatim in all three blocks. */
 export function optionSurface(tone: OptionTone): string {
   return cn(
-    "flex w-full items-start gap-2 rounded-lg border px-2.5 py-1.5 text-left shadow-sm transition-all",
+    "flex min-h-11 w-full items-start gap-2 rounded-lg border px-2.5 py-1.5 text-left shadow-sm transition-all",
     "active:scale-[0.99]",
     tone === "busy"
       ? "border-primary bg-primary/10" // in flight — accent, never dimmed (the spinner reads over it)
