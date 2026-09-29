@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.5] - 2026-09-29
+
 ### Fixed
 
-- **Codex agents fit five compact rows on phone screens.** Remove excess row padding, keep names and metadata on two lines, and center the pointed task whenever the list's scroll limits allow it.
+- **Codex agents fit five compact rows on phone screens.** Remove excess row padding, keep names and metadata on two lines, and center the pointed task whenever the list's scroll limits allow it. ([94ec0a89](https://github.com/zhdsmy/collie/commit/94ec0a89))
 
 ## [1.14.2+collie.4] - 2026-09-29
 
