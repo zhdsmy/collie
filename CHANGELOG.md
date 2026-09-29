@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.9] - 2026-09-29
+
 ### Changed
 
-- **Unrecognized interfaces show a compact caption beside their key.** Use consistent wording across all seven languages and a single 50px row with a 44px Escape touch target, keeping the terminal mirror visible and existing guarded key behavior.
+- **Unrecognized interfaces show a compact caption beside their key.** Use consistent wording across all seven languages and a single 50px row with a 44px Escape touch target, keeping the terminal mirror visible and existing guarded key behavior. ([af3914bf](https://github.com/zhdsmy/collie/commit/af3914bf))
 
 ## [1.14.2+collie.8] - 2026-09-29
 
