@@ -15,6 +15,12 @@ Duplicate visible identities, partial frames, other grouping modes and search,
 rename or management dialogs remain native. Updated ages and the changing
 right-hand preview are excluded from row facts but remain in the bound region.
 
+The active command center may follow terminal scrollback in inline mode. Its
+last header and complete tail own the picker; preceding transcript stays raw.
+Read-only sampling against the local 0.158.0 daemon on 2026-09-29 reproduced
+this prefix in `codex agents --no-alt-screen`. Output after the footer still
+invalidates the card. The 320px browser test includes a synthetic prefix.
+
 The native view was opened with `/agents` in the isolated remote TUI. The
 0.158.0 `app/input.rs` Left handler routes to the same `open_agents_overview()`
 when the composer is empty and viewing an external writer on a shared daemon.

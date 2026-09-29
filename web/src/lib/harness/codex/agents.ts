@@ -24,7 +24,7 @@ export function detectAgentsRegion(lines: StyledLine[]): PickerRegion | null {
   if (keys.join("|") !== "?|esc|↑/↓|enter|n") return null;
 
   const start = texts.findLastIndex((text) => HEADER.test(text));
-  if (start < 0 || tail - start > 200 || texts.slice(0, start).some((text) => text.trim())) return null;
+  if (start < 0 || tail - start > 200) return null;
   if (lines[start]!.segments.find((segment) => segment.text.trim())?.bold !== true) return null;
   const filters = FILTERS.exec(texts[start + 1] ?? "");
   if (!filters || !/^ {2}─+$/.test(texts[start + 2] ?? "")) return null;

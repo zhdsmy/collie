@@ -5,8 +5,8 @@ import { fixtureSnapshot } from "../src/test/handlers";
 import { en } from "../src/lib/i18n/messages/en";
 
 const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}.txt`, import.meta.url), "utf8");
-const first = fixture("codex--v0158-agents-overview");
-const moved = fixture("codex--v0158-agents-overview-moved");
+const first = "Earlier terminal output\n" + fixture("codex--v0158-agents-overview");
+const moved = "Earlier terminal output\n" + fixture("codex--v0158-agents-overview-moved");
 const idle = fixture("codex--v0157-idle");
 test.use({ serviceWorkers: "block" });
 

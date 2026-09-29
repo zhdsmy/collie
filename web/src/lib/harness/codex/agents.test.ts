@@ -4,12 +4,22 @@ import { describe, expect, it } from "vitest";
 import { parseAnsi } from "../../ansi";
 import { lineText, splitLines } from "../../blocks";
 import { detectAgentsRegion } from "./agents";
+import { codexBuildBlocks } from "./index";
 
 const PANES = join(import.meta.dirname, "../../../fixtures/panes");
 const source = (moved = false) => readFileSync(join(PANES, `codex--v0158-agents-overview${moved ? "-moved" : ""}.txt`), "utf8");
 const parse = (text: string) => splitLines(parseAnsi(text));
 
 describe("Codex agent command center", () => {
+  it("recognizes the active command center after terminal scrollback", () => {
+    const lines = parse("Earlier terminal output\n" + source());
+    const region = detectAgentsRegion(lines)!;
+    expect(region.startLine).toBe(1);
+    expect(region.model).toEqual(detectAgentsRegion(parse(source()))!.model);
+    expect(codexBuildBlocks(lines).map((block) => block.kind)).toEqual(["raw", "picker"]);
+    expect(detectAgentsRegion(parse(source() + "\nEarlier terminal output"))).toBeNull();
+  });
+
   it("keeps current task separate from focus while the native detail pane changes", () => {
     const first = detectAgentsRegion(parse(source()))!.model;
     const moved = detectAgentsRegion(parse(source(true)))!.model;
