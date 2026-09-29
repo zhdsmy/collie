@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.7] - 2026-09-29
+
 ### Changed
 
-- **Picker cards share scrolling and comfortable touch targets.** Reuse bounded lists, separate scrollbar gutters, fixed controls, and centered selection across Codex pickers; shared option surfaces keep a 44px minimum without clipping longer answers.
+- **Picker cards share scrolling and comfortable touch targets.** Reuse bounded lists, separate scrollbar gutters, fixed controls, and centered selection across Codex pickers; shared option surfaces keep a 44px minimum without clipping longer answers. ([5acb15b6](https://github.com/zhdsmy/collie/commit/5acb15b6))
 
 ## [1.14.2+collie.6] - 2026-09-29
 
