@@ -30,13 +30,15 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.12] - 2026-09-29
+
 ### Added
 
-- **Claude background agents become a compact navigable card.** The left-arrow session list reuses the shared five-row scrolling picker, walks native group headings before opening a session, and keeps earlier conversation outside the card.
+- **Claude background agents become a compact navigable card.** The left-arrow session list reuses the shared five-row scrolling picker, walks native group headings before opening a session, and keeps earlier conversation outside the card. ([45ce8310](https://github.com/zhdsmy/collie/commit/45ce8310))
 
 ### Changed
 
-- **Escape controls use a quieter compact keycap.** Fixed scrolling cards retain a 44px touch target while the visible key loses its oversized frame.
+- **Escape controls use a quieter compact keycap.** Fixed scrolling cards retain a 44px touch target while the visible key loses its oversized frame. ([45ce8310](https://github.com/zhdsmy/collie/commit/45ce8310))
 
 ## [1.14.2+collie.11] - 2026-09-29
 
