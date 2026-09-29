@@ -68,6 +68,9 @@ test("Codex command center selects and cancels safely at 320px", async ({ page }
 
 test("Codex agents scroll within five rows and require explicit delete confirmation", async ({ page }, testInfo) => {
   const list = fixture("codex--v0158-agents-overview-six");
+  const centeredList = list
+    .replace("  \u001b[0m\u001b[1m\u001b[7m› ○ Fixture zeta", "    ○ Fixture zeta")
+    .replace("    ○ Fixture beta                                   Ready", "  \u001b[1m› ○ Fixture beta                         current   Ready");
   const help = fixture("codex--v0158-agents-overview-help");
   const confirmation = fixture("codex--v0158-agents-overview-delete");
   const pointed = fixture("codex--v0158-agents-overview-delete-pointed");
@@ -108,11 +111,32 @@ test("Codex agents scroll within five rows and require explicit delete confirmat
       fiveHeight: five.at(-1)!.getBoundingClientRect().bottom - five[0]!.getBoundingClientRect().top };
   });
   expect(geometry.scrollHeight).toBeGreaterThan(geometry.height);
-  expect(geometry.height).toBeLessThanOrEqual(geometry.fiveHeight);
+  expect(Math.abs(geometry.height - geometry.fiveHeight)).toBeLessThan(1);
   const remove = panel.getByRole("button", { name: "Delete Fixture zeta", exact: true });
   await expect(remove).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath("codex-agents-scroll-320.png"), fullPage: true });
+  text = centeredList;
+  await page.reload();
+  await expect(panel.getByRole("button", { name: "Delete Fixture beta", exact: true })).toBeVisible();
+  await expect.poll(() => options.evaluate((element) => {
+    const frame = element.getBoundingClientRect();
+    const row = element.querySelector('[data-pointed="true"]')!.getBoundingClientRect();
+    return Math.abs((row.top + row.bottom - frame.top - frame.bottom) / 2);
+  })).toBeLessThan(1);
+  await page.screenshot({ path: testInfo.outputPath("codex-agents-centered-320.png"), fullPage: true });
+  await page.setViewportSize({ width: 430, height: 932 });
+  const phoneList = await options.evaluate((element) => {
+    const rows = Array.from(element.children);
+    return { height: element.clientHeight,
+      fiveHeight: rows[4]!.getBoundingClientRect().bottom - rows[0]!.getBoundingClientRect().top };
+  });
+  expect(Math.abs(phoneList.height - phoneList.fiveHeight)).toBeLessThan(1);
+  await page.screenshot({ path: testInfo.outputPath("codex-agents-centered-430.png"), fullPage: true });
+  text = list;
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.reload();
+  await expect(remove).toBeVisible();
   await options.evaluate((element) => { element.scrollTop = element.scrollHeight; });
   await expect(options.getByRole("button", { name: /^Fixture alpha / })).toBeInViewport();
   await expect(remove).toBeInViewport();

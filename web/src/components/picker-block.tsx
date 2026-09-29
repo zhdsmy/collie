@@ -378,11 +378,11 @@ function SingleOption({
   const tone = busy ? "busy" : option.current ? "selected" : "default";
   const separator = option.description.lastIndexOf(" · ");
   return (
-    <div data-pointed={option.pointed} className={cn("grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] items-stretch gap-1", compact && "shrink-0 [&>button]:h-16")}>
+    <div data-pointed={option.pointed} className={cn("grid min-w-0 grid-cols-[1rem_minmax(0,1fr)] items-stretch gap-1", compact && "shrink-0 [&>button]:h-11 [&>button]:py-1 [&>button>span>span]:leading-tight")}>
       <PointerMark pointed={option.pointed} />
       <OptionButton
         tone={tone}
-        label={compact ? <span className="line-clamp-2" title={option.label}>{option.label}</span> : option.label}
+        label={compact ? <span className="block truncate" title={option.label}>{option.label}</span> : option.label}
         description={compact && separator >= 0 ? (
           <span className="flex min-w-0 gap-1" title={option.description}>
             <span className="min-w-0 truncate">{option.description.slice(0, separator)}</span>
@@ -512,8 +512,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
     if (!list || !row) return;
     const frame = list.getBoundingClientRect();
     const item = row.getBoundingClientRect();
-    if (item.top < frame.top) list.scrollTop += item.top - frame.top;
-    else if (item.bottom > frame.bottom) list.scrollTop += item.bottom - frame.bottom;
+    list.scrollTop += (item.top + item.bottom - frame.top - frame.bottom) / 2;
   }, [agents, pointed?.id]);
 
   async function press(id: string, intent: PickerIntent): Promise<void> {
@@ -623,7 +622,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
       {search}
 
       {picker.options.length > 0 ? (
-        <OptionsGroup ref={listRef} data-slot="picker-options" className={cn("flex min-w-0 flex-col", picker.kind === "single" && "gap-1", agents && "max-h-84 min-h-0 overflow-y-scroll overscroll-y-contain [scrollbar-gutter:stable] [scrollbar-width:thin]")}>
+        <OptionsGroup ref={listRef} data-slot="picker-options" className={cn("flex min-w-0 flex-col", picker.kind === "single" && "gap-1", agents && "max-h-59 min-h-0 overflow-y-scroll overscroll-y-contain [scrollbar-gutter:stable] [scrollbar-width:thin]")}>
           {picker.options.map((option, index) => {
             const busy = sending === `option:${option.id}` || sending === `move:${option.id}`;
             if (picker.kind === "single") {
