@@ -622,7 +622,7 @@ export function PickerBlock({ picker, onAction, disabled }: PickerBlockProps) {
       {search}
 
       {picker.options.length > 0 ? (
-        <OptionsGroup ref={listRef} data-slot="picker-options" className={cn("flex min-w-0 flex-col", picker.kind === "single" && "gap-1", agents && "max-h-59 min-h-0 overflow-y-scroll overscroll-y-contain [scrollbar-gutter:stable] [scrollbar-width:thin]")}>
+        <OptionsGroup ref={listRef} data-slot="picker-options" className={cn("flex min-w-0 flex-col", picker.kind === "single" && "gap-1", agents && "-mr-1 max-h-59 min-h-0 overflow-y-scroll overscroll-y-contain pr-3 [scrollbar-gutter:stable] [scrollbar-width:thin]")}>
           {picker.options.map((option, index) => {
             const busy = sending === `option:${option.id}` || sending === `move:${option.id}`;
             if (picker.kind === "single") {
