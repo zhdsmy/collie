@@ -73,11 +73,11 @@ describe("a real unread modal gets the card", () => {
   ])("%s gets the card on %s", (agent, fixture, key) => {
     const lines = fixtureLines(fixture);
     const blocks = pass(agent, lines);
-    expect(blocks.map((b) => b.kind)).toEqual(["unread-dialog"]);
+    expect(blocks.map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
     const card = cardOf(blocks)!;
     expect(card.kind === "unread-dialog" && card.cancel).toMatchObject({ key, agent });
     expect(card.kind === "unread-dialog" && card.cancel.signature).not.toBe("");
-    // The region is the WHOLE mirror: the card understands nothing, so nothing may be hidden. It is
+    // The region is the WHOLE mirror, which still draws it in place (the raw blocks stay). It is
     // the blocks' OWN lines rather than the input array, because those are what the mirror would
     // have drawn — the adapter's chrome strip has run, and on a native-mirror agent so have the
     // display passes (see `decorateNativeMirror`).
@@ -96,7 +96,7 @@ describe("a real unread modal gets the card", () => {
         ),
       );
       const blocks = pass(agent, lines);
-      expect(blocks.map((b) => b.kind)).toEqual(["unread-dialog"]);
+      expect(blocks.map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
       expect(cardOf(blocks)).toMatchObject({ cancel: { key: "Escape", agent } });
     },
   );
@@ -313,7 +313,7 @@ describe("the card is built outside the adapter", () => {
 describe("raw terminal mode", () => {
   it("shows no card: raw terminal means no adapter, so the pass cannot run", () => {
     const lines = fixtureLines("claude-lab--menu-status-screen--w82.txt");
-    expect(buildBlocks(lines, { agent: "claude" }).map((b) => b.kind)).toEqual(["unread-dialog"]);
+    expect(buildBlocks(lines, { agent: "claude" }).map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
     expect(buildBlocks(lines, { agent: "claude", grammars: false }).map((b) => b.kind)).toEqual([
       "raw",
     ]);

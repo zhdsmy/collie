@@ -180,9 +180,9 @@ export interface AutocompleteBlock {
  * (.adr/0053). Produced by a post-pass outside every adapter (harness/index.ts `withUnreadDialog`),
  * never by an adapter's own `buildBlocks` — so no fail-closed contract is loosened to make one.
  *
- * Like `menu`, its region text IS rendered, and more so: the card understands NOTHING about the
- * screen, so the screen is the only thing the operator has to read. `lines` is therefore the WHOLE
- * pane, not a lifted sub-region. Still not part of the find haystack (find runs over raw blocks only).
+ * `lines` is the WHOLE pane (what the guard binds to), but the card does not render it: the raw
+ * blocks stay beside it (downstream), so the mirror keeps drawing the screen in place and find still
+ * searches it.
  */
 export interface UnreadDialogBlock {
   kind: "unread-dialog";

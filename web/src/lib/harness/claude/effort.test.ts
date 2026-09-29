@@ -447,7 +447,7 @@ describe("detectEffort — a level other than medium selected, and the widths th
     expect(detectEffort(paneLines)).toBeNull();
 
     const blocks = buildBlocks(paneLines, { agent: "claude" });
-    expect(blocks.map((b) => b.kind)).toEqual(["unread-dialog"]);
+    expect(blocks.map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
   });
 
   it("declines at 40 columns with ultracode selected: a genuine Claude Code 2.1.278 render glitch (labels truncated to `xhigh      m`, no marker, no divider) leaves nothing this grammar can read", () => {

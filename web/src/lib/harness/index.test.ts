@@ -82,16 +82,15 @@ describe("buildBlocks native display pass", () => {
     },
   );
 
-  // The card renders its region ITSELF, so the display passes have to have run before the pass that
-  // builds it (harness/index.ts). Otherwise a Muse pane with no composer on it shows an un-trimmed,
-  // un-marked mirror inside the card while the same pane's raw mirror is trimmed and marked.
+  // The display passes run before the pass that builds the card (harness/index.ts), so the card's
+  // region (what the guard binds to) is the trimmed, marked screen the mirror draws.
   it("hands a muse card the decorated, trimmed lines", () => {
     const gutter = `${ESC}[38;2;170;171;175m  ${ESC}[0m`;
     // No composer on this screen, so the M34 post-pass answers with the card (.adr/0053).
     const lines = linesOf(`${gutter}${DARK_BODY}   \n${gutter}${BRIGHT}   `);
     expect(lines.map(lineText)).toEqual(["  body   ", "  bright   "]);
 
-    const [block] = buildBlocks(lines, { agent: "muse" });
+    const block = buildBlocks(lines, { agent: "muse" }).at(-1);
     expect(block!.kind).toBe("unread-dialog");
     // Trimmed: the grey gutter and the trailing pad are gone from the card's own region.
     expect(mirrorLines(block!).map(lineText)).toEqual(["body", "bright"]);

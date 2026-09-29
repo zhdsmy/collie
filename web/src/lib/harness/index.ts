@@ -126,15 +126,19 @@ export function withUnreadDialog(
     }
     if (!modal) return blocks;
   }
+  // Downstream: the raw blocks STAY, so the mirror keeps drawing the screen in place (full width,
+  // scrollable) and the docked card is only the caption and the key. Copying the whole pane into the
+  // card clipped wide rows and left the mirror above it blank.
   return [
+    ...blocks,
     {
       kind: "unread-dialog",
       cancel: { key, agent: adapter.agent, signature: unreadDialogSignature(texts) },
       // The lines the pass was HANDED, not the ones it probed: every block here is raw, and on a
-      // native-mirror agent they have already been through the display passes. The card renders this
-      // region itself, so it must be what the mirror would have drawn. The probes above stay on the
-      // original `lines`, because `composerReady`, blankness and the signature are claims about the
-      // real screen, and the row-chrome trim removes visible bytes by design.
+      // native-mirror agent they have already been through the display passes. The guard binds to
+      // this region. The probes above stay on the original `lines`, because `composerReady`,
+      // blankness and the signature are claims about the real screen, and the row-chrome trim
+      // removes visible bytes by design.
       lines: blocks.flatMap((b) => b.lines),
     },
   ];

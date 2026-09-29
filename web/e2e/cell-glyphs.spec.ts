@@ -24,8 +24,7 @@ import { installApiStub } from "./fixtures/api";
 // The pixel cases read one pixel against another, never against a constant.
 //
 // The pane is the fixture's SHELL pane, which is where a status tool prints a pill. An agent pane
-// with no input box on screen lifts the unread-dialog card (.adr/0053) and mirrors its rows there
-// instead — components/raw-mirror.test.tsx covers that path.
+// with no input box on screen would also dock the unread-dialog card (.adr/0053) under the mirror.
 
 const PANE_ID = "w2:p2";
 const LEFT_CAP = "\ue0b6";

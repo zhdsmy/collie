@@ -191,7 +191,7 @@ describe("no screen the grammar reads wears the unread card", () => {
       expect(kinds).toEqual(["raw"]);
       expect(claudeAdapter.composerReady!(lines)).toBe(false);
     } else {
-      expect(kinds).toEqual(["unread-dialog"]);
+      expect(kinds).toEqual(["raw", "unread-dialog"]);
     }
   });
 

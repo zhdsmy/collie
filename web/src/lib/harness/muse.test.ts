@@ -459,8 +459,8 @@ describe("muse: a dialog over the tasks popup lifts only where the bridge can bi
     expect(museAdapter.buildBlocks(three).every((b) => b.kind === "raw")).toBe(true);
     expect(museAdapter.composerReady!(three)).toBe(false);
     const card = buildBlocks(three, { agent: "muse" });
-    expect(card.map((b) => b.kind)).toEqual(["unread-dialog"]);
-    expect(card[0]!.kind === "unread-dialog" && card[0]!.cancel.key).toBe("Escape");
+    expect(card.map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
+    const c = card.at(-1)!; expect(c.kind === "unread-dialog" && c.cancel.key).toBe("Escape");
   });
 
   it.each(["muse--ask-color.txt", "muse--ask-toppings.txt", "muse--ask-toppings-review.txt"])(
@@ -470,7 +470,7 @@ describe("muse: a dialog over the tasks popup lifts only where the bridge can bi
       expect(kinds(plain)).not.toContain("unread-dialog"); // non-vacuous: it lifts without the popup
       const popped = withPopup(plain);
       expect(museAdapter.composerReady!(popped)).toBe(false);
-      expect(kinds(popped)).toEqual(["unread-dialog"]);
+      expect(kinds(popped)).toEqual(["raw", "unread-dialog"]);
     },
   );
 });
@@ -494,8 +494,8 @@ describe("muse: a focused tasks popup that names x to stop refuses the composer"
     expect(museAdapter.composerReady!(focused)).toBe(false);
     expect(museAdapter.composerPrompt!(focused)).toBeNull();
     const blocks = buildBlocks(focused, { agent: "muse" });
-    expect(blocks.map((b) => b.kind)).toEqual(["unread-dialog"]);
-    expect(blocks[0]!.kind === "unread-dialog" && blocks[0]!.cancel.key).toBe("Escape");
+    expect(blocks.map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
+    const b = blocks.at(-1)!; expect(b.kind === "unread-dialog" && b.cancel.key).toBe("Escape");
   });
 
   it.each(["main · ↓ to select", "main", "main · Enter to view"])(

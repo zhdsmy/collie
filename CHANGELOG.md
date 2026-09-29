@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **An unreadable dialog keeps its screen in the mirror, and the card shrinks to its key.** Claude's `/status` and other screens Collie cannot read now stay full width and scrollable in the mirror; the docked card holds only the caption and the declared key instead of a clipped copy of the pane.
+
 ## [1.14.2+collie.7] - 2026-09-29
 
 ### Changed

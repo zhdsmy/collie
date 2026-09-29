@@ -1,18 +1,15 @@
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import type { StyledLine, UnreadDialogModel } from "@/lib/blocks";
+import type { UnreadDialogModel } from "@/lib/blocks";
 import { keyLabel } from "@/lib/key-queue";
 import { OptionGroupCaption, PromptPanel } from "@/components/option-button";
-import { RawMirror } from "@/components/raw-mirror";
 import { t } from "@/lib/i18n";
 import { useLocale } from "@/hooks/use-locale";
 
 export interface UnreadDialogBlockProps {
   /** The screen no grammar read, and the key its harness DECLARED as the way out (.adr/0053). */
   cancel: UnreadDialogModel;
-  /** The whole pane's styled lines — rendered verbatim under the control (see below). */
-  lines: StyledLine[];
   /**
    * Injected send handler (from AgentChat). Presentational contract: this component NEVER touches
    * the network — the race guard and the send live in lib/unread-dialog-action.ts's caller.
@@ -30,18 +27,15 @@ export interface UnreadDialogBlockProps {
 // Muse that key steps back rather than dismisses, so a label promising "cancel" would be a lie on a
 // real harness.
 //
-// The region is the WHOLE pane, mirrored verbatim BY DEFAULT — the screen is the only thing the
-// operator has to read when nothing else is understood, so unlike the four cards that fully replace
-// their region this one never hides it. Same treatment as menu-block.tsx: React text nodes only, and
-// the agent's own terminal colours (MIRROR_SPACE / MIRROR_INVERT, ADR 0002), via the shared
-// RawMirror. PromptPanel's own Terminal toggle (ADR 0056) still applies on top, for a decluttered
-// view with the key control put away.
+// The screen itself is NOT in the card (downstream): the post-pass leaves the raw blocks in place,
+// so the mirror above keeps drawing the pane verbatim and at full width. The card is only the
+// caption and the key, so it stays one row tall and never pushes the composer down.
 //
 // DESIGN.md §2: the in-flight state recolours the button and changes NOTHING else — no spinner child
 // appears, no border is added, no padding moves. The border is reserved in the base string and the
 // pending state only repaints it, so the card the operator is reading does not shift under the tap.
 // DESIGN.md §6: `min-h-11` is the 44px tap floor, stated as a floor and never a fixed height.
-export function UnreadDialogBlock({ cancel, lines, onAction, disabled }: UnreadDialogBlockProps) {
+export function UnreadDialogBlock({ cancel, onAction, disabled }: UnreadDialogBlockProps) {
   useLocale();
   const [sending, setSending] = useState(false);
   const locked = disabled || sending;
@@ -58,9 +52,7 @@ export function UnreadDialogBlock({ cancel, lines, onAction, disabled }: UnreadD
   }
 
   return (
-    // rawMode (ADR 0056 counsel fix): this card always shows the mirror by default (below), so
-    // its control only puts the button away — never a swap from nothing.
-    <PromptPanel ariaLabel={caption} raw={lines} rawMode="declutter">
+    <PromptPanel ariaLabel={caption}>
       <OptionGroupCaption>{caption}</OptionGroupCaption>
 
       <button
@@ -75,8 +67,6 @@ export function UnreadDialogBlock({ cancel, lines, onAction, disabled }: UnreadD
       >
         {keyLabel(cancel.key)}
       </button>
-
-      <RawMirror lines={lines} />
     </PromptPanel>
   );
 }

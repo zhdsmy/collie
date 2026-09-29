@@ -86,8 +86,8 @@ export interface CardDockProps {
    *  keep the family the mirror above them is drawn in. */
   faceClassName?: string;
   faceStyle?: CSSProperties;
-  /** The mirror's "tap to type" handler, so a tap on the card's own terminal rows (the unread-dialog
-   *  card's whole-pane mirror, a card put down to Terminal) still focuses the composer, exactly as it
+  /** The mirror's "tap to type" handler, so a tap on the card's own terminal rows (a card put down
+   *  to Terminal) still focuses the composer, exactly as it
    *  did while the card lived inside the mirror. The handler declines a tap on a control itself. */
   onClick?: (event: MouseEvent<HTMLDivElement>) => void;
 }
@@ -161,14 +161,13 @@ function liftedCard({
     );
   }
   // The least confident arm, and last of the controls for that reason: it is reached only when no
-  // grammar claimed the screen at all (.adr/0053). It renders the WHOLE pane itself, which is why
-  // the mirror's raw blocks are empty whenever it is showing.
+  // grammar claimed the screen at all (.adr/0053). The mirror keeps drawing the pane (downstream);
+  // this card is only the caption and the key.
   const unreadBlock = blocks.find((b): b is UnreadBlock => b.kind === "unread-dialog");
   if (unreadBlock) {
     return (
       <UnreadDialogBlock
         cancel={unreadBlock.cancel}
-        lines={unreadBlock.lines}
         disabled={promptDisabled || !onUnreadDialogAction}
         onAction={(key) => onUnreadDialogAction?.(key, unreadBlock.cancel)}
       />
@@ -200,8 +199,7 @@ function liftedCard({
  * with none keeps its column exactly as it was: no padding, no rule, no empty box.
  *
  * HEIGHT. Capped at 55dvh, 40dvh with the soft keyboard up, and scrolled inside, so a tall card (the
- * /model mirror, a long /resume list, an unread-dialog card carrying the whole pane) never pushes the
- * composer off the screen. `dvh` already tracks the keyboard (hooks/use-keyboard.ts), so the cap is
+ * /model mirror, a long /resume list) never pushes the composer off the screen. `dvh` already tracks the keyboard (hooks/use-keyboard.ts), so the cap is
  * a share of what is really visible.
  *
  * LOOK. The page background and one uniform 1px top rule: a docked sheet standing on the column, not
