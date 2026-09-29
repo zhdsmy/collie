@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.14.2+collie.6] - 2026-09-29
+
 ### Fixed
 
-- **Codex agents keep overlay scrollbars clear of row borders.** Reserve a separate right-hand gutter so iOS scroll indicators do not cover task text, borders, or current-task marks.
+- **Codex agents keep overlay scrollbars clear of row borders.** Reserve a separate right-hand gutter so iOS scroll indicators do not cover task text, borders, or current-task marks. ([3217f38b](https://github.com/zhdsmy/collie/commit/3217f38b))
 
 ## [1.14.2+collie.5] - 2026-09-29
 
