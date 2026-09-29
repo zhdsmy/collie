@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Claude settings content stays inside a fixed-size card.** Status, Config, Usage, and Stats share a bounded 320px viewport with horizontal and vertical scrolling, a fixed title and Escape control, and earlier conversation preserved outside the card.
+
 ## [1.14.2+collie.10] - 2026-09-29
 
 ### Fixed

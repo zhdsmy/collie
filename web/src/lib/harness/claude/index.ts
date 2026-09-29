@@ -30,7 +30,7 @@ import {
 } from "./chrome";
 import { isPastePlaceholderOnly, pasteCarriesSend } from "./paste";
 import { decorateClaudeDiff, decorateClaudeUser } from "./display";
-import { isModalEdge, MODAL_EDGE_WINDOW } from "./region-top";
+import { detectSettingsRegion } from "./settings";
 
 function raw(lines: StyledLine[]): Block {
   return { kind: "raw", lines: decorateClaudeUser(decorateClaudeDiff(lines)) };
@@ -185,23 +185,6 @@ const MODAL_HINT_ROWS = 6;
 const POINTED_OPTION_ROW = /^\s*❯\s*\d+\.\s+\S/;
 const PRESS_KEY_PROMPT = /\bpress\s+(?:enter|esc|escape|any key)\b/i;
 
-// Stats omits the Escape footer while loading and when its chart fills the viewport.
-function statsTabOnScreen(lines: StyledLine[]): boolean {
-  const texts = lines.map(lineText);
-  let end = texts.length - 1;
-  while (end >= 0 && texts[end]!.trim() === "") end--;
-  if (end < 0 || !(texts[end]!.trim() === "↓ stats" ||
-      texts[end]!.includes("Loading your Claude Code stats"))) return false;
-  for (let i = end; i >= 0 && end - i < MODAL_EDGE_WINDOW; i--) {
-    if (!/^\s*Settings\s+Status\s+Config\s+Usage\s+Stats\s*$/.test(texts[i]!)) continue;
-    if (!lines[i]!.segments.some((s) => s.bg !== undefined && s.text.trim() === "Stats")) return false;
-    let edge = i - 1;
-    while (edge >= 0 && texts[edge]!.trim() === "") edge--;
-    return edge >= 0 && isModalEdge(texts, edge, end);
-  }
-  return false;
-}
-
 /** Whether the screen's last non-blank rows show a Claude modal: a row naming a key the way a modal's
  *  footer does, a pointed numbered option, or a "Press Enter" prompt. */
 function tailNamesAKey(lines: StyledLine[]): boolean {
@@ -211,7 +194,8 @@ function tailNamesAKey(lines: StyledLine[]): boolean {
     if (text.trim() !== "") rows.push(text);
   }
   return rows.some((t) => namesAMenuKey(t) || POINTED_OPTION_ROW.test(t) || PRESS_KEY_PROMPT.test(t)) ||
-    statsTabOnScreen(lines);
+    // Stats omits the Escape footer while loading and when its chart fills the viewport.
+    detectSettingsRegion(lines)?.title === "Stats";
 }
 
 export const claudeAdapter: HarnessAdapter = {

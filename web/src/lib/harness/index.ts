@@ -5,9 +5,10 @@
 // absent agent — the universal single raw block. This is the seam where the Claude-Code TUI grammars
 // (and any future agent's) run; every non-adapter agent keeps the pure raw mirror.
 
-import { lineText, type Block, type StyledLine } from "../blocks";
+import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../blocks";
 import { adapterFor, hasBlockGrammar } from "./registry";
 import { unreadDialogSignature } from "./unread-dialog-model";
+import { detectSettingsRegion } from "./claude/settings";
 import type { HarnessAdapter } from "./types";
 import {
   decorateMuseDisplay,
@@ -126,11 +127,12 @@ export function withUnreadDialog(
     }
     if (!modal) return blocks;
   }
-  // Downstream: the raw blocks STAY, so the mirror keeps drawing the screen in place (full width,
-  // scrollable) and the docked card is only the caption and the key. Copying the whole pane into the
-  // card clipped wide rows and left the mirror above it blank.
+  const mirrorLines = blocks.flatMap((b) => b.lines);
+  const settings = adapter.agent === "claude" ? detectSettingsRegion(mirrorLines) : null;
+  const before = settings ? trimTrailingBlank(mirrorLines.slice(0, settings.startLine)) : [];
+  // Only the identified modal moves into its viewport; history and unknown screens stay raw.
   return [
-    ...blocks,
+    ...(settings ? (before.length > 0 ? [{ kind: "raw" as const, lines: before }] : []) : blocks),
     {
       kind: "unread-dialog",
       cancel: { key, agent: adapter.agent, signature: unreadDialogSignature(texts) },
@@ -139,7 +141,11 @@ export function withUnreadDialog(
       // this region. The probes above stay on the original `lines`, because `composerReady`,
       // blankness and the signature are claims about the real screen, and the row-chrome trim
       // removes visible bytes by design.
-      lines: blocks.flatMap((b) => b.lines),
+      lines: mirrorLines,
+      viewport: settings ? {
+        title: settings.title,
+        lines: trimTrailingBlank(mirrorLines.slice(settings.startLine)),
+      } : undefined,
     },
   ];
 }

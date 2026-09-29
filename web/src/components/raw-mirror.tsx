@@ -11,13 +11,15 @@ import { cn } from "@/lib/utils";
  * the agent's own terminal colours (MIRROR_SPACE / MIRROR_INVERT, ADR 0002). Scrolls horizontally
  * on its own so a wide screen never makes the page pan.
  */
-export function RawMirror({ lines }: { lines: StyledLine[] }) {
+export function RawMirror({ lines, className, tabIndex }: { lines: StyledLine[]; className?: string; tabIndex?: number }) {
   return (
     <pre
+      tabIndex={tabIndex}
       className={cn(
         "m-0 overflow-x-auto rounded-lg px-2 py-1.5 font-mono text-[11px] leading-[1.25] whitespace-pre",
         MIRROR_SPACE,
         MIRROR_INVERT,
+        className,
       )}
     >
       {lines.map((line, li) => (

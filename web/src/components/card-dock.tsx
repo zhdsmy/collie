@@ -161,13 +161,14 @@ function liftedCard({
     );
   }
   // The least confident arm, and last of the controls for that reason: it is reached only when no
-  // grammar claimed the screen at all (.adr/0053). The mirror keeps drawing the pane (downstream);
-  // this card is only the caption and the key.
+  // grammar claimed the screen's actions (.adr/0053). A known native region can be framed without
+  // changing the declared key or its guard; unknown screens keep the compact caption/key row.
   const unreadBlock = blocks.find((b): b is UnreadBlock => b.kind === "unread-dialog");
   if (unreadBlock) {
     return (
       <UnreadDialogBlock
         cancel={unreadBlock.cancel}
+        viewport={unreadBlock.viewport}
         disabled={promptDisabled || !onUnreadDialogAction}
         onAction={(key) => onUnreadDialogAction?.(key, unreadBlock.cancel)}
       />

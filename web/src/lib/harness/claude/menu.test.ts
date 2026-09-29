@@ -79,14 +79,29 @@ describe("detectMenuRegion — the /model picker", () => {
 });
 
 describe("detectMenuRegion — what it must decline", () => {
-  it.each(claudeSettingsModalScreens)("keeps $name in the mirror with only the compact Escape card", ({ text }) => {
+  it.each(claudeSettingsModalScreens)("frames $name in the card with the declared Escape key", ({ name, text }) => {
     const screen = lines(text);
     expect(detectMenu(screen)).toBeNull();
     const blocks = buildBlocks(screen, { agent: "claude" });
-    expect(blocks.map((block) => block.kind)).toEqual(["raw", "unread-dialog"]);
+    expect(blocks.map((block) => block.kind)).toEqual(["unread-dialog"]);
     expect(blocks[0]!.lines.map(lineText).join("\n")).toBe(screen.map(lineText).join("\n"));
-    expect(blocks[1]).toMatchObject({ cancel: { agent: "claude", key: "Escape" } });
+    expect(blocks[0]).toMatchObject({
+      cancel: { agent: "claude", key: "Escape" },
+      viewport: { title: name === "Stats loading" ? "Stats" : name, lines: screen },
+    });
     expect(claudeAdapter.composerReady?.(screen)).toBe(false);
+  });
+
+  it("keeps prior conversation outside the viewport and preserves the guard's full region", () => {
+    const text = claudeSettingsModalScreens[0].text;
+    const screen = lines(`Earlier conversation\n\n${text}`);
+    const blocks = buildBlocks(screen, { agent: "claude" });
+    expect(blocks.map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
+    expect(blocks[0]!.lines.map(lineText)).toEqual(["Earlier conversation"]);
+    const card = blocks[1];
+    if (card?.kind !== "unread-dialog") throw new Error("Expected the settings card");
+    expect(card.viewport?.lines.map(lineText).join("\n")).toBe(lines(text).map(lineText).join("\n"));
+    expect(card.lines.map(lineText).join("\n")).toBe(screen.map(lineText).join("\n"));
   });
 
   it("does not turn Stats text or historical tabs into a modal", () => {

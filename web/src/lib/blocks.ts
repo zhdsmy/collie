@@ -180,14 +180,15 @@ export interface AutocompleteBlock {
  * (.adr/0053). Produced by a post-pass outside every adapter (harness/index.ts `withUnreadDialog`),
  * never by an adapter's own `buildBlocks` — so no fail-closed contract is loosened to make one.
  *
- * `lines` is the WHOLE pane (what the guard binds to), but the card does not render it: the raw
- * blocks stay beside it (downstream), so the mirror keeps drawing the screen in place and find still
- * searches it.
+ * `lines` is the WHOLE pane (what the guard binds to). Normally the raw blocks stay beside the card.
+ * An identified native screen can instead carry a bounded `viewport` for its own region; earlier
+ * conversation stays raw outside the card.
  */
 export interface UnreadDialogBlock {
   kind: "unread-dialog";
   cancel: UnreadDialogModel;
   lines: StyledLine[];
+  viewport?: { title: string; lines: StyledLine[] };
 }
 
 /**
