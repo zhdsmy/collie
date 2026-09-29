@@ -206,6 +206,8 @@ const CARD_FIXTURES = {
       // field no grammar reads; the Marketplaces grammar does not claim it (no `Manage marketplaces`
       // title), so the card and its Escape are the way back to the tab.
       "claude--v2283-plugin-marketplaces-add-form--w82.txt",
+      // Settings tabs share the compact card even under the newer modal edge.
+      "claude--v2283-slash-usage.txt",
     ],
     notModals: [
       // corpus, DELIBERATE: a statusline printing numbered rows is refused by ADR 0048 step 4

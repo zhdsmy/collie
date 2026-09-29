@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Claude settings tabs share one compact Escape card.** Keep Status, Config, Usage, and Stats in the full-width mirror with the same 50px docked control, including Stats loading and chart views, while rejecting historical or unhighlighted tab text.
+
 ## [1.14.2+collie.9] - 2026-09-29
 
 ### Changed

@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { parseAnsi } from "../../ansi";
 import { splitLines, type StyledLine } from "../../blocks";
-import { claudeSettingsScreens } from "../../../fixtures/claude-settings";
+import { claudeSettingsModalScreens, claudeSettingsScreens } from "../../../fixtures/claude-settings";
+import { buildBlocks } from "../index";
 import { claudeAdapter, claudeBuildBlocks } from "./index";
 import { lineText } from "./markers";
 import { detectMenu, detectMenuRegion } from "./menu";
@@ -78,6 +79,28 @@ describe("detectMenuRegion — the /model picker", () => {
 });
 
 describe("detectMenuRegion — what it must decline", () => {
+  it.each(claudeSettingsModalScreens)("keeps $name in the mirror with only the compact Escape card", ({ text }) => {
+    const screen = lines(text);
+    expect(detectMenu(screen)).toBeNull();
+    const blocks = buildBlocks(screen, { agent: "claude" });
+    expect(blocks.map((block) => block.kind)).toEqual(["raw", "unread-dialog"]);
+    expect(blocks[0]!.lines.map(lineText).join("\n")).toBe(screen.map(lineText).join("\n"));
+    expect(blocks[1]).toMatchObject({ cancel: { agent: "claude", key: "Escape" } });
+    expect(claudeAdapter.composerReady?.(screen)).toBe(false);
+  });
+
+  it("does not turn Stats text or historical tabs into a modal", () => {
+    const stats = claudeSettingsModalScreens.find((s) => s.name === "Stats")!.text;
+    for (const text of [
+      stats.replace("\u001b[44;1m", "\u001b[1m"),
+      stats.replace("▔".repeat(60), "ordinary output"),
+      `${stats}\nuser@host $`,
+      `${stats}\n${BOX_RULE}\n❯ \n${BOX_RULE}`,
+    ]) {
+      expect(buildBlocks(lines(text), { agent: "claude" }).map((b) => b.kind)).toEqual(["raw"]);
+    }
+  });
+
   it.each(claudeSettingsScreens)("keeps $name native without allowing composer replies", ({ text }) => {
     const screen = lines(text);
     expect(detectMenu(screen)).toBeNull();
@@ -201,7 +224,6 @@ describe("detectMenuRegion — the `▔` modal edge of Claude Code 2.1.283", () 
 
   it.each([
     ["claude--v2283-slash-export.txt", "Export conversation", true],
-    ["claude--v2283-slash-usage.txt", "Settings  Status   Config   Usage   Stats", false],
   ])("%s: a lone `Esc to cancel` footer under the edge is one Cancel action", (name, title, upDown) => {
     const model = detectMenu(load(name))!;
     expect(model.title).toBe(title);
@@ -209,6 +231,12 @@ describe("detectMenuRegion — the `▔` modal edge of Claude Code 2.1.283", () 
     // Arrows only where a highlight row advertises them, and never a digit for the numbered rows.
     expect(model.nav).toEqual({ upDown });
     expect(claudeBuildBlocks(load(name)).map((b) => b.kind)).toEqual(["raw", "menu"]);
+  });
+
+  it("keeps the tabbed Usage page out of the generic menu even under a modal edge", () => {
+    const screen = load("claude--v2283-slash-usage.txt");
+    expect(detectMenu(screen)).toBeNull();
+    expect(buildBlocks(screen, { agent: "claude" }).map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
   });
 
   it("names the verb a lone Esc hint prints", () => {

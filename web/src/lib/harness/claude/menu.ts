@@ -92,8 +92,7 @@ export function detectMenuRegion(lines: StyledLine[]): MenuRegion | null {
   let actions = parseKeyHintFooter(footer);
   const escOnly = actions.length === 0 ? escOnlyFooter(footer) : null;
   if (actions.length === 0 && escOnly === null) return null;
-  // Older tabbed Settings pages stay native, including when their tab bar has scrolled away.
-  // A lone Esc footer on a newer modal does not carry those nested-navigation hints.
+  // Settings pages stay in the mirror, including when their tab bar has scrolled away.
   const hints = footer.trim().split(/\s+·\s+/);
   if (actions.length > 0 && (hints.includes("←/→/tab to switch") ||
       (hints.includes("↓ stats") && hints.includes("r to cycle dates")))) return null;
@@ -121,8 +120,7 @@ export function detectMenuRegion(lines: StyledLine[]): MenuRegion | null {
   }
   if (title === "") return null;
   // Inspect the active region's heading, never a Settings page in earlier scrollback.
-  if (/^Settings\s+Status\s+Config\s+Usage\s+Stats$/.test(title) &&
-      !(region.edge && escOnly !== null)) return null;
+  if (/^Settings\s+Status\s+Config\s+Usage\s+Stats$/.test(title)) return null;
 
   // Affordances advertised INSIDE the region (never assumed): a highlighted row means Up/Down do
   // something; an "←/→ to adjust" row means Left/Right do, and names what.
