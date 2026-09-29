@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex input and Agents cards handle current terminal states.** A custom status line with a right-aligned warning no longer duplicates the input area, and repeated task names remain selectable in the Agents card.
+
 ## [1.14.2+collie.16] - 2026-09-30
 
 ### Added

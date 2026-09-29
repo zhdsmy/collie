@@ -343,9 +343,10 @@ export function isStatusRow(text: string, line?: StyledLine): boolean {
 
 /**
  * Custom statuslines can contain one coloured item, several merged dim items, or the disabled
- * shortcut/context footer. Text and separators are configurable; only the native footer paint is
- * stable. This predicate is NEVER sufficient on its own: locateComposer also requires the dedicated
- * live arrow, continuous composer background and painted padding above and below the draft.
+ * shortcut/context footer, with an optional painted right-aligned warning. Text and separators are
+ * configurable; only the native footer paint is stable. This predicate is NEVER sufficient on its
+ * own: locateComposer also requires the dedicated live arrow, continuous composer background and
+ * painted padding above and below the draft.
  */
 export function isComposerStatusRow(text: string, line?: StyledLine): boolean {
   if (isStatusRow(text, line)) return true;
@@ -356,7 +357,9 @@ export function isComposerStatusRow(text: string, line?: StyledLine): boolean {
   if (!segments || segments.length < 2 || !isIndentSegment(segments[0]!)) return false;
 
   let hasField = false;
-  for (const segment of segments.slice(1)) {
+  for (let i = 1; i < segments.length; i++) {
+    const segment = segments[i]!;
+    if (isGapSegment(segment)) return hasField && isRightNotice(segments.slice(i + 1));
     const shortcutIcon = hasField && segment.text === "←" && segment.bold === true &&
       segment.fg !== undefined && segment.dim !== true;
     if (

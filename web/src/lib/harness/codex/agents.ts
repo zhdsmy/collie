@@ -65,9 +65,8 @@ export function detectAgentsRegion(lines: StyledLine[]): PickerRegion | null {
     const status = row[5]!;
     if (row[2] !== (status === "Error" ? "!" : status === "Ready" || status === "Inactive" ? "○" : "●")) return null;
     const label = row[3]!;
-    // The terminal exposes names rather than UUIDs. Ambiguous visible rows stay native.
-    const id = `${project}\n${label}`;
-    if (options.some((option) => option.id === id)) return null;
+    // Names are not unique. Visible order stays stable while focus and task details change.
+    const id = `${project}\n${options.length}`;
     options.push({ id, label, description: `${project} · ${status}`, pointed,
       current: row[4] === "current", checked: false, orderable: false });
   }

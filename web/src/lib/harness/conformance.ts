@@ -648,9 +648,12 @@ export function describeAdapterConformance(
             expect(contract.commits(a, b), `${name}: ${kind} equality is unstable`).toBe(true);
           });
 
-          it(`${name}: a perturbed region moves the signature and fails the committing check`, () => {
+          it(`${name}: a perturbed region changes the signature or invalidates the dialog`, () => {
             const before = modelsOf(adapter, name, kind).at(-1)!;
             const probe = perturbRegion(adapter, name, kind);
+            // Permanent deletion confirms exact warning text; a changed warning must lose the card.
+            if (probe === null && kind === "picker" &&
+              "identity" in before && before.identity.startsWith("agents:delete:")) return;
             expect(
               probe,
               `${name}: no row of the ${kind} region changes its signature — the race guard is blind ` +

@@ -43,7 +43,18 @@ describe("Codex agent command center", () => {
     expect(moved.sessionAction).toBeUndefined();
   });
 
-  it("refuses missing paint, partial frames, duplicate names, other modes and stale output", () => {
+  it("keeps duplicate task names independently addressable by visible order", () => {
+    const repeatedName = (text: string) => text.replaceAll("Fixture beta", "Fixture alpha");
+    const first = detectAgentsRegion(parse(repeatedName(source())))!.model;
+    const moved = detectAgentsRegion(parse(repeatedName(source(true))))!.model;
+
+    expect(first.options.map((option) => option.label)).toEqual(["Fixture alpha", "Fixture alpha"]);
+    expect(new Set(first.options.map((option) => option.id)).size).toBe(2);
+    expect(moved.options.map((option) => option.id)).toEqual(first.options.map((option) => option.id));
+    expect(moved.options.map((option) => option.pointed)).toEqual([false, true]);
+  });
+
+  it("refuses missing paint, partial frames, other modes and stale output", () => {
     const lines = parse(source());
     expect(detectAgentsRegion(lines.map((line) => ({ segments: [{ text: lineText(line), style: {}, muted: false }] })))).toBeNull();
     for (const fragment of ["Agent command center", "›", "? help"]) {
@@ -54,7 +65,6 @@ describe("Codex agent command center", () => {
     expect(detectAgentsRegion(lines.slice(1))).toBeNull();
     expect(detectAgentsRegion(lines.slice(0, -1))).toBeNull();
     expect(detectAgentsRegion(parse(source() + "\nNew output"))).toBeNull();
-    expect(detectAgentsRegion(parse(source().replaceAll("Fixture beta", "Fixture alpha")))).toBeNull();
     expect(detectAgentsRegion(parse(source().replace("    ! Fixture beta", "  › ! Fixture beta")))).toBeNull();
     expect(detectAgentsRegion(parse(source().replace("Group: Project", "Group: Model")))).toBeNull();
     expect(detectAgentsRegion([...lines.slice(0, -1), ...parse("Search: query"), ...lines.slice(-1)])).toBeNull();

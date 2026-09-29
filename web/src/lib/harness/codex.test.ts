@@ -47,6 +47,12 @@ const PICKERS = [
   "codex--v0158-agents-overview-delete.txt",
   "codex--v0158-agents-overview-delete-pointed.txt",
   "codex--v0158-agents-overview-deleted.txt",
+  "codex--v0158-fork.txt",
+  "codex--v0158-picker-effort.txt",
+  "codex--v0158-picker-model-navigated.txt",
+  "codex--v0158-picker-model.txt",
+  "codex--v0158-picker-statusline.txt",
+  "codex--v0158-resume.txt",
   "codex--v0154-picker-advanced.txt",
   "codex--v0154-picker-effort.txt",
   "codex--v0154-picker-model.txt",
@@ -1414,6 +1420,29 @@ describe("Codex 0.156.1 busy: a spinner ends the status row", () => {
 // fullscreen"). Every such pane had no composer until the reader learned that row: the
 // unread-dialog card over the live input box, and every send refused.
 describe("Codex 0.157.1 fullscreen: one key-hint row under the status row", () => {
+  it("strips the 0.159 idle composer with an agents shortcut and right-aligned warning", () => {
+    const source = fixtureLines("codex--v0157-idle.txt");
+    const statusRow = locateComposer(source)!.statusRow;
+    const off = "\u001b[0m";
+    const field = "\u001b[38;2;246;226;183m";
+    const muted = "\u001b[38;2;132;132;132m";
+    const bold = "\u001b[1;38;2;221;221;221m";
+    const status = [
+      `  ${field}GPT-6-Sol xhigh${off}${muted} · ${off}${field}Ready${off}`,
+      `${muted} · Main [default] · ${off}${bold}←${off}${muted} for agents${off}`,
+      `${" ".repeat(24)}${muted}⚠ ${off}${field}1 warning${off}`,
+      `${muted} · ${off}${bold}f2${off}${muted} to view${off}`,
+    ].join("");
+    const lines = [...source.slice(0, statusRow), splitLines(parseAnsi(status))[0]!];
+
+    expect(codexAdapter.composerReady!(lines)).toBe(true);
+    expect(codexAdapter.extractInputDraft(lines)).toBeNull();
+    expect(codexAdapter.extractStatusLines(lines).map(lineText).join("\n")).toContain("1 warning");
+    expect(stripChrome(lines).map(lineText).join("\n")).not.toContain(PLACEHOLDER);
+    const unknownNotice = [...lines.slice(0, -1), splitLines(parseAnsi(`${status} plain text`))[0]!];
+    expect(codexAdapter.composerReady!(unknownNotice)).toBe(false);
+  });
+
   it("keeps the composer with an unpainted, truncated 50-column status row", () => {
     const lines = splitLines(parseAnsi([
       "› Ask Codex to do anything", "", "  GPT-6-Sol low · Ready · Context 100%…  ⚠ 2 · \u001b[1mf2\u001b[0m",
