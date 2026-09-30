@@ -10,7 +10,7 @@ import type { CaseResult, ScenarioResult } from "./harness-canary/verdict";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const LABEL = "dev.collie.harness-watch";
-const LIVE_AGENTS = ["codex", "claude"] as const;
+const LIVE_AGENTS = ["codex", "claude", "opencode"] as const;
 
 interface LiveRun {
   version: string;
@@ -18,6 +18,8 @@ interface LiveRun {
   checked: string;
   evidence: string;
   cases: CaseResult[];
+  screenshots?: string;
+  dialogs?: boolean;
   error?: string;
 }
 
@@ -41,16 +43,16 @@ interface HealthReport {
 export function featureHealth(feature: AdaptationFeature, replay: FeatureReplayResult, version: string | null, run?: LiveRun): FeatureHealth {
   const id = feature.liveCase ?? feature.id;
   const cases = run?.version === version ? run.cases.filter((c) => c.id.startsWith(`${id}.`)) : [];
-  const reached = cases.some((c) => c.id === `${id}.open` && c.verdict === "pass");
-  const escaped = cases.some((c) => c.id === `${id}.escape` && c.verdict === "pass");
+  const complete = (feature.liveChecks ?? ["open", "escape"]).every((step) =>
+    cases.some((c) => c.id === `${id}.${step}` && c.verdict === "pass"));
   const live = version === null ? "not-installed" : cases.some((c) => c.verdict === "fail") ? "fail"
-    : reached && escaped && cases.every((c) => c.verdict === "pass") ? "pass" : "pending";
+    : complete && cases.every((c) => c.verdict === "pass") ? "pass" : "pending";
   const status = replay.status === "fail" || live === "fail" ? "fail" : live === "pass" ? "pass"
     : feature.agent === "shared" ? (replay.status === "pass" ? "fixture-only" : "pending") : live;
   return {
     id: feature.id, agent: feature.agent, version, replay: replay.status, live, status,
     detail: replay.status === "fail" ? replay.detail : cases.find((c) => c.verdict !== "pass")?.detail
-      ?? (live === "pass" ? "current TUI card and native cancellation checked; UI confirmation not exercised"
+      ?? (live === "pass" ? "registered current TUI checks passed; browser confirmation remains separate"
         : run?.error ?? "no current-version live evidence; fixture replay does not certify a CLI update"),
     evidence: run?.version === version && cases.length ? run.evidence : null,
   };
@@ -72,16 +74,17 @@ function fingerprint(features: readonly AdaptationFeature[]): string {
   };
   scan("scripts/harness-canary");
   scan("web/src/lib/harness");
-  const hash = createHash("sha256").update(JSON.stringify(features.map((f) => [f.id, f.live, f.liveCase, f.sources])));
+  const hash = createHash("sha256").update(JSON.stringify(features.map((f) => [f.id, f.live, f.liveCase, f.liveChecks, f.sources])));
   for (const file of [...files].toSorted()) hash.update(file).update(readFileSync(join(ROOT, file)));
   return hash.digest("hex");
 }
 
-async function liveRun(agent: string, version: string, stamp: string, dir: string): Promise<LiveRun> {
+async function liveRun(agent: string, version: string, stamp: string, dir: string, dialogs: boolean, screenshots: boolean): Promise<LiveRun> {
   const out = join(dir, "captures", `${Date.now()}-${agent}`);
   mkdirSync(out, { recursive: true, mode: 0o700 });
   const log = join(out, "run.log");
-  const child = Bun.spawn([process.execPath, join(ROOT, "scripts/harness-canary/run.ts"), "--agent", agent, "--scenario", "cards", "--out", out], {
+  const scenarios = agent === "opencode" ? "dialogs" : dialogs ? "cards,dialogs" : "cards";
+  const child = Bun.spawn([process.execPath, join(ROOT, "scripts/harness-canary/run.ts"), "--agent", agent, "--scenario", scenarios, "--out", out, ...(dialogs ? ["--card-dialogs"] : []), ...(screenshots ? ["--screenshots"] : [])], {
     cwd: ROOT, stdout: Bun.file(log), stderr: Bun.file(log),
   });
   let timedOut = false;
@@ -98,12 +101,14 @@ async function liveRun(agent: string, version: string, stamp: string, dir: strin
     clearTimeout(hardStop);
   }
   const summary = readdirSync(out).map((p) => join(out, p, "summary.json")).find(existsSync);
-  const run: LiveRun = { version, fingerprint: stamp, checked: new Date().toISOString(), evidence: summary ?? log, cases: [] };
+  const run: LiveRun = { version, fingerprint: stamp, checked: new Date().toISOString(), evidence: summary ?? log, cases: [], dialogs };
   if (summary && !timedOut) {
     // SAFETY: the owned canary writes this summary contract, including per-case verdicts.
     const parsed = JSON.parse(readFileSync(summary, "utf8")) as { versions: Record<string, string>; results: ScenarioResult[] };
     if (parsed.versions[agent] !== version) run.error = "CLI version changed during the check; run --force again";
-    else run.cases = parsed.results.filter((r) => r.agent === agent && r.scenario === "cards").flatMap((r) => r.cases);
+    else run.cases = parsed.results.filter((r) => r.agent === agent).flatMap((r) => r.cases);
+    const index = join(summary, "..", "screenshots", "index.md");
+    if (existsSync(index)) run.screenshots = index;
   } else run.error = timedOut ? `check timed out; inspect cleanup and ${log}` : `check did not produce a summary; inspect ${log}`;
   return run;
 }
@@ -111,6 +116,7 @@ async function liveRun(agent: string, version: string, stamp: string, dir: strin
 function markdown(report: HealthReport): string {
   return ["# Collie adaptation health", "", `Checked: ${report.checked}`, "",
     "Fixture replay and current TUI checks are separate. Pass applies to the listed card, not the entire agent.", "",
+    ...Object.entries(report.runs).filter(([, run]) => run.screenshots).map(([agent, run]) => `[${agent} replay screenshots](${run.screenshots})`), "",
     "| Feature | CLI version | Fixture | Current status | Evidence |", "| --- | --- | --- | --- | --- |",
     ...report.features.map((f) => `| ${f.id} | ${f.version ?? "unavailable"} | ${f.replay} | ${f.status} | ${f.evidence ?? "pending live check"} |`),
     "", ...report.features.filter((f) => f.status === "fail" || f.status === "pending").map((f) => `- ${f.id}: ${f.detail}`), ""].join("\n");
@@ -162,13 +168,18 @@ function install(dir: string): void {
 }
 
 async function main(argv: string[]): Promise<number> {
-  const allowed = new Set(["--once", "--force", "--replay", "--install", "--no-notify", "--state-dir"]);
+  const allowed = new Set(["--once", "--force", "--replay", "--install", "--no-notify", "--state-dir", "--dialogs", "--screenshots", "--agent"]);
   let dir = "";
+  let agents: string[] = [...LIVE_AGENTS];
   for (let i = 0; i < argv.length; i++) {
     if (!allowed.has(argv[i]!)) throw new Error(`unknown option: ${argv[i]}`);
     if (argv[i] === "--state-dir") {
       if (!argv[i + 1] || argv[i + 1]!.startsWith("--")) throw new Error("--state-dir needs a directory");
       dir = resolve(argv[++i]!);
+    } else if (argv[i] === "--agent") {
+      if (!argv[i + 1] || argv[i + 1]!.startsWith("--")) throw new Error("--agent needs comma-separated agents");
+      agents = argv[++i]!.split(",");
+      if (agents.some((agent) => !LIVE_AGENTS.some((name) => name === agent))) throw new Error("--agent supports codex,claude,opencode");
     }
   }
   const catalog = loadCatalog();
@@ -186,13 +197,22 @@ async function main(argv: string[]): Promise<number> {
   const runs = previous?.runs ?? {};
   const versions = new Map([...new Set(catalog.features.map((f) => f.agent))].map((a) => [a, a === "shared" ? null : installedVersion(a)]));
   for (const agent of LIVE_AGENTS) {
+    if (!agents.includes(agent)) continue;
+    if (agent === "opencode" && !argv.includes("--dialogs")) continue;
     const version = versions.get(agent);
     if (!version) continue;
     const owned = catalog.features.filter((f) => f.agent === agent || f.agent === "shared");
     const stamp = fingerprint(owned);
-    if (argv.includes("--force") || runs[agent]?.version !== version || runs[agent]?.fingerprint !== stamp) {
+    if (argv.includes("--force") || runs[agent]?.version !== version || runs[agent]?.fingerprint !== stamp ||
+        (argv.includes("--dialogs") && !runs[agent]?.dialogs)) {
       console.log(`checking ${agent} ${version}`);
-      runs[agent] = await liveRun(agent, version, stamp, dir);
+      runs[agent] = await liveRun(agent, version, stamp, dir, argv.includes("--dialogs"), argv.includes("--screenshots"));
+    }
+    if (argv.includes("--screenshots") && !runs[agent]?.screenshots && runs[agent]?.evidence.endsWith("summary.json")) {
+      const { captureScreenshots } = await import("./harness-canary/screenshots");
+      const images = await captureScreenshots(ROOT, resolve(runs[agent]!.evidence, ".."));
+      runs[agent]!.screenshots = images.index;
+      for (const error of images.errors) console.error(`screenshot error: ${error}`);
     }
   }
   const report: HealthReport = { checked: new Date().toISOString(), runs,

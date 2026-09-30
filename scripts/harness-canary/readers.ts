@@ -25,6 +25,7 @@ export interface Adapter {
   extractInputDraft(lines: Line[]): string | null;
   composerReady?(lines: Line[]): boolean;
   draftCarriesSend?(sent: string, draft: string): boolean;
+  extractStatusLines?(lines: Line[]): Line[];
 }
 
 export type ReplyOutcome =

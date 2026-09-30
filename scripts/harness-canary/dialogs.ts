@@ -16,7 +16,7 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { launchLine } from "./agents/profile";
-import { Driver, POLL_MS, answeredBelow, wordsOnScreen, type AgentContext, type Screen } from "./scenarios";
+import { Driver, POLL_MS, answeredBelow, nativeIdle, wordsOnScreen, type AgentContext, type Screen } from "./scenarios";
 import { failCase, notReachedCase, passCase, type CaseResult } from "./verdict";
 
 const BLOCKED_TIMEOUT_MS = 120_000;
@@ -116,10 +116,12 @@ async function waitBlocked(d: Driver, timeoutMs = BLOCKED_TIMEOUT_MS): Promise<S
     await Bun.sleep(POLL_MS * 2);
     const info = d.ctx.session.paneInfo(d.paneId);
     if (info.status === "blocked") return stable(d);
-    if (info.status === "working") {
+    const screen = info.status === "unknown" ? await d.screen() : null;
+    const nativeWorking = screen?.texts.some((line) => / · (?:Working|Thinking)(?: · |$)/.test(line)) ?? false;
+    if (info.status === "working" || nativeWorking) {
       sawWork = true;
       quietSince = null;
-    } else if (sawWork && (info.status === "idle" || info.status === "done")) {
+    } else if (sawWork && nativeIdle(d.agent, info, screen?.texts ?? [])) {
       quietSince ??= Date.now();
       if (Date.now() - quietSince >= NO_DIALOG_GRACE_MS) return null;
     }
@@ -133,7 +135,7 @@ async function waitSettled(d: Driver, timeoutMs = SETTLE_TIMEOUT_MS): Promise<Sc
   let held = 0;
   while (Date.now() < deadline) {
     await Bun.sleep(POLL_MS * 2);
-    held = d.herdrIdle() ? held + 1 : 0;
+    held = d.herdrIdle(await d.screen()) ? held + 1 : 0;
     if (held >= 2) return stable(d);
   }
   return null;
@@ -186,51 +188,55 @@ function unreached(ids: readonly string[], why: string): CaseResult[] {
 const PERMISSION_IDS = ["permission-row1", "permission-row2", "permission-row3", "permission-no"];
 
 /** Claude: permission (pointer on each row, No), Tab amend, WebFetch, AskUserQuestion, plan approval. */
-async function claudeDialogs(ctx: AgentContext): Promise<CaseResult[]> {
+async function claudeDialogs(ctx: AgentContext, questionsOnly = false): Promise<CaseResult[]> {
   const cases: CaseResult[] = [];
   const d = await Driver.open(ctx, "canary-claude-dialogs", ctx.options.cols, "dialogs");
   try {
     if ((await d.launch([])) === null) return unreached(["dialogs"], "Claude never came up idle");
 
-    // A Bash permission dialog, with the pointer on each row. Before 2.1.283's fix the rows below
-    // the first lost the "Tab to amend" hint and read as an unread dialog.
-    await prompt(d, "Use the Bash tool to run exactly this command and nothing else: touch canary-perm.txt");
-    let s = await waitBlocked(d);
-    if (s === null) cases.push(...unreached(PERMISSION_IDS, "no permission dialog came"));
-    else {
-      cases.push(judgePrompt(d, s, "permission-row1", { family: "permission", labels: ["Yes", "No"] }));
-      for (const row of [2, 3]) {
-        d.keys(["Down"]);
-        s = await stable(d);
-        cases.push(judgePrompt(d, s, `permission-row${row}`, { family: "permission", labels: ["Yes", "No"] }));
+    let s: Screen | null;
+    if (!questionsOnly) {
+      // A Bash permission dialog, with the pointer on each row. Before 2.1.283's fix the rows below
+      // the first lost the "Tab to amend" hint and read as an unread dialog.
+      await prompt(d, "Use the Bash tool to run exactly this command and nothing else: touch canary-perm.txt");
+      s = await waitBlocked(d);
+      if (s === null) {
+        const file = d.save("dialogs-permission-not-reached", await d.screen());
+        cases.push(...unreached(PERMISSION_IDS, `no permission dialog came (${file})`));
+      } else {
+        cases.push(judgePrompt(d, s, "permission-row1", { family: "permission", labels: ["Yes", "No"] }));
+        for (const row of [2, 3]) {
+          d.keys(["Down"]);
+          s = await stable(d);
+          cases.push(judgePrompt(d, s, `permission-row${row}`, { family: "permission", labels: ["Yes", "No"] }));
+        }
+        cases.push(await decline(d, "permission-no", s, /^No\b/i, "canary-perm.txt"));
       }
-      cases.push(await decline(d, "permission-no", s, /^No\b/i, "canary-perm.txt"));
-    }
 
-    // The same dialog after Tab: the amend note is a text field, so the buttons lock.
-    await prompt(d, "Use the Bash tool to run exactly this command and nothing else: touch canary-amend.txt");
-    s = await waitBlocked(d);
-    if (s === null) cases.push(...unreached(["permission-amend", "permission-amend-escape"], "no permission dialog came"));
-    else {
-      d.keys(["Tab"]);
-      s = await stable(d);
-      cases.push(judgePrompt(d, s, "permission-amend", { family: "permission", focused: true }));
-      d.keys(["Escape"]);
-      const after = await waitSettled(d);
-      if (after === null) cases.push(failCase("permission-amend-escape", "Escape from the amend note left the agent unsettled"));
-      else if (existsSync(join(ctx.project, "canary-amend.txt"))) cases.push(failCase("permission-amend-escape", "canary-amend.txt was written"));
-      else cases.push(passCase("permission-amend-escape", "Escape declined"));
-    }
+      // The same dialog after Tab: the amend note is a text field, so the buttons lock.
+      await prompt(d, "Use the Bash tool to run exactly this command and nothing else: touch canary-amend.txt");
+      s = await waitBlocked(d);
+      if (s === null) cases.push(...unreached(["permission-amend", "permission-amend-escape"], "no permission dialog came"));
+      else {
+        d.keys(["Tab"]);
+        s = await stable(d);
+        cases.push(judgePrompt(d, s, "permission-amend", { family: "permission", focused: true }));
+        d.keys(["Escape"]);
+        const after = await waitSettled(d);
+        if (after === null) cases.push(failCase("permission-amend-escape", "Escape from the amend note left the agent unsettled"));
+        else if (existsSync(join(ctx.project, "canary-amend.txt"))) cases.push(failCase("permission-amend-escape", "canary-amend.txt was written"));
+        else cases.push(passCase("permission-amend-escape", "Escape declined"));
+      }
 
-    // WebFetch paints no footer at all; the dialog is known by its own words.
-    await prompt(d, "Use the WebFetch tool to fetch https://example.com and then reply with only the page title.");
-    s = await waitBlocked(d);
-    if (s === null) cases.push(...unreached(["webfetch", "webfetch-no"], "no WebFetch permission dialog came"));
-    else {
-      cases.push(judgePrompt(d, s, "webfetch", { family: "permission", labels: ["Yes", "No"] }));
-      cases.push(await decline(d, "webfetch-no", s, /^No\b/i, null));
+      // WebFetch paints no footer at all; the dialog is known by its own words.
+      await prompt(d, "Use the WebFetch tool to fetch https://example.com and then reply with only the page title.");
+      s = await waitBlocked(d);
+      if (s === null) cases.push(...unreached(["webfetch", "webfetch-no"], "no WebFetch permission dialog came"));
+      else {
+        cases.push(judgePrompt(d, s, "webfetch", { family: "permission", labels: ["Yes", "No"] }));
+        cases.push(await decline(d, "webfetch-no", s, /^No\b/i, null));
+      }
     }
-
     // AskUserQuestion, with the pointer on "Type something" (a text field: buttons lock) and off it.
     await prompt(
       d,
@@ -238,7 +244,10 @@ async function claudeDialogs(ctx: AgentContext): Promise<CaseResult[]> {
     );
     s = await waitBlocked(d);
     const askIds = ["ask-open", "ask-type-focused", "ask-type-left", "ask-answer"];
-    if (s === null) cases.push(...unreached(askIds, "no AskUserQuestion dialog came"));
+    if (s === null) {
+      const file = d.save("dialogs-ask-not-reached", await d.screen());
+      cases.push(...unreached(askIds, `no AskUserQuestion dialog came (${file})`));
+    }
     else {
       cases.push(judgePrompt(d, s, "ask-open", { labels: ["Apple", "Banana"] }));
       const onField = await walkTo(d, "❯", /Type something/i, "Down");
@@ -253,8 +262,11 @@ async function claudeDialogs(ctx: AgentContext): Promise<CaseResult[]> {
       if (apple === undefined) cases.push(failCase("ask-answer", "no Apple option to press"));
       else {
         d.keys(apple.keys);
-        const after = await waitSettled(d);
-        if (after === null) cases.push(failCase("ask-answer", `pressed ${apple.keys.join(" ")}; the agent did not settle`));
+        const after = await waitSettled(d, BUSY_TURN_TIMEOUT_MS);
+        if (after === null) {
+          const file = d.save("dialogs-ask-answer-stuck", await d.screen());
+          cases.push(failCase("ask-answer", `pressed ${apple.keys.join(" ")}; the agent did not settle (${file})`));
+        }
         else {
           d.save("dialogs-ask-answer", after);
           const answered = after.texts.some((t) => /Apple/.test(t)) && promptOf(after) === null;
@@ -267,6 +279,7 @@ async function claudeDialogs(ctx: AgentContext): Promise<CaseResult[]> {
   }
 
   // Plan approval, in a pane started in plan mode. Read only: its keys were not probed on 2.1.283.
+  if (questionsOnly) return cases;
   const p = await Driver.open(ctx, "canary-claude-plan", ctx.options.cols, "plan");
   try {
     if ((await p.launch([], launchLine(ctx.options.cols, "claude --model haiku --permission-mode plan"))) === null) {
@@ -292,7 +305,7 @@ async function claudeDialogs(ctx: AgentContext): Promise<CaseResult[]> {
 }
 
 /** Codex, started so that it asks: command approval and patch approval, both declined. */
-async function codexDialogs(ctx: AgentContext): Promise<CaseResult[]> {
+async function codexDialogs(ctx: AgentContext, execOnly = false): Promise<CaseResult[]> {
   const cases: CaseResult[] = [];
   const d = await Driver.open(ctx, "canary-codex-dialogs", ctx.options.cols, "dialogs");
   const command = `codex -c 'model_reasoning_effort="low"' -c approvals_reviewer=user -a on-request -s read-only`;
@@ -302,12 +315,16 @@ async function codexDialogs(ctx: AgentContext): Promise<CaseResult[]> {
 
     await prompt(d, "Run this shell command and nothing else: touch canary-exec.txt");
     let s = await waitBlocked(d);
-    if (s === null) cases.push(...unreached(["exec-approval", "exec-decline"], "no command approval came"));
+    if (s === null) {
+      const file = d.save("dialogs-exec-not-reached", await d.screen());
+      cases.push(...unreached(["exec-approval", "exec-decline"], `no command approval came (${file})`));
+    }
     else {
       cases.push(judgePrompt(d, s, "exec-approval", {}));
       cases.push(await decline(d, "exec-decline", s, declineRow, "canary-exec.txt"));
     }
 
+    if (execOnly) return cases;
     await prompt(d, "Create a file named canary-patch.txt that contains the word hi. Use your file editing tool, not the shell.");
     s = await waitBlocked(d);
     if (s === null) cases.push(...unreached(["patch-approval", "patch-decline"], "no patch approval came"));
@@ -347,7 +364,7 @@ const OPENCODE_ASK = { $schema: "https://opencode.ai/config.json", permission: {
  * Confirm on the "Always allow" step is never pressed: it would allow the pattern until OpenCode
  * restarts.
  */
-async function opencodeDialogs(ctx: AgentContext): Promise<CaseResult[]> {
+async function opencodeDialogs(ctx: AgentContext, permissionOnly = false): Promise<CaseResult[]> {
   const cases: CaseResult[] = [];
   const config = join(ctx.dir, "opencode-ask.json");
   writeFileSync(config, `${JSON.stringify(OPENCODE_ASK, null, 2)}\n`);
@@ -363,7 +380,10 @@ async function opencodeDialogs(ctx: AgentContext): Promise<CaseResult[]> {
     await prompt(d, "Use the bash tool to run exactly this command and nothing else: touch canary-perm.txt");
     let s = await waitBlocked(d);
     const ids = ["permission", "permission-always", "permission-always-cancel", "permission-reject"];
-    if (s === null) cases.push(...unreached(ids, "no permission dialog came"));
+    if (s === null) {
+      const file = d.save("dialogs-permission-not-reached", await d.screen());
+      cases.push(...unreached(ids, `no permission dialog came (${file})`));
+    }
     else {
       cases.push(judgePrompt(d, s, "permission", { family: "permission", labels }));
       const always = promptOf(s)?.options.find((o) => o.label === "Allow always");
@@ -383,6 +403,7 @@ async function opencodeDialogs(ctx: AgentContext): Promise<CaseResult[]> {
       cases.push(await decline(d, "permission-reject", s, /^Reject$/, "canary-perm.txt"));
     }
 
+    if (permissionOnly) return cases;
     // An edit, declined with Escape: the one key the unread-dialog card would offer.
     await prompt(d, "Create a file named canary-edit.txt that contains the word hi. Use your file write tool, not the shell.");
     s = await waitBlocked(d);
@@ -406,11 +427,17 @@ async function opencodeDialogs(ctx: AgentContext): Promise<CaseResult[]> {
 }
 
 /** The dialogs scenario for one agent. Claude, Codex and OpenCode have dialog readers to test. */
-export async function runDialogs(ctx: AgentContext): Promise<CaseResult[]> {
-  if (ctx.profile.agent === "claude") return claudeDialogs(ctx);
-  if (ctx.profile.agent === "codex") return codexDialogs(ctx);
-  if (ctx.profile.agent === "opencode") return opencodeDialogs(ctx);
-  return [notReachedCase("dialogs", "Collie has no dialog reader for this agent")];
+export async function runDialogs(ctx: AgentContext, focused = false): Promise<CaseResult[]> {
+  const cases = ctx.profile.agent === "claude" ? await claudeDialogs(ctx, focused)
+    : ctx.profile.agent === "codex" ? await codexDialogs(ctx, focused)
+    : ctx.profile.agent === "opencode" ? await opencodeDialogs(ctx, focused)
+    : [notReachedCase("dialogs", "Collie has no dialog reader for this agent")];
+  const ids: Record<string, string> = ctx.profile.agent === "codex"
+    ? { "exec-approval": "codex.approval.open", "exec-decline": "codex.approval.decline" }
+    : ctx.profile.agent === "claude"
+      ? { "ask-open": "claude.ask.open", "ask-type-focused": "claude.ask.type-focused", "ask-type-left": "claude.ask.type-left", "ask-answer": "claude.ask.answer" }
+      : { permission: "opencode.permission.open", "permission-always": "opencode.permission.always", "permission-always-cancel": "opencode.permission.cancel", "permission-reject": "opencode.permission.decline" };
+  return cases.map((result) => Object.assign({}, result, { id: ids[result.id] ?? result.id }));
 }
 
 const BUSY_PROMPT = "Write a 500-word story about a sheepdog. Use no tools.";
@@ -448,7 +475,7 @@ export async function runBusy(ctx: AgentContext): Promise<CaseResult[]> {
     while (Date.now() < deadline) {
       s = await d.screen();
       if (s.unread && cardAt === null) cardAt = s;
-      held = d.herdrIdle() ? held + 1 : 0;
+      held = d.herdrIdle(s) ? held + 1 : 0;
       const inBox = s.draft !== null && ctx.readers.draftCarriesSend(QUEUED, s.draft);
       if (held >= 2 && !inBox && wordsOnScreen(s.texts, QUEUED) && answeredBelow(s.texts, QUEUED)) {
         answered = true;

@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **Card regressions retain phone screenshots and broader live evidence.** The isolated harness saves optional 320px replay images linked to ANSI captures and verdicts, adds focused approval/question probes and current statusline/trust/menu checks, and supports selecting agents without rerunning unrelated model turns.
+
 ## [1.14.2+collie.17] - 2026-09-30
 
 ### Fixed

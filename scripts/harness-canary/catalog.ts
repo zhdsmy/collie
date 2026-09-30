@@ -31,6 +31,7 @@ export interface AdaptationFeature {
   fixtures: AdaptationFixture[];
   live: boolean;
   liveCase?: string;
+  liveChecks?: string[];
   verified: { version: string; date: string; how: string; evidence: string } | null;
 }
 

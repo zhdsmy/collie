@@ -10,7 +10,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { NARROW_COLS, type CanaryOptions } from "./args";
 import type { AgentProfile } from "./agents/profile";
-import type { CanarySession } from "./herdr";
+import type { CanarySession, PaneInfo } from "./herdr";
 import { MESSAGES, NARROW_DRAFT_IDS, SEND_IDS, messageById, type CanaryMessage } from "./messages";
 import type { Adapter, Block, Line, Readers } from "./readers";
 import type { Transport } from "./transport";
@@ -57,6 +57,14 @@ export interface AgentContext {
   /** Where this agent's captures go: `<out>/<run-id>/<agent>-<version>/`. */
   readonly dir: string;
   readonly log: (line: string) => void;
+}
+
+export function nativeIdle(agent: string, info: PaneInfo, texts: readonly string[]): boolean {
+  if (info.agent !== agent) return false;
+  if (info.status === "idle" || info.status === "done") return true;
+  // Herdr does not yet classify Codex 0.159's custom run-state footer.
+  const footer = texts.findLast((line) => line.trim() !== "")?.trimEnd() ?? "";
+  return agent === "codex" && info.status === "unknown" && / · Ready(?: · |$)/.test(footer);
 }
 
 /** Run every selected scenario for one agent. Always closes the panes it opened. */
@@ -243,9 +251,8 @@ export class Driver {
   }
 
   /** Herdr sees the agent in the pane and calls it ready for input. */
-  herdrIdle(): boolean {
-    const info = this.ctx.session.paneInfo(this.paneId);
-    return info.agent === this.agent && (info.status === "idle" || info.status === "done");
+  herdrIdle(screen: Screen): boolean {
+    return nativeIdle(this.agent, this.ctx.session.paneInfo(this.paneId), screen.texts);
   }
 
   /**
@@ -283,7 +290,7 @@ export class Driver {
       }
       // Idle means Herdr says so AND the screen held still for one poll: a first frame can be
       // idle by Herdr's reckoning while the agent is still painting.
-      const idle = this.herdrIdle() && s.text === previous;
+      const idle = this.herdrIdle(s) && s.text === previous;
       previous = s.text;
       if (!idle) continue;
       if (window) startExit.push(this.windowCase(label, samples, unreadAt, "while starting"));
@@ -408,7 +415,7 @@ export class Driver {
       const shown = wordsOnScreen(s.texts, m.text) && !inBox;
       // Herdr's idle can flicker between the submit and the turn, so it must hold for two polls,
       // and the answer must sit BELOW the message: an earlier send's OK does not count.
-      settledPolls = info.agent === this.agent && (info.status === "idle" || info.status === "done") ? settledPolls + 1 : 0;
+      settledPolls = nativeIdle(this.agent, info, s.texts) ? settledPolls + 1 : 0;
       if (shown && answeredBelow(s.texts, m.text) && settledPolls >= 2) {
         await Bun.sleep(800);
         this.save(`sends-${m.id}`, await this.screen());

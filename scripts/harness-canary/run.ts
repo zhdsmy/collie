@@ -18,6 +18,7 @@ import { LEDGER_FILE, recordVerified } from "./ledger";
 import { loadReaders } from "./readers";
 import { runBusy, runDialogs } from "./dialogs";
 import { runCards } from "./cards";
+import { captureScreenshots } from "./screenshots";
 import { runAgent } from "./scenarios";
 import { installTransport } from "./transport";
 import { applyKnownGaps, exitCode, notReachedCase, recordable, renderTable, scenarioResult, type ScenarioResult } from "./verdict";
@@ -131,7 +132,7 @@ async function main(options: CanaryOptions): Promise<number> {
       };
       const own = await runAgent(ctx);
       // Spec M37/03, after the screens and sends: each opens panes of its own.
-      if (options.scenarios.includes("dialogs")) own.push(scenarioResult(agent, "dialogs", await runDialogs(ctx)));
+      if (options.scenarios.includes("dialogs")) own.push(scenarioResult(agent, "dialogs", await runDialogs(ctx, options.cardDialogs)));
       if (options.scenarios.includes("busy")) own.push(scenarioResult(agent, "busy", await runBusy(ctx)));
       if (options.scenarios.includes("cards")) own.push(scenarioResult(agent, "cards", await runCards(ctx)));
       for (const r of own) {
@@ -166,7 +167,13 @@ async function main(options: CanaryOptions): Promise<number> {
     log(left ? `teardown: NOT clean, check \`herdr session list\` and ${project}` : "teardown: clean (no canary session, no project dir)");
   }
 
-  const code = exitCode(results);
+  let code = exitCode(results);
+  if (options.screenshots) {
+    const images = await captureScreenshots(options.readers, runDir);
+    log(`screenshots: ${images.captured}; ${images.index}`);
+    for (const error of images.errors) log(`screenshot error: ${error}`);
+    if (images.errors.length) code = 1;
+  }
   if (options.record) record(options, id, results, versions, adapters);
   return code;
 }

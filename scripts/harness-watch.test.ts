@@ -23,3 +23,12 @@ test("failure/recovery notifications depend on health, not capture paths or poll
   expect(healthSignature([pending])).not.toBe(healthSignature([{ ...pending, status: "pass" }]));
   expect(healthSignature([pending])).not.toBe(healthSignature([{ ...pending, version: "0.159.0" }]));
 });
+
+test("observations and declines need every registered live check", () => {
+  const observed = { ...feature, liveChecks: ["observe"] };
+  const run = { version: "0.159.0", fingerprint: "source", checked: "now", evidence: "/tmp/summary.json", cases: [
+    { id: `${feature.id}.observe`, verdict: "pass" as const, detail: "statusline extracted" },
+  ] };
+  expect(featureHealth(observed, replay, "0.159.0", run).status).toBe("pass");
+  expect(featureHealth({ ...observed, liveChecks: ["observe", "decline"] }, replay, "0.159.0", run).status).toBe("pending");
+});

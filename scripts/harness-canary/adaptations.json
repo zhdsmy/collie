@@ -40,7 +40,8 @@
       "sources": ["web/src/lib/harness/codex/chrome.ts", "web/src/components/statusline-row.tsx"],
       "tests": ["web/src/lib/harness/codex/statusline-chrome.test.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0154-statusline-single-idle.txt", "agent": "codex", "expect": { "block": "raw", "statusLinesMin": 1 } }],
-      "live": false,
+      "live": true,
+      "liveChecks": ["observe"],
       "verified": { "version": "0.154.0", "date": "2026-09-13", "how": "captured ANSI replay; extraction only", "evidence": "web/src/fixtures/panes/README.md#codex-0154-model-and-statusline-pickers" }
     },
     {
@@ -71,7 +72,7 @@
       "sources": ["web/src/lib/harness/codex/trust.ts", "web/src/lib/harness/codex/index.ts"],
       "tests": ["web/src/lib/harness/codex.test.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0156-trust.txt", "agent": "codex", "expect": { "block": "prompt-select", "minOptions": 2 } }],
-      "live": false,
+      "live": true,
       "verified": { "version": "0.156.1", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus" }
     },
     {
@@ -81,7 +82,8 @@
       "sources": ["web/src/lib/harness/codex/approval.ts", "web/src/lib/harness/codex/index.ts"],
       "tests": ["web/src/lib/harness/codex.test.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0156-approval-exec-2opt.txt", "agent": "codex", "expect": { "block": "prompt-select", "minOptions": 2 } }],
-      "live": false,
+      "live": true,
+      "liveChecks": ["open", "decline"],
       "verified": { "version": "0.156.1", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus" }
     },
     {
@@ -115,7 +117,7 @@
       "sources": ["web/src/lib/harness/claude/menu.ts", "web/src/lib/harness/claude/index.ts"],
       "tests": ["web/src/lib/harness/claude/menu.test.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/claude--menu-model-picker.txt", "agent": "claude", "expect": { "block": "menu", "minOptions": 1 } }],
-      "live": false,
+      "live": true,
       "verified": null
     },
     {
@@ -125,7 +127,7 @@
       "sources": ["web/src/lib/harness/claude/effort.ts", "web/src/lib/harness/claude/index.ts"],
       "tests": ["web/src/lib/harness/claude/effort.test.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/claude--menu-effort-slider--w120.txt", "agent": "claude", "expect": { "block": "menu", "scaleMin": 6 } }],
-      "live": false,
+      "live": true,
       "verified": { "version": "2.1.278", "date": "2026-09-21", "how": "captured live ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#claude-effort-slider" }
     },
     {
@@ -259,7 +261,7 @@
       "sources": ["web/src/lib/harness/claude/marketplaces.ts", "web/src/lib/harness/claude/index.ts"],
       "tests": ["web/src/lib/harness/claude/marketplaces.test.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/claude--v2283-plugin-marketplaces-pending--w82.txt", "agent": "claude", "expect": { "block": "menu" } }],
-      "live": false,
+      "live": true,
       "verified": { "version": "2.1.283", "date": "2026-09-27", "how": "captured live ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#plugin-marketplaces-corpus" }
     },
     {
@@ -274,7 +276,8 @@
         { "path": "web/src/fixtures/panes/claude--select-multiselect-single.txt", "agent": "claude", "expect": { "block": "multi-select" } },
         { "path": "web/src/fixtures/panes/claude--select-preview.txt", "agent": "claude", "expect": { "block": "preview-select" } }
       ],
-      "live": false,
+      "live": true,
+      "liveChecks": ["open", "answer"],
       "verified": null
     },
     {
@@ -284,7 +287,7 @@
       "sources": ["web/src/lib/harness/claude/autocomplete.ts", "web/src/lib/harness/claude/index.ts"],
       "tests": ["web/src/lib/harness/claude/autocomplete.test.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/claude--autocomplete-slash-long.txt", "agent": "claude", "expect": { "block": "autocomplete" } }],
-      "live": false,
+      "live": true,
       "verified": null
     },
     {
@@ -434,7 +437,8 @@
       "sources": ["web/src/lib/harness/opencode/dialog.ts", "web/src/lib/harness/opencode/index.ts"],
       "tests": ["web/src/lib/harness/opencode.test.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/oc--permission-bash.txt", "agent": "opencode", "expect": { "block": "prompt-select", "minOptions": 2 } }],
-      "live": false,
+      "live": true,
+      "liveChecks": ["open", "decline"],
       "verified": { "version": "1.18.32", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/lib/harness/opencode/PERMISSION_NOTES.md" }
     },
     {

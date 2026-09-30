@@ -75,7 +75,7 @@ refuses when `--readers` points at another checkout, and it never creates the le
 The adaptation inventory and hourly update watcher are described in [ADAPTATIONS.md](./ADAPTATIONS.md).
 
 `cards` checks Codex model/reasoning, statusline configuration, Resume, Fork and Agents, plus
-Claude Status/Config/Usage/Stats, Resume and Agents. Native headings are reached independently
+Claude model/effort menus, slash autocomplete, Marketplaces, Status/Config/Usage/Stats, Resume and Agents. Native headings are reached independently
 of Collie's parser, then the real block and disabled composer are checked. Arrow moves only stage
 selection; native cancellation restores the empty composer (Fork quits to its shell).
 
@@ -87,6 +87,14 @@ can still exercise card recognition. A missing native screen is `not-reached`, n
 These probes use native keys in owned panes. Browser regressions separately cover guarded card
 actions, including the Recent Models to Select Model entry. Hermes currently has fixture replay
 and version-change reporting; its live card recipes remain pending.
+
+Codex cards also observe the current statusline and cancel folder trust in a fresh temporary
+directory. Agents uses `/agents`; a standalone CLI may report `Shared agents unavailable` and
+remain pending. This does not certify the Left shortcut's external-writer/shared-server topology.
+Native headings must be present on two consecutive reads; timers and paint can keep changing.
+`--card-dialogs` adds only the focused command approval/question/permission probes; ordinary
+`--dialogs` continues to include the broader dialog and busy baseline. `--screenshots` saves
+phone-size replay images and an index after the owned live session has been cleaned up.
 
 ## How it stays off the operator's panes
 

@@ -9,10 +9,21 @@ import { colorAnswers, unfinishedTail } from "./client";
 import { cleanEnv } from "./herdr";
 import { MESSAGES, NARROW_DRAFT_IDS, SEND_IDS, messageById } from "./messages";
 import { lastPointedRow } from "./dialogs";
+import { nativeIdle } from "./scenarios";
 import { DEFAULT_SCENARIOS } from "./verdict";
 
 const ESC = String.fromCodePoint(0x1b);
 const BEL = String.fromCodePoint(0x07);
+
+test("Codex native Ready footer covers unknown Herdr status without trusting transcript or busy state", () => {
+  const info = { agent: "codex", status: "unknown" };
+  const footer = "  gpt-6.1-sol low · Ready · Context 100% left · 0.159.0";
+  expect(nativeIdle("codex", info, [footer, ""])).toBe(true);
+  expect(nativeIdle("codex", info, [footer, "approval required"])).toBe(false);
+  expect(nativeIdle("codex", info, [footer.replace("Ready", "Working")])).toBe(false);
+  expect(nativeIdle("codex", { ...info, status: "blocked" }, [footer])).toBe(false);
+  expect(nativeIdle("claude", info, [footer])).toBe(false);
+});
 
 describe("parseArgs", () => {
   test("defaults run every agent and the five M37/02 scenarios at the pane's own width", () => {
@@ -57,6 +68,14 @@ describe("parseArgs", () => {
 
   test("--help", () => {
     expect(parseArgs(["--help"], "/repo")).toBe("help");
+  });
+
+  test("focused dialog evidence and screenshots do not add busy model turns", () => {
+    const options = parseArgs(["--agent", "codex", "--scenario", "cards", "--card-dialogs", "--screenshots"], "/repo");
+    if (options === "help") throw new Error("unexpected help");
+    expect(options.scenarios).toEqual(["cards", "dialogs"]);
+    expect(options.cardDialogs).toBe(true);
+    expect(options.screenshots).toBe(true);
   });
 
   test("--cards adds card checks once, independent of argument order", () => {

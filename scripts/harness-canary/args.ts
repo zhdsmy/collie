@@ -18,6 +18,8 @@ export interface CanaryOptions {
   readonly cols: number | null;
   /** Leave the Herdr session and the project up after the run, for a look. */
   readonly keep: boolean;
+  readonly screenshots: boolean;
+  readonly cardDialogs: boolean;
   /** Write each clean agent's version into the ledger (spec M37/01). */
   readonly record: boolean;
   /** The Collie checkout whose web/src/lib readers and reply action the canary judges with. */
@@ -45,6 +47,8 @@ screen and send with Collie's own readers. See scripts/harness-canary/README.md.
   --cards            also probe Resume, Agents, model/statusline pickers and Settings (one seed turn per supported agent)
   --cols N           terminal width for the wide scenarios, 40 to ${MAX_COLS} (default: the pane's own)
   --keep             leave the collie-canary session and the project up after the run
+  --screenshots      save 320px Collie replay PNGs and an index beside the captures
+  --card-dialogs     probe one approval/question per agent, without busy or plan turns
   --record           after a run with no fail, write each agent's version into the ledger
   --ledger PATH      the ledger --record writes (default: web/src/lib/harness/verified-versions.json)
   --readers PATH     judge with the web/src/lib readers of another Collie checkout (a worktree)
@@ -59,6 +63,8 @@ export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOpti
   let cards = false;
   let cols: number | null = null;
   let keep = false;
+  let screenshots = false;
+  let cardDialogs = false;
   let record = false;
   let readers = repoRoot;
   let out = DEFAULT_OUT;
@@ -104,6 +110,12 @@ export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOpti
       case "--keep":
         keep = true;
         break;
+      case "--screenshots":
+        screenshots = true;
+        break;
+      case "--card-dialogs":
+        cardDialogs = true;
+        break;
       case "--record":
         record = true;
         break;
@@ -126,5 +138,6 @@ export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOpti
   if (agents.length === 0) throw new Error("--agent names no agent");
   if (dialogs) for (const s of DIALOG_SCENARIOS) if (!scenarios.includes(s)) scenarios.push(s);
   if (cards && !scenarios.includes("cards")) scenarios.push("cards");
-  return { agents, scenarios, cols, keep, record, readers, out, ledger };
+  if (cardDialogs && !scenarios.includes("dialogs")) scenarios.push("dialogs");
+  return { agents, scenarios, cols, keep, screenshots, cardDialogs, record, readers, out, ledger };
 }

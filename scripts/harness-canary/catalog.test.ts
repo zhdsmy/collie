@@ -15,19 +15,33 @@ describe("adaptation catalog", () => {
     const live = features.filter((feature) => feature.live).map((feature) => feature.id).toSorted();
     expect(live).toEqual([
       "claude.agents",
+      "claude.ask",
+      "claude.autocomplete",
+      "claude.effort",
+      "claude.marketplaces",
+      "claude.model",
       "claude.resume",
       "claude.settings.config",
       "claude.settings.stats",
       "claude.settings.status",
       "claude.settings.usage",
       "codex.agents",
+      "codex.approval",
       "codex.fork",
       "codex.model",
       "codex.resume",
+      "codex.statusline-fields",
       "codex.statusline-picker",
+      "codex.trust",
+      "opencode.permission",
     ]);
 
     for (const feature of features) {
+      if (feature.liveChecks) {
+        expect(feature.live).toBe(true);
+        expect(feature.liveChecks.length).toBeGreaterThan(0);
+        expect(new Set(feature.liveChecks).size).toBe(feature.liveChecks.length);
+      }
       for (const path of [...feature.sources, ...feature.tests, ...feature.fixtures.map((fixture) => fixture.path)]) {
         expect(existsSync(resolve(ROOT, path)), `${feature.id}: missing ${path}`).toBe(true);
       }
