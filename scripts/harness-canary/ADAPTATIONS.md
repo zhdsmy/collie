@@ -13,6 +13,26 @@ upstream/downstream origin, source files, tests, captured fixtures, live recipe 
 evidence. It includes individual agent adaptations and shared card primitives. Fixture replay
 runs the actual ANSI parser and public block pipeline, including history folding and statuslines.
 
+## Economical Verification
+
+Choose checks for the change being delivered; the commands above are alternatives, not a checklist.
+
+- **Routine repairs:** replay affected fixtures and run focused parser/action checks. Changes to
+  focus ownership, keys or sending need a relevant isolated live interaction. Preserve the real
+  ANSI and key failure/fix screenshots.
+- **CLI updates:** target the updated CLI with `--agent`; prioritize model selection, Resume,
+  Agents and composer hiding. Include other CLIs when a shared behavior changed.
+- **Model-backed dialogs:** add approval/question probes when repairing those interactions or
+  resolving a concrete remaining risk. An unreachable screen stays pending with its reason and
+  available capture; do not repeat probes solely to reduce that count. Diagnose observed failures.
+- **Screenshots:** render existing captures without another model request. Save key evidence;
+  screenshot replay alone does not prove live keyboard or browser button behavior.
+- **Scope and gates:** broaden or repeat checks only for a concrete unresolved risk or a required
+  release gate. `pending`, `fixture-only` and `not-installed` describe coverage boundaries, not
+  counts to clear or automatic release blockers. Required release checks still apply.
+- **Monitoring:** keep the hourly schedule disabled by default; enable it only when the operator
+  requests ongoing monitoring.
+
 ## After A CLI Update
 
 The watcher compares installed CLI versions and a content hash of relevant adaptation/checker
@@ -36,7 +56,7 @@ rendered without another model request:
 bun scripts/harness-canary/screenshots.ts /path/to/run
 ```
 
-Install the hourly macOS schedule from the stable installed checkout:
+Optional hourly monitoring, only when requested by the operator. Install from the stable checkout:
 
 ```sh
 cd ~/.local/share/collie

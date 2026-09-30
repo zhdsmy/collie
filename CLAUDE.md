@@ -26,6 +26,10 @@ replay and current-version live verification are separate results, and a card-on
 certifies the whole CLI. Commands and maintenance steps:
 [`scripts/harness-canary/ADAPTATIONS.md`](./scripts/harness-canary/ADAPTATIONS.md).
 
+Follow the guide's [Economical Verification](./scripts/harness-canary/ADAPTATIONS.md#economical-verification):
+scope checks to the affected card/CLI, reuse captured evidence, and keep extra model probes and
+scheduled monitoring optional. Pending counts describe coverage boundaries; do not chase zero.
+
 ## Decision records — read before reopening a settled question
 
 [`.adr/`](./.adr/) holds the decisions whose reasoning would otherwise live only in a PR thread —
