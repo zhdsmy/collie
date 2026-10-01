@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.15.0+collie.2] - 2026-10-02
+
 ### Fixed
 
-- **Quick and Agent controls share the Display sheet layout.** Use the same bottom sheet title, surface and viewport anchoring; show five command rows by default with the rest available by scrolling.
+- **Quick and Agent controls share the Display sheet layout.** Use the same bottom sheet title, surface and viewport anchoring; show five command rows by default with the rest available by scrolling. ([8bc63510](https://github.com/zhdsmy/collie/commit/8bc63510))
 
 ## [1.15.0+collie.1] - 2026-10-01
 
