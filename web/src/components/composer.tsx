@@ -23,6 +23,7 @@ import { QuickActionsContent } from "@/components/quick-actions";
 import { ActionsRow } from "@/components/actions-row";
 import { Collapse } from "@/components/ui/collapse";
 import { ComposerDock } from "@/components/ui/composer-dock";
+import { BottomSheet } from "@/components/ui/sheet";
 import { ActionRow } from "@/components/action-sheet-rows";
 import { AnchoredMenu } from "@/components/ui/anchored-menu";
 import * as api from "@/lib/api";
@@ -1361,30 +1362,33 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         <input ref={photoRef} data-testid="attach-photos" type="file" accept={PHOTO_ACCEPT} multiple hidden onChange={onPickFile} />
         <input ref={fileRef} data-testid="attach-files" type="file" accept={accept} hidden onChange={onPickFile} />
 
-        {/* Auxiliary docks stay above the actions belt. */}
-
-      {drawer === "quick" && (
-          <ComposerDock title={translate("composer.controls.quick")} onClose={closeDrawer}>
-            <QuickActionsContent
-              onSend={(t) => send(t, false)}
-              onClose={closeDrawer}
-              agent={agent}
-              isShell={isShell}
-              disabled={locked || sending}
-            />
-          </ComposerDock>
-        )}
-        {drawer === "cmd" && (
-          <ComposerDock title={translate("composer.controls.agent")} onClose={closeDrawer}>
-            <CommandPalette
-              onClose={closeDrawer}
-              agent={agent}
-              mine={operatorCommands}
-              disabled={locked || sending}
-              onInsert={insertCommand}
-              onSubmit={(value) => send(value, false)}
-            />
-          </ComposerDock>
+        {/* The portal keeps sheets viewport-anchored while the composer's Collapse animates. */}
+        {(drawer === "quick" || drawer === "cmd") && createPortal(
+          <BottomSheet
+            open
+            title={translate(drawer === "quick" ? "composer.controls.quick" : "composer.controls.agent")}
+            onClose={closeDrawer}
+          >
+            {drawer === "quick" ? (
+              <QuickActionsContent
+                onSend={(t) => send(t, false)}
+                onClose={closeDrawer}
+                agent={agent}
+                isShell={isShell}
+                disabled={locked || sending}
+              />
+            ) : (
+              <CommandPalette
+                onClose={closeDrawer}
+                agent={agent}
+                mine={operatorCommands}
+                disabled={locked || sending}
+                onInsert={insertCommand}
+                onSubmit={(value) => send(value, false)}
+              />
+            )}
+          </BottomSheet>,
+          document.body,
         )}
         {/* The agent's own tip (Claude's `new task? /clear to save N tokens`), opened from the belt's
             lightbulb pill. The sentence is Claude's own and is shown verbatim: it names a command

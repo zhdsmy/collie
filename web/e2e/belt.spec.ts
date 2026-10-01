@@ -216,3 +216,57 @@ test("grouped Settings retains custom controls and Display overlays without movi
   expect(await sheet.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
   await page.screenshot({ path: testInfo.outputPath("display-sheet-320.png"), animations: "disabled" });
 });
+
+for (const width of [320, 390]) {
+  test(`Quick and Agent match the Display sheet with five command rows at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/pane/w2:p1");
+    const belt = page.locator(BELT);
+    const before = await belt.boundingBox();
+    await page.getByRole("button", { name: en["composer.controls.displayAria"] }).click();
+    const display = page.getByRole("dialog", { name: en["composer.controls.display"] });
+    await expect(display.locator(':scope > div[tabindex="-1"]')).toBeInViewport({ ratio: 1 });
+    const titleStyle = await display.locator('[data-slot="sheet-title"]').evaluate((el) => {
+      const style = getComputedStyle(el);
+      return [style.fontSize, style.fontWeight, style.color];
+    });
+    await display.getByRole("button", { name: en["common.closeAria"] }).click();
+
+    for (const control of ["quick", "agent"] as const) {
+      const title = en[`composer.controls.${control}`];
+      await page.getByRole("button", { name: title, exact: true }).click();
+      const sheet = page.getByRole("dialog", { name: title });
+      const panel = sheet.locator(':scope > div[tabindex="-1"]');
+      await expect(panel).toBeInViewport({ ratio: 1 });
+      expect(await sheet.locator('[data-slot="sheet-title"]').evaluate((el) => {
+        const style = getComputedStyle(el);
+        return [style.fontSize, style.fontWeight, style.color];
+      })).toEqual(titleStyle);
+      const rect = await panel.boundingBox();
+      expect(rect!.y + rect!.height).toBeCloseTo(844, 0);
+      expect(await panel.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+      expect((await belt.boundingBox())!.y).toBeCloseTo(before!.y, 0);
+      expect(await page.getByRole("textbox", { name: en["composer.placeholder.reply"] }).evaluate((el) => el === document.activeElement)).toBe(false);
+
+      if (control === "agent") {
+        const list = sheet.getByRole("list", { name: en["commands.title"] });
+        const rows = await list.evaluate((el) => {
+          const box = el.getBoundingClientRect();
+          const items = Array.from(el.children).map((item) => item.getBoundingClientRect());
+          return {
+            visible: items.filter((item) => item.top >= box.top - 0.5 && item.bottom <= box.bottom + 0.5).length,
+            partial: items.filter((item) => item.top < box.bottom - 0.5 && item.bottom > box.bottom + 0.5).length,
+            scrolls: el.scrollHeight > el.clientHeight,
+          };
+        });
+        expect(rows).toEqual({ visible: 5, partial: 0, scrolls: true });
+        await list.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+        await expect(list.getByRole("button").last()).toBeInViewport({ ratio: 1 });
+        await expect(sheet.getByRole("textbox")).toBeInViewport({ ratio: 1 });
+        await list.evaluate((el) => { el.scrollTop = 0; });
+      }
+      await page.screenshot({ path: testInfo.outputPath(`${control}-${width}.png`), animations: "disabled" });
+      await sheet.getByRole("button", { name: en["common.closeAria"] }).click();
+    }
+  });
+}

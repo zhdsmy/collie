@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Quick and Agent controls share the Display sheet layout.** Use the same bottom sheet title, surface and viewport anchoring; show five command rows by default with the rest available by scrolling.
+
 ## [1.15.0+collie.1] - 2026-10-01
 
 ### Changed

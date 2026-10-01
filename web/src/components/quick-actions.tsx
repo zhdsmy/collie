@@ -100,9 +100,7 @@ function Group({
   );
 }
 
-// The Quick-actions body — the two one-tap reply grids, no chrome of its own. Docked in-flow by the
-// composer (same ComposerDock wrapper as Keys), so it never covers the mirror. Padding matches
-// NavTray so both docks read identically.
+// The Quick-actions body — the two one-tap reply grids, inside the shared BottomSheet.
 //
 // The dock deliberately stays up THROUGH the send. It used to close on the tap itself, which meant
 // the reply's only acknowledgement — the ✓ on the composer's Send button — flashed a second later on
@@ -142,7 +140,7 @@ export function QuickActionsContent({
   };
 
   return (
-    <div className="space-y-4 border-t border-rule bg-muted/30 px-3 py-2.5">
+    <div className="space-y-4">
       {groups.map((g) => (
         <Group
           key={g.title}

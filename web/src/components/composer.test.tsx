@@ -762,12 +762,12 @@ describe("Composer — typing into the terminal", () => {
     server.use(replyHandler(() => replyCalls++));
     renderComposer();
     fireEvent.click(screen.getByRole("button", { name: /^quick$/i }));
-    expect(screen.getByRole("button", { name: /close quick/i })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Quick" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /^type into terminal$/i }));
 
     expect(screen.getByPlaceholderText(/type into the terminal/i)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /close quick/i })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Quick" })).toBeNull();
     expect(replyCalls).toBe(0);
     expect(screen.getByRole("button", { name: /^type into terminal$/i })).toHaveAttribute(
       "aria-pressed",
@@ -2287,16 +2287,16 @@ describe("Composer — clipboard image paste", () => {
   });
 });
 
-describe("Composer — Agent dock", () => {
-  it("opens inline without focusing, toggles closed, and resets search on reopen", async () => {
+describe("Composer — Agent sheet", () => {
+  it("opens without focusing search, closes, and resets search on reopen", async () => {
     const user = userEvent.setup();
     renderComposer();
     const toggle = screen.getByRole("button", { name: "Agent" });
     await user.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     const search = screen.getByPlaceholderText(/Search \d+ commands/);
-    expect(search.closest('[data-slot="composer"]')).not.toBeNull();
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(search.closest('[data-slot="composer"]')).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Agent" })).toContainElement(search);
     expect(search).not.toHaveFocus();
     expect(screen.getByPlaceholderText(/type a reply/i)).not.toHaveFocus();
     await user.type(search, "doctor");
@@ -2306,7 +2306,7 @@ describe("Composer — Agent dock", () => {
     expect(screen.queryByText("/doctor")).toBeNull();
     await user.click(toggle);
     expect(screen.getByPlaceholderText(/Search \d+ commands/)).toHaveValue("");
-    await user.click(screen.getByRole("button", { name: "Close Agent" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Agent" })).getByRole("button", { name: "Close" }));
     expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -2340,8 +2340,8 @@ describe("Composer — Agent dock", () => {
   });
 });
 
-describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
-  it("tapping Quick docks the reply grids in the normal flow (no fixed overlay) and toggles it closed", async () => {
+describe("Composer — Quick sheet", () => {
+  it("opens the reply grid in a viewport sheet and restores focus on close", async () => {
     const user = userEvent.setup();
     renderComposer();
 
@@ -2356,13 +2356,12 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
     // The reply grid is now mounted ("yes" is a good witness)…
     const yes = screen.getByRole("button", { name: "yes" });
     expect(yes).toBeInTheDocument();
-    // …and it is IN-FLOW like the keys dock, not inside a BottomSheet's covering role="dialog".
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(yes.closest('[aria-modal="true"]')).toBeNull();
-    expect(yes.closest(".fixed")).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Quick" })).toContainElement(yes);
+    expect(yes.closest('[data-slot="composer"]')).toBeNull();
+    expect(screen.getByPlaceholderText(/type a reply/i)).not.toHaveFocus();
 
-    // Tapping Quick again closes the dock (single-valued drawer toggle).
-    await user.click(quick);
+    await user.keyboard("{Escape}");
+    expect(quick).toHaveFocus();
     expect(quick).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("button", { name: "yes" })).not.toBeInTheDocument();
   });
@@ -2386,7 +2385,7 @@ describe("Composer — quick dock (in-flow, matches the keys dock)", () => {
     await user.click(screen.getByRole("button", { name: "Quick" }));
     expect(screen.getByRole("button", { name: "yes" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Close Quick" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Quick" })).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("button", { name: "yes" })).not.toBeInTheDocument();
   });
 
@@ -2519,9 +2518,9 @@ describe("Composer — the Display gear", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Quick" }));
-    expect(screen.getByRole("heading", { name: "Quick" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Quick" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Display settings" }));
-    expect(screen.queryByRole("heading", { name: "Quick" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Quick" })).not.toBeInTheDocument();
   });
 
   it("the gear stays reachable on a read-only device", async () => {

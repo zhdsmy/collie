@@ -409,9 +409,9 @@ it("toggles the in-flow model panel and keeps Composer docks mutually exclusive"
   await user.click(field);
   await waitFor(() => expect(screen.queryByRole("region", { name: "Recently used models" })).toBeNull());
   await user.click(screen.getByRole("button", { name: "Quick" }));
-  expect(screen.getByRole("heading", { name: "Quick" })).toBeVisible();
+  expect(screen.getByRole("dialog", { name: "Quick" })).toBeVisible();
   await user.click(field);
-  expect(screen.queryByRole("heading", { name: "Quick" })).toBeNull();
+  expect(screen.queryByRole("dialog", { name: "Quick" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "Display settings" }));
   await waitFor(() => expect(screen.queryByRole("region", { name: "Recently used models" })).toBeNull());
   expect(screen.getByRole("dialog", { name: "Display" })).toBeVisible();

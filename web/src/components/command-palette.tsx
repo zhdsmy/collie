@@ -59,9 +59,9 @@ export function CommandPalette({
   }
 
   return (
-    <div className="flex max-h-[45dvh] min-h-0 flex-col border-t border-rule bg-muted/30">
-      {/* Three rows at rest; on short keyboard viewports only the list shrinks. */}
-      <ul ref={listRef} aria-label={t("commands.title")} className="h-48 min-h-0 overflow-y-auto overscroll-contain">
+    <div className="flex max-h-[60dvh] min-h-0 flex-col">
+      {/* Five rows at rest; on short keyboard viewports only the list shrinks. */}
+      <ul ref={listRef} aria-label={t("commands.title")} className="h-80 min-h-0 overflow-y-auto overscroll-contain">
         {list.length === 0 && (
           <li className="flex h-full items-center justify-center px-3 text-center text-sm text-muted-foreground">
             {t("commands.empty", { query })}
@@ -109,7 +109,7 @@ export function CommandPalette({
           );
         })}
       </ul>
-      <div className="shrink-0 border-t border-border px-3 py-2">
+      <div className="shrink-0 border-t border-rule pt-2">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <input
