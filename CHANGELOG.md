@@ -30,131 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-### Changed
-
-- **Collie follows upstream with Chat and clearer device controls.** Merge v1.15.0, adopt grouped Settings and the Display sheet, and preserve compact controls, current agent cards, Cursor history and screenshot evidence.
-
-## [1.14.2+collie.18] - 2026-09-30
-
-### Added
-
-- **Card regressions retain phone screenshots and broader live evidence.** The isolated harness saves optional 320px replay images linked to ANSI captures and verdicts, adds focused approval/question probes and current statusline/trust/menu checks, and supports selecting agents without rerunning unrelated model turns. ([38675d78](https://github.com/zhdsmy/collie/commit/38675d78))
-
-## [1.14.2+collie.17] - 2026-09-30
-
-### Fixed
-
-- **Codex input and Agents cards handle current terminal states.** A custom status line with a right-aligned warning no longer duplicates the input area, and repeated task names remain selectable in the Agents card. ([7fa4c8da](https://github.com/zhdsmy/collie/commit/7fa4c8da))
-
-## [1.14.2+collie.16] - 2026-09-30
-
-### Added
-
-- **Adaptation checks track card health after CLI updates.** An inventory links 46 adaptations to sources, tests and captured evidence. The optional macOS hourly watcher reuses isolated Codex and Claude card probes when versions or relevant sources change, reports unverified coverage separately, and notifies only on health changes. Partial canaries and known gaps cannot certify an entire CLI version. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
-
-### Fixed
-
-- **Codex model and fork cards read current terminal layouts.** Recognize compact model/reasoning/statusline footers and label-only bold selection, match recent versioned GPT model names uniquely across casing changes while keeping custom IDs exact, and accept Fork's action-specific toolbar and density hint. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
-- **Claude Settings cards recognize plain horizontal modal boundaries.** Status, Config, Usage and Stats stay in their fixed scrolling cards instead of falling back or being claimed by the generic menu reader. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
-- **Claude Agents cards preserve positions in compact native lists.** Hidden empty groups and repeated truncated titles retain native navigation order, while background selection and the current conversation remain distinct. The isolated probe cancels recognized native screens even when they include a new-session input box. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
-
-## [1.14.2+collie.15] - 2026-09-30
+## [1.15.0+collie.1] - 2026-10-01
 
 ### Changed
 
-- **The iOS home-screen icon uses a finished sable Collie.** Smooth vector edges, cream markings, and a transparent background preserve the existing silhouette and orbit. The 180 px and 512 px touch icons use the device-tested artwork; Android and development icons keep their existing appearance. ([f6fab37d](https://github.com/zhdsmy/collie/commit/f6fab37d))
-
-## [1.14.2+collie.14] - 2026-09-29
-
-### Changed
-
-- **The iOS home-screen icon uses the existing artwork inverted.** The release touch icon keeps every pixel in place and reverses its colors to provide a light-source candidate for iOS appearance processing; automatic switching still requires real-device verification. ([910bb199](https://github.com/zhdsmy/collie/commit/910bb199))
-
-## [1.14.2+collie.13] - 2026-09-29
-
-### Fixed
-
-- **Agent card titles and message snippets wrap within their rows.** Compact pickers no longer treat text after a separator as a nonwrapping status badge, and shared option buttons constrain long words and paths to the card width while retaining bounded list scrolling. ([c966314a](https://github.com/zhdsmy/collie/commit/c966314a))
-
-## [1.14.2+collie.12] - 2026-09-29
-
-### Added
-
-- **Claude background agents become a compact navigable card.** The left-arrow session list reuses the shared five-row scrolling picker, walks native group headings before opening a session, and keeps earlier conversation outside the card. ([45ce8310](https://github.com/zhdsmy/collie/commit/45ce8310))
-
-### Changed
-
-- **Escape controls use a quieter compact keycap.** Fixed scrolling cards retain a 44px touch target while the visible key loses its oversized frame. ([45ce8310](https://github.com/zhdsmy/collie/commit/45ce8310))
-
-## [1.14.2+collie.11] - 2026-09-29
-
-### Changed
-
-- **Claude settings content stays inside a fixed-size card.** Status, Config, Usage, and Stats share a bounded 320px viewport with horizontal and vertical scrolling, a fixed title and Escape control, and earlier conversation preserved outside the card. ([244a43cf](https://github.com/zhdsmy/collie/commit/244a43cf))
-
-## [1.14.2+collie.10] - 2026-09-29
-
-### Fixed
-
-- **Claude settings tabs share one compact Escape card.** Keep Status, Config, Usage, and Stats in the full-width mirror with the same 50px docked control, including Stats loading and chart views, while rejecting historical or unhighlighted tab text. ([ef39c6a9](https://github.com/zhdsmy/collie/commit/ef39c6a9))
-
-## [1.14.2+collie.9] - 2026-09-29
-
-### Changed
-
-- **Unrecognized interfaces show a compact caption beside their key.** Use consistent wording across all seven languages and a single 50px row with a 44px Escape touch target, keeping the terminal mirror visible and existing guarded key behavior. ([af3914bf](https://github.com/zhdsmy/collie/commit/af3914bf))
-
-## [1.14.2+collie.8] - 2026-09-29
-
-### Changed
-
-- **An unreadable dialog keeps its screen in the mirror, and the card shrinks to its key.** Claude's `/status` and other screens Collie cannot read now stay full width and scrollable in the mirror; the docked card holds only the caption and the declared key instead of a clipped copy of the pane. ([8a4e734b](https://github.com/zhdsmy/collie/commit/8a4e734b))
-
-## [1.14.2+collie.7] - 2026-09-29
-
-### Changed
-
-- **Picker cards share scrolling and comfortable touch targets.** Reuse bounded lists, separate scrollbar gutters, fixed controls, and centered selection across Codex pickers; shared option surfaces keep a 44px minimum without clipping longer answers. ([5acb15b6](https://github.com/zhdsmy/collie/commit/5acb15b6))
-
-## [1.14.2+collie.6] - 2026-09-29
-
-### Fixed
-
-- **Codex agents keep overlay scrollbars clear of row borders.** Reserve a separate right-hand gutter so iOS scroll indicators do not cover task text, borders, or current-task marks. ([3217f38b](https://github.com/zhdsmy/collie/commit/3217f38b))
-
-## [1.14.2+collie.5] - 2026-09-29
-
-### Fixed
-
-- **Codex agents fit five compact rows on phone screens.** Remove excess row padding, keep names and metadata on two lines, and center the pointed task whenever the list's scroll limits allow it. ([94ec0a89](https://github.com/zhdsmy/collie/commit/94ec0a89))
-
-## [1.14.2+collie.4] - 2026-09-29
-
-### Changed
-
-- **Codex agents lists scroll above their task controls.** At most five rows fit in the list; a guarded delete button reads the native shortcut and opens Codex's explicit permanent-delete confirmation. ([bcdfbf5e](https://github.com/zhdsmy/collie/commit/bcdfbf5e))
-
-## [1.14.2+collie.3] - 2026-09-29
-
-### Fixed
-
-- **Codex agents cards survive preceding terminal scrollback.** Opening the command center from an existing conversation now recognizes the active list while preserving earlier output and guarded native navigation. ([0c1312c5](https://github.com/zhdsmy/collie/commit/0c1312c5))
-
-## [1.14.2+collie.2] - 2026-09-28
-
-### Added
-
-- **Codex's agent command center opens as a touch-friendly card.** The daemon's `← for agents` list preserves task names, projects, statuses and the current task; browsing, opening and cancelling use guarded native keys. Incomplete or ambiguous lists keep their terminal view. ([5a405637](https://github.com/zhdsmy/collie/commit/5a405637))
-
-## [1.14.2+collie.1] - 2026-09-28
-
-### Docs
-
-- **A walkthrough for running Claude Code from your phone.** `docs/claude-code-on-your-phone.md`
-  keeps Claude Code alive in tmux, Herdr or zellij when SSH drops, covers parallel sessions,
-  installation, pairing, replies, the Keys tray and push notifications.
-  `collie docs claude-code-on-your-phone` prints it. The complete upstream comparison is recorded
-  in `docs/upstream-v1.14.2.md`. ([24f5d280](https://github.com/zhdsmy/collie/commit/24f5d280))
+- **Collie follows upstream with Chat and clearer device controls.** Merge v1.15.0, adopt grouped Settings and the Display sheet, and preserve compact controls, current agent cards, Cursor history and screenshot evidence. ([e5786f9a](https://github.com/zhdsmy/collie/commit/e5786f9a))
 
 ## [1.15.0] - 2026-10-01
 
@@ -524,6 +404,128 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
   never updates on its own. Both had stopped being true. `docs/changes.md` covers both ways in, the
   list, the diff, the last commit, the 5-second refresh, how the folder and nested repos are found,
   the read-only rules and the limits. `collie docs changes` prints it from the binary. ([1948ef6b](https://github.com/AltanS/collie/commit/1948ef6b))
+
+## [1.14.2+collie.18] - 2026-09-30
+
+### Added
+
+- **Card regressions retain phone screenshots and broader live evidence.** The isolated harness saves optional 320px replay images linked to ANSI captures and verdicts, adds focused approval/question probes and current statusline/trust/menu checks, and supports selecting agents without rerunning unrelated model turns. ([38675d78](https://github.com/zhdsmy/collie/commit/38675d78))
+
+## [1.14.2+collie.17] - 2026-09-30
+
+### Fixed
+
+- **Codex input and Agents cards handle current terminal states.** A custom status line with a right-aligned warning no longer duplicates the input area, and repeated task names remain selectable in the Agents card. ([7fa4c8da](https://github.com/zhdsmy/collie/commit/7fa4c8da))
+
+## [1.14.2+collie.16] - 2026-09-30
+
+### Added
+
+- **Adaptation checks track card health after CLI updates.** An inventory links 46 adaptations to sources, tests and captured evidence. The optional macOS hourly watcher reuses isolated Codex and Claude card probes when versions or relevant sources change, reports unverified coverage separately, and notifies only on health changes. Partial canaries and known gaps cannot certify an entire CLI version. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
+
+### Fixed
+
+- **Codex model and fork cards read current terminal layouts.** Recognize compact model/reasoning/statusline footers and label-only bold selection, match recent versioned GPT model names uniquely across casing changes while keeping custom IDs exact, and accept Fork's action-specific toolbar and density hint. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
+- **Claude Settings cards recognize plain horizontal modal boundaries.** Status, Config, Usage and Stats stay in their fixed scrolling cards instead of falling back or being claimed by the generic menu reader. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
+- **Claude Agents cards preserve positions in compact native lists.** Hidden empty groups and repeated truncated titles retain native navigation order, while background selection and the current conversation remain distinct. The isolated probe cancels recognized native screens even when they include a new-session input box. ([6779a2a2](https://github.com/zhdsmy/collie/commit/6779a2a2))
+
+## [1.14.2+collie.15] - 2026-09-30
+
+### Changed
+
+- **The iOS home-screen icon uses a finished sable Collie.** Smooth vector edges, cream markings, and a transparent background preserve the existing silhouette and orbit. The 180 px and 512 px touch icons use the device-tested artwork; Android and development icons keep their existing appearance. ([f6fab37d](https://github.com/zhdsmy/collie/commit/f6fab37d))
+
+## [1.14.2+collie.14] - 2026-09-29
+
+### Changed
+
+- **The iOS home-screen icon uses the existing artwork inverted.** The release touch icon keeps every pixel in place and reverses its colors to provide a light-source candidate for iOS appearance processing; automatic switching still requires real-device verification. ([910bb199](https://github.com/zhdsmy/collie/commit/910bb199))
+
+## [1.14.2+collie.13] - 2026-09-29
+
+### Fixed
+
+- **Agent card titles and message snippets wrap within their rows.** Compact pickers no longer treat text after a separator as a nonwrapping status badge, and shared option buttons constrain long words and paths to the card width while retaining bounded list scrolling. ([c966314a](https://github.com/zhdsmy/collie/commit/c966314a))
+
+## [1.14.2+collie.12] - 2026-09-29
+
+### Added
+
+- **Claude background agents become a compact navigable card.** The left-arrow session list reuses the shared five-row scrolling picker, walks native group headings before opening a session, and keeps earlier conversation outside the card. ([45ce8310](https://github.com/zhdsmy/collie/commit/45ce8310))
+
+### Changed
+
+- **Escape controls use a quieter compact keycap.** Fixed scrolling cards retain a 44px touch target while the visible key loses its oversized frame. ([45ce8310](https://github.com/zhdsmy/collie/commit/45ce8310))
+
+## [1.14.2+collie.11] - 2026-09-29
+
+### Changed
+
+- **Claude settings content stays inside a fixed-size card.** Status, Config, Usage, and Stats share a bounded 320px viewport with horizontal and vertical scrolling, a fixed title and Escape control, and earlier conversation preserved outside the card. ([244a43cf](https://github.com/zhdsmy/collie/commit/244a43cf))
+
+## [1.14.2+collie.10] - 2026-09-29
+
+### Fixed
+
+- **Claude settings tabs share one compact Escape card.** Keep Status, Config, Usage, and Stats in the full-width mirror with the same 50px docked control, including Stats loading and chart views, while rejecting historical or unhighlighted tab text. ([ef39c6a9](https://github.com/zhdsmy/collie/commit/ef39c6a9))
+
+## [1.14.2+collie.9] - 2026-09-29
+
+### Changed
+
+- **Unrecognized interfaces show a compact caption beside their key.** Use consistent wording across all seven languages and a single 50px row with a 44px Escape touch target, keeping the terminal mirror visible and existing guarded key behavior. ([af3914bf](https://github.com/zhdsmy/collie/commit/af3914bf))
+
+## [1.14.2+collie.8] - 2026-09-29
+
+### Changed
+
+- **An unreadable dialog keeps its screen in the mirror, and the card shrinks to its key.** Claude's `/status` and other screens Collie cannot read now stay full width and scrollable in the mirror; the docked card holds only the caption and the declared key instead of a clipped copy of the pane. ([8a4e734b](https://github.com/zhdsmy/collie/commit/8a4e734b))
+
+## [1.14.2+collie.7] - 2026-09-29
+
+### Changed
+
+- **Picker cards share scrolling and comfortable touch targets.** Reuse bounded lists, separate scrollbar gutters, fixed controls, and centered selection across Codex pickers; shared option surfaces keep a 44px minimum without clipping longer answers. ([5acb15b6](https://github.com/zhdsmy/collie/commit/5acb15b6))
+
+## [1.14.2+collie.6] - 2026-09-29
+
+### Fixed
+
+- **Codex agents keep overlay scrollbars clear of row borders.** Reserve a separate right-hand gutter so iOS scroll indicators do not cover task text, borders, or current-task marks. ([3217f38b](https://github.com/zhdsmy/collie/commit/3217f38b))
+
+## [1.14.2+collie.5] - 2026-09-29
+
+### Fixed
+
+- **Codex agents fit five compact rows on phone screens.** Remove excess row padding, keep names and metadata on two lines, and center the pointed task whenever the list's scroll limits allow it. ([94ec0a89](https://github.com/zhdsmy/collie/commit/94ec0a89))
+
+## [1.14.2+collie.4] - 2026-09-29
+
+### Changed
+
+- **Codex agents lists scroll above their task controls.** At most five rows fit in the list; a guarded delete button reads the native shortcut and opens Codex's explicit permanent-delete confirmation. ([bcdfbf5e](https://github.com/zhdsmy/collie/commit/bcdfbf5e))
+
+## [1.14.2+collie.3] - 2026-09-29
+
+### Fixed
+
+- **Codex agents cards survive preceding terminal scrollback.** Opening the command center from an existing conversation now recognizes the active list while preserving earlier output and guarded native navigation. ([0c1312c5](https://github.com/zhdsmy/collie/commit/0c1312c5))
+
+## [1.14.2+collie.2] - 2026-09-28
+
+### Added
+
+- **Codex's agent command center opens as a touch-friendly card.** The daemon's `← for agents` list preserves task names, projects, statuses and the current task; browsing, opening and cancelling use guarded native keys. Incomplete or ambiguous lists keep their terminal view. ([5a405637](https://github.com/zhdsmy/collie/commit/5a405637))
+
+## [1.14.2+collie.1] - 2026-09-28
+
+### Docs
+
+- **A walkthrough for running Claude Code from your phone.** `docs/claude-code-on-your-phone.md`
+  keeps Claude Code alive in tmux, Herdr or zellij when SSH drops, covers parallel sessions,
+  installation, pairing, replies, the Keys tray and push notifications.
+  `collie docs claude-code-on-your-phone` prints it. The complete upstream comparison is recorded
+  in `docs/upstream-v1.14.2.md`. ([24f5d280](https://github.com/zhdsmy/collie/commit/24f5d280))
 
 ## [1.14.1+collie.2] - 2026-09-28
 
