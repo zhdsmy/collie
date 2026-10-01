@@ -8,6 +8,7 @@ import { emittableKeys } from "../conformance";
 import { parseKeyHintFooter } from "../menu-hints";
 import { detectAutocompleteRegion } from "./autocomplete";
 import { extractInputDraft, extractStatusLines, hasInputBox, inputBoxTail, stripChrome } from "./chrome";
+import { detectSettingsRegion } from "./settings";
 import { claudeBuildBlocks } from "./index";
 import table from "./claude-lab-corpus.json";
 
@@ -291,11 +292,12 @@ describe("the pipeline lifts the kind the screen shows", () => {
 });
 
 describe("an unread dialog is never silently raw", () => {
-  // THE INVARIANT. No composer, a last line that names the screen's own keys, and nothing but raw
-  // blocks: that is a modal Collie could drive and did not. Only a declared `knownRaw` is exempt.
+  // The read-only Settings tabs are covered by the shared unread pass, not this adapter-local gate.
+  // Elsewhere, a no-composer screen whose tail names keys must not remain raw in this adapter.
   const REACHED = ENTRIES.filter((entry) => {
     const lines = load(entry.fixture);
-    return !hasInputBox(lines) && parseKeyHintFooter(lastNonBlankLine(lines)).length > 0;
+    return !hasInputBox(lines) && detectSettingsRegion(lines) === null &&
+      parseKeyHintFooter(lastNonBlankLine(lines)).length > 0;
   });
   const RAW_ONLY = REACHED.filter((entry) =>
     claudeBuildBlocks(load(entry.fixture)).every((b) => b.kind === "raw"),
@@ -315,7 +317,7 @@ describe("an unread dialog is never silently raw", () => {
 
   it.each(ENTRIES.map((e) => [e.fixture, e] as const))("%s", (_name, entry) => {
     const lines = load(entry.fixture);
-    if (hasInputBox(lines)) return;
+    if (hasInputBox(lines) || detectSettingsRegion(lines) !== null) return;
     if (parseKeyHintFooter(lastNonBlankLine(lines)).length === 0) return;
     if (!claudeBuildBlocks(lines).every((b) => b.kind === "raw")) return;
     expect(entry.knownRaw, `${entry.fixture} is an unread dialog with no declared gap`).toBeDefined();

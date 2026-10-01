@@ -191,3 +191,28 @@ test("a portrait cover display keeps its focused composer when the keyboard shri
   await expect(box).toBeFocused();
   await expect(page.getByRole("button", { name: "Exit zen mode" })).toHaveCount(0);
 });
+
+test("grouped Settings retains custom controls and Display overlays without moving the belt at 320px", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto("/settings");
+  await expect(page.getByRole("button", { name: /Appearance/ })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("settings-index-320.png") });
+  await page.getByRole("button", { name: /Appearance/ }).click();
+  await expect(page).toHaveURL(/\/settings\/appearance/);
+  await expect(page.getByText(en["settings.beltSize.title"], { exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("settings-appearance-320.png"), fullPage: true });
+
+  await page.goto("/pane/w1:p1");
+  const gear = page.getByRole("button", { name: en["composer.controls.displayAria"] });
+  await expect(gear).toBeVisible();
+  const before = await page.locator(BELT).boundingBox();
+  await gear.click();
+  const sheet = page.getByRole("dialog", { name: en["composer.controls.display"] });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator(':scope > div[tabindex="-1"]')).toBeInViewport({ ratio: 1 });
+  const after = await page.locator(BELT).boundingBox();
+  expect(after?.y).toBeCloseTo(before!.y, 0);
+  expect(after?.height).toBeCloseTo(before!.height, 0);
+  expect(await sheet.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: testInfo.outputPath("display-sheet-320.png"), animations: "disabled" });
+});

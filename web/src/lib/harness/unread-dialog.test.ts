@@ -85,6 +85,21 @@ describe("a real unread modal gets the card", () => {
     expect(card.lines.length).toBeGreaterThan(0);
   });
 
+  it.each([
+    ["claude--v2283-slash-usage.txt", "Usage"],
+    ["claude-lab--menu-config-panel--w82.txt", "Config"],
+    ["claude--v21284-settings-config.txt", "Config"],
+    ["claude--v21284-settings-status.txt", "Status"],
+    ["claude--v21284-settings-usage.txt", "Usage"],
+    ["claude--v21284-settings-stats.txt", "Stats"],
+  ])("keeps %s in its bounded Settings card with Escape only", (fixture, title) => {
+    const card = cardOf(pass("claude", fixtureLines(fixture)));
+    if (card?.kind !== "unread-dialog") throw new Error("Expected the Settings card");
+    expect(card.cancel).toMatchObject({ agent: "claude", key: "Escape" });
+    expect(card.viewport?.title).toBe(title);
+    expect(card.viewport?.lines.length).toBeGreaterThan(0);
+  });
+
   it.each([["agy"], ["antigravity"]])(
     "%s gets the card on a hand-built modal (no corpus capture lands raw-only)",
     (agent) => {
@@ -187,11 +202,14 @@ describe("the card never coexists with a live composer", () => {
 const CARD_FIXTURES = {
   claude: {
     modals: [
-      // corpus: a modal carrying its own typeable box; the locator's refusal is the safe read
-      "claude-lab--agents-screen--w40.txt",
-      "claude-lab--agents-screen--w82.txt",
       // corpus: `/status` screen, `Esc to cancel` footer — the M34 reference capture
       "claude-lab--menu-status-screen--w82.txt",
+      // Settings tabs share the bounded unread viewport, including the selectable Config list.
+      "claude-lab--menu-config-panel--w82.txt",
+      "claude--v21284-settings-config.txt",
+      "claude--v21284-settings-status.txt",
+      "claude--v21284-settings-usage.txt",
+      "claude--v21284-settings-stats.txt",
       // README: a multiSelect with the pointer on its "Type something" field. Declined on purpose,
       // since every toggle digit would be typed into the field, so the card is the honest answer.
       "claude--v2283-multiselect-type-something-focused.txt",

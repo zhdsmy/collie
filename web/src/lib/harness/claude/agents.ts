@@ -46,6 +46,8 @@ export function detectAgentsRegion(lines: StyledLine[]): { startLine: number; mo
       continue;
     }
     if (!text) continue;
+    // At 40 columns Claude wraps the Working group's explanatory sentence onto a dash-led row.
+    if (group === "Working" && /^\s+—\s/.test(texts[i]!)) continue;
     if (!/^ ?[^\p{L}\p{N}\s] /u.test(texts[i]!)) {
       if (!/^\s/.test(texts[i]!)) return null;
       continue;

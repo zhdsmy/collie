@@ -37,9 +37,9 @@
       "id": "codex.statusline-fields",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/chrome.ts", "web/src/components/statusline-row.tsx"],
-      "tests": ["web/src/lib/harness/codex/statusline-chrome.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0154-statusline-single-idle.txt", "agent": "codex", "expect": { "block": "raw", "statusLinesMin": 1 } }],
+      "sources": ["web/src/lib/harness/codex/chrome.ts", "web/src/components/statusline-row.tsx", "web/src/lib/harness/codex/markers.ts"],
+      "tests": ["web/src/lib/harness/codex/statusline-chrome.test.ts", "web/src/lib/harness/codex.test.ts"],
+      "fixtures": [{"path": "web/src/fixtures/panes/codex--v0154-statusline-single-idle.txt", "agent": "codex", "expect": {"block": "raw", "statusLinesMin": 1}}, {"path": "web/src/fixtures/panes/codex--v0158-goal-notice.txt", "agent": "codex", "expect": {"block": "raw", "statusLinesMin": 1}}],
       "live": true,
       "liveChecks": ["observe"],
       "verified": { "version": "0.154.0", "date": "2026-09-13", "how": "captured ANSI replay; extraction only", "evidence": "web/src/fixtures/panes/README.md#codex-0154-model-and-statusline-pickers" }
@@ -93,6 +93,7 @@
       "sources": ["web/src/lib/harness/claude/agents.ts", "web/src/lib/harness/claude/index.ts"],
       "tests": ["web/src/lib/harness/claude/agents.test.ts"],
       "fixtures": [
+        { "path": "web/src/fixtures/panes/claude-lab--agents-screen--w40.txt", "agent": "claude", "expect": { "block": "picker", "title": "Agents", "minOptions": 1 } },
         { "path": "web/src/fixtures/panes/claude--v21284-agents-list.txt", "agent": "claude", "expect": { "block": "picker", "title": "Agents", "minOptions": 1 } },
         { "path": "web/src/fixtures/panes/claude--v21284-agents-canary-open.txt", "agent": "claude", "expect": { "block": "picker", "title": "Agents", "minOptions": 3 } },
         { "path": "web/src/fixtures/panes/claude--v21284-agents-canary-navigate.txt", "agent": "claude", "expect": { "block": "picker", "title": "Agents", "minOptions": 3 } }

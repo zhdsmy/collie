@@ -21,7 +21,6 @@ import { DirectKeyboardAccessory } from "@/components/direct-keyboard-accessory"
 import { CommandPalette } from "@/components/command-palette";
 import { QuickActionsContent } from "@/components/quick-actions";
 import { ActionsRow } from "@/components/actions-row";
-import { DisplayPrefsContent } from "@/components/display-prefs";
 import { Collapse } from "@/components/ui/collapse";
 import { ComposerDock } from "@/components/ui/composer-dock";
 import { ActionRow } from "@/components/action-sheet-rows";
@@ -128,29 +127,21 @@ interface ComposerProps {
    * text tracks this live so host typing streams into it; it also drives the send()-time pre-clear (the
    * actual current "❯" line) and unmounts the preview when it goes null. Never written into the input. */
   rawTerminalDraft: string | null;
-  /** Mirror display prefs — the View row lives here, but the mirror (in AgentChat) reads the same
-   * single instance, so they're threaded through rather than each calling useDisplayPrefs. */
+  /** Mirror display prefs — the mirror (in AgentChat) reads the same single instance, so they're
+   * threaded through rather than each calling useDisplayPrefs. Only the DRAFT field's own size and
+   * the terminal face are read here; the rows that write any of this moved to AgentChat's ⚙ sheet. */
   prefs: DisplayPrefs;
   /**
-   * The agent's OWN tip for this pane — Claude's `new task? /clear to save N tokens` sentence, read
-   * off the re-surfaced statusline run by the pane (`claudeHintText`, harness/claude/chrome.ts).
+   * The ⚙ on the belt, whose sheet AgentChat owns and mounts.
    *
-   * It is a TIP, not a status field, so it does not belong in the terminal strip: the strip would have
-   * to print Claude's raw sentence, right-alignment padding and all, in the middle of fields that are
-   * all compact values. It arrives here as the belt's tip icon instead — one icon-only pill that opens
-   * this dock.
-   *
-   * Only ever set for an agent that paints one; absent means no pill, which is every other pane.
+   * The button stays here because it is one of four on one row and the row is this file's. The
+   * PANEL moved out: a sheet is a `fixed inset-0` element with no portal, so it must not be mounted
+   * inside the composer's animated, sticky ancestry (see the note beside the pane-menu sheet in
+   * agent-chat.tsx).
    */
+  display: { open: boolean; onToggle: () => void };
+  /** The agent tip shown by the belt lightbulb. */
   claudeTip?: string | null;
-  setWrap: (wrap: boolean) => void;
-  stepFontSize: (delta: number) => void;
-  setRawTerminal: (raw: boolean) => void;
-  setTapToFocus: (tapToFocus: boolean) => void;
-  /** This pane's mirror-inversion override, resolved and owned by AgentChat. */
-  mirrorNative: boolean;
-  setMirrorNative: (native: boolean) => void;
-  setExpandClippedReply: (expandClippedReply: boolean) => void;
   /** Snap the mirror to the live tail (follow + revalidate + scroll) after a successful send. */
   onSent: () => void;
 
@@ -191,13 +182,8 @@ interface ComposerProps {
 // docks) is entirely local; it reaches AgentChat only through `onSent` (to re-follow the tail) and
 // exposes `focusInput` so the mirror tap can bring up the keyboard.
 //
-// "display" joined the drawer union when the permanent icon-only View row was retired: wrap / raw
-// terminal / font size are settings you touch once, so they cost a whole row of a phone viewport for
-// nothing, and the raw-terminal toggle in particular was an unlabelled `>_` glyph nobody could
-// decode. They now live behind the ⚙ on the actions row, as labelled rows in the same
-// in-flow dock (they change how the mirror LOOKS, so the mirror has to stay visible while you flip
-// them). Find moved the other way — to the header, where its find bar already takes over the row.
-type ComposerDrawer = "quick" | "cmd" | "display" | "tip" | null;
+// Display is a sheet owned by AgentChat; the other controls keep their compact docks.
+type ComposerDrawer = "quick" | "cmd" | "tip" | null;
 
 
 
@@ -272,7 +258,7 @@ interface ClearedDraft {
 }
 
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, onDockOpen, onWritingChange, composing, dialogPresent, dialogUnread, text, terminalDraft, rawTerminalDraft, prefs, claudeTip, setWrap, stepFontSize, setRawTerminal, setTapToFocus, mirrorNative, setMirrorNative, setExpandClippedReply, onSent, pullHandle, draftNoticeSlot, changesPill },
+  { paneId, scope, agent, isShell, gone, readOnly, hostBlock, externalBusy = false, onDockOpen, onWritingChange, composing, dialogPresent, dialogUnread, text, terminalDraft, rawTerminalDraft, prefs, claudeTip, display, onSent, pullHandle, draftNoticeSlot, changesPill },
   ref,
 ) {
   const revalidator = useRevalidator();
@@ -1400,20 +1386,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </ComposerDock>
         )}
-        {drawer === "display" && (
-          <ComposerDock title={translate("composer.controls.display")} onClose={closeDrawer}>
-            <DisplayPrefsContent
-              prefs={prefs}
-              mirrorNative={mirrorNative}
-              setMirrorNative={setMirrorNative}
-              setWrap={setWrap}
-              stepFontSize={stepFontSize}
-              setRawTerminal={setRawTerminal}
-              setTapToFocus={setTapToFocus}
-              setExpandClippedReply={setExpandClippedReply}
-            />
-          </ComposerDock>
-        )}
         {/* The agent's own tip (Claude's `new task? /clear to save N tokens`), opened from the belt's
             lightbulb pill. The sentence is Claude's own and is shown verbatim: it names a command
             (`/clear`) and a number this app does not compute, so there is nothing here to translate. */}
@@ -1527,9 +1499,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 icon: Settings2,
                 label: translate("composer.controls.displayAria"),
                 word: translate("composer.controls.display"),
-                on: drawer === "display",
-                expanded: drawer === "display",
-                onSelect: () => requestDrawer(drawer === "display" ? null : "display"),
+                on: display.open,
+                expanded: display.open,
+                // Close whatever dock is open first. The sheet covers the composer, so leaving a
+                // Keys tray open under it would only be discovered on dismissal.
+                onSelect: () => {
+                  requestDrawer(null);
+                  display.onToggle();
+                },
               },
               // THE AGENT'S OWN TIP, as an icon-only pill at the end of Collie's run. It is the one
               // pill on this belt that is not ours: the sentence comes from Claude's screen

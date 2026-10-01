@@ -149,6 +149,8 @@ describe("NotificationCoordinator — debounce", () => {
     clock.fireAll();
     expect(sink.last).toEqual({
       title: "claude needs you",
+      titleCode: "agent.blocked",
+      titleDetail: { agent: "claude" },
       body: "demo",
       paneId: "p1",
       renotify: true,
@@ -169,6 +171,7 @@ describe("NotificationCoordinator — debounce", () => {
     coord.onTransition(agent("p1", "done"), "working", "done");
     clock.fireAll();
     expect(sink.last?.title).toBe("claude is done");
+    expect(sink.last?.titleCode).toBe("agent.done");
   });
 });
 
@@ -183,6 +186,8 @@ describe("NotificationCoordinator — coalescing", () => {
     // otherwise repeat the same word).
     expect(sink.renders.at(-1)).toEqual({
       title: "2 agents need you",
+      titleCode: "herd.blocked",
+      titleDetail: { count: 2 },
       body: "api, web",
       paneId: undefined,
       renotify: true,
@@ -195,6 +200,8 @@ describe("NotificationCoordinator — coalescing", () => {
     coord.onTransition(agentNamed("p2", "codex", "done"), "working", "done");
     clock.fireAll();
     expect(sink.last?.title).toBe("2 agents need attention");
+    expect(sink.last?.titleCode).toBe("herd.mixed");
+    expect(sink.last?.titleDetail).toEqual({ count: 2 });
   });
 
   test("resolving one of two falls back to the named single, silently", () => {
@@ -205,6 +212,8 @@ describe("NotificationCoordinator — coalescing", () => {
     coord.onTransition(agentNamed("p2", "codex", "idle"), "blocked", "idle"); // codex handled
     expect(sink.last).toEqual({
       title: "claude needs you",
+      titleCode: "agent.blocked",
+      titleDetail: { agent: "claude" },
       body: "demo",
       paneId: "p1",
       renotify: false, // a retraction update must not re-buzz
@@ -307,6 +316,8 @@ describe("NotificationCoordinator — multi-agent digest labels (#215)", () => {
     clock.fireAll();
     expect(sink.last).toEqual({
       title: "claude needs you",
+      titleCode: "agent.blocked",
+      titleDetail: { agent: "claude" },
       body: "demo",
       paneId: "p1",
       renotify: true,
@@ -410,6 +421,8 @@ describe("NotificationCoordinator — type preferences", () => {
 describe("makeNotifySink", () => {
   const summary: HerdSummary = {
     title: "claude needs you",
+    titleCode: "agent.blocked",
+    titleDetail: { agent: "claude" },
     body: "demo",
     paneId: "p1",
     renotify: true,
@@ -425,7 +438,15 @@ describe("makeNotifySink", () => {
     const push = new RecordingPush();
     makeNotifySink(push, { isMuted: () => false }, "collie:herd").render(summary);
     expect(push.sent).toEqual([
-      { title: "claude needs you", body: "demo", tag: "collie:herd", paneId: "p1", renotify: true },
+      {
+        title: "claude needs you",
+        titleCode: "agent.blocked",
+        titleDetail: { agent: "claude" },
+        body: "demo",
+        tag: "collie:herd",
+        paneId: "p1",
+        renotify: true,
+      },
     ]);
   });
 

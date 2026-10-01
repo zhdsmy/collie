@@ -145,11 +145,13 @@ export type ComposerPrepResult =
   /** Abort the send with this error, nothing typed. */
   | { ok: false; error: string };
 
-// A cumulative prefix alone can match a stale screen after a later paste was
-// dropped. Multipart sends must also show the end that was just delivered.
+// A prefix can be a partially painted echo. Require the tail that fits in the visible draft;
+// a scrolled composer may expose fewer than 32 characters. The draft matcher supplies the
+// minimum match length before this tail check runs.
 function carriesReplyTail(sent: string, draft: string | null): boolean {
-  const tail = Array.from(sent.replace(/\s/g, "")).slice(-32).join("");
-  return tail.length > 0 && draft !== null && draft.replace(/\s/g, "").endsWith(tail);
+  const visible = draft?.replace(/\s/g, "") ?? "";
+  const tail = Array.from(sent.replace(/\s/g, "")).slice(-Math.min(32, Array.from(visible).length)).join("");
+  return visible.length > 0 && tail.length > 0 && visible.endsWith(tail);
 }
 
 function aborted(args: Pick<GuardedReplyArgs, "signal">): boolean {
@@ -307,7 +309,13 @@ async function sendGuardedReplyOwned(args: GuardedReplyArgs): Promise<ReplyOutco
     } catch {
       continue; // transient read failure — the bounded loop is the timeout
     }
-    if (literalDraftCarriesSend(args.text, draft) && (chunks.length === 1 || (draft !== previousDraft && carriesReplyTail(args.text, draft)))) return submitOnly(args, verifiedPrompt);
+    // The tail check applies to single-chunk sends too, not just multi-chunk: the substring
+    // matcher above accepts a prefix of the echo, and binding that partial row makes the bridge's
+    // exact check refuse the submit (promptBinding not_found) while the text sits delivered in the
+    // box — three stalls in the 2026-09-27 audit trail. A complete echo is the final state, so once
+    // the tail is on screen the bound region is stable; token-collapsed sends still route to the
+    // adapter's second look below, which is its purpose.
+    if (literalDraftCarriesSend(args.text, draft) && carriesReplyTail(args.text, draft) && (chunks.length === 1 || draft !== previousDraft)) return submitOnly(args, verifiedPrompt);
     // The adapter gets a second look, and only a second look: a harness can SWALLOW what we typed and
     // paint a token of its own instead (Claude collapses anything past its paste threshold into
     // `[Pasted text #N +M lines]`), so the box never holds our words and the match above structurally

@@ -1,9 +1,16 @@
-import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { CursorTranscriptSource, isCursorSessionId, parseCursorTranscript } from "./cursor.ts";
+import {
+  CursorTranscriptSource,
+  decodeCursor,
+  encodeCursor,
+  isCursorSessionId,
+  NO_CURSOR,
+  parseCursorTranscript,
+} from "./cursor.ts";
 
 const SID = "6d9e0432-f5f5-4078-90f4-71642918d097";
 const OTHER = "ffffffff-ffff-ffff-ffff-ffffffffffff";
@@ -45,8 +52,13 @@ describe("parseCursorTranscript", () => {
     expect(entry?.role).toBe("assistant");
     expect(entry?.parts).toEqual([
       { kind: "text", text: "Looking at the registry." },
-      { kind: "tool", name: "Shell", summary: "rg -n cursor bridge/journal" },
-      { kind: "tool", name: "Read", summary: "/tmp/a.ts" },
+      {
+        kind: "tool",
+        name: "Shell",
+        summary: "rg -n cursor bridge/journal",
+        call: { kind: "execute", command: "rg -n cursor bridge/journal", description: "search" },
+      },
+      { kind: "tool", name: "Read", summary: "/tmp/a.ts", call: { kind: "read", path: "/tmp/a.ts" } },
     ]);
   });
 
@@ -122,5 +134,87 @@ describe("CursorTranscriptSource", () => {
   test("has nothing to serve when no root is configured", async () => {
     expect(await new CursorTranscriptSource([]).resolve({ kind: "id", value: SID })).toBeNull();
     expect(await new CursorTranscriptSource("/nope/cursor").resolve({ kind: "id", value: SID })).toBeNull();
+  });
+
+  test("reads only complete rows appended after the first bounded read", async () => {
+    const projects = await root();
+    const path = await writeSession(projects, "data-workspace-collie", SID);
+    const source = new CursorTranscriptSource(projects);
+    const key = await source.resolve({ kind: "id", value: SID });
+    if (key === null) throw new Error("Cursor session did not resolve");
+
+    const first = await source.readSince(key, NO_CURSOR);
+    expect(first.reset).toBe(true);
+    expect(parseCursorTranscript(first.lines.join("\n")).map((entry) => entry.parts[0]?.kind === "text" ? entry.parts[0].text : "")).toEqual(["hi"]);
+
+    await appendFile(path, `${user("<user_query>\nnext\n</user_query>")}\n`);
+    const next = await source.readSince(key, first.cursor);
+    expect(next.reset).toBe(false);
+    expect(parseCursorTranscript(next.lines.join("\n")).map((entry) => entry.parts[0]?.kind === "text" ? entry.parts[0].text : "")).toEqual(["next"]);
+  });
+});
+
+// The generic codec used by every file journal.
+
+// The codec is the one place a cursor can be wrong on purpose. Each test here is one of the three
+// fields refusing its own kind of wrong, because every refusal costs a reset and a reset that fires
+// for the wrong reason shows the operator less of their session than they had.
+
+const KEY = "/home/someone/.claude/projects/a/b.jsonl";
+
+describe("the cursor codec", () => {
+  test("round-trips a position for the key it was taken on", () => {
+    expect(decodeCursor(encodeCursor("bytes", KEY, 4096), "bytes", KEY)).toBe(4096);
+  });
+
+  test("round-trips zero, which is a real position and not an absent one", () => {
+    expect(decodeCursor(encodeCursor("rowid", KEY, 0), "rowid", KEY)).toBe(0);
+  });
+
+  test("carries no path, so nothing that logs a cursor logs a home directory", () => {
+    const cursor = encodeCursor("bytes", KEY, 12);
+    expect(cursor).not.toContain("someone");
+    expect(cursor).not.toContain("/");
+  });
+
+  test("the empty cursor decodes to nothing, which is what a first read passes", () => {
+    expect(decodeCursor(NO_CURSOR, "bytes", KEY)).toBeNull();
+  });
+
+  test("refuses a cursor taken on another key — Claude's hand-over, for free", () => {
+    const cursor = encodeCursor("bytes", KEY, 900);
+    expect(decodeCursor(cursor, "bytes", "/home/someone/.claude/projects/a/c.jsonl")).toBeNull();
+  });
+
+  test("refuses a cursor from another counting, so a number is never misread", () => {
+    const cursor = encodeCursor("updated", KEY, 900);
+    expect(decodeCursor(cursor, "bytes", KEY)).toBeNull();
+    expect(decodeCursor(cursor, "rowid", KEY)).toBeNull();
+  });
+
+  // Digits only. A negative position is the one that matters: `Bun.file().slice(-5)` reads from the
+  // END of the file, so a negative offset would silently read the wrong window rather than fail.
+  // Each case here carries the REAL key hash, so the refusal under test is the position field's.
+  const HASH = encodeCursor("bytes", KEY, 1).split(":")[2] ?? "";
+
+  test.each([
+    ["a negative position", "bytes:-5"],
+    ["an empty position", "bytes:"],
+    ["exponent notation", "bytes:1e9"],
+    ["a float", "bytes:1.5"],
+    ["a leading space", "bytes: 1"],
+    ["a word", "bytes:many"],
+    ["a number past the safe integer range", "bytes:99999999999999999999"],
+  ])("refuses %s", (_label, head) => {
+    expect(decodeCursor(`${head}:${HASH}`, "bytes", KEY)).toBeNull();
+  });
+
+  test.each([
+    ["too few fields", "bytes:1"],
+    ["too many fields", `bytes:1:${HASH}:more`],
+    ["rubbish", "not-a-cursor"],
+    ["a bare number", "12"],
+  ])("refuses %s", (_label, raw) => {
+    expect(decodeCursor(raw, "bytes", KEY)).toBeNull();
   });
 });

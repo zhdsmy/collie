@@ -14,21 +14,19 @@ import { useLocale } from "@/hooks/use-locale";
 // <input> value / text node — never markup — so it stays within the pane-output XSS boundary.
 
 /**
- * A plain (non-destructive) action row: leading icon + label. Used for "Rename".
- *
- * `className` is an escape hatch for surfaces that are not a sheet — the Codex model menu sits in the
- * statusline's own type scale and passes `text-[11px]`. Merged through `cn`, so a caller's size beats
- * `text-sm` while `min-h-11` (a different group) survives untouched.
+ * A plain action row with optional hint, disabled state and caller styling.
  */
 export function ActionRow({
   icon,
   label,
+  hint,
   onClick,
   disabled,
   className,
 }: {
   icon: ReactNode;
   label: string;
+  hint?: string;
   onClick: () => void;
   disabled?: boolean;
   className?: string;
@@ -48,7 +46,14 @@ export function ActionRow({
       )}
     >
       {icon}
-      {label}
+      {hint === undefined ? (
+        label
+      ) : (
+        <span className="min-w-0">
+          <span className="block">{label}</span>
+          <span className="block text-xs font-normal leading-snug text-muted-foreground">{hint}</span>
+        </span>
+      )}
     </button>
   );
 }

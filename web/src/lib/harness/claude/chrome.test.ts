@@ -971,6 +971,16 @@ describe("real corpus — pinned so any change to the walk shows up as a diff", 
     { fixture: "v21284-agents-list", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "v21284-agents-header", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "v21284-agents-working-header", statusRows: 0, draft: null, stripped: 0 },
+    { fixture: "v21284-agents-canary-open", statusRows: 0, draft: null, stripped: 0 },
+    { fixture: "v21284-agents-canary-navigate", statusRows: 0, draft: null, stripped: 0 },
+    { fixture: "v21284-settings-config", statusRows: 0, draft: null, stripped: 1 },
+    { fixture: "v21284-settings-status", statusRows: 0, draft: null, stripped: 1 },
+    { fixture: "v21284-settings-usage", statusRows: 0, draft: null, stripped: 1 },
+    { fixture: "v21284-settings-stats", statusRows: 0, draft: null, stripped: 1 },
+    // The dynamic-workflow view (discussion #301, ADR 0072). A full-screen TUI: no statusline, no
+    // input box and nothing to strip, because the view replaces the whole screen rather than sitting
+    // under it. All three zeros are the honest reading, not a gap.
+    { fixture: "workflow-view", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "working", statusRows: 2, draft: null, stripped: 6 },
   ];
 

@@ -7,10 +7,17 @@ import { backspaceSweep, launchLine, pointedRow, type AgentProfile } from "./pro
 const TRUST_QUESTION = "Trust this folder?";
 const TRUST_YES = "Trust and continue";
 
+/**
+ * The launch arguments every canary codex shares. `check_for_update_on_startup=false` keeps codex's
+ * "Update available" prompt away: its default answer is "Update now", which would change the user's
+ * install, and it takes the place of the composer the canary waits for.
+ */
+export const CODEX_ARGS = `-c 'model_reasoning_effort="low"' -c check_for_update_on_startup=false`;
+
 export const codex: AgentProfile = {
   agent: "codex",
   versionCommand: ["codex", "--version"],
-  launch: (cols) => launchLine(cols, `codex -c 'model_reasoning_effort="low"'`),
+  launch: (cols) => launchLine(cols, `codex ${CODEX_ARGS}`),
   startupAnswer(texts) {
     if (texts.some((t) => /^\s*Update available · \d+\.\d+\.\d+ → \d+\.\d+\.\d+\s*$/.test(t)) &&
         texts.findLast((t) => t.trim())?.trim() === "enter continue · esc skip") return ["Escape"];

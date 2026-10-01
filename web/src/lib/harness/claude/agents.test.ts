@@ -7,6 +7,7 @@ import { detectAgentsRegion } from "./agents";
 import { claudeBuildBlocks } from "./index";
 
 const fixture = (name: string) => readFileSync(join(import.meta.dirname, "../../../fixtures/panes", `claude--v21284-agents-${name}.txt`), "utf8");
+const labFixture = (name: string) => readFileSync(join(import.meta.dirname, "../../../fixtures/panes", name), "utf8");
 const parse = (text: string) => splitLines(parseAnsi(text));
 
 describe("Claude left-arrow agents", () => {
@@ -19,6 +20,13 @@ describe("Claude left-arrow agents", () => {
     expect(blocks.map((block) => block.kind)).toEqual(["raw", "picker"]);
     expect(blocks[0]!.lines.map(lineText)).toEqual(["Earlier conversation"]);
     expect(blocks[1]!.lines.map(lineText).join("\n")).toBe(region.model.regionSignature);
+  });
+
+  it("keeps a wrapped Working-group description out of the option walk at 40 columns", () => {
+    const lines = parse(labFixture("claude-lab--agents-screen--w40.txt"));
+    const region = detectAgentsRegion(lines);
+    expect(region?.model.options.map((option) => option.label)).toEqual(["README.md"]);
+    expect(claudeBuildBlocks(lines).at(-1)?.kind).toBe("picker");
   });
 
   it("keeps native group focus distinct from selectable sessions", () => {

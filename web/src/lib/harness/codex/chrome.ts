@@ -71,6 +71,7 @@ function hasComposerChrome(lines: StyledLine[], promptRow: number, statusRow: nu
   const prompt = lines[promptRow];
   const marker = prompt?.segments[0];
   if (
+    prompt === undefined ||
     marker?.text !== "›" ||
     marker.bold !== true ||
     marker.dim === true ||

@@ -230,11 +230,6 @@
     "region": "▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ● high · /effort ▔\n   Manage MCP servers\n   2 servers\n                                           \n     claude.ai\n   ❯ ✔ claude.ai Claude Docs   8 tools\n     ⚠ claude.ai Google Drive   needs authentication\n  \n   https://code.claude.com/docs/en/mcp for help\n   ↑/↓ to navigate · Enter to confirm · Esc to cancel"
   },
   {
-    "fixture": "claude--v2283-slash-usage.txt",
-    "detector": "menu",
-    "region": "▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ● high · /effort ▔\n   Settings  Status   Config   Usage   Stats\n\n   Session\n     \n   Total cost:            $0.0000\n   Total duration (API):  0s\n   Total duration (wall): 1m 41s\n   Total code changes:    0 lines added, 0 lines removed\n   Usage:                 0 input, 0 output, 0 cache read, 0 cache write\n          \n   Current session   \n   ███████████████                                    30% used\n   Resets 1:29pm (Europe/Berlin)               \n                                         \n   Current week (all models)\n   █████                                              10% used\n   Resets Oct 2, 11:59pm (Europe/Berlin)\n\n   Current week (Fable)\n                                                      0% used\n   Resets Oct 3, 12am (Europe/Berlin)\n\n   What's contributing to your limits usage?\n   Approximate, based on local sessions on this machine — does not include other devices or claude.ai\n\n   Scanning local sessions…\n\n   Usage credits\n   Usage credits are off · /usage-credits to turn them on\n  \n   Esc to cancel"
-  },
-  {
     "fixture": "claude--wizard-multiselect-checked.txt",
     "detector": "multi-select",
     "region": "←  ☒ Toppings  ☐ Crust  ✔ Submit  →\n\nWhich toppings would you like on your pizza?\n\n❯ 1. [✔] Pepperoni\n  Classic cured pork-and-beef slices that crisp at the edges.\n  2. [ ] Mushrooms\n  Earthy sliced creminis that soften into the cheese.\n  3. [✔] Bell peppers\n  Sweet, slightly crunchy strips of red and green pepper.\n  4. [ ] Extra cheese\n  A double layer of mozzarella for a richer, stretchier bite.\n  5. [ ] Type something\n     Next\n───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n  6. Chat about this"
@@ -293,11 +288,6 @@
     "fixture": "claude--wizard-submit.txt",
     "detector": "wizard",
     "region": "←  ☒ Focus area  ☒ Scope  ☒ Workflow  ✔ Submit  →\n\nReview your answers\n\n ● Which focus area should we work on?\n   → UI\n ● What scope should this work have?\n   → Medium\n ● How should we approach the work?\n   → Plan first\n  \nReady to submit your answers?\n\n❯ 1. Submit answers\n  2. Cancel"
-  },
-  {
-    "fixture": "claude-lab--menu-config-panel--w82.txt",
-    "detector": "menu",
-    "region": "  ╰────────────────────────────────────────────────────────────────────────────╯\n\n    Auto-compact                               true\n    Continue automatically at usage limit      true\n    Switch models when a message is flagged    Not asked yet\n    Show tips                                  true\n    Claude-drafted feedback                    off\n    Reduce motion                              false\n    Thinking mode                              true\n    Prompt suggestions                         true\n    Session recap                              true\n    Rewind code (checkpoints)                  true\n    Dynamic workflows                          true\n    Ultracode keyword trigger                  true\n    Dynamic workflow size                      medium (default)\n    Artifacts                                  true\n    Verbose output                             false\n    Terminal progress bar                      true\n    Show turn duration                         true\n    Time format                                auto\n    Default permission mode                    Manual\n    Worktree base ref                          fresh\n  ↓ 22 more below\n\n  Type to filter · Enter/↓ to select · ↑ to tabs · Esc to clear"
   },
   {
     "fixture": "claude-lab--menu-effort-slider--w82.txt",

@@ -47,6 +47,14 @@ interface RegionRow {
 const REGIONS = JSON.parse(
   readFileSync(join(FIXTURES_DIR, "prompt-binding-regions.json"), "utf8"),
 ) as RegionRow[];
+const READONLY_SETTINGS = [
+  "claude--v2283-slash-usage.txt",
+  "claude--v21284-settings-config.txt",
+  "claude--v21284-settings-status.txt",
+  "claude--v21284-settings-usage.txt",
+  "claude--v21284-settings-stats.txt",
+  "claude-lab--menu-config-panel--w82.txt",
+];
 
 /** The region each detector hands to the bridge, or null when it does not recognise the pane. The
  *  order mirrors the precedence the action layer uses, so a pane is attributed to one detector. */
@@ -92,6 +100,10 @@ describe("client/bridge binding contract", () => {
       expect(found!.region).toBe(region);
     });
   }
+
+  it.each(READONLY_SETTINGS)("does not prompt-bind Settings card %s", (fixture) => {
+    expect(detectRegion(fixtureLines(fixture))).toBeNull();
+  });
 
   // Completeness gate: a newly added dialog fixture must not slip past the contract unnoticed. A new
   // capture that some detector recognises but that carries no committed region would otherwise ship
