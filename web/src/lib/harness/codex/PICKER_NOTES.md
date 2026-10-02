@@ -66,17 +66,17 @@ Fast requires a model catalog entry exposing the Fast service tier; a fallback
 model can display `Fast off` while `/fast` is unavailable. Test with real model
 metadata, without copying authentication or changing the user's configuration.
 
-## Scope (2026-09-17)
+## Scope (2026-10-02)
 
 Model/reasoning, statusline configuration, saved-session and agent pickers, and command
-approvals are cardified. QA (including asynchronous questions and notes), plan
-decisions, review selection, and folder trust stay in the native terminal view.
+approvals and folder trust are cardified. QA (including asynchronous questions and notes),
+plan decisions and review selection stay in the native terminal view.
 Their captured text and keyboard hints remain visible; Collie does not expand,
 answer, or confirm those dialogs automatically. Use the Composer's native keys.
 
-The base QA detector and its notes match `upstream/v1.10.0`; that detector
-and the upstream trust detector are intentionally not registered by this fork.
-Do not restore their card entry points during a mechanical upstream merge.
+The retired QA detector has been removed; `ASK_NOTES.md` records its historical probes.
+Do not restore QA card entry points during a mechanical upstream merge. Folder trust uses
+the upstream card for the captured `Folder access` layout; unknown layouts remain native.
 Composer recognition and prompt binding still protect ordinary chat sends when
 a native dialog owns the input. Retain the native captures as regression cases.
 

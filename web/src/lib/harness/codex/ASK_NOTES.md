@@ -1,5 +1,10 @@
 # Codex `request_user_input` — keystroke recipe
 
+Historical evidence only. Codex QA has stayed native since 2026-09-17; the unused card
+detector was removed on 2026-10-02. These probes do not describe current Collie actions.
+Current scope: [PICKER_NOTES.md](./PICKER_NOTES.md#scope-2026-10-02). Captures remain for
+native rendering and composer-locking regression tests.
+
 Captured 2026-08-22 on Codex v0.149.0 in a sandbox pane (feature flag
 `default_mode_request_user_input` was enabled in the host config; the tool announces itself as
 under development). The card REPLACES the composer. Herdr status: `blocked`.
@@ -28,7 +33,7 @@ Live-probed, in this session:
 | `tab` | Opens the notes box: a `› Add notes` row appears and the footer flips to `tab or esc to clear notes | enter to submit answer`. A second `tab` leaves it. |
 | `esc` | Interrupts the WHOLE conversation ("Conversation interrupted — tell the model what to do differently") — probed on a throwaway card. Never emitted. |
 
-What the adapter emits: one button per option row, `keys: ["N"]` — a digit answers the current
+What the retired adapter emitted: one button per option row, `keys: ["N"]` — a digit answers the current
 question, which on the last unanswered question submits the set, so multi-question calls step
 through as consecutive lifted cards with no extra choreography. The complete captured layout is
 required: `Question X/Y (N unanswered)` header, a non-empty question line, consecutive `1..n`
@@ -41,12 +46,12 @@ Typing notes from the phone is deliberately not offered — it has no probed rec
 A read-only inspection found cards with wrapped questions and descriptions. One footer put
 `esc to interrupt` on its own final row. The released detector returned null for that card.
 
-`ask.test.ts` applies those layout changes to the public fruit capture through
+The former detector tests applied those layout changes to the public fruit capture through
 `parseAnsi → splitLines`. These are synthetic variants, not new byte-faithful captures.
-The parser joins question and description rows, keeps the original rows in its signature,
-and accepts the standalone interrupt hint only directly below the submit footer.
-A continuation must belong to an existing description and start at or beyond its column.
-Wrapped labels, incomplete options, notes mode, and output after the footer stay raw.
+The parser joined question and description rows, kept the original rows in its signature,
+and accepted the standalone interrupt hint only directly below the submit footer.
+A continuation had to belong to an existing description and start at or beyond its column.
+Wrapped labels, incomplete options, notes mode, and output after the footer stayed raw.
 
-The digit recipe above is unchanged. No keys were sent to the observed work session.
-Maintainer live-verification on a wrapped card is still needed before merge.
+No keys were sent to the observed work session. Current `ask.test.ts` retains the wrapped
+samples to check native text preservation and composer locking, without card actions.

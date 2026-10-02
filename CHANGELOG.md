@@ -30,6 +30,10 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Changed
+
+- **Retired card code no longer adds to adaptation maintenance.** Remove the unused Codex question-card parser and duplicate dialog frame, retain native-question regression coverage, and refresh current card scope and panel documentation.
+
 ## [1.15.3+collie.1] - 2026-10-02
 
 ### Changed

@@ -9,7 +9,6 @@ import { codexAdapter } from "./codex";
 import { composerPrompt, extractInputDraft, locateComposer, stripChrome } from "./codex/chrome";
 import { isComposerStatusRow, isStatusRow, lineText, PLACEHOLDER } from "./codex/markers";
 import { detectApprovalRegion } from "./codex/approval";
-import { detectAskRegion } from "./codex/ask";
 import { detectTrustRegion } from "./codex/trust";
 import { decorateCodexDisplay } from "./codex/display";
 import { describeAdapterConformance } from "./conformance";
@@ -1037,24 +1036,6 @@ describe("codexBuildBlocks", () => {
       "  Press enter to confirm or esc to cancel",
     ].join("\n");
     expect(detectApprovalRegion(splitLines(parseAnsi(spoof)))).toBeNull();
-  });
-
-  it("ask refuses non-consecutive digits and a missing header", () => {
-    const shuffled = [
-      "  Question 1/1 (1 unanswered)",
-      "  Pick?",
-      "  › 2. B",
-      "    1. A",
-      "  tab to add notes | enter to submit answer | esc to interrupt",
-    ].join("\n");
-    expect(detectAskRegion(splitLines(parseAnsi(shuffled)))).toBeNull();
-    const headerless = [
-      "  Pick?",
-      "  › 1. A",
-      "    2. B",
-      "  tab to add notes | enter to submit answer | esc to interrupt",
-    ].join("\n");
-    expect(detectAskRegion(splitLines(parseAnsi(headerless)))).toBeNull();
   });
 
   it("trust refuses altered labels — a different pair of stakes is a different widget", () => {

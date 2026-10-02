@@ -179,11 +179,11 @@ interface ComposerProps {
 // The composer cluster at the bottom of the pane view — everything a phone keyboard can't do on its
 // own: quick actions, an agent-aware slash-command palette, a direct-input keyboard (via
 // `pane.send_keys`), attachment upload, display prefs, and the reply Send (with a destructive-command
-// two-tap guard). Its state (draft, sending, upload, pending preview, its own Quick/Agent/Display
-// docks) is entirely local; it reaches AgentChat only through `onSent` (to re-follow the tail) and
+// two-tap guard). Draft, sending, upload, pending preview, Quick/Agent sheets and the tip dock
+// are local state; `onSent` asks AgentChat to re-follow the tail, and the composer
 // exposes `focusInput` so the mirror tap can bring up the keyboard.
 //
-// Display is a sheet owned by AgentChat; the other controls keep their compact docks.
+// Display is a sheet owned by AgentChat. Quick/Agent are sheets here; the tip stays in a dock.
 type ComposerDrawer = "quick" | "cmd" | "tip" | null;
 
 
@@ -1446,10 +1446,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   */}
         <ActionsRow
           general={[
-              // Keys and Quick are TOGGLES for the in-flow dock above (not overlays): tap to
-              // open, tap again to close. `expanded` ties each to the dock; the "on" tint marks
-              // it pressed while open. Both share the single-valued `drawer`, so opening one
-              // closes the other.
+              // Quick and Agent share `drawer`, so only one sheet opens at a time.
               // One explicit mode owns both live text and the special-key accessory.
               // Opening it exposes the keys without focusing the textarea.
               {
