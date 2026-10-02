@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.15.3+collie.2] - 2026-10-02
+
 ### Changed
 
-- **Retired card code no longer adds to adaptation maintenance.** Remove the unused Codex question-card parser and duplicate dialog frame, retain native-question regression coverage, and refresh current card scope and panel documentation.
+- **Retired card code no longer adds to adaptation maintenance.** Remove the unused Codex question-card parser and duplicate dialog frame, retain native-question regression coverage, and refresh current card scope and panel documentation. ([1035f76a](https://github.com/zhdsmy/collie/commit/1035f76a))
 
 ## [1.15.3+collie.1] - 2026-10-02
 
