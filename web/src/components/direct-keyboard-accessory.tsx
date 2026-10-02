@@ -12,6 +12,7 @@ import {
   ArrowUp,
   ChevronUp,
   CircleArrowOutUpLeft,
+  Combine,
   CornerDownLeft,
   Keyboard,
   LockKeyhole,
@@ -37,6 +38,26 @@ interface DirectKeyboardAccessoryProps {
 }
 
 const FUNCTION_KEYS = Array.from({ length: 12 }, (_, index) => `F${index + 1}`);
+
+// Whole chords a terminal agent asks for often enough to deserve one tap: Claude's and Codex's mode
+// cycle, a selection step left, and interrupt. Already composed, so a latched modifier neither
+// applies to them nor is spent by them (composeKey leaves a `+` chord alone).
+const COMBO_KEYS: ReadonlyArray<{ key: string; label: string; ariaLabel: string }> = [
+  { key: "shift+Tab", label: "⇧Tab", ariaLabel: "Shift+Tab" },
+  { key: "shift+Left", label: "⇧←", ariaLabel: "Shift+Left" },
+  { key: "ctrl+c", label: "^C", ariaLabel: "Ctrl+C" },
+];
+
+/**
+ * The switch's face per row, in the order it walks them (use-direct-typing.ts ROW_ORDER): the icon
+ * of the row you are ON, and the sentence for the tap, which names the row it leads to. The dots
+ * under the icon say which of the three pages this is.
+ */
+const ROWS: ReadonlyArray<{ row: DirectKeyRow; icon: LucideIcon; next: () => string }> = [
+  { row: "navigation", icon: Keyboard, next: () => t("keys.showComboKeys") },
+  { row: "combos", icon: Combine, next: () => t("keys.showFunctionKeys") },
+  { row: "function", icon: SquareFunction, next: () => t("keys.showNavigationKeys") },
+];
 
 const NAVIGATION_KEYS: ReadonlyArray<{
   key: string;
@@ -84,6 +105,8 @@ export function DirectKeyboardAccessory({
   onSendKeys,
 }: DirectKeyboardAccessoryProps) {
   useLocale();
+  const here = ROWS.find((r) => r.row === row)!;
+  const HereIcon = here.icon;
   const activeModifiers = MODIFIER_ORDER.filter((modifier) => modifiers[modifier] !== "off");
   const repeat = useHoldRepeat(
     async (key, count) => {
@@ -175,19 +198,22 @@ export function DirectKeyboardAccessory({
         disabled={disabled}
         onMouseDown={preserveTextareaFocus}
         onClick={onToggleRow}
-        aria-label={
-          row === "navigation" ? t("keys.showFunctionKeys") : t("keys.showNavigationKeys")
-        }
-        title={
-          row === "navigation" ? t("keys.showFunctionKeys") : t("keys.showNavigationKeys")
-        }
+        aria-label={here.next()}
+        title={here.next()}
         className={cn("size-11 shrink-0 touch-manipulation", RESTING_KEY_CLASS)}
       >
-        {row === "navigation" ? (
-          <KeyLegend icon={SquareFunction} label="Fn" />
-        ) : (
-          <KeyLegend icon={Keyboard} label={t("keys.navigation.short")} />
-        )}
+        <span aria-hidden="true" className="flex flex-col items-center gap-1">
+          <HereIcon className={KEY_ICON_CLASS} />
+          <span className="flex gap-1">
+            {ROWS.map((r) => (
+              <span
+                key={r.row}
+                data-current={r.row === row || undefined}
+                className={cn("size-1 rounded-full bg-current", r.row !== row && "opacity-30")}
+              />
+            ))}
+          </span>
+        </span>
       </Button>
       <div aria-hidden="true" className="h-7 w-px shrink-0 bg-border" />
       <div
@@ -213,8 +239,10 @@ export function DirectKeyboardAccessory({
             {modifierButton("shift", ArrowBigUp, "Shift")}
             {modifierButton("alt", Option, "Alt")}
           </>
-        ) : (
+        ) : row === "function" ? (
           FUNCTION_KEYS.map((key) => keyButton(key, key, key))
+        ) : (
+          COMBO_KEYS.map(({ key, label, ariaLabel }) => keyButton(key, label, ariaLabel))
         )}
       </div>
     </div>

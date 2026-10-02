@@ -13,7 +13,7 @@ export const zhTW: Dictionary = {
   "settings.typeface.note.geist": "幾何無襯線字體，支援可變字重。",
   "keys.showFunctionKeys": "顯示功能鍵",
   "keys.showNavigationKeys": "顯示導覽鍵",
-  "keys.navigation.short": "導覽",
+  "keys.showComboKeys": "顯示組合鍵",
   "statusline.context.remainingShort": "餘",
   "statusline.context.usedShort": "用",
   "statusline.context.remainingAria": "上下文剩餘 {percent}",

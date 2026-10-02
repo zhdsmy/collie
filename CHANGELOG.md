@@ -30,6 +30,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **The Type keys gain a page of common combos.** Shift+Tab, Shift+Left and Ctrl+C now sit one tap
+  away, between the navigation keys and the rarely used F1 to F12. Each goes out whole: a latched
+  Ctrl or Shift neither applies to it nor is spent on it. The page switch now shows the icon of the
+  page you are on, with three dots marking which page it is.
+
 ### Fixed
 
 - **A question Claude asks in Chinese or Japanese is a card again.** AskUserQuestion's question is

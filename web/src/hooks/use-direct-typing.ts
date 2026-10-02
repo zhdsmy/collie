@@ -32,7 +32,11 @@ const SPECIAL_KEYS = new Map([
   ["ArrowRight", "Right"],
 ]);
 
-export type DirectKeyRow = "navigation" | "function";
+export type DirectKeyRow = "navigation" | "function" | "combos";
+
+/** The accessory's rows in the order its switch walks them: combos one tap away, the rarely used
+ *  function keys last. */
+const ROW_ORDER: readonly DirectKeyRow[] = ["navigation", "combos", "function"];
 export type DirectModifierState = Record<Modifier, ModMode>;
 
 const ALL_MODIFIERS_OFF = { ctrl: "off", alt: "off", shift: "off" } satisfies DirectModifierState;
@@ -50,6 +54,10 @@ const COMPOSABLE_SPECIAL_KEYS = new Set([
 ]);
 
 function isComposableKey(key: string): boolean {
+  // A chord that arrives already composed (`shift+Tab`, `ctrl+c` from the combos row) is whole: no
+  // latched modifier applies to it and none is spent on it. normalizeBaseChar reads only the LAST
+  // character, so without this `shift+Tab` passed as the letter `b` and quietly used up a one-shot.
+  if (key.length > 1 && key.includes("+")) return false;
   return normalizeBaseChar(key) !== null || COMPOSABLE_SPECIAL_KEYS.has(key);
 }
 
@@ -160,7 +168,7 @@ export function useDirectTyping({
   }
 
   function toggleRow() {
-    setRow((current) => (current === "navigation" ? "function" : "navigation"));
+    setRow((current) => ROW_ORDER[(ROW_ORDER.indexOf(current) + 1) % ROW_ORDER.length]!);
   }
 
   function settleOneShotModifiers() {

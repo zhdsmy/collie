@@ -195,15 +195,40 @@ describe("Composer — actions belt", () => {
     expect(screen.queryByRole("button", { name: "Clear queued keys" })).toBeNull();
     await user.click(within(accessory).getByRole("button", { name: "Ctrl" }));
     await user.click(within(accessory).getByRole("button", { name: "Ctrl" }));
-    await user.click(within(accessory).getByRole("button", { name: "Show function keys" }));
+    await user.click(within(accessory).getByRole("button", { name: "Show key combos" }));
     await user.click(type);
     await waitFor(() => expect(screen.queryByTestId("direct-keyboard-accessory")).toBeNull());
     expect(onWritingChange).toHaveBeenLastCalledWith(false);
     await user.click(type);
     expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
     expect(screen.getByRole("button", { name: "Tab" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "F1" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Shift+Tab" })).toBeNull();
     expect(sent).toEqual(["ctrl+Tab"]);
+  });
+
+  it("walks the switch to the combos row and sends a combo whole, leaving a latched Ctrl armed", async () => {
+    const user = userEvent.setup();
+    const sent: string[] = [];
+    server.use(http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+      // SAFETY: this route receives the app-owned sendKeys payload under test.
+      const body = await request.json() as { keys: string[] };
+      sent.push(...body.keys);
+      return HttpResponse.json({ ok: true });
+    }));
+    renderComposer();
+    await user.click(screen.getByRole("button", { name: "Type into terminal" }));
+    // The accessory remounts per row (its key), so it is looked up again after every switch.
+    const accessory = () => screen.getByTestId("direct-keyboard-accessory");
+    await user.click(within(accessory()).getByRole("button", { name: "Ctrl" }));
+    await user.click(within(accessory()).getByRole("button", { name: "Show key combos" }));
+    await user.click(within(accessory()).getByRole("button", { name: "Shift+Tab" }));
+    await user.click(within(accessory()).getByRole("button", { name: "Ctrl+C" }));
+    await waitFor(() => expect(sent).toEqual(["shift+Tab", "ctrl+c"]));
+    // Combos, then the rarely used function keys, then back where the walk started.
+    await user.click(within(accessory()).getByRole("button", { name: "Show function keys" }));
+    expect(within(accessory()).getByRole("button", { name: "F1" })).toBeVisible();
+    await user.click(within(accessory()).getByRole("button", { name: "Show navigation keys" }));
+    expect(within(accessory()).getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "once");
   });
 });
 

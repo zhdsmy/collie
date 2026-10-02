@@ -5,6 +5,13 @@ import { DirectKeyboardAccessory } from "./direct-keyboard-accessory";
 
 const ALL_OFF: DirectModifierState = { ctrl: "off", alt: "off", shift: "off" };
 
+/** Which of the switch's three page dots is filled. */
+function currentDot(switcher: HTMLElement): number {
+  const dots = [...switcher.querySelectorAll("span.rounded-full")];
+  expect(dots).toHaveLength(3);
+  return dots.findIndex((dot) => dot.hasAttribute("data-current"));
+}
+
 describe("DirectKeyboardAccessory", () => {
   it("disables unsupported keys even when modifiers are armed", () => {
     const props = {
@@ -35,7 +42,7 @@ describe("DirectKeyboardAccessory", () => {
     );
 
     const root = screen.getByTestId("direct-keyboard-accessory");
-    const switcher = screen.getByRole("button", { name: "Show function keys" });
+    const switcher = screen.getByRole("button", { name: "Show key combos" });
     const rail = screen.getByTestId("direct-key-rail");
     expect(root).toContainElement(switcher);
     expect(root).toContainElement(rail);
@@ -43,11 +50,13 @@ describe("DirectKeyboardAccessory", () => {
     expect(root).toHaveClass("border-rule", "px-1.5");
     expect(rail).toHaveClass("overflow-x-auto", "flex", "min-w-0");
     expect(switcher).toHaveClass("shrink-0", "border-border", "bg-card");
+    // The switch wears the row it is ON, and three dots say which page: the first, here.
     expect(switcher.querySelector("svg")).toHaveClass(
-      "lucide-square-function",
+      "lucide-keyboard",
       "size-[18px]",
     );
-    expect(switcher).toHaveTextContent("Fn");
+    expect(switcher).toHaveTextContent("");
+    expect(currentDot(switcher)).toBe(0);
     for (const button of root.querySelectorAll("button")) {
       expect(button).toHaveClass("size-11", "shrink-0");
     }
@@ -149,12 +158,12 @@ describe("DirectKeyboardAccessory", () => {
       onSendKeys: vi.fn(),
     };
     const { rerender } = render(<DirectKeyboardAccessory {...props} row="navigation" />);
-    fireEvent.click(screen.getByRole("button", { name: "Show function keys" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show key combos" }));
     expect(props.onToggleRow).toHaveBeenCalledOnce();
     rerender(<DirectKeyboardAccessory {...props} row="function" />);
     const switcher = screen.getByRole("button", { name: "Show navigation keys" });
-    expect(switcher).toHaveTextContent("Nav");
-    expect(switcher.querySelector("svg")).toHaveClass("lucide-keyboard", "size-[18px]");
+    expect(switcher.querySelector("svg")).toHaveClass("lucide-square-function", "size-[18px]");
+    expect(currentDot(switcher)).toBe(2);
     for (let index = 1; index <= 12; index++) {
       const key = screen.getByRole("button", { name: `F${index}` });
       expect(key.textContent).toBe(`F${index}`);
@@ -165,6 +174,25 @@ describe("DirectKeyboardAccessory", () => {
     }
     fireEvent.click(switcher);
     expect(props.onToggleRow).toHaveBeenCalledTimes(2);
+  });
+
+  it("sends each common combo whole, whatever modifier is latched, and leads on to the function keys", () => {
+    const props = {
+      modifiers: { ...ALL_OFF, ctrl: "once" as const },
+      onToggleRow: vi.fn(),
+      onToggleModifier: vi.fn(),
+      onSendKeys: vi.fn(),
+    };
+    render(<DirectKeyboardAccessory {...props} row="combos" />);
+    const switcher = screen.getByRole("button", { name: "Show function keys" });
+    expect(switcher.querySelector("svg")).toHaveClass("lucide-combine", "size-[18px]");
+    expect(currentDot(switcher)).toBe(1);
+    for (const [name, key] of [["Shift+Tab", "shift+Tab"], ["Shift+Left", "shift+Left"], ["Ctrl+C", "ctrl+c"]] as const) {
+      const button = screen.getByRole("button", { name });
+      expect(button).toHaveClass("size-11", "shrink-0");
+      fireEvent.click(button);
+      expect(props.onSendKeys).toHaveBeenLastCalledWith([key]);
+    }
   });
 
   it("preserves arrow hold-repeat through the accessory sender", async () => {
