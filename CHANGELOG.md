@@ -30,6 +30,13 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **A question Claude asks in Chinese or Japanese is a card again.** AskUserQuestion's question is
+  the model's own words, so in those languages it ends on the full-width `？`, and the question
+  search accepted only `?`: the whole dialog fell to the unread card and its options could not be
+  tapped. Both question searches now accept either mark; a real Claude Code 2.1.287 capture pins it.
+
 ## [1.15.3+collie.3] - 2026-10-03
 
 ### Added

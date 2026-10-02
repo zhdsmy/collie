@@ -16,6 +16,15 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Claude AskUserQuestion written in Chinese (captured 2026-10-03)
+
+`claude--v21287-select-cjk-question.txt` is a real Claude Code 2.1.287 dialog from an isolated
+canary Herdr session at 119 columns, one haiku turn asked to call AskUserQuestion with a
+question an operator had met. It starts at the dialog's top rule; the prompt above was cut. The
+question ends on the full-width `？`, wraps three rows down the `│` gutter, and each description
+wraps under its option. ANSI styling and native rows are unchanged. It pins the question search
+accepting `？`: an ASCII-only check dropped the whole dialog to the unread card.
+
 ## Current card canary captures (2026-09-30)
 
 `codex--v0158-picker-model*.txt`, `codex--v0158-picker-effort.txt`, `codex--v0158-picker-statusline.txt`,

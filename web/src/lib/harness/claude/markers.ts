@@ -240,6 +240,15 @@ export function namesPermissionDialog(texts: string[]): boolean {
 // ("│ Which fruit do you want?" / "│ Pick the one you like best."). It is chrome, not question text.
 const QUESTION_GUTTER = /^\s*│\s?/;
 
+/**
+ * Whether a row carries the question mark every AskUserQuestion prompt ends on. The model writes the
+ * question, so in Chinese or Japanese it ends on the full-width `？` (U+FF1F); accepting only `?`
+ * dropped every such dialog to the unread card (captured live on Claude Code 2.1.287, 2026-10-03).
+ */
+export function hasQuestionMark(text: string): boolean {
+  return /[?？]/.test(text);
+}
+
 /** A question row with its `│` gutter and outer whitespace removed. */
 export function questionRowText(text: string): string {
   return text.replace(QUESTION_GUTTER, "").trim();

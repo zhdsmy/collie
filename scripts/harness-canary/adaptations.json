@@ -275,7 +275,8 @@
         { "path": "web/src/fixtures/panes/claude--select-menu.txt", "agent": "claude", "expect": { "block": "prompt-select", "minOptions": 2 } },
         { "path": "web/src/fixtures/panes/claude--wizard-q1.txt", "agent": "claude", "expect": { "block": "wizard" } },
         { "path": "web/src/fixtures/panes/claude--select-multiselect-single.txt", "agent": "claude", "expect": { "block": "multi-select" } },
-        { "path": "web/src/fixtures/panes/claude--select-preview.txt", "agent": "claude", "expect": { "block": "preview-select" } }
+        { "path": "web/src/fixtures/panes/claude--select-preview.txt", "agent": "claude", "expect": { "block": "preview-select" } },
+        { "path": "web/src/fixtures/panes/claude--v21287-select-cjk-question.txt", "agent": "claude", "expect": { "block": "prompt-select", "minOptions": 3 } }
       ],
       "live": true,
       "liveChecks": ["open", "answer"],

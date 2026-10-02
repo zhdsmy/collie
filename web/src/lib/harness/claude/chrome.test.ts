@@ -974,6 +974,8 @@ describe("real corpus — pinned so any change to the walk shows up as a diff", 
     { fixture: "v21284-agents-working-header", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "v21284-agents-canary-open", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "v21284-agents-canary-navigate", statusRows: 0, draft: null, stripped: 0 },
+    // A dialog has no input box under it: nothing is chrome, nothing is a draft.
+    { fixture: "v21287-select-cjk-question", statusRows: 0, draft: null, stripped: 0 },
     { fixture: "v21284-settings-config", statusRows: 0, draft: null, stripped: 1 },
     { fixture: "v21284-settings-status", statusRows: 0, draft: null, stripped: 1 },
     { fixture: "v21284-settings-usage", statusRows: 0, draft: null, stripped: 1 },

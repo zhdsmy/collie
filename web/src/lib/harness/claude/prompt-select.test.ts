@@ -55,6 +55,22 @@ describe("detectPromptSelect — the five blocked-state fixtures", () => {
     expect(model!.options[3]!.description).toBeUndefined(); // "Chat about this" has none
   });
 
+  // Captured live on Claude Code 2.1.287 (2026-10-03, isolated canary session, 119 columns): the
+  // model wrote the question in Chinese, so it ends on the full-width `？`, wraps three rows down a
+  // `│` gutter, and every description wraps under its option. Reading only an ASCII "?" dropped the
+  // whole dialog to the unread card.
+  it("AskUserQuestion written in Chinese → its full-width question mark still finds the question", () => {
+    const model = detectPromptSelect(fixtureLines("claude--v21287-select-cjk-question.txt"));
+    expect(model).not.toBeNull();
+    expect(model!.family).toBe("select");
+    expect(model!.question).toMatch(/^Codex 桌面版（\/Applications\/Codex\.app）已不在本机/);
+    expect(model!.question).toMatch(/怎么处理？$/);
+    expect(model!.question).not.toContain("│");
+    expect(model!.options.map((o) => o.label)).toEqual(["清理残留 (Recommended)", "重装桌面版", "暂不处理", "Chat about this"]);
+    expect(model!.options.map((o) => o.keys)).toEqual([["1", "Enter"], ["2", "Enter"], ["3", "Enter"], ["5", "Enter"]]);
+    expect(model!.options[0]!.description).toMatch(/^删除 node_repl MCP.*以后要用再装回桌面版。$/);
+  });
+
   it("edit-permission dialog → permission family, digit-alone keys", () => {
     const model = detectPromptSelect(fixtureLines("claude--permission-edit.txt"));
     expect(model).not.toBeNull();
