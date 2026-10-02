@@ -30,15 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-### Changed
-
-- **Collie follows upstream with reliable paths and Crew connections.** Merge v1.15.3 with Windows path fixes, explicit Crew addresses and omp empty-editor hint recognition, preserving Collie controls and current agent adaptations.
-
-## [1.15.2+collie.1] - 2026-10-02
+## [1.15.3+collie.1] - 2026-10-02
 
 ### Changed
 
-- **Collie follows upstream with clearer Chat and reliable agent dialogs.** Merge v1.15.2 with OpenCode question cards, folded compaction summaries and lifecycle fixes, preserving Collie controls and current agent adaptations. ([880d26f8](https://github.com/zhdsmy/collie/commit/880d26f8))
+- **Collie follows upstream with reliable paths and Crew connections.** Merge v1.15.3 with Windows path fixes, explicit Crew addresses and omp empty-editor hint recognition, preserving Collie controls and current agent adaptations. ([4e24f2d5](https://github.com/zhdsmy/collie/commit/4e24f2d5))
 
 ## [1.15.3] - 2026-10-02
 
@@ -70,6 +66,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
   glyphs for a typed draft, so every new session showed "Draft in terminal" with Take over. The
   reader now knows the hint's shape in all three composer layouts and reads the editor as empty.
   Thanks @enieuwy (#320). ([e3887c1d](https://github.com/AltanS/collie/commit/e3887c1d), [487f70b0](https://github.com/AltanS/collie/commit/487f70b0), [73f417cd](https://github.com/AltanS/collie/commit/73f417cd))
+
+## [1.15.2+collie.1] - 2026-10-02
+
+### Changed
+
+- **Collie follows upstream with clearer Chat and reliable agent dialogs.** Merge v1.15.2 with OpenCode question cards, folded compaction summaries and lifecycle fixes, preserving Collie controls and current agent adaptations. ([880d26f8](https://github.com/zhdsmy/collie/commit/880d26f8))
 
 ## [1.15.2] - 2026-10-02
 
