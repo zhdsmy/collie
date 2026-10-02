@@ -282,6 +282,19 @@
       "verified": null
     },
     {
+      "id": "claude.status-hints",
+      "agent": "claude",
+      "origin": "upstream",
+      "sources": ["web/src/lib/harness/claude/chrome.ts", "web/src/lib/harness/claude/index.ts"],
+      "tests": ["web/src/lib/harness/claude/status-hints.test.ts", "web/src/lib/harness/claude/input-box-frame.test.ts"],
+      "fixtures": [
+        { "path": "web/src/fixtures/panes/claude--working-esc-to-interrupt.txt", "agent": "claude", "expect": { "block": "raw", "statusLinesMin": 1 } },
+        { "path": "web/src/fixtures/panes/claude--idle-background-shell.txt", "agent": "claude", "expect": { "block": "raw", "statusLinesMin": 1 } }
+      ],
+      "live": false,
+      "verified": null
+    },
+    {
       "id": "claude.autocomplete",
       "agent": "claude",
       "origin": "upstream-patched",
@@ -441,6 +454,21 @@
       "live": true,
       "liveChecks": ["open", "decline"],
       "verified": { "version": "1.18.32", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/lib/harness/opencode/PERMISSION_NOTES.md" }
+    },
+    {
+      "id": "opencode.question",
+      "agent": "opencode",
+      "origin": "upstream",
+      "sources": ["web/src/lib/harness/opencode/question.ts", "web/src/lib/harness/opencode/question-tabs.ts", "web/src/lib/harness/opencode/index.ts"],
+      "tests": ["web/src/lib/harness/opencode.test.ts", "web/src/lib/multi-select-action.test.ts", "web/src/components/wizard-block.test.tsx"],
+      "fixtures": [
+        { "path": "web/src/fixtures/panes/oc--question--single.txt", "agent": "opencode", "expect": { "block": "prompt-select", "minOptions": 3 } },
+        { "path": "web/src/fixtures/panes/oc--question--multi.txt", "agent": "opencode", "expect": { "block": "multi-select", "minOptions": 3 } },
+        { "path": "web/src/fixtures/panes/oc--question--two--q1.txt", "agent": "opencode", "expect": { "block": "wizard", "minOptions": 3 } },
+        { "path": "web/src/fixtures/panes/oc--question--tall14.txt", "agent": "opencode", "expect": { "block": "unread-dialog" } }
+      ],
+      "live": false,
+      "verified": { "version": "1.18.33", "date": "2026-10-02", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/lib/harness/opencode/QUESTION_NOTES.md" }
     },
     {
       "id": "shared.option-rows",

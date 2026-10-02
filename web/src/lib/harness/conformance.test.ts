@@ -27,6 +27,9 @@ const PANES_DIR = join(import.meta.dirname, "..", "..", "fixtures", "panes");
 const NEUTRAL = new Set([
   "claude--custom-statusline.txt",
   "claude--working.txt",
+  // The default footer's own hints ("esc to interrupt", "↓ to manage") sit under a live box.
+  "claude--working-esc-to-interrupt.txt",
+  "claude--idle-background-shell.txt",
   "claude--fresh-idle.txt",
   "claude--done.txt",
   "claude--send-inflight.txt",

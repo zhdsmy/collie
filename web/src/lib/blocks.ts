@@ -50,6 +50,7 @@ export type {
   MultiSelectOption,
   MultiSelectEscape,
   MultiPointer,
+  MultiSelectReviewSubmit,
 } from "./harness/multi-select-model";
 export type { MenuModel, MenuAction, MenuNav, MenuLeftRight } from "./harness/menu-model";
 export type { PickerModel, PickerOption, PickerIntent } from "./harness/picker-model";

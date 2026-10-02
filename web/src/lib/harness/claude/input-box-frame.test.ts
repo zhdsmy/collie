@@ -5,8 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parseAnsi } from "../../ansi";
 import { splitLines, type StyledLine } from "../../blocks";
 import { detectAutocompleteRegion } from "./autocomplete";
-import { namesAMenuKey } from "../menu-hints";
-import { extractInputDraft, extractStatusLines, hasInputBox, inputBoxTail, isClaudeAsideRow } from "./chrome";
+import { extractInputDraft, extractStatusLines, hasInputBox, inputBoxTail, isClaudeAsideRow, namesAModalKey } from "./chrome";
 import { draftCarriesSend } from "../../reply-action";
 import { claudeAdapter, claudeBuildBlocks } from "./index";
 import { lineText } from "./markers";
@@ -85,6 +84,9 @@ describe("parity with the old walk on the real corpus", () => {
     "claude--fresh-idle.txt",
     "claude--ghost-suggestion.txt",
     "claude--ghost-typed-over.txt",
+    // Claude Code 2.1.287 default footer: "esc to interrupt" mid-turn and "↓ to manage" with a
+    // background task are the composer's own status hints, not a modal's keys.
+    "claude--idle-background-shell.txt",
     "claude--menu-model-picker-dismissed.txt",
     "claude--model-alias.txt",
     "claude--rename-resolved.txt",
@@ -101,6 +103,7 @@ describe("parity with the old walk on the real corpus", () => {
     "claude--v2283-plugin-marketplaces-updated--w120.txt",
     "claude--v2283-plugin-marketplaces-updated--w40.txt",
     "claude--v2283-plugin-marketplaces-updated--w82.txt",
+    "claude--working-esc-to-interrupt.txt",
     "claude--working.txt",
   ]);
 
@@ -264,15 +267,15 @@ describe("a statusline row shaped like a frame mark", () => {
 });
 
 describe("a statusline-shaped tail still carries no menu", () => {
-  it("keeps Claude's exact working hint in the fixed statusline without exempting other tails", () => {
+  it("keeps Claude's working hint while retaining the original statusline rows", () => {
     const hint = "⏵⏵ auto mode on (shift+tab to cycle) · esc to interrupt · ← for agents";
     const lines = fromTexts([...box("continue"), "[Opus 5]", hint]);
     expect(hasInputBox(lines)).toBe(true);
     expect(extractInputDraft(lines)).toBe("continue");
     expect(extractStatusLines(lines).map(lineText)).toEqual(["[Opus 5]", hint]);
     const filler = Array.from({ length: 9 }, (_, i) => `row ${i}`);
-    expect(hasInputBox(fromTexts([...box("continue"), ...filler, hint]))).toBe(false);
-    expect(hasInputBox(fromTexts([...box("continue"), "[Opus 5]", "", hint]))).toBe(false);
+    expect(hasInputBox(fromTexts([...box("continue"), ...filler, hint]))).toBe(true);
+    expect(hasInputBox(fromTexts([...box("continue"), "[Opus 5]", "", hint]))).toBe(true);
   });
 
   it.each([
@@ -313,7 +316,7 @@ describe("a statusline-shaped tail still carries no menu", () => {
           continue;
         }
         rows++;
-        expect(namesAMenuKey(row), `${name}: ${row}`).toBe(false);
+        expect(namesAModalKey(row), `${name}: ${row}`).toBe(false);
         expect(/^\s*(?:❯\s*)?\d+\.\s+\S/.test(row), `${name}: ${row}`).toBe(false);
       }
     }

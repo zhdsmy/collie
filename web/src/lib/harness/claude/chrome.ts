@@ -10,7 +10,7 @@
 // matched by POSITION (below the box's bottom border), never by its content strings.
 
 import type { StyledLine } from "../../blocks";
-import { namesAMenuKey } from "../menu-hints";
+import { namesAMenuKey, SEGMENT_SPLIT } from "../menu-hints";
 import { findAutocompleteRun, MAX_AUTOCOMPLETE_LINES } from "./autocomplete";
 import {
   classifyFooter,
@@ -524,7 +524,7 @@ function locateInputBox(lines: StyledLine[], texts: string[], end: number): Inpu
   // 4. No modal on screen.
   for (let j = b + 1; j < end; j++) {
     if (classifyFooter(texts[j]!, texts) !== null) return null;
-    if (tail !== "autocomplete" && tailNamesAMenu(texts[j]!, tail === "statusline" && j < statusEnd)) return null;
+    if (tail !== "autocomplete" && tailNamesAMenu(texts[j]!)) return null;
     if (tail === "unknown" && tailLooksModal(texts[j]!)) return null;
   }
   if (dialogOnScreen(lines)) return null;
@@ -592,16 +592,36 @@ function steppedMarksAreStatusline(
  *  `statusline` tail as well as an `unknown` one: a dialog under a stale box can fit the statusline
  *  walk (its footer split off by a blank, like the background-agents footer), and only these rows
  *  tell it apart. A popup tail is exempt, because its grammar named every row. */
-function tailNamesAMenu(text: string, inStatusline: boolean): boolean {
-  // Claude's own right-aligned asides are NOT menus, however they read: `Ctrl+Y to paste deleted text`
-  // is a key hint by shape, and refusing the box for it greyed the whole composer while it was up
-  // (isClaudeAsideRow carries the argument and the capture). A dialog's footer is left-aligned, so
-  // this cannot hide one.
+function tailNamesAMenu(text: string): boolean {
+  // Claude's right-aligned asides can name editing keys without owning the input.
   if (isClaudeAsideRow(text)) return false;
-  // Claude's native working hint is not a modal. Exempt only its exact segment inside the
-  // confirmed status run; every other key hint, including one on the same row, still refuses.
-  return NUMBERED_OPTION_ROW.test(text) || text.trim().split(/\s+·\s+/).some((segment) =>
-    !(inStatusline && segment === "esc to interrupt") && namesAMenuKey(segment));
+  return NUMBERED_OPTION_ROW.test(text) || namesAModalKey(text);
+}
+
+// Claude's own status hints. They read like a modal's "<key> to <verb>" footer but belong to the
+// live composer: the default footer paints "esc to interrupt" while a turn runs and "↓ to manage"
+// while background tasks or monitors exist. A modal's footer says "Esc to cancel" / "to close" /
+// "to select", never these. The footer is clipped with "…" on a narrow pane, so "esc to inter…" is
+// the same hint cut short.
+const ESC_TO_INTERRUPT = /^esc to (?:interrupt|i(?:n(?:t(?:e(?:r(?:r(?:u(?:p)?)?)?)?)?)?)?…|…)$/i;
+const DOWN_TO_MANAGE = /^↓ to (?:manage|m(?:a(?:n(?:a(?:g)?)?)?)?…|…)$/i;
+
+function isStatusHint(segment: string): boolean {
+  const t = segment.trim();
+  return ESC_TO_INTERRUPT.test(t) || DOWN_TO_MANAGE.test(t);
+}
+
+/**
+ * `namesAMenuKey` for a Claude row, minus Claude's own status hints. The generic test stays loose on
+ * purpose (a lone "Esc to cancel" must refuse), so the exemption is a closed list of the hints the
+ * composer's footer prints, not a loosening of the key grammar. Shared with the adapter's
+ * `modalOnScreen` so the box locator and the unread-dialog card agree on what a modal footer is.
+ */
+export function namesAModalKey(text: string): boolean {
+  const segments = text.trim().split(SEGMENT_SPLIT);
+  const kept = segments.filter((segment) => !isStatusHint(segment));
+  if (kept.length === segments.length) return namesAMenuKey(text);
+  return kept.length > 0 && namesAMenuKey(kept.join(" · "));
 }
 
 /**
