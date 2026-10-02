@@ -30,6 +30,8 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.15.3+collie.3] - 2026-10-03
+
 ### Added
 
 - **An experiment rejoins the lines an agent's terminal wrapped.** Claude Code and Codex break prose
@@ -39,6 +41,7 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
   wrap, keeping list items, author line breaks, tool output and frames as drawn. The pane's Display
   sheet then holds the switch. Joining is render-only, so find, links and copy still see the screen
   as read, and a reply still being written keeps its breaks until it reaches the log.
+  ([a7873453](https://github.com/zhdsmy/collie/commit/a7873453))
 
 ## [1.15.3+collie.2] - 2026-10-02
 
