@@ -30,12 +30,15 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.15.3+collie.4] - 2026-10-03
+
 ### Added
 
 - **The Type keys gain a page of common combos.** Shift+Tab, Shift+Left and Ctrl+C now sit one tap
   away, between the navigation keys and the rarely used F1 to F12. Each goes out whole: a latched
   Ctrl or Shift neither applies to it nor is spent on it. The page switch now shows the icon of the
   page you are on, with three dots marking which page it is.
+  ([05ba5ca9](https://github.com/zhdsmy/collie/commit/05ba5ca9))
 
 ### Fixed
 
@@ -43,6 +46,7 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
   the model's own words, so in those languages it ends on the full-width `？`, and the question
   search accepted only `?`: the whole dialog fell to the unread card and its options could not be
   tapped. Both question searches now accept either mark; a real Claude Code 2.1.287 capture pins it.
+  ([669a4dce](https://github.com/zhdsmy/collie/commit/669a4dce))
 
 ## [1.15.3+collie.3] - 2026-10-03
 
