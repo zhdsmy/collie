@@ -30,21 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
-### Changed
-
-- **Collie follows upstream with clearer Chat and reliable agent dialogs.** Merge v1.15.2 with OpenCode question cards, folded compaction summaries and lifecycle fixes, preserving Collie controls and current agent adaptations.
-
-## [1.15.0+collie.2] - 2026-10-02
-
-### Fixed
-
-- **Quick and Agent controls share the Display sheet layout.** Use the same bottom sheet title, surface and viewport anchoring; show five command rows by default with the rest available by scrolling. ([8bc63510](https://github.com/zhdsmy/collie/commit/8bc63510))
-
-## [1.15.0+collie.1] - 2026-10-01
+## [1.15.2+collie.1] - 2026-10-02
 
 ### Changed
 
-- **Collie follows upstream with Chat and clearer device controls.** Merge v1.15.0, adopt grouped Settings and the Display sheet, and preserve compact controls, current agent cards, Cursor history and screenshot evidence. ([e5786f9a](https://github.com/zhdsmy/collie/commit/e5786f9a))
+- **Collie follows upstream with clearer Chat and reliable agent dialogs.** Merge v1.15.2 with OpenCode question cards, folded compaction summaries and lifecycle fixes, preserving Collie controls and current agent adaptations. ([880d26f8](https://github.com/zhdsmy/collie/commit/880d26f8))
 
 ## [1.15.2] - 2026-10-02
 
@@ -107,6 +97,18 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
   answer. The card locks while the free-text row is open, because the terminal takes digits as text
   there, and Collie never types into that row. A list of more than nine options stays on the
   terminal mirror, with the Escape card to dismiss it (#329). ([199d31f5](https://github.com/AltanS/collie/commit/199d31f5))
+
+## [1.15.0+collie.2] - 2026-10-02
+
+### Fixed
+
+- **Quick and Agent controls share the Display sheet layout.** Use the same bottom sheet title, surface and viewport anchoring; show five command rows by default with the rest available by scrolling. ([8bc63510](https://github.com/zhdsmy/collie/commit/8bc63510))
+
+## [1.15.0+collie.1] - 2026-10-01
+
+### Changed
+
+- **Collie follows upstream with Chat and clearer device controls.** Merge v1.15.0, adopt grouped Settings and the Display sheet, and preserve compact controls, current agent cards, Cursor history and screenshot evidence. ([e5786f9a](https://github.com/zhdsmy/collie/commit/e5786f9a))
 
 ## [1.15.0] - 2026-10-01
 
