@@ -26,6 +26,9 @@ export const de: Dictionary = {
   "settings.experiments.chat.title": "Chat",
   "settings.experiments.chat.description": "Ein Pane als eigene Konversation des Agenten lesen statt als Terminal. Über das ⋮-Menü eines Panes zurückschalten.",
   "settings.experiments.chat.caveat": "Codex-Panes zeigen ihre Schritte noch nicht, und ein komprimierter Beitrag kann sichtbar bleiben, bis die Sitzung neu gelesen wird.",
+  "settings.experiments.rejoin.title": "Umbrochene Zeilen zusammenführen",
+  "settings.experiments.rejoin.description": "Führt Zeilen zusammen, die das Terminal eines Agenten auf seine eigene Breite umbrochen hat, wo das Sitzungsprotokoll den Umbruch belegt. Pro Gerät im Anzeige-Blatt eines Panes abschaltbar.",
+  "settings.experiments.rejoin.caveat": "Eine Antwort, die noch geschrieben wird, behält die Umbrüche des Terminals, bis sie im Protokoll steht; zusammengeführt wird nur bei Agenten mit Sitzungsprotokoll.",
   // --- settings sections ---
   "settings.section.appearance.title": "Darstellung",
   "settings.section.appearance.blurb": "Design, Sprache, Schriften",
@@ -284,6 +287,8 @@ export const de: Dictionary = {
   "settings.display.tapToType.label": "Tippen zum Schreiben",
   "settings.display.tapToType.hint":
     "Aktiv: Antippen des Spiegels öffnet überall die Tastatur. Deaktiviert: Spiegel bleibt Textanzeige, Tastatur öffnet nur im Eingabefeld.",
+  "settings.display.rejoin.label": "Umbrochene Zeilen zusammenführen",
+  "settings.display.rejoin.hint": "Führt Zeilen zusammen, die das Terminal des Agenten umbrochen hat, wo das Sitzungsprotokoll es belegt. Wirkt bei aktivem Zeilenumbruch.",
   "settings.display.fullReply.label": "Vollständige letzte Antwort",
   "settings.display.fullReply.hint":
     "Das Terminal eines Agenten hat keinen Verlaufspuffer, daher fehlt bei langen Antworten der Anfang. Aktiv: Die Antwort erscheint vollständig aus dem Protokoll des Agenten und ersetzt die abgeschnittenen Zeilen.",

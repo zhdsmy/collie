@@ -78,6 +78,9 @@ interface DisplayPrefsContentProps {
   setExpandClippedReply: (expandClippedReply: boolean) => void;
   /** The body switch and the Chat rows. Absent while the experiment is off. */
   paneView?: PaneViewControl;
+  /** The rejoin row (lib/wrap-join.ts). Absent while that experiment is off, and then the sheet says
+   *  nothing about it. */
+  rejoin?: { on: boolean; set: (on: boolean) => void };
 }
 
 // One settings row: name (+ optional explanation) on the left, control on the right. Module-level so
@@ -212,6 +215,7 @@ export function DisplayPrefsContent({
   setMirrorNative,
   setExpandClippedReply,
   paneView,
+  rejoin,
 }: DisplayPrefsContentProps) {
   useLocale();
   // What is on screen, not what was chosen: a pane with no journal holds `chat` and draws the
@@ -271,6 +275,23 @@ export function DisplayPrefsContent({
               />
             }
           />
+          {/* Beside Wrap, because it only acts while Wrap is on: it undoes the TUI's wrap so the
+              mirror's own wrap is the only one left. */}
+          {rejoin && (
+            <Row
+              label={t("settings.display.rejoin.label")}
+              hint={t("settings.display.rejoin.hint")}
+              htmlFor="pref-rejoin"
+              control={
+                <Switch
+                  id="pref-rejoin"
+                  checked={rejoin.on}
+                  onCheckedChange={rejoin.set}
+                  aria-label={t("settings.display.rejoin.label")}
+                />
+              }
+            />
+          )}
           <Row
             label={t("settings.display.tapToType.label")}
             hint={t("settings.display.tapToType.hint")}

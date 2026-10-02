@@ -99,6 +99,7 @@ import type { PromptBlockAction } from "@/components/prompt-select-block";
 import type { PreviewBlockAction } from "@/components/preview-select-block";
 import type { MenuBlockAction } from "@/components/menu-block";
 import { locateReply } from "@/lib/latest-reply";
+import { proseSource } from "@/lib/wrap-join";
 import { canGrowRequestedLines, growRequestedLines } from "@/lib/loaders";
 import { paneName, panePlaceParts } from "@/lib/pane-name";
 import { keysSendable, useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux-capability";
@@ -285,8 +286,16 @@ export function AgentChat({
 
   const { launchers, home: launchersHome } = useLaunchers(scope);
   // Single display-prefs instance: the View controls (in <Composer>) write it, the mirror reads it.
-  const { prefs, setWrap, stepFontSize, stepChatFontSize, setRawTerminal, setTapToFocus, setExpandClippedReply } =
-    useDisplayPrefs();
+  const {
+    prefs,
+    setWrap,
+    stepFontSize,
+    stepChatFontSize,
+    setRawTerminal,
+    setTapToFocus,
+    setExpandClippedReply,
+    setRejoinWraps,
+  } = useDisplayPrefs();
   // The chosen terminal font (Settings → Terminal font), applied by re-pointing `--font-mono` on
   // the two mirror surfaces below and NOWHERE else — see mirrorFont() for how, and why it is not a
   // custom property. Scoped to terminal CONTENT on purpose: app chrome that happens to be monospace
@@ -1210,7 +1219,24 @@ export function AgentChat({
   // still on a pane.
   const switchSheetOpen = drawer === "paneMenu" || drawer === "display";
   const warming = chatOffered && historyAvailable && switchSheetOpen;
-  const chatFeed = useChatWindow({ paneId, scope, enabled: chatBody || warming });
+  // REJOINING WRAPPED ROWS (Settings → Experiments, lib/wrap-join.ts) reads the same live window:
+  // the agent's prose is what proves which row breaks were the TUI's. Only while the mirror wraps
+  // and grammars run — with Wrap off rows already pan one-to-one, and the raw terminal is the
+  // escape hatch that promises the screen untouched.
+  const rejoinOffered = dash.prefs.rejoinExperiment;
+  const rejoinOn = rejoinOffered && prefs.rejoinWraps && prefs.wrap && !prefs.rawTerminal && historyAvailable;
+  const chatFeed = useChatWindow({ paneId, scope, enabled: chatBody || warming || rejoinOn });
+  const wrapSource = useMemo(
+    () => (rejoinOn ? proseSource(chatFeed.window.entries) : undefined),
+    [rejoinOn, chatFeed.window.entries],
+  );
+  // Held with the mirror freeze above: while you read backscroll the text stands still, and so must
+  // its joins — a reply reaching the log must not reflow the rows under your eye. Off is immediate.
+  const [heldWrapSource, setHeldWrapSource] = useState(wrapSource);
+  useEffect(() => {
+    if (following) setHeldWrapSource(wrapSource);
+  }, [wrapSource, following]);
+  const shownWrapSource = wrapSource === undefined ? undefined : heldWrapSource;
   // What the Chat body's running question card says about the dialog below it. Chat body only: the
   // terminal body draws no cards, so nothing there reads it. `localeRevision` is READ by the note's
   // `t()` and keys the memo so the sentence follows a language change.
@@ -2516,6 +2542,7 @@ export function AgentChat({
                     hideLeadingLines={hiddenMirrorLines}
                     images={mirrorImages.images}
                     onImageClusterCount={setImageClusterCount}
+                    wrapSource={shownWrapSource}
                   />
                   {/* THE NEWEST TURN'S PICTURE, RIGHT AFTER THE MIRROR (M39, #292). pi draws a
                       picture by direct placement, which leaves only blank rows on the grid, so
@@ -2890,6 +2917,7 @@ export function AgentChat({
             setRawTerminal={setRawTerminal}
             setTapToFocus={setTapToFocus}
             setExpandClippedReply={setExpandClippedReply}
+            rejoin={rejoinOffered ? { on: prefs.rejoinWraps, set: setRejoinWraps } : undefined}
             // THE BODY SWITCH, second door. The ⋮ menu writes the same value; this is the one an
             // operator opens to change how a pane LOOKS, which is the question it answers. `chosen`
             // and `showing` are both passed because they differ on a pane with no journal, and the

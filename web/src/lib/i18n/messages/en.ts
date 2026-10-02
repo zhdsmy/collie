@@ -41,6 +41,9 @@ export const en = {
   "settings.experiments.chat.title": "Chat",
   "settings.experiments.chat.description": "Read a pane as the agent's own conversation instead of its terminal. Switch back from a pane's ⋮ menu.",
   "settings.experiments.chat.caveat": "Codex panes do not draw their steps yet, and a compacted turn can stay on screen until the session is re-read.",
+  "settings.experiments.rejoin.title": "Rejoin wrapped lines",
+  "settings.experiments.rejoin.description": "Join the lines an agent's terminal broke to fit its own width, wherever its session log proves the break was a wrap. Turn it off per device from a pane's Display sheet.",
+  "settings.experiments.rejoin.caveat": "A reply still being written keeps the terminal's breaks until it reaches the log, and only agents with a session log are joined.",
   // --- settings sections (the index's four rows) ---
   // The blurb names the three or four cards a person is most likely to be hunting for, so the row
   // answers "is it in here?" without being opened. Keep it short: it truncates on a narrow phone.
@@ -309,6 +312,8 @@ export const en = {
   "settings.display.tapToType.label": "Tap to type",
   "settings.display.tapToType.hint":
     "On, tapping the mirror anywhere opens the keyboard. Off, the mirror behaves like a document — taps land on the text and only the composer opens the keyboard.",
+  "settings.display.rejoin.label": "Rejoin wrapped lines",
+  "settings.display.rejoin.hint": "Join the lines the agent's terminal wrapped, where its session log proves it. Acts while Wrap lines is on.",
   "settings.display.fullReply.label": "Full latest reply",
   "settings.display.fullReply.hint":
     "An agent's terminal keeps no scrollback, so a long answer loses its start. On, that reply is shown in full from the agent's own log, in place of the rows it covers.",

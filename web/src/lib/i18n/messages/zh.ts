@@ -26,6 +26,9 @@ export const zh: Dictionary = {
   "settings.experiments.chat.title": "聊天",
   "settings.experiments.chat.description": "把窗格当作代理自己的对话来读，而不是终端。可从窗格的 ⋮ 菜单切回。",
   "settings.experiments.chat.caveat": "Codex 窗格暂不显示其步骤；被压缩的对话可能会一直显示，直到会话重新读取。",
+  "settings.experiments.rejoin.title": "合并终端折行",
+  "settings.experiments.rejoin.description": "代理终端按自身宽度折断的行，只要会话日志能证明是折行，就重新合并。可在窗格的“显示”面板中关闭。",
+  "settings.experiments.rejoin.caveat": "仍在输出的回复在写入日志前保持终端原有折行；只有带会话日志的代理会被合并。",
   // --- settings sections ---
   "settings.section.appearance.title": "外观",
   "settings.section.appearance.blurb": "主题、语言、字体",
@@ -270,6 +273,8 @@ export const zh: Dictionary = {
   "settings.display.tapToType.label": "点击唤起键盘",
   "settings.display.tapToType.hint":
     "开启后点击镜像任意位置均弹出键盘。关闭后镜像以文档模式交互，仅点击输入框时调出键盘。",
+  "settings.display.rejoin.label": "合并终端折行",
+  "settings.display.rejoin.hint": "按会话日志合并代理终端折断的行。仅在自动换行开启时生效。",
   "settings.display.fullReply.label": "完整显示最新回复",
   "settings.display.fullReply.hint":
     "智能体终端不保留回滚缓冲，长回复的开头会丢失。开启后将从智能体自身日志中取出完整回复，替换它所覆盖的那几行。",

@@ -26,6 +26,9 @@ export const ko: Dictionary = {
   "settings.experiments.chat.title": "채팅",
   "settings.experiments.chat.description": "패널을 터미널 대신 에이전트의 대화로 읽습니다. 패널의 ⋮ 메뉴에서 되돌릴 수 있습니다.",
   "settings.experiments.chat.caveat": "Codex 패널은 아직 단계를 표시하지 않으며, 압축된 대화는 세션을 다시 읽을 때까지 화면에 남을 수 있습니다.",
+  "settings.experiments.rejoin.title": "줄바꿈된 행 합치기",
+  "settings.experiments.rejoin.description": "에이전트 터미널이 자체 너비에 맞춰 나눈 행을, 세션 기록으로 줄바꿈임이 확인되는 곳에서 다시 합칩니다. 패널의 표시 시트에서 끌 수 있습니다.",
+  "settings.experiments.rejoin.caveat": "작성 중인 답변은 기록에 저장될 때까지 터미널의 줄바꿈을 유지하며, 세션 기록이 있는 에이전트만 합쳐집니다.",
   // --- settings sections ---
   "settings.section.appearance.title": "화면",
   "settings.section.appearance.blurb": "테마, 언어, 글꼴",
@@ -279,6 +282,8 @@ export const ko: Dictionary = {
   "settings.display.tapToType.label": "탭하여 입력",
   "settings.display.tapToType.hint":
     "활성화하면 미러 영역 어디를 눌러도 키보드가 열립니다. 끄면 일반 문서처럼 동작하며 입력기를 눌러야 키보드가 표시됩니다.",
+  "settings.display.rejoin.label": "줄바꿈된 행 합치기",
+  "settings.display.rejoin.hint": "세션 기록으로 확인된 터미널 줄바꿈을 합칩니다. 자동 줄바꿈이 켜져 있을 때 적용됩니다.",
   "settings.display.fullReply.label": "최신 답변 전체 보기",
   "settings.display.fullReply.hint":
     "에이전트 터미널은 스크롤백을 남기지 않아 긴 답변은 앞부분이 사라집니다. 켜면 에이전트 로그에서 전체 답변을 가져와 해당 줄을 대신 표시합니다.",

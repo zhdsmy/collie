@@ -33,6 +33,7 @@ import { renderCells } from "@/components/painted-cells";
 import { ImageCard } from "@/components/ui/image-card";
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks } from "@/lib/links";
+import { foldSource, NO_JOINS, planJoins, type JoinPlan } from "@/lib/wrap-join";
 import { SessionInfoCard } from "@/components/session-info-card";
 
 /** A raw block, narrowed off the Block union (the highlight/offset paths only touch these). */
@@ -108,6 +109,14 @@ export interface AnsiOutputProps {
    * more: inside the scroller its bottom edge moved with the text above it.
    */
   blocks?: readonly Block[];
+  /**
+   * The agent's own prose from its session log, when the operator opted into rejoining wrapped rows
+   * (lib/wrap-join.ts). A row break the log proves was the TUI's wrap renders as a space, or as
+   * nothing inside a split word, and the row's hanging indent goes with it. Render-only, like
+   * `hideLeadingLines`: the hidden characters keep their offsets, so find, links and copy are
+   * untouched. Ignored while `wrap` is off, where rows already pan one-to-one with the terminal.
+   */
+  wrapSource?: string;
 }
 
 // Stable empty result so the "not searching" path keeps the same `matches` reference across polls
@@ -125,6 +134,11 @@ const NO_IMAGES: readonly string[] = Object.freeze([]);
 /** The frozen empty cluster list, for a block the grammar produced no clusters for. */
 const NO_CLUSTERS: readonly ImageCluster[] = Object.freeze([]);
 const NO_BLOCK_RUNS: readonly (readonly TableRun[])[] = Object.freeze([]);
+const NO_BLOCK_JOINS: readonly JoinPlan[] = Object.freeze([]);
+
+/** Whether row `row` sits inside one of these inclusive ranges. */
+const within = (ranges: readonly { start: number; end: number }[], row: number): boolean =>
+  ranges.some((r) => row >= r.start && row <= r.end);
 
 // The mirror's dark colour space and its light-theme inversion live in mirror-space.ts — the
 // statusline strip renders the same terminal segments and the two must not drift.
@@ -311,6 +325,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   blocks: builtBlocks,
   images,
   onImageClusterCount,
+  wrapSource,
 }: AnsiOutputProps) {
   // The mirror is agent output and is not translated — but the two strings the image cluster
   // renders are Collie's own words, so this subscribes for the same reason every t() caller does.
@@ -343,6 +358,20 @@ export const AnsiOutput = memo(function AnsiOutput({
   // image, however many cells it covers. Computed here rather than inside the render loop because
   // the TOTAL is what the caller needs before a single node is emitted.
   const clustersByBlock = useMemo(() => rawBlocks.map((b) => imageClusters(b.lines)), [rawBlocks]);
+  // Which row breaks were the TUI's own wraps, by block. Folded once per journal text; planned only
+  // while wrapping, and never into a table run or an image cluster, which render rows their own way.
+  const folded = useMemo(() => (wrapSource ? foldSource(wrapSource) : null), [wrapSource]);
+  const joinsByBlock = useMemo(
+    () =>
+      wrap && folded
+        ? rawBlocks.map((b, bi) => {
+            const runs = runsByBlock[bi] ?? NO_RUNS;
+            const clusters = clustersByBlock[bi] ?? NO_CLUSTERS;
+            return planJoins(b.lines, folded, (row) => within(runs, row) || within(clusters, row));
+          })
+        : NO_BLOCK_JOINS,
+    [wrap, folded, rawBlocks, runsByBlock, clustersByBlock],
+  );
   const clusterCount = useMemo(
     () => clustersByBlock.reduce((sum, c) => sum + c.length, 0),
     [clustersByBlock],
@@ -490,18 +519,38 @@ export const AnsiOutput = memo(function AnsiOutput({
   // nothing to pan, so the table would be silently un-pannable, which is the exact failure this
   // change exists to fix. A frame row that is NOT in a run, a lone menu or panel border, keeps its clip
   // untouched: a detected table owns its own rows, and nothing beyond them.
-  const renderLine = (line: StyledLine, li: number, lead: boolean, inRun: boolean): ReactNode => {
+  //
+  // `joins` is the block's rejoin plan (lib/wrap-join.ts). A joined row drops its newline and its
+  // hanging indent, and the row above drops its trailing blanks; both still advance the offset, so
+  // the haystack's coordinates hold whether or not a character is drawn.
+  const renderLine = (
+    line: StyledLine,
+    li: number,
+    lead: boolean,
+    inRun: boolean,
+    joins: JoinPlan = NO_JOINS,
+  ): ReactNode => {
     if (li > 0) offset += 1; // the "\n" separating this line from the previous
+    const join = joins.get(li);
+    const head = join?.indent ?? 0;
+    const lineStart = offset;
+    const trail = joins.get(li + 1)?.trail ?? 0;
+    // Infinity keeps the common row on the fast path: no lineText walk unless a blank is hidden.
+    const shownEnd = trail === 0 ? Infinity : lineText(line).length - trail;
     const segNodes = line.segments.map((s, si) => {
       const segStart = offset;
       offset += s.text.length;
+      const from = Math.max(0, head - (segStart - lineStart));
+      const to = Math.min(s.text.length, shownEnd - (segStart - lineStart));
+      if (from >= to) return null;
+      const shown = from === 0 && to === s.text.length ? s.text : s.text.slice(from, to);
       return (
         <span
           key={si}
           style={surfaceSegmentStyle(s, line.surface)}
           className={segmentClassName(s)}
         >
-          {renderSegment(s.text, segStart)}
+          {renderSegment(shown, segStart + from)}
         </span>
       );
     });
@@ -532,7 +581,7 @@ export const AnsiOutput = memo(function AnsiOutput({
     );
     return (
       <Fragment key={li}>
-        {li > 0 && lead ? "\n" : null}
+        {li > 0 && lead ? (join ? (join.space ? " " : null) : "\n") : null}
         {line.surface ? (
           <span
             data-terminal-surface={line.surface.kind}
@@ -554,6 +603,7 @@ export const AnsiOutput = memo(function AnsiOutput({
     if (bi > 0) offset += 1; // the "\n" separating this block from the previous
     const runs = runsByBlock[bi] ?? NO_RUNS;
     const clusters = clustersByBlock[bi] ?? NO_CLUSTERS;
+    const joins = joinsByBlock[bi] ?? NO_JOINS;
     const nodes: ReactNode[] = [];
     let ri = 0;
     let ci = 0;
@@ -583,7 +633,7 @@ export const AnsiOutput = memo(function AnsiOutput({
       }
       const run: TableRun | undefined = runs[ri];
       if (!run || run.start !== li) {
-        nodes.push(renderLine(block.lines[li]!, li, true, false));
+        nodes.push(renderLine(block.lines[li]!, li, true, false, joins));
         li++;
         continue;
       }

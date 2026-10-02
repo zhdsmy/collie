@@ -16,9 +16,10 @@ const PREFS: DisplayPrefs = {
   rawTerminal: false,
   tapToFocus: true,
   expandClippedReply: true,
+  rejoinWraps: true,
 };
 
-function draw(paneView?: Partial<PaneViewControl>) {
+function draw(paneView?: Partial<PaneViewControl>, rejoin?: { on: boolean; set: (on: boolean) => void }) {
   const onChange = vi.fn();
   const setShowToolCalls = vi.fn();
   const stepChatFontSize = vi.fn();
@@ -33,6 +34,7 @@ function draw(paneView?: Partial<PaneViewControl>) {
       mirrorNative={false}
       setMirrorNative={vi.fn()}
       setExpandClippedReply={vi.fn()}
+      rejoin={rejoin}
       paneView={
         paneView && {
           chosen: "terminal",
@@ -53,6 +55,26 @@ function draw(paneView?: Partial<PaneViewControl>) {
 }
 
 describe("DisplayPrefsContent", () => {
+  it("offers rejoining wrapped rows only once the experiment is on", async () => {
+    draw();
+    expect(screen.queryByLabelText("Rejoin wrapped lines")).toBeNull();
+  });
+
+  it("writes the rejoin switch, on the terminal body", async () => {
+    const user = userEvent.setup();
+    const set = vi.fn();
+    draw({ showing: "terminal" }, { on: true, set });
+    const toggle = screen.getByRole("switch", { name: "Rejoin wrapped lines" });
+    expect(toggle).toBeChecked();
+    await user.click(toggle);
+    expect(set).toHaveBeenCalledWith(false);
+  });
+
+  it("draws no rejoin row over a Chat stream", () => {
+    draw({ chosen: "chat", showing: "chat" }, { on: true, set: vi.fn() });
+    expect(screen.queryByLabelText("Rejoin wrapped lines")).toBeNull();
+  });
+
   it("says nothing about Chat while the experiment is off", () => {
     draw();
     expect(screen.queryByRole("radiogroup")).toBeNull();

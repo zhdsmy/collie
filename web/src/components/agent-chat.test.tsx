@@ -3219,3 +3219,60 @@ describe("AgentChat — the chat body", () => {
     ).toBeInTheDocument();
   });
 });
+
+// ── REJOINING THE TUI'S WRAPS (Settings → Experiments, lib/wrap-join.ts) ─────────────────────────
+describe("AgentChat — rejoining wrapped rows", () => {
+  const ROWS = "⏺ The version lives in three files, and they must\n  match the newest numbered CHANGELOG heading.";
+  const JOINED = "⏺ The version lives in three files, and they must match the newest numbered CHANGELOG heading.";
+
+  function withProse() {
+    server.use(
+      http.get(/\/api\/pane\/[^/]+\/chat/, () =>
+        HttpResponse.json({
+          paneId: "w1:p1",
+          available: true,
+          page: "live",
+          gen: 7,
+          rev: 1,
+          head: 1,
+          oldest: 1,
+          hasOlder: false,
+          upserts: [
+            {
+              seq: 1,
+              uuid: "a1",
+              ts: "2026-10-02T00:00:00Z",
+              role: "assistant",
+              parts: [{ kind: "text", text: "The version lives in three files, and they must match the newest numbered CHANGELOG heading." }],
+            },
+          ],
+        }),
+      ),
+    );
+  }
+  const mirror = (container: HTMLElement) => container.querySelector("pre")?.textContent ?? "";
+  const journalAgent = () => ({ ...fixtureAgents[0]!, hasSession: true });
+
+  it("draws the terminal's rows untouched, with no Display row, until the device opts in", async () => {
+    withProse();
+    const user = userEvent.setup();
+    const { container } = renderChat({ agent: journalAgent(), text: paneTextWithDraft(ROWS) });
+    expect(mirror(container)).toContain(ROWS);
+    await user.click(screen.getByRole("button", { name: "Display settings" }));
+    expect(screen.queryByRole("switch", { name: "Rejoin wrapped lines" })).toBeNull();
+  });
+
+  it("joins a wrap the log proves once opted in, and the Display row turns it back off", async () => {
+    localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ rejoinExperiment: true }));
+    withProse();
+    const user = userEvent.setup();
+    const { container } = renderChat({ agent: journalAgent(), text: paneTextWithDraft(ROWS) });
+    await waitFor(() => expect(mirror(container)).toContain(JOINED));
+
+    await user.click(screen.getByRole("button", { name: "Display settings" }));
+    const toggle = screen.getByRole("switch", { name: "Rejoin wrapped lines" });
+    expect(toggle).toBeChecked();
+    await user.click(toggle);
+    await waitFor(() => expect(mirror(container)).toContain(ROWS));
+  });
+});

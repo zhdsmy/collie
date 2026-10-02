@@ -80,6 +80,13 @@ export interface DisplayPrefs {
    * is why it is a pref at all rather than unconditional.
    */
   expandClippedReply: boolean;
+  /**
+   * Whether the mirror rejoins the rows the agent's TUI wrapped, where its session log proves the
+   * break was a wrap (default: true; lib/wrap-join.ts). Only consulted while the device has opted
+   * into the experiment (`DashPrefs.rejoinExperiment`), so the default is what opting in hands you.
+   * Costs the same live journal read Chat uses, answered 304 while nothing moved.
+   */
+  rejoinWraps: boolean;
 }
 
 /** The terminal font families offered in Settings. A closed list, not a free-text box: an
@@ -209,6 +216,7 @@ const DEFAULTS: DisplayPrefs = {
   rawTerminal: false,
   tapToFocus: true,
   expandClippedReply: true,
+  rejoinWraps: true,
 };
 
 function readFontFamily(value: string | undefined): FontFamily {
@@ -306,6 +314,7 @@ function loadPrefs(): DisplayPrefs {
       rawTerminal: asJsonBoolean(p.rawTerminal) ?? DEFAULTS.rawTerminal,
       tapToFocus: asJsonBoolean(p.tapToFocus) ?? DEFAULTS.tapToFocus,
       expandClippedReply: asJsonBoolean(p.expandClippedReply) ?? DEFAULTS.expandClippedReply,
+      rejoinWraps: asJsonBoolean(p.rejoinWraps) ?? DEFAULTS.rejoinWraps,
     };
   } catch {
     return DEFAULTS;
@@ -342,6 +351,8 @@ export interface UseDisplayPrefsReturn {
   setTapToFocus: (tapToFocus: boolean) => void;
   /** Toggle or explicitly set whether a clipped reply is re-shown in full above the mirror. */
   setExpandClippedReply: (expandClippedReply: boolean) => void;
+  /** Toggle or explicitly set whether the mirror rejoins wrapped rows. */
+  setRejoinWraps: (rejoinWraps: boolean) => void;
 }
 
 export function useDisplayPrefs(): UseDisplayPrefsReturn {
@@ -419,6 +430,14 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     });
   }, []);
 
+  const setRejoinWraps = useCallback((rejoinWraps: boolean) => {
+    setPrefs((p) => {
+      const next: DisplayPrefs = { ...p, rejoinWraps };
+      savePrefs(next);
+      return next;
+    });
+  }, []);
+
   return {
     prefs,
     setWrap,
@@ -430,5 +449,6 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     setRawTerminal,
     setTapToFocus,
     setExpandClippedReply,
+    setRejoinWraps,
   };
 }

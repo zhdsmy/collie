@@ -8,6 +8,7 @@ import { t } from "@/lib/i18n";
 import { BeltSizeControl } from "@/components/belt-size-control";
 import { ChangesControl } from "@/components/changes-control";
 import { ChatExperimentControl } from "@/components/chat-experiment-control";
+import { RejoinExperimentControl } from "@/components/rejoin-experiment-control";
 import { ConnectionInfo } from "@/components/connection-info";
 import { CrewSettingsCard } from "@/components/crew-settings-card";
 import { FontSettingsControl } from "@/components/font-settings";
@@ -170,8 +171,8 @@ export function SettingsExperimentsRoute() {
   return (
     <SettingsPage title="settings.section.experiments.title">
       <ExperimentsContract />
-      {/* One entry today (M41/11). Chat will not be the last thing to pass through here. */}
       <ChatExperimentControl />
+      <RejoinExperimentControl />
     </SettingsPage>
   );
 }

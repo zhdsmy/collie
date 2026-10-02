@@ -44,6 +44,7 @@ describe("coerceDashPrefs", () => {
       paneOrder: "place",
       chatExperiment: false,
       paneView: "chat",
+      rejoinExperiment: false,
     });
   });
 
@@ -65,6 +66,7 @@ describe("coerceDashPrefs", () => {
         paneOrder: "activity",
         chatExperiment: true,
         paneView: "terminal",
+        rejoinExperiment: true,
       }),
     ).toEqual({
       spacesOpen: false,
@@ -83,6 +85,7 @@ describe("coerceDashPrefs", () => {
       paneOrder: "activity",
       chatExperiment: true,
       paneView: "terminal",
+      rejoinExperiment: true,
     });
   });
 
@@ -145,6 +148,7 @@ describe("coerceDashPrefs", () => {
       paneOrder: "place",
       chatExperiment: false,
       paneView: "chat",
+      rejoinExperiment: false,
     });
   });
 });
@@ -171,6 +175,7 @@ describe("useDashPrefs", () => {
       paneOrder: "place",
       chatExperiment: false,
       paneView: "chat",
+      rejoinExperiment: false,
     });
   });
 
@@ -193,6 +198,7 @@ describe("useDashPrefs", () => {
     act(() => first.result.current.setPaneOrder("activity"));
     act(() => first.result.current.setChatExperiment(true));
     act(() => first.result.current.setPaneView("terminal"));
+    act(() => first.result.current.setRejoinExperiment(true));
 
     const second = renderHook(() => useDashPrefs());
     expect(second.result.current.prefs).toEqual({
@@ -212,6 +218,7 @@ describe("useDashPrefs", () => {
       paneOrder: "activity",
       chatExperiment: true,
       paneView: "terminal",
+      rejoinExperiment: true,
     });
   });
 

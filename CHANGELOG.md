@@ -30,6 +30,16 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Added
+
+- **An experiment rejoins the lines an agent's terminal wrapped.** Claude Code and Codex break prose
+  at their own pane width, so a phone wrapped every row a second time and a paragraph read as a full
+  row, a stub and an indented continuation. Turn on *Rejoin wrapped lines* under Settings →
+  Experiments and the mirror joins a row break wherever the agent's session log proves it was a
+  wrap, keeping list items, author line breaks, tool output and frames as drawn. The pane's Display
+  sheet then holds the switch. Joining is render-only, so find, links and copy still see the screen
+  as read, and a reply still being written keeps its breaks until it reaches the log.
+
 ## [1.15.3+collie.2] - 2026-10-02
 
 ### Changed

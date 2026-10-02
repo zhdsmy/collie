@@ -25,6 +25,9 @@ export const es: Dictionary = {
   "settings.experiments.chat.title": "Chat",
   "settings.experiments.chat.description": "Lee un panel como la conversación del propio agente en lugar de su terminal. Vuelve atrás desde el menú ⋮ de un panel.",
   "settings.experiments.chat.caveat": "Los paneles de Codex todavía no dibujan sus pasos, y un turno compactado puede quedarse en pantalla hasta que la sesión se relea.",
+  "settings.experiments.rejoin.title": "Unir líneas ajustadas",
+  "settings.experiments.rejoin.description": "Une las líneas que el terminal de un agente cortó para ajustarse a su propio ancho, donde el registro de la sesión demuestra que el corte fue un ajuste. Se desactiva por dispositivo desde la hoja Pantalla de un panel.",
+  "settings.experiments.rejoin.caveat": "Una respuesta que aún se está escribiendo conserva los cortes del terminal hasta llegar al registro, y solo se unen los agentes con registro de sesión.",
   // --- settings sections ---
   "settings.section.appearance.title": "Apariencia",
   "settings.section.appearance.blurb": "Tema, idioma, fuentes",
@@ -282,6 +285,8 @@ export const es: Dictionary = {
   "settings.display.tapToType.label": "Tocar para escribir",
   "settings.display.tapToType.hint":
     "Si esta activo, pulsar en cualquier parte abre el teclado. Si no, funciona como documento de texto y solo el editor abre el teclado.",
+  "settings.display.rejoin.label": "Unir líneas ajustadas",
+  "settings.display.rejoin.hint": "Une las líneas que el terminal del agente ajustó, donde el registro de la sesión lo demuestra. Actúa con el ajuste de línea activado.",
   "settings.display.fullReply.label": "Respuesta completa",
   "settings.display.fullReply.hint":
     "La terminal de un agente no guarda historial, así que una respuesta larga pierde su inicio. Si esta activo, se muestra completa desde el registro del agente, en lugar de las lineas que cubre.",

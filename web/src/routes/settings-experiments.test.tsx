@@ -55,3 +55,14 @@ describe("SettingsExperimentsRoute", () => {
     expect(stored().paneView).toBe("chat");
   });
 });
+
+describe("SettingsExperimentsRoute — rejoin", () => {
+  it("holds rejoining wrapped rows, off, and writes the opt-in", async () => {
+    const user = userEvent.setup();
+    renderExperiments();
+    const toggle = await screen.findByRole("switch", { name: "Rejoin wrapped lines" });
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    expect(stored().rejoinExperiment).toBe(true);
+  });
+});

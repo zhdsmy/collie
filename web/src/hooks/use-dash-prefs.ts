@@ -106,6 +106,12 @@ export interface DashPrefs {
    * terminal — the two are different questions, and the gate above is what answers the second.
    */
   paneView: PaneView;
+  /**
+   * Whether this device has opted into rejoining the rows an agent's TUI wrapped (Settings →
+   * Experiments, lib/wrap-join.ts). OFF by default. On, the Display sheet offers the switch that
+   * actually turns it on per device (`DisplayPrefs.rejoinWraps`); off, that row does not exist.
+   */
+  rejoinExperiment: boolean;
 }
 
 const STORAGE_KEY = "collie:dash-prefs:v1";
@@ -137,6 +143,7 @@ const DEFAULTS: DashPrefs = {
   paneOrder: "place",
   chatExperiment: false,
   paneView: "chat",
+  rejoinExperiment: false,
 };
 
 function coerceDepth(raw: JsonValue | undefined): number {
@@ -190,6 +197,7 @@ export function coerceDashPrefs(raw: JsonValue | undefined): DashPrefs {
     paneOrder: coercePaneOrder(p.paneOrder),
     chatExperiment: asJsonBoolean(p.chatExperiment) ?? DEFAULTS.chatExperiment,
     paneView: coercePaneView(p.paneView),
+    rejoinExperiment: asJsonBoolean(p.rejoinExperiment) ?? DEFAULTS.rejoinExperiment,
   };
 }
 
@@ -231,6 +239,7 @@ export interface UseDashPrefsReturn {
   setPaneOrder: (order: PaneOrder) => void;
   setChatExperiment: (on: boolean) => void;
   setPaneView: (view: PaneView) => void;
+  setRejoinExperiment: (on: boolean) => void;
 }
 
 export function useDashPrefs(): UseDashPrefsReturn {
@@ -261,6 +270,7 @@ export function useDashPrefs(): UseDashPrefsReturn {
   const setPaneOrder = useCallback((paneOrder: PaneOrder) => update({ paneOrder }), [update]);
   const setChatExperiment = useCallback((chatExperiment: boolean) => update({ chatExperiment }), [update]);
   const setPaneView = useCallback((paneView: PaneView) => update({ paneView }), [update]);
+  const setRejoinExperiment = useCallback((rejoinExperiment: boolean) => update({ rejoinExperiment }), [update]);
 
   const setBeltScale = useCallback(
     (scale: number) => update({ beltScale: coerceBeltScale(scale) }),
@@ -299,5 +309,6 @@ export function useDashPrefs(): UseDashPrefsReturn {
     setPaneOrder,
     setChatExperiment,
     setPaneView,
+    setRejoinExperiment,
   };
 }

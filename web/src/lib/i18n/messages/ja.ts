@@ -25,6 +25,9 @@ export const ja: Dictionary = {
   "settings.experiments.chat.title": "チャット",
   "settings.experiments.chat.description": "ペインをターミナルではなくエージェント自身の会話として読みます。ペインの ⋮ メニューから元に戻せます。",
   "settings.experiments.chat.caveat": "Codex のペインはまだ操作を描画せず、圧縮された発言はセッションを読み直すまで画面に残ることがあります。",
+  "settings.experiments.rejoin.title": "折り返し行の結合",
+  "settings.experiments.rejoin.description": "エージェントのターミナルが自身の幅に合わせて折り返した行を、セッション履歴で折り返しと確認できた箇所だけ結合します。ペインの「表示」シートからオフにできます。",
+  "settings.experiments.rejoin.caveat": "書き込み中の返答は履歴に保存されるまでターミナルの改行のままです。セッション履歴のあるエージェントだけが対象です。",
   // --- settings sections ---
   "settings.section.appearance.title": "外観",
   "settings.section.appearance.blurb": "テーマ、言語、フォント",
@@ -280,6 +283,8 @@ export const ja: Dictionary = {
   "settings.display.tapToType.label": "タップで入力開始",
   "settings.display.tapToType.hint":
     "有効時はターミナル領域のタップでキーボードが開きます。無効時はテキスト選択が優先され、キーボードは入力欄タップ時のみ開きます。",
+  "settings.display.rejoin.label": "折り返し行の結合",
+  "settings.display.rejoin.hint": "セッション履歴で確認できた、ターミナルの折り返しを結合します。行の折り返しがオンのときに有効です。",
   "settings.display.fullReply.label": "最新の返答を全文表示",
   "settings.display.fullReply.hint":
     "エージェントのターミナルはスクロールバックを保持しないため、長い返答は冒頭が失われます。有効時はエージェント自身のログから全文を表示し、該当する行を置き換えます。",

@@ -16,7 +16,7 @@
 // section off the index with no other edit.
 
 /** Every experiment the section holds today, newest last. */
-export const EXPERIMENTS = ["chat"] as const;
+export const EXPERIMENTS = ["chat", "rejoin"] as const;
 
 /** One experiment's name, so a card naming something nobody built is a compile error. */
 export type ExperimentId = (typeof EXPERIMENTS)[number];

@@ -1009,3 +1009,34 @@ describe("cell-filling glyphs", () => {
     expect(match.querySelectorAll(".cell-glyph")).toHaveLength(1);
   });
 });
+
+describe("wrapSource (rejoining the TUI's own wraps)", () => {
+  const screen = [
+    "  - Versioning is enforced. The version lives in three files, and must",
+    "    match the newest numbered CHANGELOG heading.",
+    "  - Fork delivery: you commit and push.",
+  ].join("\n");
+  const source =
+    "- **Versioning is enforced.** The version lives in three files, and must match the newest numbered CHANGELOG heading.\n- **Fork delivery:** you commit and push.";
+
+  it("draws a proven wrap as one line and keeps the author's breaks", () => {
+    const { container } = render(<AnsiOutput text={screen} wrapSource={source} />);
+    expect(container.querySelector("pre")!.textContent).toBe(
+      "  - Versioning is enforced. The version lives in three files, and must match the newest numbered CHANGELOG heading.\n  - Fork delivery: you commit and push.",
+    );
+  });
+
+  it("keeps find offsets on the screen as read, across a joined row", () => {
+    const onMatchCount = vi.fn();
+    const { container } = render(
+      <AnsiOutput text={screen} wrapSource={source} query="CHANGELOG" currentMatch={0} onMatchCount={onMatchCount} />,
+    );
+    expect(onMatchCount).toHaveBeenLastCalledWith(1);
+    expect(container.querySelector('[data-find-match="current"]')!.textContent).toBe("CHANGELOG");
+  });
+
+  it("joins nothing while Wrap is off", () => {
+    const { container } = render(<AnsiOutput text={screen} wrapSource={source} wrap={false} />);
+    expect(container.querySelector("pre")!.textContent).toBe(screen);
+  });
+});

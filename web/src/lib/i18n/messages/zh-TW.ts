@@ -34,6 +34,9 @@ export const zhTW: Dictionary = {
   "settings.experiments.chat.title": "聊天",
   "settings.experiments.chat.description": "把窗格當成代理自己的對話來讀，而不是終端機。可從窗格的 ⋮ 選單切回。",
   "settings.experiments.chat.caveat": "Codex 窗格尚未繪製其步驟；被壓縮的對話可能會持續顯示，直到工作階段重新讀取。",
+  "settings.experiments.rejoin.title": "合併終端機折行",
+  "settings.experiments.rejoin.description": "代理終端機依自身寬度折斷的行，只要工作階段記錄能證明是折行，就重新合併。可在窗格的「顯示」面板中關閉。",
+  "settings.experiments.rejoin.caveat": "仍在輸出的回覆在寫入記錄前保持終端機原有折行；只有具備工作階段記錄的代理會被合併。",
   // --- settings sections ---
   "settings.section.appearance.title": "外觀",
   "settings.section.appearance.blurb": "主題、語言、字型",
@@ -276,6 +279,8 @@ export const zhTW: Dictionary = {
   "settings.display.tapToType.label": "點擊喚出鍵盤",
   "settings.display.tapToType.hint":
     "啟用後點擊鏡像任意位置都會彈出鍵盤。關閉後鏡像以文件模式互動，僅點擊輸入框時喚出鍵盤。",
+  "settings.display.rejoin.label": "合併終端機折行",
+  "settings.display.rejoin.hint": "依工作階段記錄合併代理終端機折斷的行。僅在自動換行開啟時生效。",
   "settings.display.fullReply.label": "完整顯示最新回覆",
   "settings.display.fullReply.hint":
     "Agent 的終端機不保留回捲緩衝，較長回覆的開頭會遺失。啟用後會從 Agent 自身的記錄取出完整回覆，取代它所覆蓋的那幾行。",
