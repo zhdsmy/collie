@@ -20,7 +20,7 @@
 import { fetchPane, sendReply } from "./api";
 import { describeApiError, describeThrownError } from "./api-error-message";
 import { parseAnsi } from "./ansi";
-import { splitLines } from "./blocks";
+import { splitLines, type StyledLine } from "./blocks";
 import { t } from "./i18n";
 import { draftCarriesSend } from "./draft-match";
 import { adapterFor, type HarnessAdapter } from "./harness";
@@ -224,6 +224,8 @@ async function sendGuardedReplyOwned(args: GuardedReplyArgs): Promise<ReplyOutco
       if (aborted(args)) return cancelledReply();
       const lines = splitLines(parseAnsi(fresh.text));
       if (!adapter.composerReady?.(lines)) return { status: "blocked", error: noBoxMessage() };
+      const split = newlineRefusal(adapter, args.text, lines);
+      if (split !== null) return split;
       previousDraft = adapter.extractInputDraft(lines);
     } catch (e) {
       return { status: "error", error: message(e) };
@@ -250,6 +252,11 @@ async function sendGuardedReplyOwned(args: GuardedReplyArgs): Promise<ReplyOutco
         const fresh = await fetchPane(args.paneId, args.requestedLines, args.scope, args.signal);
         if (aborted(args)) return cancelledReply();
         const lines = splitLines(parseAnsi(fresh.text));
+        // A screen that changed under the send must not unlock a later chunk carrying a `\n` into
+        // an input that submits on it. The earlier chunks are already in the pane, so say so.
+        if (newlineRefusal(adapter, args.text, lines) !== null) {
+          return { status: "error", error: t("reply.refused.multilineMidway"), textDelivered: true };
+        }
         const draft = adapter.extractInputDraft(lines);
         if (draft !== previousDraft && adapter.composerReady?.(lines) && literalDraftCarriesSend(delivered, draft) && carriesReplyTail(delivered, draft)) {
           verified = true;
@@ -362,6 +369,19 @@ function noEchoMessage(): string {
 }
 
 /**
+ * The refusal for a multi-line message on an input that SUBMITS on a raw newline, or null.
+ * `pane.send_text` types each `\n` as a keypress, so there the message would be answered at its first
+ * line break and the rest typed into whatever comes next. Asked of every read that clears the text to
+ * go out — the pre-flight, the re-check after the pre-clear sweep, the read before a chunked send —
+ * because each can land on a different input than the read before it. No override fixes this, so it
+ * is an `error`, not a `blocked` that would offer "type anyway": the caller keeps the draft.
+ */
+function newlineRefusal(adapter: HarnessAdapter, text: string, lines: StyledLine[]): ReplyOutcome | null {
+  if (!/[\r\n]/.test(text) || !adapter.newlineSubmits?.(lines)) return null;
+  return { status: "error", error: t("reply.refused.multiline") };
+}
+
+/**
  * What the pre-flight decided. Two fields, and the second is the safety invariant of this module made
  * structural rather than conditional:
  *
@@ -431,6 +451,9 @@ async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promi
     return blind({ status: "blocked", error: noBoxMessage() });
   }
 
+  const split = newlineRefusal(adapter, args.text, seen);
+  if (split !== null) return blind(split);
+
   // The region the read's `true` was true OF. Computed here, from the same parse `composerReady` just
   // answered about, so the caller cannot bind its keys to anything but the screen that authorised
   // them — and cannot forget to, since it arrives as the argument.
@@ -460,7 +483,7 @@ async function preflight(adapter: HarnessAdapter, args: GuardedReplyArgs): Promi
         if (aborted(args)) return { abort: cancelledReply(), beforeDraft: undefined };
         const freshLines = splitLines(parseAnsi(fresh.text));
         if (composerReady(freshLines)) {
-          return { abort: null, beforeDraft: adapter.extractInputDraft(freshLines) };
+          return { abort: newlineRefusal(adapter, args.text, freshLines), beforeDraft: adapter.extractInputDraft(freshLines) };
         }
       } catch {
         return { abort: null, beforeDraft: undefined };

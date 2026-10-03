@@ -15,6 +15,7 @@ import { codexJournal } from "./codex.ts";
 import { cursorJournal } from "./cursor.ts";
 import { grokJournal } from "./grok.ts";
 import { hermesJournal } from "./hermes.ts";
+import { museJournal } from "./muse.ts";
 import { opencodeJournal } from "./opencode.ts";
 import { piJournal } from "./pi.ts";
 import type { JournalAdapter } from "./types.ts";
@@ -44,6 +45,8 @@ export interface JournalRoots {
   grok: readonly string[];
   /** Hermes' SessionDB directory — `state.db` lives at its top level. */
   hermes: readonly string[];
+  /** Muse's `sessions` directory — `YYYY/MM/DD/<uuid>/session.jsonl` lives under it. */
+  muse: readonly string[];
 }
 
 /**
@@ -61,6 +64,7 @@ export function buildJournalRegistry(roots: JournalRoots): Record<string, Journa
     opencodeJournal(roots.opencode),
     grokJournal(roots.grok),
     hermesJournal(roots.hermes),
+    museJournal(roots.muse),
   ];
   return Object.fromEntries(adapters.map((a) => [a.agent, a]));
 }
@@ -110,6 +114,17 @@ export const REPORTS_SESSION_ON_FIRST_PROMPT: readonly string[] = ["codex"];
  * two drift).
  */
 export const DRAWS_IMAGES_OFF_GRID: readonly string[] = ["omp", "pi"];
+
+/**
+ * Agents whose adapter finds the session itself when the pane names none.
+ *
+ * Herdr reports a session only for agents with an integration; Muse has none, so its panes never
+ * carry a ref and the adapter discovers the log by cwd instead (`JournalAdapter.discover`). The
+ * name list exists for the one consumer that works from names alone: `collie doctor`, whose
+ * history section must not advise `herdr integration install` for an agent no hook could ever
+ * report. Pinned against the adapters themselves in registry.test.ts, so the two cannot drift.
+ */
+export const DISCOVERS_OWN_SESSIONS: readonly string[] = ["muse"];
 
 /**
  * The same pairs as a Map, which is how {@link adapterFor} asks.
@@ -162,5 +177,6 @@ export const KNOWN_HARNESS_NAMES: readonly string[] = journalAgents(
     opencode: [],
     grok: [],
     hermes: [],
+    muse: [],
   }),
 );

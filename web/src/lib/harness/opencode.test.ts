@@ -18,7 +18,7 @@ import { detectPermissionDialog } from "./opencode/dialog";
 import { detectQuestionDialog } from "./opencode/question";
 import { detectQuestionTabs } from "./opencode/question-tabs";
 import { describeAdapterConformance } from "./conformance";
-import { promptsSameIdentity } from "./prompt-model";
+import { promptsEqual, promptsSameIdentity, splitWalk } from "./prompt-model";
 import { draftCarriesSend } from "../reply-action";
 
 // The opencode adapter's CI gate. Tier 1 chrome (composer strip, status/draft probes, the composer
@@ -130,6 +130,20 @@ describe("opencode permission dialog lift", () => {
   it("reject selection: the pointer is derivable there too", () => {
     const rejected = detectPermissionDialog(loadLines("oc--permission-bash--reject.txt"));
     expect(rejected?.model.options.at(-1)?.keys).toEqual(["Enter"]);
+  });
+
+  it("the pointer is a style, so the text is identical and only the plans tell two pointers apart", () => {
+    const here = detectPermissionDialog(loadLines("oc--permission-bash.txt"))!.model;
+    const moved = detectPermissionDialog(loadLines("oc--permission-bash--moved.txt"))!.model;
+    // The signature (also the bridge's text binding) cannot see the pointer.
+    expect(moved.signature).toBe(here.signature);
+    expect(moved.coreSignature).toBe(here.coreSignature);
+    // Every plan is walk-class (Right arrows, then Enter), so the identity ignores the counts ...
+    for (const o of [...here.options, ...moved.options]) expect(splitWalk(o.keys)).not.toBeNull();
+    expect(promptsSameIdentity(here, moved)).toBe(true);
+    // ... and `promptsEqual` is what refuses a stale tap: it compares the exact plans.
+    expect(promptsEqual(here, moved)).toBe(false);
+    expect(promptsEqual(here, detectPermissionDialog(loadLines("oc--permission-bash.txt"))!.model)).toBe(true);
   });
 
   it("wrapped selection: Right past Reject lands back on Allow once", () => {
@@ -352,6 +366,102 @@ describe("opencode composer chrome", () => {
     const draft = extractInputDraft(lines);
     expect(draft).toBe("test test");
     expect(draftCarriesSend("test test", draft)).toBe(true);
+  });
+
+  it("the #337 capture: sidebar glyphs stay out of the draft, the typed words stay in", () => {
+    // The reporter's real screen (oc--draft-sidebar-overlay.txt, opencode 1.18.31, Models sidebar open):
+    // the panel's right edge and bottom border share rows with the composer.
+    const lines = loadLines("oc--draft-sidebar-overlay.txt");
+    expect(locateComposer(lines)).not.toBeNull();
+    const draft = extractInputDraft(lines);
+    expect(draft).not.toBeNull();
+    expect(draft).not.toMatch(/[│└┘┌┐─]/);
+    expect(draft).toBe("stell mir eine Frage mit dem Frage tool");
+    expect(draftCarriesSend("stell mir eine Frage mit dem Frage tool", draft)).toBe(true);
+  });
+
+  it("a sidebar edge row and a shared-row border read as the typed words alone", () => {
+    // Live shape from a Models-sidebar pane: an edge-only row above the message, and the
+    // message sharing its row with the panel's bottom border. Both leaked into the join
+    // and the reply guard never verified the send.
+    const lines = splitLines(
+      parseAnsi(
+        [
+          "some transcript above",
+          "  ┃                                                                                                                                │                                   │",
+          "  ┃  stell mir eine Frage mit dem Frage tool                                                                                       └───────────────────────────────────┘",
+          "  ┃",
+          "  ┃  Sisyphus - Ultraworker · Muse Spark 1.3 Free OpenCode Zen                                                                     ~/repos/omarchy",
+          "  ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀",
+          "   /tmp/probe   1.18.32",
+        ].join("\n"),
+      ),
+    );
+    expect(locateComposer(lines)).not.toBeNull();
+    const draft = extractInputDraft(lines);
+    expect(draft).toBe("stell mir eine Frage mit dem Frage tool");
+    expect(draftCarriesSend("stell mir eine Frage mit dem Frage tool", draft)).toBe(true);
+  });
+  it("a pasted tree sharing a row with an overlay border keeps its words", () => {
+    // Suffix strip, opposite risk: the overlay corner run goes, the pasted words stay.
+    // A lone trailing `│` after words is deliberately NOT stripped — textually identical
+    // to a table cell divider, only geometry could tell them apart (needs a column-aware
+    // strip, out of scope) — so such a row keeps its edge and fails safe.
+    const lines = splitLines(
+      parseAnsi(
+        [
+          "some transcript above",
+          "  ┃  ├── src",
+          "  ┃  └── leaf   └─┘",
+          "  ┃",
+          "  ┃  Sisyphus - Ultraworker · Muse Spark 1.3 Free OpenCode Zen                                                                     ~/repos/omarchy",
+          "  ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀",
+          "   /tmp/probe   1.18.32",
+        ].join("\n"),
+      ),
+    );
+    const draft = extractInputDraft(lines);
+    expect(draft).toBe("├── src └── leaf");
+    expect(draftCarriesSend("├── src └── leaf", draft)).toBe(true);
+  });
+
+  it("a typed row ending in a plain rule keeps the rule", () => {
+    // The suffix strip demands a corner, junction, vertical or rule-block inside the run:
+    // bare horizontals never strip, so a typed emphasis divider survives verbatim.
+    const lines = splitLines(
+      parseAnsi(
+        [
+          "some transcript above",
+          "  ┃  summary ───",
+          "  ┃",
+          "  ┃  Sisyphus - Ultraworker · Muse Spark 1.3 Free OpenCode Zen                                                                     ~/repos/omarchy",
+          "  ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀",
+          "   /tmp/probe   1.18.32",
+        ].join("\n"),
+      ),
+    );
+    const draft = extractInputDraft(lines);
+    expect(draft).toBe("summary ───");
+    expect(draftCarriesSend("summary ───", draft)).toBe(true);
+  });
+  it("a pasted box row closing its own corner one space after its words stays whole", () => {
+    for (const row of ["╭─ title ─╮", "┌ Name ┐"]) {
+      const lines = splitLines(
+        parseAnsi(
+          [
+            "some transcript above",
+            `  ┃  ${row}`,
+            "  ┃",
+            "  ┃  Sisyphus - Ultraworker · Muse Spark 1.3 Free OpenCode Zen                                                                     ~/repos/omarchy",
+            "  ╹▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀",
+            "   /tmp/probe   1.18.32",
+          ].join("\n"),
+        ),
+      );
+      const draft = extractInputDraft(lines);
+      expect(draft).toBe(row);
+      expect(draftCarriesSend(row, draft)).toBe(true);
+    }
   });
 
   // THE REGRESSION THE FIRST SHAPE OF THAT RULE CAUSED, on a real capture rather than a hand-typed
@@ -799,6 +909,8 @@ describe("opencode tab-bar question dialogs lift", () => {
       // The footer's own word: Escape ends the turn, so "Cancel" would promise less than the key does.
       expect(review.cancelLabel).toBe("Dismiss");
       expect(review.backKeys).toEqual(["Left"]);
+      // A back key is one Left and no Enter, so it is not a pointer walk and is sent as it is.
+      expect(splitWalk(review.backKeys ?? [])).toBeNull();
       expect(review.answers).toEqual([{ question: "Colour", answer: "Red" }]);
       expect(review.incomplete).toBe(false);
       expect(review.pointer).toBeNull();

@@ -69,6 +69,9 @@ these details only in progress updates.
 Do not create GitHub Releases or restore `.github/workflows/` during upstream merges unless the
 operator explicitly requests it. This overrides the upstream automatic Release-publishing
 assumptions below; version consistency, CHANGELOG, build and test requirements still apply.
+The upstream Windows artifact and VM rehearsal gates apply to publishing Windows binaries;
+this fork's local macOS delivery runs host-platform tests and reports Windows runtime verification
+separately. It does not restore Windows CI or claim a Windows artifact was published.
 
 Collie is **SemVer**ed, and the version is **enforced**, so it never silently drifts.
 
@@ -148,7 +151,23 @@ release. 1.14.2 was cut this way on 2026-09-28.
    the flake), so a lock that moved in a feature commit describes a build nothing records. This is
    the only commit allowed to touch it, and `scripts/check-flake-lock.sh` refuses the others.
    Leaving it alone is the ordinary case; a release does not owe the lock a bump.
-6. **Run `scripts/check-version.sh`** — it must print `✓`. Then tag and push (next paragraph).
+6. **Run `scripts/check-version.sh`** — it must print `✓`.
+7. **Run `make win-rehearse LOCAL=collie` from the workspace root before the tag.** Windows is a
+   supported host ([ADR 0075](./.adr/0075-windows-is-a-supported-host.md)), and this rehearsal
+   installs, updates and rolls back a Windows build on the test VM, which no CI job can do. It
+   resets the VM's disk and takes 13 to 16 minutes, and it ships the commits of `LOCAL`, so commit
+   the release first. Read its table: a failed step holds the tag, and so does an unavailable VM.
+   The `windows.yml` run on the release commit must be green as well. If this release is the first
+   to carry the Windows zip, rewrite the "today" box in `docs/windows.md`, the README and
+   `docs/install.md` in the release commit: they say no release carries the zip. Then tag and push
+   (next paragraph).
+
+   A missing Windows zip stops the release once a published release has carried one, from
+   2026-11-15 (`WINDOWS_ASSET_MANDATORY_FROM` in `scripts/windows-asset.ts`), and whenever the
+   releases API does not answer. For a Linux hotfix while the Windows job is broken, set the
+   repository variable `COLLIE_WINDOWS_ASSET_OVERRIDE` to `optional` (Settings > Secrets and
+   variables > Actions > Variables) before the tag, and delete it right after the release: the run
+   warns loudly while it is set. To move the date instead, change that one constant in a commit.
 
 **A PR from a fork is the exception: leave all four files alone.** Bump nothing, add no CHANGELOG
 line — send the functional commits only. The version is the maintainer's to pick, because it depends
@@ -740,8 +759,10 @@ its own `COLLIE_STANDBY_HOST` and neither gate reaches it; don't route it throug
 **The bridge makes no outbound call and spawns no long-running child for content — unless the
 operator ran `collie stt setup`.** Speech-to-text (`bridge/stt/`, CLI `cli/stt.ts`) is a registered
 provider seam, absent until that verb writes `stt.json`: it then holds a provider credential at 0600,
-opens an operator-configured outbound path carrying microphone audio, and on the `codex` provider
-spawns a `codex app-server` child. All three costs are declined by doing nothing, the local-engine
+opens an operator-configured outbound path carrying microphone audio, on the `codex` provider
+spawns a `codex app-server` child, and on the `local-cli` provider spawns the operator's named
+command as the bridge user, once per dictation, argv only and never a shell (ADR 0029, addendum
+2026-10-03). Every one of these costs is declined by doing nothing, the local-engine
 configuration keeps the egress on loopback, and the wire identity is probed honest-first and recorded
 ([ADR 0029](./.adr/0029-speech-to-text-is-a-provider-seam-collie-owns.md)). Setup is a CLI act, never
 a web form, for the reason pairing is.

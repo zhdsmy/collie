@@ -66,6 +66,15 @@ for (const [theme, width] of [["light", 320], ["dark", 320], ["light", 1280]] as
         await expect(page.getByRole("button", { name, exact: true })).toHaveCount(0);
       }
       await page.screenshot({ path: testInfo.outputPath(`claude-settings-${screen.name}-${theme}.png`) });
+      await button.click();
+      const armed = card.getByRole("button", { name: "Tap again to send Esc", exact: true });
+      await expect(armed).toBeVisible();
+      await expect(armed).toHaveText("Esc");
+      expect(await armed.boundingBox()).toEqual(target);
+      expect(await card.boundingBox()).toEqual(frame);
+      if (screen.name === "Status") {
+        await page.screenshot({ path: testInfo.outputPath(`claude-settings-armed-${theme}.png`) });
+      }
     }
 
     // A real /model capture still uses the existing menu card after native Settings output.
@@ -75,3 +84,35 @@ for (const [theme, width] of [["light", 320], ["dark", 320], ["light", 1280]] as
     await expect(page.getByRole("button", { name: "Set as default", exact: true })).toBeVisible();
   });
 }
+
+test("unknown dialog keeps the compact Chinese caption and small Esc while armed at 320px", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await installApiStub(page);
+  await page.addInitScript(() => localStorage.setItem("collie:locale:v1", "zh"));
+  const text = readFileSync(new URL("../src/fixtures/panes/claude--v2283-plugin-marketplaces-add-form--w82.txt", import.meta.url), "utf8");
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) =>
+    route.fulfill({ json: { paneId: "w1:p1", text, truncated: false, revision: 1 } }),
+  );
+  const writes: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST") writes.push(request.url());
+  });
+  await page.goto("/pane/w1:p1");
+  const card = page.getByRole("group", { name: "Collie 未识别此界面", exact: true });
+  const button = card.getByRole("button", { name: "Esc", exact: true });
+  await expect(button).toBeVisible();
+  const frame = await card.boundingBox();
+  const target = await button.boundingBox();
+  expect(frame!.height).toBeLessThanOrEqual(52);
+  expect(target!.width).toBeGreaterThanOrEqual(44);
+  expect(target!.height).toBeGreaterThanOrEqual(44);
+  writes.length = 0;
+  await button.click();
+  const armed = card.getByRole("button", { name: "再次点击以发送 Esc", exact: true });
+  await expect(armed).toHaveText("Esc");
+  expect(await armed.boundingBox()).toEqual(target);
+  expect(await card.boundingBox()).toEqual(frame);
+  expect(writes).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("unread-dialog-armed-zh-320.png") });
+});

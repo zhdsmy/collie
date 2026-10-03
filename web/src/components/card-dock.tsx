@@ -168,6 +168,7 @@ function liftedCard({
     return (
       <UnreadDialogBlock
         cancel={unreadBlock.cancel}
+        lines={unreadBlock.lines}
         viewport={unreadBlock.viewport}
         disabled={promptDisabled || !onUnreadDialogAction}
         onAction={(key) => onUnreadDialogAction?.(key, unreadBlock.cancel)}

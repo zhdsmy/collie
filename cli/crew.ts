@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { DEFAULT_PORT, envBool, nonLoopbackBindRefusal, resolveBridgeHost } from "../bridge/config.ts";
 import type { JsonObject, JsonValue } from "../bridge/json.ts";
 import type { AuditLog } from "../bridge/audit.ts";
+import { HOST, type Host } from "../bridge/host.ts";
 import {
   acceptEnrollment,
   approvePromotion,
@@ -162,6 +163,11 @@ export interface CrewDeps {
   prompt?(question: string): string | null | Promise<string | null>;
   /** This machine's own hostname — the default `--label`, so a member is named after its box. */
   hostname?(): string;
+  /**
+   * The machine this runs on (`bridge/host.ts`). A test pins `hostFor("win32")` so the Windows
+   * refusal runs on Linux, and `hostFor("linux")` so a Windows test run still reaches the verbs.
+   */
+  readonly host: Host;
 }
 
 /**
@@ -603,6 +609,29 @@ async function clearOwnHerdTags(deps: CrewDeps): Promise<void> {
   }
 }
 
+// ── Windows runs alone (M43) ─────────────────────────────────────────────────
+
+/**
+ * Why the verbs that form a crew or change who leads it refuse on Windows: `crew invite`, `crew join`
+ * (and `collie join`), `crew add`, `crew deputy`, `crew approve-promote` and `collie promote`. They
+ * put this machine into a crew, take a member in, or hand the lead to someone; nothing about a crew
+ * was checked on Windows in this release. The verbs that read or leave a crew stay open, so a store
+ * carried over can still be inspected and dropped.
+ */
+export const WINDOWS_CREW_SENTENCE =
+  "On Windows, Collie runs on one machine only: a Windows machine cannot join, lead or change a crew in this release, and nothing was changed. See docs/windows.md.";
+
+/**
+ * Refuse a crew-forming verb on a Windows host, before any argument, store, network or terminal is
+ * touched. True when it refused; the caller returns `EXIT.FAIL`, as `collie update` does for its
+ * own Windows refusal.
+ */
+export function refuseCrewOnWindows(deps: Pick<CrewDeps, "host" | "io">): boolean {
+  if (deps.host.platform !== "win32") return false;
+  deps.io.err(`error: ${WINDOWS_CREW_SENTENCE}`);
+  return true;
+}
+
 // ── crew invite (on the lead) ────────────────────────────────────────────────
 
 /**
@@ -612,6 +641,7 @@ async function clearOwnHerdTags(deps: CrewDeps): Promise<void> {
  * `crew invite`, which is the correct price.
  */
 export async function cmdCrewInvite(deps: CrewDeps, args: readonly string[]): Promise<number> {
+  if (refuseCrewOnWindows(deps)) return EXIT.FAIL;
   const { flags } = parseCrewArgs(args);
   const data = await ensureStore(deps, flags.as);
   if (data === null) return EXIT.FAIL;
@@ -805,6 +835,7 @@ function refusePlaintext(deps: CrewDeps): void {
  * did not answer is `5`.
  */
 export async function cmdJoin(deps: CrewDeps, args: readonly string[]): Promise<number> {
+  if (refuseCrewOnWindows(deps)) return EXIT.FAIL;
   const { positional, flags, bare } = parseCrewArgs(args, ["insecure"]);
   const [address, tokenArg] = positional;
   if (address === undefined) {
@@ -2067,6 +2098,7 @@ export async function cmdCrewSetAddress(deps: CrewDeps, args: readonly string[])
  * the consent. Same for `--cancel`: the bridge must *forget* it, which is the same mechanism.
  */
 export async function cmdCrewApprovePromote(deps: CrewDeps, args: readonly string[]): Promise<number> {
+  if (refuseCrewOnWindows(deps)) return EXIT.FAIL;
   // `cancel` is a BARE flag. Anything else and `--cancel` would swallow the following token as its
   // value — which, on a verb whose one argument is a member id, silently approves nobody.
   const { positional, bare } = parseCrewArgs(args, ["force", "cancel"]);
@@ -2136,6 +2168,7 @@ export async function cmdCrewApprovePromote(deps: CrewDeps, args: readonly strin
  * lead is gone.
  */
 export async function cmdPromote(deps: CrewDeps, args: readonly string[]): Promise<number> {
+  if (refuseCrewOnWindows(deps)) return EXIT.FAIL;
   const { flags, bare } = parseCrewArgs(args);
   const force = bare.has("force");
   const data = await deps.store.load();
@@ -2459,6 +2492,7 @@ export function crewDeps(
     prompt: (question) => (process.stdin.isTTY === true ? prompt(question) : null),
     hostname: () => hostname(),
     clearNotifications: (tags) => clearViaPush(base.ctx, tags),
+    host: HOST,
   };
 }
 

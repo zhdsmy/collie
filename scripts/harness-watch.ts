@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { HOST } from "../bridge/host.ts";
 import { loadContext } from "../cli/context";
 import { installedVersion } from "./harness-drift";
 import { loadCatalog, replayCatalog, type AdaptationFeature, type FeatureReplayResult } from "./harness-canary/catalog";
@@ -140,13 +141,13 @@ function counts(features: readonly FeatureHealth[]): string {
 }
 
 function notify(report: HealthReport): void {
-  if (process.platform !== "darwin") return;
+  if (HOST.platform !== "darwin") return;
   const result = Bun.spawnSync(["osascript", "-e", "on run argv", "-e", 'display notification (item 1 of argv) with title "Collie card checks"', "-e", "end run", counts(report.features)], { timeout: 5_000 });
   if (result.exitCode) console.error("harness-watch: notification failed; latest.md still contains the findings");
 }
 
 function install(dir: string): void {
-  if (process.platform !== "darwin") throw new Error("--install uses macOS LaunchAgents");
+  if (HOST.platform !== "darwin") throw new Error("--install uses macOS LaunchAgents");
   const launchDir = join(homedir(), "Library/LaunchAgents");
   mkdirSync(launchDir, { recursive: true });
   const plist = join(launchDir, `${LABEL}.plist`);

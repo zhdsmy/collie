@@ -446,6 +446,46 @@
       "verified": { "version": "1.3.0", "date": "2026-09-18", "how": "captured live ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#muse-corpus" }
     },
     {
+      "id": "omp.resume",
+      "agent": "omp",
+      "origin": "upstream",
+      "sources": ["web/src/lib/harness/omp/resume.ts", "web/src/lib/harness/omp/index.ts"],
+      "tests": ["web/src/lib/harness/omp/resume.test.ts", "web/src/lib/prompt-action.test.ts"],
+      "fixtures": [{ "path": "web/src/fixtures/panes/omp--v18-4-resume.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "live": false,
+      "verified": { "version": "18.4.10", "date": "2026-10-03", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/omp--v18-4-resume.txt" }
+    },
+    {
+      "id": "omp.model",
+      "agent": "omp",
+      "origin": "upstream",
+      "sources": ["web/src/lib/harness/omp/switch.ts", "web/src/lib/harness/omp/index.ts"],
+      "tests": ["web/src/lib/harness/omp/switch.test.ts", "web/src/lib/prompt-action.test.ts"],
+      "fixtures": [{ "path": "web/src/fixtures/panes/omp--v18-4-switch.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "live": false,
+      "verified": { "version": "18.4.10", "date": "2026-10-03", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/omp--v18-4-switch.txt" }
+    },
+    {
+      "id": "omp.ask",
+      "agent": "omp",
+      "origin": "upstream",
+      "sources": ["web/src/lib/harness/omp/ask.ts", "web/src/lib/harness/omp/answer-editor.ts", "web/src/lib/harness/omp/index.ts"],
+      "tests": ["web/src/lib/harness/omp/ask.test.ts", "web/src/lib/prompt-action.test.ts", "web/src/lib/reply-action.test.ts"],
+      "fixtures": [{ "path": "web/src/fixtures/panes/omp--v18-4-ask-single.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "live": false,
+      "verified": { "version": "18.4.10", "date": "2026-10-03", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/omp--v18-4-ask-single.txt" }
+    },
+    {
+      "id": "omp.approval",
+      "agent": "omp",
+      "origin": "upstream",
+      "sources": ["web/src/lib/harness/omp/approval.ts", "web/src/lib/harness/omp/index.ts"],
+      "tests": ["web/src/lib/harness/omp/approval.test.ts", "web/src/lib/prompt-action.test.ts"],
+      "fixtures": [{ "path": "web/src/fixtures/panes/omp--v18-4-approval-bash.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "live": false,
+      "verified": { "version": "18.4.10", "date": "2026-10-03", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/omp--v18-4-approval-bash.txt" }
+    },
+    {
       "id": "omp.composer-hints",
       "agent": "omp",
       "origin": "upstream",
@@ -570,8 +610,8 @@
       "id": "shared.unread-dialog",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/lib/harness/index.ts", "web/src/lib/harness/unread-dialog-model.ts"],
-      "tests": ["web/src/lib/harness/unread-dialog.test.ts"],
+      "sources": ["web/src/lib/harness/index.ts", "web/src/lib/harness/unread-dialog-model.ts", "web/src/components/unread-dialog-block.tsx"],
+      "tests": ["web/src/lib/harness/unread-dialog.test.ts", "web/src/components/unread-dialog-block.test.tsx", "web/e2e/claude-settings.spec.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/claude--v2283-slash-usage.txt", "agent": "claude", "expect": { "block": "unread-dialog", "viewportNonEmpty": true } }],
       "live": false,
       "verified": null

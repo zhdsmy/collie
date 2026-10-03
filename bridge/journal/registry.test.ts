@@ -4,6 +4,7 @@ import {
   adapterFor,
   AGENT_ALIASES,
   buildJournalRegistry,
+  DISCOVERS_OWN_SESSIONS,
   DRAWS_IMAGES_OFF_GRID,
   journalAgents,
   KNOWN_HARNESS_NAMES,
@@ -22,6 +23,7 @@ const roots = {
   opencode: ["/o"],
   grok: ["/g"],
   hermes: ["/h"],
+  muse: ["/m"],
 };
 
 describe("buildJournalRegistry", () => {
@@ -32,6 +34,7 @@ describe("buildJournalRegistry", () => {
       "cursor",
       "grok",
       "hermes",
+      "muse",
       "opencode",
       "pi",
     ]);
@@ -46,7 +49,7 @@ describe("buildJournalRegistry", () => {
 describe("adapterFor", () => {
   const registry = buildJournalRegistry(roots);
 
-  test.each(["claude", "codex", "cursor", "pi", "opencode", "grok", "hermes"])("resolves %s", (agent) => {
+  test.each(["claude", "codex", "cursor", "pi", "opencode", "grok", "hermes", "muse"])("resolves %s", (agent) => {
     expect(adapterFor(registry, agent)?.agent).toBe(agent);
   });
 
@@ -114,4 +117,16 @@ describe("the frontend mirror", () => {
     const registry = buildJournalRegistry(roots);
     for (const agent of DRAWS_IMAGES_OFF_GRID) expect(adapterFor(registry, agent)).toBeDefined();
   });
+});
+
+// `DISCOVERS_OWN_SESSIONS` names exactly the adapters that implement `discover` — derived from the
+// adapters themselves, so neither side can drift. `collie doctor` reads the list; the routes read
+// the capability.
+test("DISCOVERS_OWN_SESSIONS names exactly the discovering adapters", () => {
+  const registry = buildJournalRegistry(roots);
+  const discovering = Object.entries(registry)
+    .filter(([, adapter]) => adapter.discover !== undefined)
+    .map(([agent]) => agent)
+    .toSorted();
+  expect([...DISCOVERS_OWN_SESSIONS].toSorted()).toEqual(discovering);
 });

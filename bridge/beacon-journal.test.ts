@@ -161,6 +161,7 @@ async function fixture() {
     opencode: [],
     grok: [],
     hermes: [],
+    muse: [],
   });
   return { base, claude, pi, piLog, escape, outside: `${base}/outside/secrets.jsonl`, registry };
 }
