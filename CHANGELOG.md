@@ -30,9 +30,11 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.16.0+collie.1] - 2026-10-03
+
 ### Changed
 
-- **Collie follows upstream with safer dialogs and more agent integrations.** Merge v1.16.0 with Oh My Pi cards, Muse history, optional local transcription and Access verification, plus experimental Windows support; preserve Collie layouts, direct-input controls and current agent adaptations.
+- **Collie follows upstream with safer dialogs and more agent integrations.** Merge v1.16.0 with Oh My Pi cards, Muse history, optional local transcription and Access verification, plus experimental Windows support; preserve Collie layouts, direct-input controls and current agent adaptations. ([1e9f05d1](https://github.com/zhdsmy/collie/commit/1e9f05d1))
 
 ## [1.15.3+collie.7] - 2026-10-03
 
