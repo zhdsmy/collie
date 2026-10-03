@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.16.1+collie.1] - 2026-10-04
+
 ### Fixed
 
-- **Finished alerts and OMP input follow the latest upstream fixes.** Merge v1.16.1 to notify on working-to-idle completion, recognise OMP claude and borderless composers, and correct Windows tool lookup and doctor guidance; retain Collie notification acknowledgement and existing card layouts.
+- **Finished alerts and OMP input follow the latest upstream fixes.** Merge v1.16.1 to notify on working-to-idle completion, recognise OMP claude and borderless composers, and correct Windows tool lookup and doctor guidance; retain Collie notification acknowledgement and existing card layouts. ([c265ab8f](https://github.com/zhdsmy/collie/commit/c265ab8f))
 
 ## [1.16.0+collie.1] - 2026-10-03
 
