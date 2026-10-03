@@ -406,6 +406,7 @@ export const en = {
   // --- sendMode (the armed "typing straight through" indicator) ---
   "sendMode.armed.title": "Typing into terminal",
   "sendMode.armed.hint": "keys go straight through",
+  "sendMode.armed.draftKept": "draft kept",
   "sendMode.armed.stop": "Stop",
 
   // --- chat (the pane view shell: header, mirror, switcher) ---
@@ -1101,7 +1102,6 @@ export const en = {
   "stt.error.micRefused": "Microphone access was refused.",
 
   // --- directTyping (the composer's "Type into terminal" mode, hooks/use-direct-typing.ts) ---
-  "directTyping.status.draftPending": "Send or clear the draft before typing into the terminal.",
   "directTyping.status.armed": "Typing into the terminal — keys send as you type.",
   "directTyping.status.disarmed": "Back to sending replies",
   "directTyping.status.interrupted":

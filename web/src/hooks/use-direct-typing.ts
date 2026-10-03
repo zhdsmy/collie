@@ -76,11 +76,6 @@ function keyForKeyDown(key: string): string | undefined {
 interface DirectTypingOptions {
   paneKey: string;
   inputRef: RefObject<HTMLTextAreaElement | null>;
-  /** The durable reply draft, read at the moment of arming rather than captured at render. A getter,
-   *  because the password-prompt handoff (components/no-echo-notice.tsx) clears the draft and arms in
-   *  the SAME tick: a value captured at render would still be the secret the operator just typed, and
-   *  the refusal below would block the very remedy being offered. */
-  replyDraft: () => string;
   canActivate: () => boolean;
   /** True while the view the mode belongs to has stopped being live: a gone pane, a read-only
    *  device, or the idle pause. Arming survives none of them — see the disarm effect below. */
@@ -122,7 +117,6 @@ interface DirectTypingOptions {
 export function useDirectTyping({
   paneKey,
   inputRef,
-  replyDraft,
   canActivate,
   suspended,
   sendKeys,
@@ -222,12 +216,9 @@ export function useDirectTyping({
 
   function activate() {
     if (!canActivate()) return;
-    // A buffered reply and live keystrokes cannot safely share one field. Keep the durable draft
-    // exactly where it is and make the user send or clear it before arming direct terminal input.
-    if (replyDraft().length > 0) {
-      setStatus(t("directTyping.status.draftPending"), "info");
-      return;
-    }
+    // A reply draft does not stand in the way. The armed field shows this mode's own buffer, never
+    // the draft, so the two never share a field: the draft waits untouched, in the composer's state
+    // and its store, and is in the box again when the mode ends. Nothing of it goes to the pane.
     onActivate();
     accessorySession.current += 1;
     // A new armed session owns the field from here: any blur still pending belongs to an older one,

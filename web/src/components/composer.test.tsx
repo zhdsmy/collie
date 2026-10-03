@@ -1119,18 +1119,34 @@ describe("Composer — typing into the terminal", () => {
     expect(screen.getByTestId("status")).toHaveTextContent(/pane unavailable/i);
   });
 
-  it("refuses activation while a buffered reply exists", async () => {
+  // A draft no longer stands between the operator and Type: it is kept out of sight, untouched, and
+  // none of it reaches the pane, while the armed field takes only live keys.
+  it("arms over a buffered reply, keeps it out of the field, and gives it back on Stop", async () => {
     const user = userEvent.setup();
+    const sent: string[] = [];
+    let replyCalls = 0;
+    server.use(
+      replyHandler(() => replyCalls++),
+      http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        // SAFETY: this route receives the app-owned sendKeys payload under test.
+        const body = await request.json() as { keys: string[] };
+        sent.push(...body.keys);
+        return HttpResponse.json({ ok: true });
+      }),
+    );
     renderComposerWithStatus();
-    const box = screen.getByPlaceholderText(/type a reply/i);
-    await user.type(box, "keep this draft");
+    await user.type(screen.getByPlaceholderText(/type a reply/i), "keep this draft");
 
-    // The refusal belongs on the named choice, where there is somewhere to explain it.
-    fireEvent.click(screen.getByRole("button", { name: /^type into terminal$/i }));
+    const box = startDirectTyping();
+    expect(box).toHaveValue("");
+    expect(screen.getByText(/draft kept/i)).toBeInTheDocument();
+    fireEvent.change(box, { target: { value: "q" } });
+    await waitFor(() => expect(sent).toEqual(["q"]));
 
-    expect(screen.getByPlaceholderText(/type a reply/i)).toHaveValue("keep this draft");
-    expect(screen.queryByPlaceholderText(/type into the terminal/i)).not.toBeInTheDocument();
-    expect(screen.getByTestId("status")).toHaveTextContent(/send or clear the draft/i);
+    fireEvent.click(screen.getByRole("button", { name: /^stop$/i }));
+    expect(await screen.findByPlaceholderText(/type a reply/i)).toHaveValue("keep this draft");
+    expect(sent).toEqual(["q"]);
+    expect(replyCalls).toBe(0);
   });
 
   it("resets when the composer changes panes", () => {
@@ -3677,14 +3693,16 @@ describe("Composer — the belt's clear control (M40 spec 04, #291)", () => {
 
     it("is inert while Type is armed: the field is a live keyboard then, not a draft", async () => {
       const user = userEvent.setup();
-      // Chips alone with no text: the one draft Type can still arm over.
       saveDraft(undefined, "w1:p1", "", [chip], 2);
       renderComposer();
       await user.click(screen.getByRole("button", { name: "Type into terminal" }));
+      // The chips wait out of sight with the rest of the draft, and the X cannot reach them there.
+      expect(screen.queryByRole("button", { name: "Remove a.png" })).toBeNull();
       const x = xButton()!;
       expect(x).toHaveAttribute("aria-disabled", "true");
       await user.click(x);
-      expect(screen.getByRole("button", { name: "Remove a.png" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: /^stop$/i }));
+      expect(await screen.findByRole("button", { name: "Remove a.png" })).toBeInTheDocument();
     });
 
     it("arming Type ends an open Undo window", async () => {

@@ -375,6 +375,7 @@ export const ko: Dictionary = {
   // --- sendMode (the armed "typing straight through" indicator) ---
   "sendMode.armed.title": "터미널 직접 입력 모드",
   "sendMode.armed.hint": "키 입력이 터미널로 즉시 전송됩니다",
+  "sendMode.armed.draftKept": "초안 보관됨",
   "sendMode.armed.stop": "중지",
 
   // --- chat (the pane view shell: header, mirror, switcher) ---
@@ -1025,7 +1026,6 @@ export const ko: Dictionary = {
   "stt.error.micRefused": "마이크 접근 권한이 거부되었습니다.",
 
   // --- directTyping (the composer's "Type into terminal" mode, hooks/use-direct-typing.ts) ---
-  "directTyping.status.draftPending": "터미널에 입력하려면 먼저 작성 중인 초안을 전송하거나 삭제하세요.",
   "directTyping.status.armed": "터미널 직접 입력 활성화됨. 키 입력이 즉시 전달됩니다.",
   "directTyping.status.disarmed": "일반 메시지 전송 모드로 복귀",
   "directTyping.status.interrupted": "터미널 입력 중단됨. 창 뷰가 끊겼습니다.",

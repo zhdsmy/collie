@@ -15,14 +15,20 @@ import { t } from "@/lib/i18n";
 // HostChip, because a write names its target; a mode that streams keystrokes into a terminal without
 // saying WHICH machine would be the one write path that doesn't. That component does not exist on
 // main, so the chip goes in at the merge, next to the label below.
-export function DirectTypingStrip({ onStop }: { onStop: () => void }) {
+//
+// WITH A DRAFT IN THE BOX, the hint says it is kept instead. Arming hides the draft rather than
+// refusing it, and a draft that vanished without a word would read as lost.
+export function DirectTypingStrip({ draftKept, onStop }: { draftKept: boolean; onStop: () => void }) {
   useLocale();
   return (
     <div className="flex items-center gap-2 px-1 pb-1 text-xs text-primary">
       <Keyboard className="size-3.5 shrink-0" />
       <span className="min-w-0 flex-1 truncate">
         <span className="font-medium">{t("sendMode.armed.title")}</span>
-        <span className="text-muted-foreground"> — {t("sendMode.armed.hint")}</span>
+        <span className="text-muted-foreground">
+          {" — "}
+          {draftKept ? t("sendMode.armed.draftKept") : t("sendMode.armed.hint")}
+        </span>
       </span>
       <button
         type="button"

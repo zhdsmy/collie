@@ -490,8 +490,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const direct = useDirectTyping({
     paneKey: `${scopeId}\0${paneId}`,
     inputRef,
-    // The ref, not `input`: the password-prompt handoff clears the draft and arms in one tick.
-    replyDraft: () => inputValueRef.current,
     canActivate: () => !(locked || sending || uploading),
     // `locked` covers a gone pane, a read-only device, and the idle pause. A LOST CONNECTION is
     // deliberately not added here: the mode already disarms on a failed batch, which is the same
@@ -1574,10 +1572,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   ? null
                   : () => {
                       // The draft is a password we know the pane never accepted, and it is already
-                      // in localStorage. Clear it BEFORE arming — both because leaving a secret in a
-                      // 48h store is the leak this issue asked about, and because `activate` refuses
-                      // while any draft is present, which would make the offered remedy fail on the
-                      // spot.
+                      // in localStorage. Clear it BEFORE arming: arming keeps any draft for when the
+                      // mode ends, and leaving a secret in a 48h store is the leak this issue asked
+                      // about.
                       updateInput("");
                       requestDrawer(null);
                       direct.activate();
@@ -1598,7 +1595,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               see the component. */}
           {direct.active && (
             <div id="composer-direct-keys">
-              <DirectTypingStrip onStop={() => direct.deactivate()} />
+              <DirectTypingStrip draftKept={hasDraft} onStop={() => direct.deactivate()} />
               <DirectKeyboardAccessory
                 key={`${direct.accessorySession}:${direct.row}`}
                 row={direct.row}
@@ -1685,8 +1682,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             // Chips take a line of their own ABOVE the row (ADR 0060). `flex-wrap` plus a
             // full-basis strip does that without re-parenting the field, so the textarea is never
             // remounted (and never loses its caret) when the first chip arrives. With no chips the
-            // class is absent and the box is exactly the one row it was.
-            attachments.length > 0 && "flex-wrap",
+            // class is absent and the box is exactly the one row it was. Armed Type keeps the
+            // chips with the rest of the draft, out of sight until the mode ends.
+            attachments.length > 0 && !direct.active && "flex-wrap",
             // A composer nobody may write to says so as a surface, not just as a placeholder:
             // the fill recedes and both buttons in the box are disabled anyway.
             locked && "bg-muted/40",
@@ -1695,7 +1693,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             direct.active && "border-primary focus-within:border-primary focus-within:ring-primary",
           )}
         >
-          {attachments.length > 0 && (
+          {attachments.length > 0 && !direct.active && (
             // The strip scrolls sideways when the chips outrun the box; `pt-1 px-1` is room for
             // the corner badge and the x, which stand 4px outside each chip.
             <ul

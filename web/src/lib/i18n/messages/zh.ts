@@ -364,6 +364,7 @@ export const zh: Dictionary = {
   // --- sendMode (the armed "typing straight through" indicator) ---
   "sendMode.armed.title": "终端直接输入",
   "sendMode.armed.hint": "按键将直接发送到终端",
+  "sendMode.armed.draftKept": "草稿已保留",
   "sendMode.armed.stop": "停止",
 
   // --- chat (the pane view shell: header, mirror, switcher) ---
@@ -1012,7 +1013,6 @@ export const zh: Dictionary = {
   "stt.error.micRefused": "麦克风访问权限被拒绝。",
 
   // --- directTyping (the composer's "Type into terminal" mode, hooks/use-direct-typing.ts) ---
-  "directTyping.status.draftPending": "直接输入终端前，需先发送或清空草稿。",
   "directTyping.status.armed": "已直连终端，按键实时发送。",
   "directTyping.status.disarmed": "已切换为发送普通消息",
   "directTyping.status.interrupted": "已断开终端直连：窗格视图被中断。",

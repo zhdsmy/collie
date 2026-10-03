@@ -377,6 +377,7 @@ export const ja: Dictionary = {
   // --- sendMode (the armed "typing straight through" indicator) ---
   "sendMode.armed.title": "ターミナル直接入力中",
   "sendMode.armed.hint": "キー入力は直接送信されます",
+  "sendMode.armed.draftKept": "下書きは保持中",
   "sendMode.armed.stop": "停止",
 
   // --- chat (the pane view shell: header, mirror, switcher) ---
@@ -1027,8 +1028,6 @@ export const ja: Dictionary = {
   "stt.error.micRefused": "マイクへのアクセスが拒否されました。",
 
   // --- directTyping (the composer's "Type into terminal" mode, hooks/use-direct-typing.ts) ---
-  "directTyping.status.draftPending":
-    "ターミナルへ入力する前に、下書きを送信または破棄してください。",
   "directTyping.status.armed": "ターミナル直接入力中: キー入力が即座に送信されます。",
   "directTyping.status.disarmed": "通常返信モードに復帰",
   "directTyping.status.interrupted":

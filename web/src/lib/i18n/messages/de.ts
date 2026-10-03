@@ -382,6 +382,7 @@ export const de: Dictionary = {
   // --- sendMode (the armed "typing straight through" indicator) ---
   "sendMode.armed.title": "Eingabe ins Terminal",
   "sendMode.armed.hint": "Tastatureingaben werden direkt weitergeleitet",
+  "sendMode.armed.draftKept": "Entwurf bleibt erhalten",
   "sendMode.armed.stop": "Stopp",
 
   // --- chat (the pane view shell: header, mirror, switcher) ---
@@ -1037,8 +1038,6 @@ export const de: Dictionary = {
   "stt.error.micRefused": "Der Zugriff auf das Mikrofon wurde verweigert.",
 
   // --- directTyping (the composer's "Type into terminal" mode, hooks/use-direct-typing.ts) ---
-  "directTyping.status.draftPending":
-    "Entwurf vor der Eingabe ins Terminal senden oder verwerfen.",
   "directTyping.status.armed": "Direkteingabe im Terminal aktiv. Tastenanschläge werden direkt gesendet.",
   "directTyping.status.disarmed": "Zurück zur regulären Eingabe von Antworten.",
   "directTyping.status.interrupted":

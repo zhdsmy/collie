@@ -87,3 +87,32 @@ for (const theme of ["light", "dark"]) for (const locale of ["en", "de", "zh"] a
     await expect.poll(() => sent).toEqual(["ctrl+Tab", "Escape"]);
   });
 }
+
+for (const [locale, width] of [["zh", 320], ["en", 320]] as const) {
+  test(`Type arms over a draft and gives it back: ${locale} ${width}`, async ({ page }, testInfo) => {
+    const messages = dictionaries[locale];
+    await page.setViewportSize({ width, height: 844 });
+    await page.addInitScript((code) => localStorage.setItem("collie:locale:v1", code), locale);
+    await installApiStub(page);
+    const sent: string[] = [];
+    await page.route("**/api/pane/*/keys*", async (route) => {
+      sent.push(...route.request().postDataJSON().keys);
+      await route.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/pane/w1:p1");
+    const textarea = page.getByRole("textbox");
+    await textarea.fill("half a reply");
+    const controls = page.getByRole("group", { name: messages["composer.controls.label"] });
+    await controls.getByRole("button", { name: messages["composer.controls.typeAria"] }).tap();
+    await expect(textarea).toHaveValue("");
+    const kept = page.getByText(messages["sendMode.armed.draftKept"]);
+    await expect.poll(() => kept.evaluate((el) =>
+      getComputedStyle(el.closest('[data-slot="collapse"]')!).overflowY,
+    )).toBe("visible");
+    await expect(kept).toBeInViewport();
+    await page.screenshot({ path: testInfo.outputPath("draft-kept.png") });
+    await page.getByRole("button", { name: messages["sendMode.armed.stop"], exact: true }).tap();
+    await expect(textarea).toHaveValue("half a reply");
+    expect(sent).toEqual([]);
+  });
+}
