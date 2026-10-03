@@ -30,11 +30,14 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.15.3+collie.6] - 2026-10-03
+
 ### Fixed
 
 - **The modifier tag on the Type keys' page switch no longer covers its icon.** The three page dots
   moved from under the icon to beside it, which lets the icon sit centred and leaves the top corner
   free for the tag, even with Ctrl, Alt and Shift all latched.
+  ([266f2f70](https://github.com/zhdsmy/collie/commit/266f2f70))
 
 ## [1.15.3+collie.5] - 2026-10-03
 
