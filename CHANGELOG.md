@@ -21,14 +21,11 @@ newest tag. The phone PWA updates itself within about a minute; no reload needed
 Running a crew? Update the lead first; members follow on their own. Details:
 `docs/crew.md` → *Updating from 1.7.0*.
 
-**Coming from 0.x?** Upgrade with one command. Do not use `collie update`. From the Herdr
-plugin: `herdr plugin action invoke update-major --plugin herdr.collie`. From a checkout you can
-reach: `bin/collie update --major`. Fresh install:
-`curl -fsSL https://colliepwa.dev/install.sh | sh`. Neither upgrade path assumes a `collie` on your
-PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgrading from 0.x to
-1.0*.
-
 ## [Unreleased]
+
+### Fixed
+
+- **Finished alerts and OMP input follow the latest upstream fixes.** Merge v1.16.1 to notify on working-to-idle completion, recognise OMP claude and borderless composers, and correct Windows tool lookup and doctor guidance; retain Collie notification acknowledgement and existing card layouts.
 
 ## [1.16.0+collie.1] - 2026-10-03
 
@@ -106,6 +103,22 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 ### Changed
 
 - **Collie follows upstream with reliable paths and Crew connections.** Merge v1.15.3 with Windows path fixes, explicit Crew addresses and omp empty-editor hint recognition, preserving Collie controls and current agent adaptations. ([4e24f2d5](https://github.com/zhdsmy/collie/commit/4e24f2d5))
+## [1.16.1] - 2026-10-03
+
+### Changed
+
+- **Release pages and the changelog no longer repeat the upgrade path from 0.x.** The steps stay in `docs/upgrading.md` under "Upgrading from 0.x to 1.0". ([8b1f4faf](https://github.com/AltanS/collie/commit/8b1f4faf))
+- **The Windows note on a release page names the installer and the setup guide.** It said "There is no installer yet", which has been false since `install.ps1`. It now gives the `irm https://colliepwa.dev/install.ps1 | iex` command and links `docs/windows.md`, and the README inside the zip says the same. ([8b1f4faf](https://github.com/AltanS/collie/commit/8b1f4faf))
+
+### Fixed
+
+- **On Windows (experimental): `collie doctor` and `collie crew status` no longer suggest `collie crew invite`.** With no crew, both ended on "`collie crew invite` here makes it a lead; `collie join …` makes it a peer", and both verbs refuse on Windows. They now say "A Windows machine cannot join or lead a crew in this release." Linux and macOS print what they printed before. ([c9322daa](https://github.com/AltanS/collie/commit/c9322daa))
+- **On Windows (experimental): `collie doctor` no longer tells you to run `collie serve`.** Collie publishes no front door on Windows, so the `front-door` remedies sent you to a command that does nothing useful there. They now give the Tailscale command to run by hand, `tailscale serve --bg --set-path=/ <port>`, with a reminder to pair a device right away, and point to `docs/windows.md`. A mapping you made by hand that points at Collie now passes the `front-door` check instead of warning. Linux and macOS print what they printed before. ([ebc5f304](https://github.com/AltanS/collie/commit/ebc5f304))
+- **On Windows (experimental): `collie doctor` passes a front door published over HTTP on a Headscale tailnet.** Headscale issues no HTTPS certificates, so the Windows guide publishes with `tailscale serve --bg --http=80 --set-path=/ <port>`. The `front-door` check kept the warning "this tailnet has no HTTPS certificates" after that. It now looks for a mapping made by hand that points at Collie, on port 80 too, before it asks about certificates. Linux and macOS print what they printed before. ([1418ba02](https://github.com/AltanS/collie/commit/1418ba02))
+- **Windows commands find PowerShell again when PowerShell 7 is installed.** The tool lookup now skips a directory that carries the tool's name. On Windows 11 with PowerShell 7, `System32\PowerShell` is a directory, and it came before the real `powershell.exe` on PATH. It was picked as the program, so `collie status`, `doctor`, `start`, `restart`, `stop`, `uninstall` and the update check all failed. Thanks @ronanflannery (#344). ([a86d8b91](https://github.com/AltanS/collie/commit/a86d8b91))
+- **The Finished alert no longer misses a turn that ends as idle.** Herdr 0.9 can report a finished turn as idle instead of done, and tmux and zellij always do, so the push did not fire there. A working agent that goes idle now counts as finished, on this machine and for crew peers. Answering a prompt does not count. An agent you interrupt also goes idle and pushes too. Finished is off by default, in Settings → Alerts. Thanks @homieyangg (#345). ([a01c22e6](https://github.com/AltanS/collie/commit/a01c22e6))
+- **OMP panes with the `claude` or `borderless` composer shape accept a send.** Collie found no input box in these two shapes, so every send asked "Type anyway?". Both are now recognised, and a draft left in the terminal reads back. Captured on OMP 18.4.10. Thanks @nhl4000 (#343). ([1897d3cc](https://github.com/AltanS/collie/commit/1897d3cc))
+
 ## [1.16.0] - 2026-10-03
 
 ### Added
