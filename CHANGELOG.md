@@ -30,11 +30,14 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.15.3+collie.7] - 2026-10-03
+
 ### Changed
 
 - **Type into terminal now arms with a draft in the box.** It used to refuse until the draft was
   sent or cleared. The draft, chips included, now waits out of sight and untouched while the keys go
   to the terminal, the strip says "draft kept", and Stop puts it back. Nothing of it is sent.
+  ([3bd7e51c](https://github.com/zhdsmy/collie/commit/3bd7e51c))
 
 ## [1.15.3+collie.6] - 2026-10-03
 
