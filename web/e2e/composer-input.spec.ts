@@ -51,11 +51,25 @@ for (const theme of ["light", "dark"]) for (const locale of ["en", "de", "zh"] a
     await expect(textarea).toBeFocused();
     await accessory.getByRole("button", { name: "Escape", exact: true }).tap();
     await expect(textarea).toBeFocused();
-    await accessory.getByRole("button", { name: "Ctrl", exact: true }).tap();
+    for (const name of ["Ctrl", "Shift", "Alt"]) await accessory.getByRole("button", { name, exact: true }).tap();
     await accessory.getByRole("button", { name: messages["keys.showComboKeys"] }).tap();
-    // The combos page has no Ctrl key, so the switch carries the latched one.
-    const carrying = accessory.getByRole("button", { name: `${messages["keys.showFunctionKeys"]} · Ctrl` });
-    await expect(carrying).toHaveText("^");
+    // The combos page has no modifier keys, so the switch carries the latched ones: at their widest
+    // here, and still clear of the icon and the page dots, inside the button.
+    const carrying = accessory.getByRole("button", {
+      name: `${messages["keys.showFunctionKeys"]} · Ctrl+Alt+Shift`,
+    });
+    await expect(carrying).toHaveText("^⌥⇧");
+    const tagFit = await carrying.getByText("^⌥⇧").evaluate((tag) => {
+      const box = tag.getBoundingClientRect();
+      const button = tag.closest("button")!.getBoundingClientRect();
+      const covered = [...tag.closest("button")!.querySelectorAll("svg, span:empty")].filter((part) => {
+        const r = part.getBoundingClientRect();
+        return r.left < box.right && box.left < r.right && r.top < box.bottom && box.top < r.bottom;
+      });
+      const inside = box.left >= button.left && box.right <= button.right && box.top >= button.top;
+      return { covered: covered.length, inside };
+    });
+    expect(tagFit).toEqual({ covered: 0, inside: true });
     await page.screenshot({ path: testInfo.outputPath("input-combos.png") });
     await carrying.tap();
     const rail = page.getByTestId("direct-key-rail");

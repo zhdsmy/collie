@@ -51,7 +51,7 @@ const COMBO_KEYS: ReadonlyArray<{ key: string; label: string; ariaLabel: string 
 /**
  * The switch's face per row, in the order it walks them (use-direct-typing.ts ROW_ORDER): the icon
  * of the row you are ON, and the sentence for the tap, which names the row it leads to. The dots
- * under the icon say which of the three pages this is.
+ * beside the icon say which of the three pages this is.
  */
 const ROWS: ReadonlyArray<{ row: DirectKeyRow; icon: LucideIcon; next: () => string }> = [
   { row: "navigation", icon: Keyboard, next: () => t("keys.showComboKeys") },
@@ -221,14 +221,16 @@ export function DirectKeyboardAccessory({
         {carried.length > 0 && (
           <span
             aria-hidden="true"
-            className="absolute right-0.5 top-0.5 rounded-sm bg-primary px-[3px] text-[10px] font-semibold leading-3 text-primary-foreground"
+            className="absolute right-px top-px rounded-sm bg-primary px-[3px] text-[9px] font-semibold leading-[10px] text-primary-foreground"
           >
             {carried.map((m) => MODIFIER_MARK[m].glyph).join("")}
           </span>
         )}
-        <span aria-hidden="true" className="flex flex-col items-center gap-1">
+        {/* Dots BESIDE the icon, a column as tall as it: the icon then sits centred (a hair low), and
+            the 14px above it is the corner the tag needs. Under the icon they pushed it up into the tag. */}
+        <span aria-hidden="true" className="mt-0.5 flex items-center gap-1">
           <HereIcon className={KEY_ICON_CLASS} />
-          <span className="flex gap-1">
+          <span className="flex flex-col gap-[3px]">
             {ROWS.map((r) => (
               <span
                 key={r.row}

@@ -30,6 +30,12 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+### Fixed
+
+- **The modifier tag on the Type keys' page switch no longer covers its icon.** The three page dots
+  moved from under the icon to beside it, which lets the icon sit centred and leaves the top corner
+  free for the tag, even with Ctrl, Alt and Shift all latched.
+
 ## [1.15.3+collie.5] - 2026-10-03
 
 ### Fixed
