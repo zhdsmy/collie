@@ -30,12 +30,15 @@ PATH. Details and rollback: [`docs/upgrading.md`](./docs/upgrading.md) → *Upgr
 
 ## [Unreleased]
 
+## [1.15.3+collie.5] - 2026-10-03
+
 ### Fixed
 
 - **A latched Ctrl, Shift or Alt shows on every Type keys page.** The modifier keys live on the
   first page only, yet a latched one still applies to what the phone keyboard types on the combos
   and F-key pages, where it used to be invisible: a stray Ctrl turned a typed `d` into Ctrl+D. The
   page switch now carries it as a small filled tag, and its spoken name says which.
+  ([6ecfcd89](https://github.com/zhdsmy/collie/commit/6ecfcd89))
 
 ## [1.15.3+collie.4] - 2026-10-03
 
