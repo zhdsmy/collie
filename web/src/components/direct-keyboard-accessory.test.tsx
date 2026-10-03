@@ -184,8 +184,10 @@ describe("DirectKeyboardAccessory", () => {
       onSendKeys: vi.fn(),
     };
     render(<DirectKeyboardAccessory {...props} row="combos" />);
-    const switcher = screen.getByRole("button", { name: "Show function keys" });
+    // The latched Ctrl has no key on this page, so the switch carries it, in its face and its name.
+    const switcher = screen.getByRole("button", { name: "Show function keys · Ctrl" });
     expect(switcher.querySelector("svg")).toHaveClass("lucide-combine", "size-[18px]");
+    expect(switcher).toHaveTextContent("^");
     expect(currentDot(switcher)).toBe(1);
     for (const [name, key] of [["Shift+Tab", "shift+Tab"], ["Shift+Left", "shift+Left"], ["Ctrl+C", "ctrl+c"]] as const) {
       const button = screen.getByRole("button", { name });
@@ -193,6 +195,20 @@ describe("DirectKeyboardAccessory", () => {
       fireEvent.click(button);
       expect(props.onSendKeys).toHaveBeenLastCalledWith([key]);
     }
+  });
+
+  it("carries every latched modifier onto the pages without modifier keys, and only there", () => {
+    const props = {
+      modifiers: { ctrl: "locked", alt: "off", shift: "once" } satisfies DirectModifierState,
+      onToggleRow: vi.fn(),
+      onToggleModifier: vi.fn(),
+      onSendKeys: vi.fn(),
+    };
+    const { rerender } = render(<DirectKeyboardAccessory {...props} row="navigation" />);
+    // Its own keys show it here; the switch stays plain.
+    expect(screen.getByRole("button", { name: "Show key combos" })).toHaveTextContent("");
+    rerender(<DirectKeyboardAccessory {...props} row="function" />);
+    expect(screen.getByRole("button", { name: "Show navigation keys · Ctrl+Shift" })).toHaveTextContent("^⇧");
   });
 
   it("preserves arrow hold-repeat through the accessory sender", async () => {

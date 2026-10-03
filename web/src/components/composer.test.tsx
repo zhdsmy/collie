@@ -225,9 +225,10 @@ describe("Composer — actions belt", () => {
     await user.click(within(accessory()).getByRole("button", { name: "Ctrl+C" }));
     await waitFor(() => expect(sent).toEqual(["shift+Tab", "ctrl+c"]));
     // Combos, then the rarely used function keys, then back where the walk started.
-    await user.click(within(accessory()).getByRole("button", { name: "Show function keys" }));
+    // Still latched, and said so on the pages that have no Ctrl key of their own.
+    await user.click(within(accessory()).getByRole("button", { name: "Show function keys · Ctrl" }));
     expect(within(accessory()).getByRole("button", { name: "F1" })).toBeVisible();
-    await user.click(within(accessory()).getByRole("button", { name: "Show navigation keys" }));
+    await user.click(within(accessory()).getByRole("button", { name: "Show navigation keys · Ctrl" }));
     expect(within(accessory()).getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "once");
   });
 });

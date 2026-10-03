@@ -59,6 +59,14 @@ const ROWS: ReadonlyArray<{ row: DirectKeyRow; icon: LucideIcon; next: () => str
   { row: "function", icon: SquareFunction, next: () => t("keys.showNavigationKeys") },
 ];
 
+/** A latched modifier as the switch shows it on the pages that have no modifier keys. The glyphs
+ *  match the Ctrl key's chevron and the combos' `⇧`; the names are the key caps, untranslated. */
+const MODIFIER_MARK = {
+  ctrl: { glyph: "^", name: "Ctrl" },
+  alt: { glyph: "⌥", name: "Alt" },
+  shift: { glyph: "⇧", name: "Shift" },
+} satisfies Record<Modifier, { glyph: string; name: string }>;
+
 const NAVIGATION_KEYS: ReadonlyArray<{
   key: string;
   icon: LucideIcon;
@@ -108,6 +116,14 @@ export function DirectKeyboardAccessory({
   const here = ROWS.find((r) => r.row === row)!;
   const HereIcon = here.icon;
   const activeModifiers = MODIFIER_ORDER.filter((modifier) => modifiers[modifier] !== "off");
+  // The modifier keys sit on the navigation page alone, yet a latched one still applies to what the
+  // phone keyboard types on the other two: a stray one-shot Ctrl turns a typed `d` into ctrl+d. The
+  // switch carries it there, where it would otherwise be invisible.
+  const carried = row === "navigation" ? [] : activeModifiers;
+  const switchLabel =
+    carried.length === 0
+      ? here.next()
+      : `${here.next()} · ${carried.map((m) => MODIFIER_MARK[m].name).join("+")}`;
   const repeat = useHoldRepeat(
     async (key, count) => {
       onSendKeys(Array<string>(count).fill(key));
@@ -198,10 +214,18 @@ export function DirectKeyboardAccessory({
         disabled={disabled}
         onMouseDown={preserveTextareaFocus}
         onClick={onToggleRow}
-        aria-label={here.next()}
-        title={here.next()}
-        className={cn("size-11 shrink-0 touch-manipulation", RESTING_KEY_CLASS)}
+        aria-label={switchLabel}
+        title={switchLabel}
+        className={cn("relative size-11 shrink-0 touch-manipulation", RESTING_KEY_CLASS)}
       >
+        {carried.length > 0 && (
+          <span
+            aria-hidden="true"
+            className="absolute right-0.5 top-0.5 rounded-sm bg-primary px-[3px] text-[10px] font-semibold leading-3 text-primary-foreground"
+          >
+            {carried.map((m) => MODIFIER_MARK[m].glyph).join("")}
+          </span>
+        )}
         <span aria-hidden="true" className="flex flex-col items-center gap-1">
           <HereIcon className={KEY_ICON_CLASS} />
           <span className="flex gap-1">

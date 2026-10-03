@@ -51,7 +51,13 @@ for (const theme of ["light", "dark"]) for (const locale of ["en", "de", "zh"] a
     await expect(textarea).toBeFocused();
     await accessory.getByRole("button", { name: "Escape", exact: true }).tap();
     await expect(textarea).toBeFocused();
-    await accessory.getByRole("button", { name: messages["keys.showFunctionKeys"] }).tap();
+    await accessory.getByRole("button", { name: "Ctrl", exact: true }).tap();
+    await accessory.getByRole("button", { name: messages["keys.showComboKeys"] }).tap();
+    // The combos page has no Ctrl key, so the switch carries the latched one.
+    const carrying = accessory.getByRole("button", { name: `${messages["keys.showFunctionKeys"]} · Ctrl` });
+    await expect(carrying).toHaveText("^");
+    await page.screenshot({ path: testInfo.outputPath("input-combos.png") });
+    await carrying.tap();
     const rail = page.getByTestId("direct-key-rail");
     await rail.evaluate((el) => { el.scrollLeft = el.scrollWidth; });
     await expect(accessory.getByRole("button", { name: "F12", exact: true })).toBeInViewport();
