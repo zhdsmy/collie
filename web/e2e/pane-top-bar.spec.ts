@@ -130,6 +130,36 @@ test("neither strip scrolls vertically", async ({ page }) => {
   }
 });
 
+test("at 320px the pane scroller receives touches and exposes the last pane", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  const original = fixtureSnapshot.agents.find((p) => p.paneId === "w2:p1")!;
+  const panes = Array.from({ length: 12 }, (_, i) => ({
+    ...original,
+    paneId: `w2:p${i + 1}`,
+    paneLabel: `Pane ${i + 1}`,
+    focused: i === 0,
+  }));
+  await page.route("**/api/snapshot", (route) => route.fulfill({
+    json: { ...fixtureSnapshot, agents: panes, shellPanes: [] },
+  }));
+  await page.goto(`/pane/${encodeURIComponent("w2:p1")}`);
+  await expect(paneNav(page)).toBeVisible();
+  const result = await paneNav(page).evaluate((nav) => {
+    const scroller = [...nav.children].find((c) => getComputedStyle(c).overflowX === "auto")!;
+    const touchable = getComputedStyle(scroller).pointerEvents;
+    scroller.scrollLeft = scroller.scrollWidth;
+    const last = scroller.querySelector("button:last-child")!.getBoundingClientRect();
+    const bounds = scroller.getBoundingClientRect();
+    return { touchable, scrollLeft: scroller.scrollLeft, lastLeft: last.left, lastRight: last.right, left: bounds.left, right: bounds.right };
+  });
+  expect(result.touchable).toBe("auto");
+  expect(result.scrollLeft).toBeGreaterThan(0);
+  expect(result.lastLeft).toBeGreaterThanOrEqual(result.left);
+  expect(result.lastRight).toBeLessThanOrEqual(result.right);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("pane-scroll-320.png") });
+});
+
 test("opening a tab moves no neighbour", async ({ page }) => {
   await page.goto(`/pane/${encodeURIComponent("w2:p1")}`);
   await expect(tabNav(page).getByRole("button", { name: /code$/ })).toHaveAttribute("aria-current", "true");

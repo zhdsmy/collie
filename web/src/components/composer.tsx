@@ -862,7 +862,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     // The operator has just acted on this pane, so the poller should watch it land. Stamped HERE —
     // after the refusals above, before the round trip — because the burst is about the operator's
     // attention, not about the send's verdict: a send that stalls or is blocked is exactly a moment
-    // they are staring at the mirror.
+    // they are staring at the mirror. Kept despite `api.sendKeys` / `api.sendReply` stamping every
+    // write: the guarded send reads the pane and may type nothing at all, and the operator is
+    // watching from the tap on, not from the first key.
     stampSend(paneId);
     try {
       // Guarded: types the text, verifies it reached the input box, and only THEN sends the submit
@@ -1074,8 +1076,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // the status channel; the echo just falls back to idle.
   async function pressKeys(k: string[]): Promise<boolean> {
     if (locked) return false;
-    // Accessory and typed keys share this transport, so both refresh the live pane.
-    stampSend(paneId);
+    // Every raw key reaches the pane through here — the Keys dock (NavTray's `onSend`), the direct
+    // typing mode (useDirectTyping's `sendKeys`) and the prompt buttons that hand keys to the tray.
+    // No stamp here: `api.sendKeys` starts the poll burst for every key written.
     try {
       const res = await api.sendKeys(paneId, k, scope);
       if (!res.ok) {

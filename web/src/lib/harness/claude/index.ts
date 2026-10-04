@@ -16,6 +16,7 @@ import { detectMultiSelectRegion } from "./multi-select";
 import { detectPromptSelectRegion } from "./prompt-select";
 import { detectEffortRegion } from "./effort";
 import { detectResumePickerRegion } from "./resume";
+import { detectSwitchModelRegion } from "./switch-model";
 import { detectMarketplacesRegion } from "./marketplaces";
 import { detectMenuRegion } from "./menu";
 import { detectAutocompleteRegion } from "./autocomplete";
@@ -28,7 +29,7 @@ import {
   namesAModalKey,
   inputBoxTail,
 } from "./chrome";
-import { isPastePlaceholderOnly, pasteCarriesSend } from "./paste";
+import { collapsesAsPaste, isPastePlaceholderOnly, pasteCarriesSend } from "./paste";
 import { decorateClaudeDiff, decorateClaudeUser } from "./display";
 import { detectSettingsRegion } from "./settings";
 import { detectAgentsRegion } from "./agents";
@@ -109,7 +110,7 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
   if (effortRegion) {
     const before = trimTrailingBlank(lines.slice(0, effortRegion.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push({ kind: "raw", lines: before });
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "menu", menu: effortRegion.model, lines: lines.slice(effortRegion.startLine) });
     return blocks;
   }
@@ -122,8 +123,22 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
   if (resumeRegion) {
     const before = trimTrailingBlank(lines.slice(0, resumeRegion.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push({ kind: "raw", lines: before });
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "prompt-select", prompt: resumeRegion.model, lines: lines.slice(resumeRegion.startLine) });
+    return blocks;
+  }
+
+  // The "Switch model?" confirmation (switch-model.ts) — the footerless screen the `/model` picker
+  // opens when the conversation is cached. No footer names a key and no "Do you want to" question
+  // makes it a permission dialog, so every grammar above declines it and the generic menu below
+  // could not read it either. Recognised by its own title under the `▔` edge and its two numbered
+  // rows, it lifts as a pointed list: a tap is the arrow walk from the `❯` plus Enter, never a digit.
+  const switchModelRegion = detectSwitchModelRegion(lines);
+  if (switchModelRegion) {
+    const before = trimTrailingBlank(lines.slice(0, switchModelRegion.startLine));
+    const blocks: Block[] = [];
+    if (before.length > 0) blocks.push(raw(before));
+    blocks.push({ kind: "prompt-select", prompt: switchModelRegion.model, lines: lines.slice(switchModelRegion.startLine) });
     return blocks;
   }
 
@@ -135,7 +150,7 @@ export function claudeBuildBlocks(lines: StyledLine[]): Block[] {
   if (marketplacesRegion) {
     const before = trimTrailingBlank(lines.slice(0, marketplacesRegion.startLine));
     const blocks: Block[] = [];
-    if (before.length > 0) blocks.push({ kind: "raw", lines: before });
+    if (before.length > 0) blocks.push(raw(before));
     blocks.push({ kind: "menu", menu: marketplacesRegion.model, lines: lines.slice(marketplacesRegion.startLine) });
     return blocks;
   }
@@ -232,4 +247,6 @@ export const claudeAdapter: HarnessAdapter = {
   // "this isn't the user's text" for the stranded-draft preview's Take over.
   draftCarriesSend: pasteCarriesSend,
   draftIsOpaque: isPastePlaceholderOnly,
+  // A send long enough to collapse goes as one bracketed paste; see `collapsesAsPaste`.
+  bracketedPaste: collapsesAsPaste,
 };

@@ -87,6 +87,19 @@
       "verified": { "version": "0.156.1", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus" }
     },
     {
+      "id": "claude.switch-model",
+      "agent": "claude",
+      "origin": "upstream",
+      "sources": ["web/src/lib/harness/claude/switch-model.ts", "web/src/lib/harness/claude/index.ts"],
+      "tests": ["web/src/lib/harness/claude/switch-model.test.ts", "web/src/lib/prompt-action.test.ts"],
+      "fixtures": [
+        { "path": "web/src/fixtures/panes/claude--v2289-switch-model-yes.txt", "agent": "claude", "expect": { "block": "prompt-select", "title": "Switch model?", "minOptions": 2 } },
+        { "path": "web/src/fixtures/panes/claude--v2289-switch-model-no--w50.txt", "agent": "claude", "expect": { "block": "prompt-select", "title": "Switch model?", "minOptions": 2 } }
+      ],
+      "live": false,
+      "verified": { "version": "2.1.289", "date": "2026-10-04", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/claude--v2289-switch-model-yes.txt" }
+    },
+    {
       "id": "claude.agents",
       "agent": "claude",
       "origin": "downstream",

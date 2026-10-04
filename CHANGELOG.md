@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Phone scrolling, Claude replies and dialog taps follow upstream fixes.** Merge v1.16.2 with iPhone pane scrolling, complete long Claude pastes, model-switch confirmation, opencode overlay handling and prompt refresh after key writes; retain Collie layouts, input guards and existing agent adaptations.
+
 ## [1.16.1+collie.1] - 2026-10-04
 
 ### Fixed
@@ -105,6 +109,16 @@ Running a crew? Update the lead first; members follow on their own. Details:
 ### Changed
 
 - **Collie follows upstream with reliable paths and Crew connections.** Merge v1.15.3 with Windows path fixes, explicit Crew addresses and omp empty-editor hint recognition, preserving Collie controls and current agent adaptations. ([4e24f2d5](https://github.com/zhdsmy/collie/commit/4e24f2d5))
+## [1.16.2] - 2026-10-04
+
+### Fixed
+
+- **The pane row scrolls sideways on an iPhone.** With more panes in a tab than fit the screen, the row did not move under a thumb on iOS Safari, so the panes past the edge could not be reached from it. The tab row was not affected. Thanks @enieuwy (#350). ([cbc94647](https://github.com/AltanS/collie/commit/cbc94647))
+- **An overlay row under the free-text row no longer hides the opencode question card.** When opencode drew a foreign row under the closed "Type your own answer" row, Collie read it as an open input and showed no card. The row is now ignored unless the pointer is on the free-text row. Thanks @AndiWandHerd (#348). ([418e978f](https://github.com/AltanS/collie/commit/418e978f))
+- **A long reply or voice note reaches Claude whole.** A reply over 800 characters now goes to a Claude pane as one bracketed paste. Before, Claude kept only its last 1 KB or so and Collie submitted that. Text inside the reply cannot end the paste early, and an image marker in the box is accepted only for a picture Collie attached. Thanks @wwilson1017 (#349). ([b9efb5c9](https://github.com/AltanS/collie/commit/b9efb5c9))
+- **Claude Code's "Switch model?" question gets its two buttons.** After the model picker, Claude Code 2.1.286 and later asks "Switch model?" when the conversation is cached. Collie could not read that screen and offered only Esc, which cancels the switch. The card now shows "Yes, switch" and "No, go back". A tap moves the pointer, checks it, then sends Enter, and never a digit. ([3e7d1f78](https://github.com/AltanS/collie/commit/3e7d1f78))
+- **A card button works on the first tap after an arrow tap.** After "Move up" or "Move down" on a card, the card could keep the old highlight for up to six seconds, and the next button answered "The screen changed". Each key Collie sends now starts the fast refresh, and the card waits for the new picture, for 1.2 seconds at most, before it takes the next tap. ([2a64ebad](https://github.com/AltanS/collie/commit/2a64ebad))
+
 ## [1.16.1] - 2026-10-03
 
 ### Changed
