@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.16.2+collie.1] - 2026-10-04
+
 ### Fixed
 
-- **Phone scrolling, Claude replies and dialog taps follow upstream fixes.** Merge v1.16.2 with iPhone pane scrolling, complete long Claude pastes, model-switch confirmation, opencode overlay handling and prompt refresh after key writes; retain Collie layouts, input guards and existing agent adaptations.
+- **Phone scrolling, Claude replies and dialog taps follow upstream fixes.** Merge v1.16.2 with iPhone pane scrolling, complete long Claude pastes, model-switch confirmation, opencode overlay handling and prompt refresh after key writes; retain Collie layouts, input guards and existing agent adaptations. ([47624fa5](https://github.com/zhdsmy/collie/commit/47624fa5))
 
 ## [1.16.1+collie.1] - 2026-10-04
 
