@@ -34,12 +34,14 @@ function typedFrame(draft: string): string {
   );
 }
 
-test("Codex warning return keeps image, mixed, and long replies sendable", async ({ page }) => {
+test("Codex warning return keeps image, mixed, and long replies sendable", async ({ page, browserName }) => {
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 320, height: 844 });
   await page.addInitScript(() => {
     localStorage.setItem("collie:locale:v1", "en");
     localStorage.setItem("collie:theme:v1", "dark");
+    // The Warnings pager is a terminal screen; Chat (the 1.17 default) does not draw it.
+    localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
   });
   await installApiStub(page);
   let screen: "ready" | "warning" | "draft" = "ready";
@@ -75,7 +77,9 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/upload", (route) => {
     const body = route.request().postDataBuffer();
     expect(body).not.toBeNull();
-    expect(body!.includes(png)).toBe(true);
+    // Playwright's WebKit reports a multipart body without the file's bytes (probed: the part's
+    // headers arrive, its content does not), so the bytes are checked where the engine shows them.
+    if (browserName !== "webkit") expect(body!.includes(png)).toBe(true);
     expect(body!.toString("latin1")).toContain('filename="photo-');
     return route.fulfill({ json: { ok: true, path: uploadPaths[uploads++] } });
   });
