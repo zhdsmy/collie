@@ -532,12 +532,13 @@
       "tests": ["web/src/lib/harness/opencode.test.ts", "web/src/lib/multi-select-action.test.ts", "web/src/components/wizard-block.test.tsx"],
       "fixtures": [
         { "path": "web/src/fixtures/panes/oc--question--single.txt", "agent": "opencode", "expect": { "block": "prompt-select", "minOptions": 3 } },
+        { "path": "web/src/fixtures/panes/oc--question--single--overlay.txt", "agent": "opencode", "expect": { "block": "prompt-select", "minOptions": 2 } },
         { "path": "web/src/fixtures/panes/oc--question--multi.txt", "agent": "opencode", "expect": { "block": "multi-select", "minOptions": 3 } },
         { "path": "web/src/fixtures/panes/oc--question--two--q1.txt", "agent": "opencode", "expect": { "block": "wizard", "minOptions": 3 } },
         { "path": "web/src/fixtures/panes/oc--question--tall14.txt", "agent": "opencode", "expect": { "block": "unread-dialog" } }
       ],
       "live": false,
-      "verified": { "version": "1.18.33", "date": "2026-10-02", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/lib/harness/opencode/QUESTION_NOTES.md" }
+      "verified": { "version": "1.18.33", "date": "2026-10-06", "how": "upstream captured ANSI and sidebar-tail regression replay; recognition only", "evidence": "web/src/lib/harness/opencode/QUESTION_NOTES.md" }
     },
     {
       "id": "shared.option-rows",

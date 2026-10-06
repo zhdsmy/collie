@@ -39,6 +39,7 @@ const QUICK_REPLY_KEYS = {
   "commit and push": "quickActions.item.commitPush",
   retry: "quickActions.item.retry",
   skip: "quickActions.item.skip",
+  "drastically simplify": "quickActions.item.simplify",
 } satisfies Record<string, MessageKey>;
 
 function replyText(raw: string, localizeItems: boolean): string {
@@ -85,7 +86,11 @@ function Group({
               disabled={disabled || busy}
               onClick={() => onFire(raw, label)}
               className={cn(
-                "h-12 gap-1.5 text-sm font-medium",
+                // A phrase may be longer than half a phone (`drastically simplify` is 20 characters
+                // in a 145px label at 390px), so it WRAPS, balanced, on the 48px the row already
+                // has. `nowrap` and `px-4` are the Button base's; both are given up here, and the
+                // height stays fixed, so a long phrase never makes one row taller than the next.
+                "h-12 gap-1.5 whitespace-normal px-2 py-1 text-sm font-medium leading-tight text-balance",
                 phase !== "idle" && "disabled:opacity-100",
               )}
             >

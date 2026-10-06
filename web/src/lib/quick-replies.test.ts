@@ -19,6 +19,12 @@ describe("quickRepliesFor", () => {
     ).not.toHaveProperty("localizeItems");
   });
 
+  it("ends the common group with `drastically simplify`, for agents only", () => {
+    const common = quickRepliesFor("claude", false).find((g) => g.title === "common");
+    expect(common?.items.at(-1)).toBe("drastically simplify");
+    expect(quickRepliesFor("shell", true).flatMap((g) => g.items)).not.toContain("drastically simplify");
+  });
+
   it("gives a shell y/n and NOT the agent phrases", () => {
     const shell = quickRepliesFor("shell", true);
     const items = shell.flatMap((g) => g.items);

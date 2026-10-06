@@ -26,6 +26,7 @@ export async function displayPush(decision: PushDecision, target: NotificationDi
       session: decision.session,
       host: decision.host,
       target: decision.target,
+      machine: decision.machine,
     } satisfies NotifData,
     icon: ICON,
     badge: BADGE,

@@ -10,6 +10,14 @@ function registration(existing = true) {
 }
 
 describe("push delivery", () => {
+  test("keeps the machine alert destination through display", async () => {
+    const target = registration(false);
+    await displayPush(decidePush({ title: "High CPU", data: { target: "machine", machine: "local" } }, false), target);
+    expect(target.showNotification).toHaveBeenCalledWith("High CPU", expect.objectContaining({
+      data: expect.objectContaining({ target: "machine", machine: "local" }),
+    }));
+  });
+
   test("retractions update an existing slot silently", async () => {
     const target = registration();
     await displayPush(decidePush({ title: "codex is done", tag: "collie:herd", renotify: false }, false), target);
