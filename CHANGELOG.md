@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.17.0+collie.1] - 2026-10-06
+
 ### Changed
 
-- **Merge upstream v1.17.0.** Add Files browsing, machine monitoring, dashboard ordering and default Chat; retain Collie compact controls, cards, wrap joining and notification behavior.
+- **Merge upstream v1.17.0.** Add Files browsing, machine monitoring, dashboard ordering and default Chat; retain Collie compact controls, cards, wrap joining and notification behavior. See [the complete Chinese report](docs/upstream-v1.17.0.md). ([13eb99bb](https://github.com/zhdsmy/collie/commit/13eb99bb))
 
 ## [1.16.2+collie.1] - 2026-10-04
 
