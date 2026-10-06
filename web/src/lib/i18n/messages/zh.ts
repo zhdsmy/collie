@@ -241,6 +241,7 @@ export const zh: Dictionary = {
   "codexPlan.blocked": "当前无法切换，请等待 Codex 输入区就绪。",
   "codexPlan.idleRequired": "Codex 正在运行，空闲时才能切换 Plan 模式。",
   "codexPlan.busy": "操作进行中，请稍候。",
+  "codexWarning.terminalOnly": "Codex 的警告在终端里显示，请切换到终端视图查看。",
   "codexPlan.changed": "终端状态已变化，请确认当前模式后重试。",
   "codexPlan.unconfirmed": "无法确认 Plan 模式更改。",
   "codexPlan.successOn": "Plan 模式已开启。",

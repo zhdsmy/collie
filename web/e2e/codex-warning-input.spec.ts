@@ -142,3 +142,30 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
   expect(uploads).toBe(4);
   expect(keys).toEqual([["f2"], ["Escape"]]);
 });
+
+test("Codex warning in Chat points at the terminal instead of opening an unseen pager", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("collie:locale:v1", "en");
+    localStorage.setItem("collie:theme:v1", "dark");
+  });
+  await installApiStub(page);
+  const keys: string[][] = [];
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+      ? Object.assign({}, agent, { agent: "codex", status: "working", hasSession: true }) : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text: empty, revision: 1, truncated: false,
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
+    // SAFETY: this route receives the app's own sendKeys request body.
+    keys.push((route.request().postDataJSON() as { keys: string[] }).keys);
+    return route.fulfill({ json: { ok: true } });
+  });
+
+  await page.goto("/pane/w1:p1");
+  await page.getByRole("button", { name: "⚠ 1 warning · f2 to view" }).click();
+  await expect(page.getByText("Codex shows its warnings in the terminal. Switch to Terminal view to read them.")).toBeVisible();
+  expect(keys).toEqual([]);
+});

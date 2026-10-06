@@ -255,6 +255,7 @@ export const de: Dictionary = {
   "codexPlan.blocked": "Der Planmodus kann gerade nicht gewechselt werden. Warte, bis die Codex-Eingabe bereit ist.",
   "codexPlan.idleRequired": "Der Planmodus kann geändert werden, wenn Codex untätig ist.",
   "codexPlan.busy": "Ein Vorgang läuft bereits. Bitte warten.",
+  "codexWarning.terminalOnly": "Codex zeigt seine Warnungen im Terminal. Wechsle zur Terminal-Ansicht, um sie zu lesen.",
   "codexPlan.changed": "Der Terminalstatus hat sich geändert. Prüfe den aktuellen Modus und versuche es erneut.",
   "codexPlan.unconfirmed": "Die Änderung des Planmodus konnte nicht bestätigt werden.",
   "codexPlan.successOn": "Planmodus aktiviert.",
