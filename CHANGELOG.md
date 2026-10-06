@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.17.0+collie.5] - 2026-10-06
+
 ### Fixed
 
-- **Chat shows Codex's Plan, review and Warnings screens in a card.** Chat draws no terminal, so these native screens were invisible there. Each now gets the unread-dialog card with Esc as its way back, and in Chat the card carries the screen itself; the terminal view keeps the native rows with the compact card under them. The warning count opens the Warnings panel again in Chat. A Codex question gets no card, because Esc on it interrupts the whole turn.
+- **Chat shows Codex's Plan, review and Warnings screens in a card.** Chat draws no terminal, so these native screens were invisible there. Each now gets the unread-dialog card with Esc as its way back, and in Chat the card carries the screen itself; the terminal view keeps the native rows with the compact card under them. The warning count opens the Warnings panel again in Chat. A Codex question gets no card, because Esc on it interrupts the whole turn. ([3e72a140](https://github.com/zhdsmy/collie/commit/3e72a140))
 
 ## [1.17.0+collie.4] - 2026-10-06
 
