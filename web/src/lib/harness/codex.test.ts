@@ -1638,6 +1638,16 @@ describe("Codex mobile display cleanup", () => {
     expect(decoratedRule!.segments).toBe(rule.segments);
   });
 
+  // A real 0.158 capture: under Herdr Codex cannot read the terminal's ground, so its selected row
+  // falls back to inverse video, which parses to dark ink on #fafafa. That is a highlight, not a
+  // submitted message: dropping its fill on a phone left the selected option invisible.
+  it("leaves an inverse-video selected row alone", () => {
+    const lines = fixtureLines("codex--v0158-picker-model.txt");
+    const selected = lines.find((line) => lineText(line).startsWith("› 2. GPT-6-Sol"))!;
+    expect(selected.segments[0]!.bg).toBe("#fafafa");
+    expect(decorateCodexDisplay(lines)).toBe(lines);
+  });
+
   it("returns the same array when a screen carries neither row", () => {
     const lines = fixtureLines("codex--fresh-idle.txt");
     expect(decorateCodexDisplay(lines)).toBe(lines);
