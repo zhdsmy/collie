@@ -250,7 +250,6 @@ export const ko: Dictionary = {
   "codexPlan.blocked": "지금은 Plan 모드를 전환할 수 없습니다. Codex 입력 영역이 준비될 때까지 기다리세요.",
   "codexPlan.idleRequired": "Codex가 유휴 상태일 때 Plan 모드를 전환할 수 있습니다.",
   "codexPlan.busy": "작업이 진행 중입니다. 잠시 기다리세요.",
-  "codexWarning.terminalOnly": "Codex 경고는 터미널에 표시됩니다. 터미널 보기로 전환해 확인하세요.",
   "codexPlan.changed": "터미널 상태가 변경되었습니다. 현재 모드를 확인한 후 다시 시도하세요.",
   "codexPlan.unconfirmed": "Plan 모드 변경을 확인할 수 없습니다.",
   "codexPlan.successOn": "Plan 모드가 켜졌습니다.",

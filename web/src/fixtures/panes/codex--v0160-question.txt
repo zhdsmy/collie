@@ -1,0 +1,26 @@
+[0m[1m[38;5;2m➜  [0m[1m[38;5;6mcollie-canary-warn-PqYw6a[0m [0m[1m[38;5;4mgit:([0m[1m[38;5;1mmain[0m[1m[38;5;4m) [0m[1m[38;5;3m✗[0m command codex --no-daemon -c 'mcp_servers.collie_canary.command="/usr/bin/fals
+e"'
+
+
+  [0m[38;2;99;168;248m>_ [0m[1mOpenAI Codex[0m[2m (v0.160.1)[0m
+     [0m[2m/private/tmp/collie-canary-warn-PqYw6a[0m
+
+  [0m[38;2;99;168;248mCome on in. There’s room for an idea.[0m
+
+  [0m[1mTip:[0m Use the [0m[1mdesktop app[0m. Run [0m[38;2;166;227;161mcodex app[0m to open it. It installs automatically if needed.
+
+
+[0m[1m[2m› [0mIsolated UI test. Call request_user_input exactly once: ask "Pick a fruit?" with options Apple and Pear. After the
+  answer, propose a one-step plan to append that fruit name to a.txt. Do not run any commands.
+
+ 
+ 
+  [0m[2mQuestion 1/1 (1 unanswered)[0m
+  [0m[38;2;99;168;248mPick a fruit?[0m
+ 
+  [0m[1m[7m› 1. Apple              [0m[7mAppend Apple to a.txt.[0m[1m[7m                                                                      [0m
+    2. Pear               [0m[2mAppend Pear to a.txt.[0m
+    3. None of the above  [0m[2mOptionally, add details in notes (tab)[0m
+ 
+  [0m[1mtab[0m to add notes[0m[2m | [0m[1menter[0m to submit answer[0m[2m | [0m[1mesc[0m to interrupt
+ 

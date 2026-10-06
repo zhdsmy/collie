@@ -36,6 +36,7 @@ const REVIEWS = [
   "codex--review-scope.txt",
   "codex--review-base-branch.txt",
   "codex--review-commit.txt",
+  "codex--v0160-review-preset.txt",
 ];
 
 const PICKERS = [
@@ -69,6 +70,7 @@ const PICKERS = [
 
 const QUESTIONS = [
   "codex--ask-notes-focused.txt",
+  "codex--v0160-question.txt",
   "codex--v0154-question-notes.txt",
   "codex--v0154-notes-empty.txt",
   "codex--v0154-notes-text.txt",
@@ -89,6 +91,7 @@ const PLANS = [
   "codex--v0154-plan-short-second.txt",
   "codex--v0154-plan-short-third.txt",
   "codex--v0154-plan-short.txt",
+  "codex--v0160-plan-prompt.txt",
 ];
 
 const ASYNC_QUESTIONS = [
@@ -157,6 +160,8 @@ const PINNED = [
   "codex--v0157-idle-50.txt",
   "codex--v0157-idle.txt",
   "codex--v0158-goal-notice.txt",
+  "codex--v0160-warning-idle.txt",
+  "codex--v0160-warnings-panel.txt",
   "codex--working.txt",
 ];
 
@@ -172,6 +177,7 @@ const DIALOG = [
   "codex--ask-wizard-q1.txt",
   "codex--ask-wizard-q2.txt",
   "codex--trust-prompt.txt",
+  "codex--v0160-warnings-panel.txt",
   "codex--v0156-approval-exec-2opt.txt",
   "codex--v0156-approval-exec-wrapped-50.txt",
   "codex--v0156-approval-exec-wrapped.txt",

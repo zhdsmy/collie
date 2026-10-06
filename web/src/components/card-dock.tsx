@@ -1,14 +1,15 @@
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import type {
-  Block,
-  MenuModel,
-  MultiSelectModel,
-  PreviewSelectModel,
-  PromptModel,
-  UnreadDialogModel,
-  WizardModel,
+import {
+  trimTrailingBlank,
+  type Block,
+  type MenuModel,
+  type MultiSelectModel,
+  type PreviewSelectModel,
+  type PromptModel,
+  type UnreadDialogModel,
+  type WizardModel,
 } from "@/lib/blocks";
 import type { MultiSelectIntent } from "@/lib/multi-select-action";
 import type { PickerIntent, PickerModel } from "@/lib/harness/picker-model";
@@ -56,6 +57,9 @@ type AutoBlock = Extract<Block, { kind: "autocomplete" }>;
  *  is mutually exclusive with every kind above by construction (harness/index.ts). */
 type UnreadBlock = Extract<Block, { kind: "unread-dialog" }>;
 type PickerCardBlock = Extract<Block, { kind: "picker" }>;
+// ponytail: a fixed screenful of rows for the Chat-side unread card; a taller modal scrolls inside it,
+// and the pane's real height is the upgrade if one ever needs more.
+const SCREEN_ROWS = 40;
 
 export interface CardDockProps {
   /** The pane's blocks, as AgentChat built them for the mirror. Only the non-raw one is drawn here. */
@@ -80,6 +84,8 @@ export interface CardDockProps {
   pickerAutomating?: boolean;
   /** Disable every card's controls (read-only device, gone pane). */
   promptDisabled?: boolean;
+  /** The body draws no mirror (Chat), so an unread dialog carries the screen's rows itself. */
+  showScreen?: boolean;
   /** The soft keyboard is up: the dock's cap drops from 55dvh to 40dvh. */
   composing?: boolean;
   /** The mirror's chosen face (`mirrorFont`), so a card's `font-mono` rows and its Terminal mirror
@@ -104,6 +110,7 @@ function liftedCard({
   onPickerAction,
   pickerAutomating,
   promptDisabled,
+  showScreen,
 }: CardDockProps): ReactNode {
   const promptBlock = blocks.find((b): b is PromptBlock => b.kind === "prompt-select");
   if (promptBlock) {
@@ -170,6 +177,7 @@ function liftedCard({
         cancel={unreadBlock.cancel}
         lines={unreadBlock.lines}
         viewport={unreadBlock.viewport}
+        screen={showScreen ? trimTrailingBlank(unreadBlock.lines).slice(-SCREEN_ROWS) : undefined}
         disabled={promptDisabled || !onUnreadDialogAction}
         onAction={(key) => onUnreadDialogAction?.(key, unreadBlock.cancel)}
       />

@@ -1076,12 +1076,6 @@ export function AgentChat({
 
   async function openWarnings(count: number) {
     if (warningOpening.current) return;
-    // f2 opens a full-screen pager that only the terminal body draws. From Chat it would leave Codex
-    // in a screen nobody can see, refusing the next reply, so the count stays a pointer there.
-    if (chatShown) {
-      setStatus(t("codexWarning.terminalOnly"));
-      return;
-    }
     if (warningDisabledReason || composerRef.current?.isWriting()) {
       setStatus(warningDisabledReason ?? t("codexPlan.busy"), "error");
       return;
@@ -2726,6 +2720,7 @@ export function AgentChat({
           {display && (
             <CardDock
               blocks={blocks}
+              showScreen={chatShown}
               onPromptAction={handlePromptAction}
               onWizardAction={handleWizardAction}
               onPreviewAction={handlePreviewAction}

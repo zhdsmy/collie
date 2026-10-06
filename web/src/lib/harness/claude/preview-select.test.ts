@@ -200,9 +200,12 @@ describe("detectPreviewSelectRegion + buildBlocks — render boundary and gating
       const blocks = buildBlocks(fixtureLines("claude--select-preview.txt"), { agent });
       expect(blocks.map((b) => b.kind)).toEqual(["raw"]);
     }
-    // Codex keeps unfamiliar dialog screens native instead of offering a generic cancel card.
+    // codex HAS an adapter, and a screen it cannot type into whose footer names Esc as the way back
+    // gets the unread-dialog card (.adr/0053) after the native rows. That is not a lift: the card
+    // reads nothing off the screen and offers codex's own declared key. What matters here is that
+    // codex still lifted no DIALOG.
     const codex = buildBlocks(fixtureLines("claude--select-preview.txt"), { agent: "codex" });
-    expect(codex.map((b) => b.kind)).toEqual(["raw"]);
+    expect(codex.map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
   });
 });
 

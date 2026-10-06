@@ -253,7 +253,6 @@ export const es: Dictionary = {
   "codexPlan.blocked": "El modo Plan no se puede cambiar ahora. Espera a que la entrada de Codex esté lista.",
   "codexPlan.idleRequired": "El modo Plan se puede cambiar cuando Codex está inactivo.",
   "codexPlan.busy": "Hay una operación en curso. Espera un momento.",
-  "codexWarning.terminalOnly": "Codex muestra sus advertencias en la terminal. Cambia a la vista de terminal para leerlas.",
   "codexPlan.changed": "El estado del terminal cambió. Confirma el modo actual y vuelve a intentarlo.",
   "codexPlan.unconfirmed": "No se pudo confirmar el cambio del modo Plan.",
   "codexPlan.successOn": "Modo Plan activado.",

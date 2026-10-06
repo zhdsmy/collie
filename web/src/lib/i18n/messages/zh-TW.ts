@@ -247,7 +247,6 @@ export const zhTW: Dictionary = {
   "codexPlan.blocked": "目前無法切換，請等待 Codex 輸入區就緒。",
   "codexPlan.idleRequired": "Codex 正在執行，閒置時才能切換 Plan 模式。",
   "codexPlan.busy": "操作進行中，請稍候。",
-  "codexWarning.terminalOnly": "Codex 的警告顯示在終端機中，請切換到終端機檢視查看。",
   "codexPlan.changed": "終端機狀態已變更，請確認目前模式後重試。",
   "codexPlan.unconfirmed": "無法確認 Plan 模式變更。",
   "codexPlan.successOn": "Plan 模式已開啟。",

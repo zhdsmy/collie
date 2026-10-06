@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -26,6 +26,11 @@ export interface UnreadDialogBlockProps {
   onAction: (key: string) => void | Promise<void>;
   /** Read-only device or a gone pane: everything renders (for context) but can't be pressed. */
   disabled?: boolean;
+  /**
+   * The screen's own rows, for a body that draws no mirror (Chat). The card is then the only place
+   * the dialog can be seen, so it carries them, opened at the end, where a modal's footer sits.
+   */
+  screen?: StyledLine[];
 }
 
 // The UNREAD-DIALOG CARD — one declared key over a screen Collie could not read (.adr/0053).
@@ -49,9 +54,11 @@ export interface UnreadDialogBlockProps {
 // (never its size), and it disarms by itself after ARM_MS. The wording names "Dismiss" only when
 // the screen's own rows print `esc dismiss`; otherwise it names the key, never a verb.
 export const ARM_MS = 4000;
+const VIEWPORT_CLASS =
+  "min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain [scrollbar-gutter:stable] [scrollbar-width:thin]";
 const NAMES_A_DISMISS = /\besc\s+dismiss\b/i;
 
-export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled }: UnreadDialogBlockProps) {
+export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled, screen }: UnreadDialogBlockProps) {
   useLocale();
   const [sending, setSending] = useState(false);
   const locked = disabled || sending;
@@ -63,8 +70,16 @@ export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled 
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const caption = viewport?.title ?? t("unreadDialog.caption");
   const dismissWording = lines.some((l) => NAMES_A_DISMISS.test(lineText(l)));
+  const shown = viewport ? undefined : screen;
+  const shownText = shown?.map(lineText).join("\n");
+  const screenRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => () => clearTimeout(timer.current), []);
+  // Pinned to the end when the screen changes, not on every poll, so a reader scrolled up stays put.
+  useLayoutEffect(() => {
+    const el = screenRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [shownText]);
   // A changed dialog or a card that stops being pressable also stops being armed.
   useEffect(() => {
     clearTimeout(timer.current);
@@ -96,7 +111,7 @@ export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled 
   return (
     <PromptPanel
       ariaLabel={caption}
-      className={viewport ? "h-[min(20rem,calc(var(--card-dock-max-height,55dvh)-2rem))] min-h-0" : "py-0.5"}
+      className={viewport || shown ? "h-[min(20rem,calc(var(--card-dock-max-height,55dvh)-2rem))] min-h-0" : "py-0.5"}
     >
       <div className="flex shrink-0 items-center justify-between gap-3">
         <div className="min-w-0 [&>div>span:last-child]:truncate" title={armed ? armedLabel : caption}>
@@ -119,8 +134,9 @@ export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled 
         key={viewport.title}
         lines={viewport.lines}
         tabIndex={0}
-        className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain [scrollbar-gutter:stable] [scrollbar-width:thin]"
+        className={VIEWPORT_CLASS}
       />}
+      {shown && <RawMirror ref={screenRef} lines={shown} tabIndex={0} className={VIEWPORT_CLASS} />}
       <span role="status" className="sr-only">
         {armed ? armedLabel : ""}
       </span>

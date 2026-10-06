@@ -1,0 +1,35 @@
+
+
+  [0m[38;2;99;168;248m>_ [0m[1mOpenAI Codex[0m[2m (v0.160.1)[0m
+     [0m[2m/private/tmp/collie-canary-warn-PqYw6a[0m
+
+  [0m[38;2;99;168;248mCome on in. There’s room for an idea.[0m
+
+  [0m[1mTip:[0m Use the [0m[1mdesktop app[0m. Run [0m[38;2;166;227;161mcodex app[0m to open it. It installs automatically if needed.
+
+
+[0m[1m[2m› [0mIsolated UI test. Call request_user_input exactly once: ask "Pick a fruit?" with options Apple and Pear. After the
+  answer, propose a one-step plan to append that fruit name to a.txt. Do not run any commands.
+
+
+[0m[2m•[0m [0m[1mQuestions[0m[2m 1/1 answered[0m
+  • Pick a fruit?
+[0m[2m    answer: [0m[38;2;99;168;248mApple[0m
+
+[0m[2m• [0m[1mProposed Plan[0m
+
+
+  [0m[38;5;12m1. [0mAppend [0m[38;2;166;227;161mApple[0m followed by a newline to [0m[38;2;166;227;161ma.txt[0m.
+
+
+[0m[2m  Worked for 23s • 22:56[0m
+ 
+ 
+  [0m[1mImplement this plan?[0m
+ 
+ 
+[0m[1m[7m› 1. Yes, implement this plan          [0m[7mSwitch to Default and start coding[0m[1m[7m                                               [0m
+  2. Yes, clear context and implement  [0m[2mStart a fresh thread (current context: 6% used)[0m
+  3. No, stay in Plan mode             [0m[2mContinue planning with the model[0m
+ 
+  [0m[1menter[0m[2m select · [0m[1mesc[0m[2m back                                                                                               [0m

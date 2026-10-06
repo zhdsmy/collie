@@ -1,7 +1,9 @@
 // Codex keeps native QA, plan and review screens. Collie lifts current resume/model/agent pickers,
-// trust and approvals while composerReady/composerPrompt guard ordinary chat submissions.
+// trust and approvals while composerReady/composerPrompt guard ordinary chat submissions. A native
+// modal whose footer names Esc as its way back gets the unread-dialog card (.adr/0053), which is how
+// Chat, where no mirror is drawn, shows it at all (MODAL_NOTES.md).
 
-import { trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
+import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { HarnessAdapter } from "../types";
 import {
   composerPrompt,
@@ -52,6 +54,27 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
 
 export { extractStatusLines, extractInputDraft };
 
+// How many of the screen's last non-blank rows may carry the footer (Claude's MODAL_HINT_ROWS).
+const MODAL_HINT_ROWS = 6;
+// Esc as a way BACK, in the words Codex 0.160.1 prints: `esc back` (Plan, /review), `esc dismiss &
+// close` (Warnings), and the older `esc to go back` / `esc to cancel`. Each was pressed live
+// (MODAL_NOTES.md). `esc quit` (trust), `esc skip` (hooks) and `tab or esc to clear notes` name
+// something else and never match.
+const ESC_WAY_BACK = /\besc(?: to)? (?:go back|back|cancel|close|dismiss)\b/i;
+// A question's footer: Esc there interrupts the whole turn (ASK_NOTES.md), so it is never a way back.
+const ESC_INTERRUPTS = /\besc to interrupt\b/i;
+
+/** Whether a Codex modal is up whose own footer names Esc as the way back, and nothing on it says
+ *  Esc interrupts the turn. */
+function escGoesBack(lines: StyledLine[]): boolean {
+  const rows: string[] = [];
+  for (let i = lines.length - 1; i >= 0 && rows.length < MODAL_HINT_ROWS; i--) {
+    const text = lineText(lines[i]!);
+    if (text.trim() !== "") rows.push(text);
+  }
+  return rows.some((t) => ESC_WAY_BACK.test(t)) && !rows.some((t) => ESC_INTERRUPTS.test(t));
+}
+
 export const codexAdapter: HarnessAdapter = {
   agent: "codex",
   buildBlocks: codexBuildBlocks,
@@ -59,6 +82,9 @@ export const codexAdapter: HarnessAdapter = {
   extractInputDraft,
   composerReady,
   composerPrompt,
+  // The way out of a native modal, offered only where the screen itself names Esc as one.
+  cancelKey: "Escape",
+  modalOnScreen: escGoesBack,
   draftCarriesSend: codexDraftCarriesSend,
   literalDraftCarriesSend: (sent, draft) => draftCarriesSend(sent, draft, { requireTail: true }),
 };

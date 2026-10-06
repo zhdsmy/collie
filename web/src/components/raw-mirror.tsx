@@ -1,3 +1,5 @@
+import type { Ref } from "react";
+
 import type { StyledLine } from "@/lib/blocks";
 import { MIRROR_INVERT, MIRROR_SPACE, styleFor } from "@/components/mirror-space";
 import { renderCells } from "@/components/painted-cells";
@@ -11,9 +13,15 @@ import { cn } from "@/lib/utils";
  * the agent's own terminal colours (MIRROR_SPACE / MIRROR_INVERT, ADR 0002). Scrolls horizontally
  * on its own so a wide screen never makes the page pan.
  */
-export function RawMirror({ lines, className, tabIndex }: { lines: StyledLine[]; className?: string; tabIndex?: number }) {
+export function RawMirror({ lines, className, tabIndex, ref }: {
+  lines: StyledLine[];
+  className?: string;
+  tabIndex?: number;
+  ref?: Ref<HTMLPreElement>;
+}) {
   return (
     <pre
+      ref={ref}
       tabIndex={tabIndex}
       className={cn(
         "m-0 overflow-x-auto rounded-lg px-2 py-1.5 font-mono text-[11px] leading-[1.25] whitespace-pre",

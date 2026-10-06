@@ -87,6 +87,20 @@
       "verified": { "version": "0.156.1", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus" }
     },
     {
+      "id": "codex.unread-dialog",
+      "agent": "codex",
+      "origin": "upstream-patched",
+      "sources": ["web/src/lib/harness/codex/index.ts", "web/src/lib/harness/index.ts", "web/src/components/unread-dialog-block.tsx"],
+      "tests": ["web/src/lib/harness/unread-dialog.test.ts", "web/src/components/unread-dialog-block.test.tsx", "web/e2e/codex-warning-input.spec.ts"],
+      "fixtures": [
+        { "path": "web/src/fixtures/panes/codex--v0160-warnings-panel.txt", "agent": "codex", "expect": { "block": "unread-dialog" } },
+        { "path": "web/src/fixtures/panes/codex--v0160-review-preset.txt", "agent": "codex", "expect": { "block": "unread-dialog" } },
+        { "path": "web/src/fixtures/panes/codex--v0160-plan-prompt.txt", "agent": "codex", "expect": { "block": "unread-dialog" } }
+      ],
+      "live": false,
+      "verified": { "version": "0.160.1", "date": "2026-10-06", "how": "isolated live pane: each screen opened and Esc pressed by hand; captured ANSI replay", "evidence": "web/src/lib/harness/codex/MODAL_NOTES.md" }
+    },
+    {
       "id": "claude.switch-model",
       "agent": "claude",
       "origin": "upstream",

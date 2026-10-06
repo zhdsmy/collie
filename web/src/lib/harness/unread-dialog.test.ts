@@ -37,6 +37,7 @@ describe("the cancel key each adapter declares", () => {
   // declaration exists for: on grok, Escape opens the scrollback view and ctrl+c is the cancel.
   it.each([
     ["claude", "Escape"],
+    ["codex", "Escape"],
     ["muse", "Escape"],
     ["agy", "Escape"],
     ["antigravity", "Escape"],
@@ -54,9 +55,15 @@ describe("the cancel key each adapter declares", () => {
     // The declaration is therefore only safe with `modalOnScreen`, and the two travel together.
     expect(adapterFor("omp")!.modalOnScreen).toBeTypeOf("function");
   });
-  it("codex keeps native QA, plan and review screens instead of an unread card", () => {
-    expect(adapterFor("codex")!.cancelKey).toBeUndefined();
-    for (const name of ["codex--ask-notes-focused.txt", "codex--v0154-plan-short.txt", "codex--review-scope.txt"]) {
+  it("codex offers Escape only where its footer names Esc as the way back", () => {
+    // Plan, /review and Warnings print `esc back`, `esc to go back` or `esc dismiss & close`, and each
+    // was pressed live on 0.160.1 (codex/MODAL_NOTES.md). A question prints `esc to interrupt`, and
+    // Esc there ends the whole turn (codex/ASK_NOTES.md), so it never gets the card.
+    expect(adapterFor("codex")!.modalOnScreen).toBeTypeOf("function");
+    for (const name of ["codex--v0160-plan-prompt.txt", "codex--v0160-review-preset.txt", "codex--v0160-warnings-panel.txt"]) {
+      expect(cardOf(pass("codex", fixtureLines(name)))?.kind, name).toBe("unread-dialog");
+    }
+    for (const name of ["codex--v0160-question.txt", "codex--ask-fruit.txt", "codex--ask-notes-focused.txt"]) {
       expect(cardOf(pass("codex", fixtureLines(name))), name).toBeNull();
     }
   });
@@ -261,8 +268,20 @@ const CARD_FIXTURES = {
     ],
   },
   codex: {
-    // Native QA/plan/review screens keep their original TUI presentation.
-    modals: [],
+    // Every native Plan, /review and Warnings screen: raw, no input box, and a footer naming Esc as
+    // the way back. Native QA screens print `esc to interrupt` and are deliberately absent.
+    modals: [
+      "codex--review-base-branch.txt",
+      "codex--review-commit.txt",
+      "codex--review-scope.txt",
+      "codex--v0154-plan-long.txt",
+      "codex--v0154-plan-short-second.txt",
+      "codex--v0154-plan-short-third.txt",
+      "codex--v0154-plan-short.txt",
+      "codex--v0160-plan-prompt.txt",
+      "codex--v0160-review-preset.txt",
+      "codex--v0160-warnings-panel.txt",
+    ],
     notModals: [],
   },
   grok: {

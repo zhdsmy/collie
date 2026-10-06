@@ -251,7 +251,6 @@ export const ja: Dictionary = {
   "codexPlan.blocked": "現在は切り替えられません。Codex の入力欄が準備できるまでお待ちください。",
   "codexPlan.idleRequired": "Codex がアイドル状態のときに Plan モードを切り替えられます。",
   "codexPlan.busy": "操作中です。しばらくお待ちください。",
-  "codexWarning.terminalOnly": "Codex の警告はターミナルに表示されます。ターミナル表示に切り替えて確認してください。",
   "codexPlan.changed": "ターミナルの状態が変わりました。現在のモードを確認して再試行してください。",
   "codexPlan.unconfirmed": "Plan モードの変更を確認できませんでした。",
   "codexPlan.successOn": "Plan モードをオンにしました。",

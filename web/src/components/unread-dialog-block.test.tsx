@@ -55,6 +55,30 @@ describe("UnreadDialogBlock", () => {
     expect(onAction).toHaveBeenCalledExactlyOnceWith("Escape");
   });
 
+  it("carries the screen when no mirror is drawn, and the Warnings footer arms Dismiss", async () => {
+    // Codex 0.160.1's Warnings panel, a real capture: in Chat the card is the only place it shows.
+    const panel = readFileSync(
+      join(import.meta.dirname, "..", "fixtures", "panes", "codex--v0160-warnings-panel.txt"),
+      "utf8",
+    );
+    const block = buildBlocks(splitLines(parseAnsi(panel)), { agent: "codex" }).find((b) => b.kind === "unread-dialog");
+    if (block?.kind !== "unread-dialog") throw new Error("the Warnings panel produced no card");
+    const onAction = vi.fn();
+    const { container, rerender } = render(
+      <UnreadDialogBlock cancel={block.cancel} lines={block.lines} onAction={onAction} />,
+    );
+    // Terminal body: the mirror shows the rows, so the card stays the compact caption and key.
+    expect(container.querySelector("pre")).toBeNull();
+    rerender(<UnreadDialogBlock cancel={block.cancel} lines={block.lines} onAction={onAction} screen={block.lines} />);
+    expect(container.querySelector("pre")).toHaveTextContent("Warnings · 1 of 1 · MCP · collie_canary");
+    expect(container.querySelector("pre")).toHaveTextContent("esc dismiss & close");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Esc" }));
+    expect(onAction).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Tap again to dismiss" }));
+    expect(onAction).toHaveBeenCalledExactlyOnceWith("Escape");
+  });
+
   it("renders the caption and exactly one control: the declared key", () => {
     renderCard();
     expect(screen.getByText("Collie did not recognize this interface")).toBeInTheDocument();

@@ -7,6 +7,8 @@ test.use({ serviceWorkers: "block" });
 
 const empty = readFileSync(new URL("../src/fixtures/panes/codex--v0154-particles-working.txt", import.meta.url), "utf8")
   .replace(/\n$/, `${" ".repeat(32)}⚠ 1 warning · f2 to view\n`);
+// Codex 0.160.1's own Warnings panel (fixtures/panes/README.md), not a hand-written screen.
+const panel = readFileSync(new URL("../src/fixtures/panes/codex--v0160-warnings-panel.txt", import.meta.url), "utf8");
 const paint = "\u001b[0m\u001b[48;2;57;57;71m";
 const uploadPaths = ["/test-state/uploads/one.png", "/test-state/uploads/two.png", "/test-state/uploads/three.png", "/test-state/uploads/four.png"];
 const longText = `BEGIN ${"请检查这个输入问题".repeat(1200)} END`;
@@ -59,7 +61,7 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
     paneId: "w1:p1",
     text: screen === "warning"
-      ? "Warnings · 1 of 1 · MCP · qa\n\nMCP startup incomplete\n\nesc back · ctrl+o copy · ←/→ warning · ↓ scroll"
+      ? panel
       : screen === "draft" ? typedFrame(cases[caseIndex]!.shown) : empty,
     revision: 1,
     truncated: false,
@@ -143,12 +145,13 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
   expect(keys).toEqual([["f2"], ["Escape"]]);
 });
 
-test("Codex warning in Chat points at the terminal instead of opening an unseen pager", async ({ page }) => {
+test("Codex warning in Chat shows the panel in the card and leaves by its Esc", async ({ page }, testInfo) => {
   await page.addInitScript(() => {
     localStorage.setItem("collie:locale:v1", "en");
     localStorage.setItem("collie:theme:v1", "dark");
   });
   await installApiStub(page);
+  let open = false;
   const keys: string[][] = [];
   await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
     ...fixtureSnapshot,
@@ -156,16 +159,25 @@ test("Codex warning in Chat points at the terminal instead of opening an unseen 
       ? Object.assign({}, agent, { agent: "codex", status: "working", hasSession: true }) : agent),
   } }));
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
-    paneId: "w1:p1", text: empty, revision: 1, truncated: false,
+    paneId: "w1:p1", text: open ? panel : empty, revision: open ? 2 : 1, truncated: false,
   } }));
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
     // SAFETY: this route receives the app's own sendKeys request body.
-    keys.push((route.request().postDataJSON() as { keys: string[] }).keys);
+    const sent = (route.request().postDataJSON() as { keys: string[] }).keys;
+    keys.push(sent);
+    open = sent[0] === "f2";
     return route.fulfill({ json: { ok: true } });
   });
 
   await page.goto("/pane/w1:p1");
   await page.getByRole("button", { name: "⚠ 1 warning · f2 to view" }).click();
-  await expect(page.getByText("Codex shows its warnings in the terminal. Switch to Terminal view to read them.")).toBeVisible();
-  expect(keys).toEqual([]);
+  // Chat draws no mirror: the dock's card is where the panel is read.
+  const card = page.locator('[data-slot="card-dock"]');
+  await expect(card.getByText(/Warnings · 1 of 1 · MCP · collie_canary/)).toBeVisible();
+  await expect(card.getByText(/esc dismiss & close/)).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("chat-warnings-card.png") });
+  await card.getByRole("button", { name: "Esc" }).click();
+  await card.getByRole("button", { name: "Tap again to dismiss" }).click();
+  await expect(card).toHaveCount(0);
+  expect(keys).toEqual([["f2"], ["Escape"]]);
 });

@@ -155,3 +155,13 @@ The same day, most of the screens that had been showing the card were read inste
 dialog is now recognised by its own words when its footer drops "Tab to amend", Claude's `▔` modal
 top is a menu region top, and the amend note and AskUserQuestion's "Type something." row are
 modelled as fields. The card stays the answer for what is left.
+
+## Addendum 2026-10-06 (zhdsmy/collie): the card carries the screen in Chat
+
+Chat, the default body since 1.17.0, draws no mirror, so a compact card over a screen nobody can see
+offered a key with nothing to judge it by. In Chat the card now carries the screen's last rows,
+opened at the end where a modal's footer sits; the terminal body keeps the compact card under the
+mirror. Codex declares `Escape` again, with a `modalOnScreen` that needs its footer to name Esc as
+`back`, `cancel`, `close` or `dismiss` and refuses `esc to interrupt`: on a Codex question Esc ends
+the whole turn, which is this ADR's revisit condition met on one screen and kept off it. Evidence:
+`web/src/lib/harness/codex/MODAL_NOTES.md`.

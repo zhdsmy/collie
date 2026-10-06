@@ -280,7 +280,6 @@ export const en = {
   "codexPlan.blocked": "Plan mode cannot be switched right now. Wait for the Codex input to be ready.",
   "codexPlan.idleRequired": "Plan mode can be changed when Codex is idle.",
   "codexPlan.busy": "An operation is already in progress. Please wait.",
-  "codexWarning.terminalOnly": "Codex shows its warnings in the terminal. Switch to Terminal view to read them.",
   "codexPlan.changed": "The terminal state changed. Confirm the current mode and try again.",
   "codexPlan.unconfirmed": "The Plan mode change could not be confirmed.",
   "codexPlan.successOn": "Plan mode enabled.",

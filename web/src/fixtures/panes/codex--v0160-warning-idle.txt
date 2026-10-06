@@ -1,0 +1,15 @@
+[0m[1m[38;5;2m➜  [0m[1m[38;5;6mcollie-canary-warn-PqYw6a[0m [0m[1m[38;5;4mgit:([0m[1m[38;5;1mmain[0m[1m[38;5;4m) [0m[1m[38;5;3m✗[0m command codex --no-daemon -c 'mcp_servers.collie_canary.command="/usr/bin/fals
+e"'
+
+
+  [0m[38;2;99;168;248m>_ [0m[1mOpenAI Codex[0m[2m (v0.160.1)[0m
+     [0m[2m/private/tmp/collie-canary-warn-PqYw6a[0m
+
+  [0m[38;2;99;168;248mCome on in. There’s room for an idea.[0m
+
+  [0m[1mTip:[0m Use the [0m[1mdesktop app[0m. Run [0m[38;2;166;227;161mcodex app[0m to open it. It installs automatically if needed.
+ 
+ 
+[0m[1m›[0m [0m[2mAsk Codex to do anything[0m
+ 
+  [0m[38;2;246;226;183mGPT-6.1-Sol xhigh[0m · [0m[38;2;200;169;238mReady[0m · [0m[38;2;242;181;144mContext 100% left[0m · [0m[38;2;200;169;238mFast off[0m · [0m[38;2;143;179;239mmain[0m · [0m[38;2;148;153;174m0.160.1[0m                    ⚠ [0m[38;2;196;167;103m1 warning[0m · [0m[1mf2[0m to view

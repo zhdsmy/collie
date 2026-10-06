@@ -16,6 +16,16 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Codex 0.160.1 native modals (captured 2026-10-06)
+
+`codex--v0160-warning-idle.txt`, `codex--v0160-warnings-panel.txt`,
+`codex--v0160-review-preset.txt`, `codex--v0160-question.txt` and `codex--v0160-plan-prompt.txt`
+are real screens from one isolated Herdr pane in a scratch git repo, Codex started with a failing
+MCP server (`/usr/bin/false`) to raise a warning. One small Plan-mode turn asked one
+`request_user_input` question and proposed a plan. The scratch path and the test prompt are the
+only content; ANSI styling and native rows are unchanged. Esc was pressed on each screen except the
+question; what it did is in `web/src/lib/harness/codex/MODAL_NOTES.md`.
+
 ## Claude AskUserQuestion written in Chinese (captured 2026-10-03)
 
 `claude--v21287-select-cjk-question.txt` is a real Claude Code 2.1.287 dialog from an isolated
