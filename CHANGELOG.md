@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.17.0+collie.4] - 2026-10-06
+
 ### Fixed
 
-- **In Chat, Codex's warning count points to the terminal view.** Tapping it used to open Codex's Warnings pager, which Chat does not draw, leaving Codex in a screen nobody could see and refusing the next reply. The count still shows; the tap now says to switch to Terminal view.
+- **In Chat, Codex's warning count points to the terminal view.** Tapping it used to open Codex's Warnings pager, which Chat does not draw, leaving Codex in a screen nobody could see and refusing the next reply. The count still shows; the tap now says to switch to Terminal view. ([73d52499](https://github.com/zhdsmy/collie/commit/73d52499))
 
 ## [1.17.0+collie.3] - 2026-10-06
 
