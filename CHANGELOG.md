@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.17.0+collie.3] - 2026-10-06
+
 ### Fixed
 
-- **Swiping the key row no longer presses a key.** A touch that drifts past a few pixels or scrolls the row is a swipe: it sends no key, and an arrow under it never starts repeating.
+- **Swiping the key row no longer presses a key.** A touch that drifts past a few pixels or scrolls the row is a swipe: it sends no key, and an arrow under it never starts repeating. ([609165c0](https://github.com/zhdsmy/collie/commit/609165c0))
 
 ## [1.17.0+collie.2] - 2026-10-06
 
