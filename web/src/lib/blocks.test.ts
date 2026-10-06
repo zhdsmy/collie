@@ -430,10 +430,13 @@ describe("buildBlocks — Claude grammars (ctx.agent === 'claude')", () => {
   it("lifts no wizard from a Claude buffer for a non-Claude agent", () => {
     const lines = fixtureLines("claude--wizard-q1.txt");
     const blocks = buildBlocks(lines, { agent: "codex" });
-    expect(blocks).toHaveLength(1);
-    // Codex keeps an unfamiliar dialog native; its grammars still lift nothing from Claude's screen.
-    expect(blocks[0]!.kind).toBe("raw");
+    // The native rows, then the unread-dialog card (.adr/0053): codex cannot type into the screen
+    // and its footer names Esc as the way back. That is not a lift — the card parses nothing and
+    // carries the region through by reference — and the fail-closed claim here is that codex's
+    // grammars still found no dialog.
+    expect(blocks.map((b) => b.kind)).toEqual(["raw", "unread-dialog"]);
     expect(blocks[0]!.lines).toEqual(lines);
+    expect(blocks[1]!.lines).toEqual(lines);
   });
 });
 
