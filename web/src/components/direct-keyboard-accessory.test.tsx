@@ -238,4 +238,51 @@ describe("DirectKeyboardAccessory", () => {
       vi.useRealTimers();
     }
   });
+
+  it("treats a swipe across the rail as a scroll, never a key", async () => {
+    vi.useFakeTimers();
+    try {
+      const onSendKeys = vi.fn<(keys: string[]) => void>();
+      const onToggleModifier = vi.fn();
+      render(
+        <DirectKeyboardAccessory
+          row="navigation"
+          modifiers={ALL_OFF}
+          onToggleRow={vi.fn()}
+          onToggleModifier={onToggleModifier}
+          onSendKeys={onSendKeys}
+        />,
+      );
+      const rail = screen.getByTestId("direct-key-rail");
+      const esc = screen.getByRole("button", { name: "Escape" });
+      const swipe = (el: HTMLElement, dx: number) => {
+        fireEvent.pointerDown(el, { pointerId: 1, clientX: 100, clientY: 10 });
+        fireEvent.pointerMove(el, { pointerId: 1, clientX: 100 + dx, clientY: 10 });
+        fireEvent.pointerUp(el, { pointerId: 1, clientX: 100 + dx, clientY: 10 });
+        fireEvent.click(el, { detail: 1 });
+      };
+
+      swipe(esc, -40);
+      swipe(screen.getByRole("button", { name: "Ctrl" }), 30);
+      // The rail moved under a finger that barely did.
+      fireEvent.pointerDown(esc, { pointerId: 1, clientX: 100, clientY: 10 });
+      rail.scrollLeft = 60;
+      fireEvent.click(esc, { detail: 1 });
+      // A held arrow that turns into a swipe never starts repeating.
+      const down = screen.getByRole("button", { name: "Down" });
+      fireEvent.pointerDown(down, { pointerId: 1, clientX: 100, clientY: 10 });
+      fireEvent.pointerMove(down, { pointerId: 1, clientX: 60, clientY: 10 });
+      await act(async () => vi.advanceTimersByTimeAsync(550));
+      expect(onSendKeys).not.toHaveBeenCalled();
+      expect(onToggleModifier).not.toHaveBeenCalled();
+
+      // A tap that jitters a few pixels is still a tap, and so is a keyboard activation.
+      swipe(esc, 4);
+      expect(onSendKeys).toHaveBeenLastCalledWith(["Escape"]);
+      fireEvent.click(screen.getByRole("button", { name: "Tab" }));
+      expect(onSendKeys).toHaveBeenLastCalledWith(["Tab"]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

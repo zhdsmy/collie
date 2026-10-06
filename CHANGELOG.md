@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Swiping the key row no longer presses a key.** A touch that drifts past a few pixels or scrolls the row is a swipe: it sends no key, and an arrow under it never starts repeating.
+
 ## [1.17.0+collie.2] - 2026-10-06
 
 ### Fixed

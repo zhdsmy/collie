@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
@@ -22,7 +23,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useHoldRepeat } from "@/hooks/use-hold-repeat";
+import { TAP_SLOP_PX, useHoldRepeat } from "@/hooks/use-hold-repeat";
 import type { DirectKeyRow, DirectModifierState } from "@/hooks/use-direct-typing";
 import type { Modifier } from "@/lib/key-queue";
 import { cn } from "@/lib/utils";
@@ -124,6 +125,10 @@ export function DirectKeyboardAccessory({
     carried.length === 0
       ? here.next()
       : `${here.next()} · ${carried.map((m) => MODIFIER_MARK[m].name).join("+")}`;
+  // A swipe across the rail is a scroll, never a key. WebKit still hands a button the click of a
+  // touch that drifted without starting a pan, or that panned the rail a little, so the rail
+  // decides, not the browser.
+  const press = useRef<{ x: number; y: number; scrollLeft: number; swiped: boolean } | null>(null);
   const repeat = useHoldRepeat(
     async (key, count) => {
       onSendKeys(Array<string>(count).fill(key));
@@ -245,6 +250,28 @@ export function DirectKeyboardAccessory({
       <div
         key={row}
         data-testid="direct-key-rail"
+        onPointerDownCapture={(e) => {
+          press.current = {
+            x: e.clientX,
+            y: e.clientY,
+            scrollLeft: e.currentTarget.scrollLeft,
+            swiped: false,
+          };
+        }}
+        onPointerMoveCapture={(e) => {
+          const p = press.current;
+          if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > TAP_SLOP_PX) p.swiped = true;
+        }}
+        onClickCapture={(e) => {
+          const p = press.current;
+          press.current = null;
+          // detail 0 is a keyboard activation: no finger, nothing to have swiped.
+          if (!p || e.detail === 0) return;
+          if (p.swiped || e.currentTarget.scrollLeft !== p.scrollLeft) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
         className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overscroll-x-contain pr-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {row === "navigation" ? (

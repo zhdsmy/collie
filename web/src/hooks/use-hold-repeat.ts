@@ -21,6 +21,10 @@ import { buzz } from "@/lib/haptics";
  *  button's own onClick handles it exactly as before (so single-tap behaviour is untouched). */
 const HOLD_DELAY_MS = 350;
 
+/** How far a finger may drift and still be pressing rather than swiping. Past it, a pending hold
+ *  never engages: the press was the start of a scroll across the key rail. */
+export const TAP_SLOP_PX = 10;
+
 /** Cadence of the local accumulator once engaged. Network pacing is handled by the pump, not this. */
 const REPEAT_MS = 90;
 
@@ -33,6 +37,7 @@ const MAX_HOLD_MS = 4_000;
 
 export interface HoldRepeatBinding {
   onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void;
+  onPointerMove: (e: ReactPointerEvent<HTMLElement>) => void;
   onPointerUp: (e: ReactPointerEvent<HTMLElement>) => void;
   onPointerCancel: (e: ReactPointerEvent<HTMLElement>) => void;
   onContextMenu: (e: SyntheticEvent) => void;
@@ -72,6 +77,8 @@ export function useHoldRepeat(
   /** Set once a hold engages, so the synthesized click that follows the release is swallowed
    *  (otherwise the tap path would send one extra key on top of everything the pump sent). */
   const engaged = useRef(false);
+  /** Where the current press began, for {@link TAP_SLOP_PX}. */
+  const origin = useRef({ x: 0, y: 0 });
   const alive = useRef(true);
   // onFlush is re-created each render by the caller; read it through a ref so the pump closure never
   // goes stale without making every callback below depend on it.
@@ -138,6 +145,7 @@ export function useHoldRepeat(
       onPointerDown: (e) => {
         if (!enabled) return;
         engaged.current = false;
+        origin.current = { x: e.clientX, y: e.clientY };
         // Capture so a thumb sliding off the button still delivers pointerup here — an uncaptured
         // pointer that leaves the element strands the timers, which is the runaway-repeat scenario.
         try {
@@ -160,6 +168,12 @@ export function useHoldRepeat(
           }, REPEAT_MS);
           deadman.current = setTimeout(release, MAX_HOLD_MS);
         }, HOLD_DELAY_MS);
+      },
+      onPointerMove: (e) => {
+        if (!engageTimer.current) return;
+        if (Math.hypot(e.clientX - origin.current.x, e.clientY - origin.current.y) <= TAP_SLOP_PX) return;
+        clearTimeout(engageTimer.current);
+        engageTimer.current = null;
       },
       onPointerUp: () => {
         if (engageTimer.current) {
