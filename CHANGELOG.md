@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.17.0+collie.2] - 2026-10-06
+
 ### Fixed
 
-- **Codex's selected list row stays readable on a phone.** Under Herdr, Codex highlights the selected row in reverse video. Collie read that as a submitted-message band and dropped its fill, which left the chosen option as dark text on the dark mirror.
+- **Codex's selected list row stays readable on a phone.** Under Herdr, Codex highlights the selected row in reverse video. Collie read that as a submitted-message band and dropped its fill, which left the chosen option as dark text on the dark mirror. ([376e8ab3](https://github.com/zhdsmy/collie/commit/376e8ab3))
 
 ## [1.17.0+collie.1] - 2026-10-06
 
