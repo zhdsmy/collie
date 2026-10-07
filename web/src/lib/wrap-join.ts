@@ -23,10 +23,12 @@ import type { TranscriptEntry } from "./types";
 // The plan is applied at render time (components/ansi-output.tsx), after every grammar has run, and
 // the hidden characters still occupy their offsets, so find, links and copy see the screen as read.
 
-/** Folded characters taken either side of a break. */
+/** Folded characters taken either side of a break, and the least a whole probe may hold: one full
+ *  side anchors it, so the other may be as short as a paragraph's last row ("rule."). */
 const PROBE = 16;
-/** A side shorter than this — the top or bottom of a block — is too weak to decide on. */
-const MIN_SIDE = 8;
+/** Stands in a blank row in the folded screen. Never a word character, so a probe is cut there: a
+ *  wrap never spans a blank row, and what lies past one (`✻ Cooked for 26m`) is not in the log. */
+const PARAGRAPH = "\n";
 
 /** Box drawing (U+2500–U+257F), block elements (U+2580–U+259F) and Claude's `⎿`: a row that opens
  *  or closes on one is a frame, gutter or tool result, never a wrapped sentence. */
@@ -115,7 +117,7 @@ export function planJoins(
   let screen = "";
   for (const text of texts) {
     starts.push(screen.length);
-    screen += fold(text);
+    screen += text.trim() === "" ? PARAGRAPH : fold(text);
   }
 
   const plan = new Map<number, RowJoin>();
@@ -132,9 +134,9 @@ export function planJoins(
     if (FRAME_CHAR.test(aboveEnd.at(-1)!) || FRAME_CHAR.test(hereBody[0]!)) continue;
 
     const at = starts[row]!;
-    const left = screen.slice(Math.max(0, at - PROBE), at);
-    const right = screen.slice(at, at + PROBE);
-    if (left.length < MIN_SIDE || right.length < MIN_SIDE) continue;
+    const left = screen.slice(Math.max(0, at - PROBE), at).split(PARAGRAPH).at(-1)!;
+    const right = screen.slice(at, at + PROBE).split(PARAGRAPH)[0]!;
+    if (left === "" || right === "" || left.length + right.length < PROBE) continue;
 
     const probe = left + right;
     let verdict: "newline" | "space" | "none" | null = null;

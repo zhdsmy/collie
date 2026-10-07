@@ -58,6 +58,22 @@ describe("planJoins", () => {
     expect(joins.get(2)).toEqual({ indent: 2, trail: 0, space: true });
   });
 
+  it("joins a reply's short last row, and the probe stops at the blank row under it", () => {
+    // 2026-10-07, a Claude pane: "rule." folds to four characters, and past the blank row lies the
+    // turn's own chrome, which no log holds.
+    const screen = [
+      "  - The Plan-to-implement path and the other /review pages (choosing a branch or commit) weren't pressed live on 0.160. Their older captures match the same",
+      "    rule.",
+      "",
+      "✻ Cooked for 26m 40s · done Tuesday 11:16 PM",
+    ].join("\n");
+    const source =
+      "- The Plan-to-implement path and the other `/review` pages (choosing a branch or commit) weren't pressed live on 0.160. Their older captures match the same rule.";
+    const joins = plan(screen, source);
+    expect([...joins.keys()]).toEqual([1]);
+    expect(joins.get(1)).toEqual({ indent: 4, trail: 0, space: true });
+  });
+
   it("hides the trailing blanks of the row above a join", () => {
     const joins = plan(
       "  the version lives in three files and must   \n    match the newest numbered heading here",

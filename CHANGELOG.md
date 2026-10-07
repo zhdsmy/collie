@@ -23,6 +23,13 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Rejoin wrapped lines also joins a reply's short last row.** The last row of a paragraph, such as
+  a lone `rule.`, held too few letters to prove the wrap, and the check read on past the blank row
+  into the turn's own chrome, which no session log holds; that row kept its break and its hanging
+  indent. The check now stops at a blank row, and one full side of context is enough.
+
 ## [1.17.2+collie.1] - 2026-10-07
 
 ### Fixed
