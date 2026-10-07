@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.17.2+collie.1] - 2026-10-07
+
 ### Fixed
 
-- **Prompt cards show their context and Claude drafts stay editable.** Merge upstream v1.17.2, including v1.17.1: restore permission subjects, avoid duplicate questions, and follow Claude Code 2.1.291 menus, effort levels and plan dialogs while retaining Collie controls and native Codex cards. See [the complete Chinese report](docs/upstream-v1.17.2.md).
+- **Prompt cards show their context and Claude drafts stay editable.** Merge upstream v1.17.2, including v1.17.1: restore permission subjects, avoid duplicate questions, and follow Claude Code 2.1.291 menus, effort levels and plan dialogs while retaining Collie controls and native Codex cards. See [the complete Chinese report](docs/upstream-v1.17.2.md). ([da2e8f5b](https://github.com/zhdsmy/collie/commit/da2e8f5b))
 
 ## [1.17.0+collie.5] - 2026-10-06
 
