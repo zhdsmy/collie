@@ -16,7 +16,7 @@ question and the Plan prompt. Each screen was captured through the bridge, then 
 | Warnings (`f2`) | `k keep & next · esc dismiss & close · ctrl+o copy · ←/→ warning · ↓ scroll` | closes the panel and dismisses the warning; the statusline count goes | yes, armed as "dismiss" |
 | `/review` presets | `enter select · esc back` | back to the input box | yes |
 | Plan prompt | `enter select · esc back` | back to the input box, still in Plan mode, nothing implemented | yes |
-| Question | `tab to add notes \| enter to submit answer \| esc to interrupt` | not pressed: interrupts the whole turn (ASK_NOTES.md) | no |
+| Question | `tab to add notes \| enter to submit answer \| esc to interrupt` | not pressed: interrupts the whole turn (ASK_NOTES.md) | no; its own digit card |
 
 Captures: `codex--v0160-warning-idle.txt`, `codex--v0160-warnings-panel.txt`,
 `codex--v0160-review-preset.txt`, `codex--v0160-question.txt`, `codex--v0160-plan-prompt.txt`.
@@ -29,5 +29,5 @@ The Warnings screen is a panel over the input box, not a full-screen pager. The 
 `modalOnScreen` answers true only when one of the last six non-blank rows names Esc as `back`,
 `go back`, `cancel`, `close` or `dismiss`, and none says `esc to interrupt`. `esc quit` (folder
 trust: it quits Codex), `esc skip` (hooks review) and `tab or esc to clear notes` match nothing, so
-those screens keep no card. A question gets none either: in Chat its text still shows as the
-session log's question card, and it is answered in the terminal.
+those screens keep no card. A question gets none either: its option list is a digit card of
+its own (ASK_NOTES.md), and its notes state, where Esc only clears notes, stays native.

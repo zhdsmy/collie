@@ -23,6 +23,13 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Added
+
+- **Codex questions are answered from a card again.** A `request_user_input` question shows its
+  options as buttons, in the Terminal and Chat views, and each button sends that option's digit
+  once: Codex records the answer and moves to the next question, or submits on the last. The notes
+  box, Esc (it interrupts the turn) and asynchronous questions stay in the terminal.
+
 ## [1.17.2+collie.2] - 2026-10-07
 
 ### Fixed

@@ -84,7 +84,7 @@ query block moved from `rgb(47,47,64)` to `rgb(31,31,37)` and the input box from
 to `rgb(18,18,18)`, which left the box mirrored and the strip empty. It pins the detection to the
 blocks' full-width shape rather than to either palette, so the two captures must both pass.
 
-## Codex native QA and plan dialogs (captured 2026-09-13 through 2026-09-15)
+## Codex QA and native plan dialogs (captured 2026-09-13 through 2026-09-15)
 
 `codex--async-qa-*.txt`, `codex--v0154-question-*.txt`, and
 `codex--v0154-notes-*.txt` are byte-faithful captures of isolated Codex 0.154.0

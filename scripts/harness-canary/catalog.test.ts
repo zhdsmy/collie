@@ -27,6 +27,7 @@ describe("adaptation catalog", () => {
       "claude.settings.usage",
       "codex.agents",
       "codex.approval",
+      "codex.ask",
       "codex.fork",
       "codex.model",
       "codex.resume",

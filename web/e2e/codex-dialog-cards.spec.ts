@@ -31,7 +31,7 @@ for (const theme of ["light", "dark"]) {
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
       (route) => route.fulfill({ json: { paneId: "w1:p1", text: buffer, truncated: false, revision: 1 } }));
     for (const name of [
-      "codex--ask-fruit.txt", "codex--v0154-notes-multiline-focused.txt",
+      "codex--v0154-notes-multiline-focused.txt",
       "codex--async-qa-options.txt", "codex--async-qa-collapsed.txt",
       "codex--v0154-plan-short.txt", "codex--v0154-plan-long.txt",
       "codex--review-scope.txt", "codex--review-base-branch.txt", "codex--trust-prompt.txt",
@@ -43,10 +43,39 @@ for (const theme of ["light", "dark"]) {
       const mirror = page.locator("pre").first();
       await expect(mirror).toBeVisible();
       await expect.poll(async () => (await mirror.textContent())?.trimEnd(), { message: name }).toBe(expected.trimEnd());
-      await expect(page.getByRole("group", { name: /Pick a fruit|Implement this plan|Select a review preset|Do you trust/ })).toHaveCount(0);
+      await expect(page.getByRole("group", { name: /Implement this plan|Select a review preset|Do you trust/ })).toHaveCount(0);
     }
     expect(writes).toEqual([]);
     await page.screenshot({ path: testInfo.outputPath(`native-dialog-${theme}.png`), fullPage: true });
+  });
+
+  test(`Codex question card answers with one digit: ${theme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 320, height: 844 });
+    await page.addInitScript((colorMode) => {
+      localStorage.setItem("collie:theme:v1", colorMode);
+      localStorage.setItem("collie:locale:v1", "zh");
+    }, theme);
+    await installApiStub(page);
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+        ? { ...agent, agent: "codex", status: "blocked", hasSession: true } : agent),
+    } }));
+    const buffer = fixture("codex--v0160-question.txt");
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
+      (route) => route.fulfill({ json: { paneId: "w1:p1", text: buffer, truncated: false, revision: 1 } }));
+    const writes: unknown[] = [];
+    page.on("request", (request) => {
+      if (request.method() === "POST" && /\/api\/pane\/.*\/(keys|reply)/.test(request.url())) writes.push(request.postDataJSON());
+    });
+    await page.goto("/pane/w1:p1");
+    const card = page.getByRole("group", { name: "Pick a fruit?", exact: true });
+    await expect(card.getByRole("button", { name: /None of the above/ })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath(`question-${theme}.png`), fullPage: true, animations: "disabled" });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await card.getByRole("button", { name: /Pear/ }).click();
+    await expect.poll(() => writes.length).toBe(1);
+    expect(writes[0]).toMatchObject({ keys: ["2"], expected_prompt: expect.stringContaining("Pick a fruit?") });
   });
 
   test(`Codex approval cards: ${theme}`, async ({ page }, testInfo) => {

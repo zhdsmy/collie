@@ -1,7 +1,8 @@
-// Codex keeps native QA, plan and review screens. Collie lifts current resume/model/agent pickers,
-// trust and approvals while composerReady/composerPrompt guard ordinary chat submissions. A native
-// modal whose footer names Esc as its way back gets the unread-dialog card (.adr/0053), which is how
-// Chat, where no mirror is drawn, shows it at all (MODAL_NOTES.md).
+// Codex keeps native plan and review screens. Collie lifts current resume/model/agent pickers,
+// trust, approvals and `request_user_input` questions (a digit answers the current question; the
+// notes state stays native, ASK_NOTES.md) while composerReady/composerPrompt guard ordinary chat
+// submissions. A native modal whose footer names Esc as its way back gets the unread-dialog card
+// (.adr/0053), which is how Chat, where no mirror is drawn, shows it at all (MODAL_NOTES.md).
 
 import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { HarnessAdapter } from "../types";
@@ -13,6 +14,7 @@ import {
   stripChrome,
 } from "./chrome";
 import { detectApprovalRegion } from "./approval";
+import { detectAskRegion } from "./ask";
 import { detectTrustRegion } from "./trust";
 import { detectPickerRegion } from "./picker";
 import { detectResumeRegion } from "./resume";
@@ -34,7 +36,7 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
       { kind: "picker", picker: picker.model, lines: lines.slice(picker.startLine) },
     ];
   }
-  const prompt = detectTrustRegion(lines) ?? detectApprovalRegion(lines);
+  const prompt = detectTrustRegion(lines) ?? detectApprovalRegion(lines) ?? detectAskRegion(lines);
   if (prompt) {
     const before = trimTrailingBlank(lines.slice(0, prompt.startLine));
     const blocks: Block[] = [];

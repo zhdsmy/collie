@@ -87,6 +87,21 @@
       "verified": { "version": "0.156.1", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus" }
     },
     {
+      "id": "codex.ask",
+      "agent": "codex",
+      "origin": "upstream-patched",
+      "sources": ["web/src/lib/harness/codex/ask.ts", "web/src/lib/harness/codex/index.ts"],
+      "tests": ["web/src/lib/harness/codex/ask.test.ts", "web/src/lib/harness/codex.test.ts", "web/e2e/codex-dialog-cards.spec.ts"],
+      "fixtures": [
+        { "path": "web/src/fixtures/panes/codex--v0160-question.txt", "agent": "codex", "expect": { "block": "prompt-select", "minOptions": 3 } },
+        { "path": "web/src/fixtures/panes/codex--v0154-question-q1.txt", "agent": "codex", "expect": { "block": "prompt-select", "minOptions": 3 } },
+        { "path": "web/src/fixtures/panes/codex--v0154-question-notes.txt", "agent": "codex", "expect": { "block": "raw" } }
+      ],
+      "live": true,
+      "liveChecks": ["open", "answer"],
+      "verified": { "version": "0.160.1", "date": "2026-10-07", "how": "isolated live canary: question lifted, Pear digit pressed, answer recorded; source cross-check of rust-v0.160.1 request_user_input/mod.rs", "evidence": "web/src/lib/harness/codex/ASK_NOTES.md" }
+    },
+    {
       "id": "codex.unread-dialog",
       "agent": "codex",
       "origin": "upstream-patched",

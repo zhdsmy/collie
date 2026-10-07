@@ -9,6 +9,7 @@ import { codexAdapter } from "./codex";
 import { composerPrompt, extractInputDraft, locateComposer, stripChrome } from "./codex/chrome";
 import { isComposerStatusRow, isStatusRow, lineText, PLACEHOLDER } from "./codex/markers";
 import { detectApprovalRegion } from "./codex/approval";
+import { detectAskRegion } from "./codex/ask";
 import { detectTrustRegion } from "./codex/trust";
 import { decorateCodexDisplay } from "./codex/display";
 import { describeAdapterConformance } from "./conformance";
@@ -77,6 +78,21 @@ const QUESTIONS = [
   "codex--v0154-notes-returned.txt",
   "codex--v0154-notes-multiline.txt",
   "codex--v0154-notes-multiline-focused.txt",
+  "codex--v0154-question-q1-answered.txt",
+  "codex--v0154-question-q1-return.txt",
+  "codex--v0154-question-q1-revised.txt",
+  "codex--v0154-question-q1-selected.txt",
+  "codex--v0154-question-q1.txt",
+  "codex--v0154-question-q2-selected.txt",
+  "codex--v0154-question-q2-unanswered.txt",
+  "codex--v0154-question-q2.txt",
+];
+// Option focus on a question: each lifts a digit-per-option card. The notes captures above stay native.
+const LIFTED_QUESTIONS = [
+  "codex--ask-fruit.txt",
+  "codex--ask-wizard-q1.txt",
+  "codex--ask-wizard-q2.txt",
+  "codex--v0160-question.txt",
   "codex--v0154-question-q1-answered.txt",
   "codex--v0154-question-q1-return.txt",
   "codex--v0154-question-q1-revised.txt",
@@ -187,6 +203,7 @@ const DIALOG = [
 
 const ownFixtures = [
   ...PICKERS,
+  ...LIFTED_QUESTIONS,
   "codex--approval-exec.txt",
   "codex--v0156-approval-exec-2opt.txt",
   "codex--v0156-approval-exec-wrapped-50.txt",
@@ -887,6 +904,31 @@ describe("codexBuildBlocks", () => {
       expect(blocks.flatMap((block) => block.lines).map(lineText)).toEqual(lines.map(lineText));
     },
   );
+
+  it.each(LIFTED_QUESTIONS)("%s: lifts a question card whose buttons send one digit each", (name) => {
+    const prompt = codexAdapter.buildBlocks(fixtureLines(name)).find((b) => b.kind === "prompt-select");
+    if (prompt?.kind !== "prompt-select") throw new Error("no question card");
+    expect(prompt.prompt.options.map((o) => o.keys)).toEqual(prompt.prompt.options.map((_, i) => [String(i + 1)]));
+    expect(prompt.prompt.options.at(-1)?.label).toBe("None of the above");
+  });
+
+  it("ask refuses non-consecutive digits and a missing header", () => {
+    const shuffled = [
+      "  Question 1/1 (1 unanswered)",
+      "  Pick?",
+      "  › 2. B",
+      "    1. A",
+      "  tab to add notes | enter to submit answer | esc to interrupt",
+    ].join("\n");
+    expect(detectAskRegion(splitLines(parseAnsi(shuffled)))).toBeNull();
+    const headerless = [
+      "  Pick?",
+      "  › 1. A",
+      "    2. B",
+      "  tab to add notes | enter to submit answer | esc to interrupt",
+    ].join("\n");
+    expect(detectAskRegion(splitLines(parseAnsi(headerless)))).toBeNull();
+  });
 
   it("stays raw on every neutral capture", () => {
     for (const name of neutralFixtures) {

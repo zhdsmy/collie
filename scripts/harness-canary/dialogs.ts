@@ -9,7 +9,7 @@
 //
 // Keys are pressed only where the recipe was measured live on 2026-09-26: a permission dialog's "No"
 // digit (declines), Escape out of the Tab amend note (declines), an AskUserQuestion option's digit
-// (answers), Codex's approval decline, and OpenCode's pointer walk (Right, then Enter) and Escape.
+// (answers), Codex's approval decline and question digit (2026-10-07), and OpenCode's pointer walk (Right, then Enter) and Escape.
 // Every decline is checked in the project folder too: the file the prompt asked for must not exist.
 // Plan approval is read, never answered: its keys were not probed on 2.1.283.
 
@@ -305,11 +305,16 @@ async function claudeDialogs(ctx: AgentContext, questionsOnly = false): Promise<
   return cases;
 }
 
-/** Codex, started so that it asks: command approval and patch approval, both declined. */
+/**
+ * Codex, started so that it asks: command approval and patch approval, both declined, and a
+ * `request_user_input` question answered with the card's Pear digit. The feature flag lets the
+ * question come in Default mode; Esc is never pressed on it, because it interrupts the turn.
+ */
 async function codexDialogs(ctx: AgentContext, execOnly = false): Promise<CaseResult[]> {
   const cases: CaseResult[] = [];
   const d = await Driver.open(ctx, "canary-codex-dialogs", ctx.options.cols, "dialogs");
-  const command = `codex ${CODEX_ARGS} -c approvals_reviewer=user -a on-request -s read-only`;
+  const command = `codex ${CODEX_ARGS} -c approvals_reviewer=user -a on-request -s read-only ` +
+    "-c features.default_mode_request_user_input=true";
   try {
     if ((await d.launch([], launchLine(ctx.options.cols, command))) === null) return unreached(["dialogs"], "Codex never came up idle");
     const declineRow = /^(No\b|Don'?t|Deny|Decline|Cancel|Reject)/i;
@@ -323,6 +328,31 @@ async function codexDialogs(ctx: AgentContext, execOnly = false): Promise<CaseRe
     else {
       cases.push(judgePrompt(d, s, "exec-approval", {}));
       cases.push(await decline(d, "exec-decline", s, declineRow, "canary-exec.txt"));
+    }
+
+    await prompt(d, 'Call request_user_input exactly once: ask "Pick a fruit?" with the options Apple and Pear. After I answer, reply with only my answer.');
+    s = await waitBlocked(d);
+    if (s === null) {
+      const file = d.save("dialogs-ask-not-reached", await d.screen());
+      cases.push(...unreached(["ask-open", "ask-answer"], `no question came (${file})`));
+    }
+    else {
+      cases.push(judgePrompt(d, s, "ask-open", { family: "select", labels: ["Apple", "Pear", "None of the above"] }));
+      const pear = promptOf(s)?.options.find((o) => /^Pear\b/.test(o.label));
+      if (pear === undefined) cases.push(failCase("ask-answer", "no Pear option to press"));
+      else {
+        d.keys(pear.keys);
+        const after = await waitSettled(d, BUSY_TURN_TIMEOUT_MS);
+        if (after === null) {
+          const file = d.save("dialogs-ask-answer-stuck", await d.screen());
+          cases.push(failCase("ask-answer", `pressed ${pear.keys.join(" ")}; the agent did not settle (${file})`));
+        }
+        else {
+          const file = d.save("dialogs-ask-answer", after);
+          const answered = after.texts.some((t) => /Pear/.test(t)) && promptOf(after) === null;
+          cases.push(answered ? passCase("ask-answer", `pressed ${pear.keys.join(" ")}, answered Pear`) : failCase("ask-answer", `no Pear answer on screen (${file})`));
+        }
+      }
     }
 
     if (execOnly) return cases;
@@ -434,7 +464,7 @@ export async function runDialogs(ctx: AgentContext, focused = false): Promise<Ca
     : ctx.profile.agent === "opencode" ? await opencodeDialogs(ctx, focused)
     : [notReachedCase("dialogs", "Collie has no dialog reader for this agent")];
   const ids: Record<string, string> = ctx.profile.agent === "codex"
-    ? { "exec-approval": "codex.approval.open", "exec-decline": "codex.approval.decline" }
+    ? { "exec-approval": "codex.approval.open", "exec-decline": "codex.approval.decline", "ask-open": "codex.ask.open", "ask-answer": "codex.ask.answer" }
     : ctx.profile.agent === "claude"
       ? { "ask-open": "claude.ask.open", "ask-type-focused": "claude.ask.type-focused", "ask-type-left": "claude.ask.type-left", "ask-answer": "claude.ask.answer" }
       : { permission: "opencode.permission.open", "permission-always": "opencode.permission.always", "permission-always-cancel": "opencode.permission.cancel", "permission-reject": "opencode.permission.decline" };

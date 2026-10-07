@@ -1,9 +1,24 @@
 # Codex `request_user_input` — keystroke recipe
 
-Historical evidence only. Codex QA has stayed native since 2026-09-17; the unused card
-detector was removed on 2026-10-02. These probes do not describe current Collie actions.
-Current scope: [PICKER_NOTES.md](./PICKER_NOTES.md#scope-2026-10-02). Captures remain for
-native rendering and composer-locking regression tests.
+## Current card — Codex 0.160.1, verified 2026-10-07
+
+The option list is a `prompt-select` card again (`ask.ts`, upstream's detector). Each option
+sends its own digit once; nothing else is offered. Codex 0.160.1's `request_user_input/mod.rs`
+selects and commits that option, then moves to the next question or submits on the last. When
+an earlier question is still unanswered, Codex opens its own `Submit with unanswered questions?`
+confirmation instead, and that screen stays native.
+
+Notes focus (`tab or esc to clear notes`, a `› Add notes` row), wrapped labels, partial option
+lists, a countdown header and output below the footer stay native. Esc interrupts the turn and
+is never sent. Asynchronous questions, plan prompts and review pickers are not part of this card.
+
+Live: `bun run canary --agent codex --scenario dialogs --card-dialogs` in an isolated Herdr
+session lifted `Pick a fruit?` with Apple, Pear and None of the above, pressed Pear's `2`, and
+Codex recorded `answer: Pear` and replied. The probe sends the card's keys through Herdr; the
+browser's bound `/keys` write is pinned by `web/e2e/codex-dialog-cards.spec.ts`.
+
+The sections below are the earlier probes: the 0.154 multi-step picker card (retired
+2026-09-17) and the 0.149 digit recipe this card follows.
 
 Captured 2026-08-22 on Codex v0.149.0 in a sandbox pane (feature flag
 `default_mode_request_user_input` was enabled in the host config; the tool announces itself as
