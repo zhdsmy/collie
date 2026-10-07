@@ -240,6 +240,7 @@ const CARD_FIXTURES = {
       "claude-lab--menu-status-screen--w82.txt",
       // Settings tabs share the bounded unread viewport, including the selectable Config list.
       "claude-lab--menu-config-panel--w82.txt",
+      "claude-lab--menu-config-panel-v2291--w82.txt",
       "claude--v21284-settings-config.txt",
       "claude--v21284-settings-status.txt",
       "claude--v21284-settings-usage.txt",

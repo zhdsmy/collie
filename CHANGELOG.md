@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Prompt cards show their context and Claude drafts stay editable.** Merge upstream v1.17.2, including v1.17.1: restore permission subjects, avoid duplicate questions, and follow Claude Code 2.1.291 menus, effort levels and plan dialogs while retaining Collie controls and native Codex cards. See [the complete Chinese report](docs/upstream-v1.17.2.md).
+
 ## [1.17.0+collie.5] - 2026-10-06
 
 ### Fixed
@@ -141,6 +145,21 @@ Running a crew? Update the lead first; members follow on their own. Details:
 ### Changed
 
 - **Collie follows upstream with reliable paths and Crew connections.** Merge v1.15.3 with Windows path fixes, explicit Crew addresses and omp empty-editor hint recognition, preserving Collie controls and current agent adaptations. ([4e24f2d5](https://github.com/zhdsmy/collie/commit/4e24f2d5))
+## [1.17.2] - 2026-10-06
+
+### Fixed
+
+- **The question shows once on a prompt card.** In the Terminal view, a Codex, Grok, opencode, omp or Antigravity card whose rows the card already shows no longer prints the question twice, above the card and on it. A fade now shows at the bottom of the card's command or diff while more of it continues below.
+- **The slash-command list is read again on Claude Code 2.1.291.** That version marks the selected command with a pointer and indents the list differently, so the list stayed on the raw terminal view, and with a long list open the phone could not send at all. Collie now reads both layouts, and the composer stays sendable while the list is open.
+- **The effort card shows only real levels on Claude Code 2.1.291.** That build replaced the `ultracode` level with a toggle beside the `/effort` slider, and the card listed the words of its `Tab to toggle` hint as three more levels. The `/tasks`, `/resume` and rewind panels on Claude Code 2.1.291 are now checked against captures of that build, and read as before.
+- **A multi-line draft no longer reads as a plan dialog.** On Claude Code 2.1.291 a multi-line draft printed a `ctrl+g` hint that Collie read as a plan dialog, so the phone showed the unread-dialog card and a send stalled. The plan family is now claimed only when the plan dialog's own words are on screen. A draft that quotes a plan dialog is never read as one. The plan dialog at 40 columns, whose question, hint and plan path wrap onto extra rows, now lifts with the same buttons as at 82 columns.
+
+## [1.17.1] - 2026-10-06
+
+### Fixed
+
+- **Permission cards show what the agent asks for.** The card now shows the dialog's header, the command or diff, any warning, and the question above the buttons. A permission raised by a subagent used to show only Yes and No in the Chat view, because the card left the rest in the terminal rows above it, which are off screen. A long command or diff scrolls inside the card, so the buttons stay in reach. Every other question card shows its question as text too.
+
 ## [1.17.0] - 2026-10-06
 
 ### Added

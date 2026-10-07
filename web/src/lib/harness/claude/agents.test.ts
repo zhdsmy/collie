@@ -23,7 +23,7 @@ describe("Claude left-arrow agents", () => {
   });
 
   it("keeps a wrapped Working-group description out of the option walk at 40 columns", () => {
-    const lines = parse(labFixture("claude-lab--agents-screen--w40.txt"));
+    const lines = parse(labFixture("claude-lab--agents-screen-v2278--w40.txt"));
     const region = detectAgentsRegion(lines);
     expect(region?.model.options.map((option) => option.label)).toEqual(["README.md"]);
     expect(claudeBuildBlocks(lines).at(-1)?.kind).toBe("picker");

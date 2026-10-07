@@ -15,6 +15,7 @@ for (const theme of ["light", "dark"]) {
     await page.addInitScript((colorMode) => {
       localStorage.setItem("collie:theme:v1", colorMode);
       localStorage.setItem("collie:locale:v1", "zh");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
     }, theme);
     await installApiStub(page);
     await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {

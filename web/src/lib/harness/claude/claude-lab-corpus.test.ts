@@ -150,8 +150,8 @@ describe("the table and the fixture directory stay in lockstep", () => {
   });
 
   it("the corpus is not vacuous", () => {
-    expect(ENTRIES.length).toBe(66);
-    expect(new Set(ENTRIES.map((e) => e.cols))).toEqual(new Set([40, 41, 60, 82, 83, 120, 200]));
+    expect(ENTRIES.length).toBe(96);
+    expect(new Set(ENTRIES.map((e) => e.cols))).toEqual(new Set([40, 41, 60, 82, 83, 120, 132, 200]));
     expect(new Set(ENTRIES.map((e) => e.state)).size).toBeGreaterThan(25);
   });
 });
@@ -176,7 +176,11 @@ describe("a real box is found, with its draft and its tail", () => {
   );
 
   it("the check is not vacuous", () => {
-    expect(CLEAN.length).toBeGreaterThan(40);
+    // 51 today. The 2.1.291 run moved box-bearing captures with multi-line drafts into the recorded
+    // tail gaps (the `ctrl+g to edit in nano` statusline hint), the slash-popup grammar fix brought
+    // eleven popup captures back (37 to 48), and the draft-hint fix the three `draft-adversarial`
+    // stalls (48 to 51), so the floor sits just under that.
+    expect(CLEAN.length).toBeGreaterThan(48);
   });
 
   it.each(CLEAN.map((e) => [e.fixture, e] as const))("%s", (_name, entry) => {
@@ -263,11 +267,7 @@ describe("the pipeline lifts the kind the screen shows", () => {
   });
 
   it("every knownRaw carries a reason naming a candidate grammar, and pins its reading", () => {
-    // Two: the seven the register in M34 spec 03 argues, plus the 40-column /tasks panel the
-    // 2026-09-22 capture-lab run added, less the WebFetch dialog and the three plan-approval
-    // captures the 2026-09-26 grammar work lifted and both Agents launchers lifted on 2026-09-29.
-    // When a grammar lands, the repair is to delete that
-    // entry's `knownRaw` and its `actualToday`, and to lower this number.
+    // The Status and narrow Tasks screens stay native; downstream lifts both Agents launchers.
     expect(RAW_GAPS.length).toBe(2);
     for (const entry of RAW_GAPS) {
       expect(entry.knownRaw!.length, entry.fixture).toBeGreaterThan(40);
