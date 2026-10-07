@@ -25,6 +25,8 @@ import {
 } from "./harness/picker-model";
 import { POLL_ATTEMPTS, defaultSleep, type ActionResult, type Sleep } from "./harness/guard";
 import { paneScopeKey, type Scope } from "./scope";
+import { draftCarriesSend } from "./draft-match";
+import { codexDraftCarriesSend } from "./harness/codex/paste";
 
 /** Lease for a multi-step write that owns one addressed pane's keyboard. */
 export interface PaneActionOwner {
@@ -220,6 +222,17 @@ function samePickerExceptPointer(a: PickerModel, b: PickerModel): boolean {
   }
   if (a.query !== b.query || a.footer !== b.footer || !samePreview(a, b)) return false;
   if (!sameStrings(a.navigation?.order ?? [], b.navigation?.order ?? [])) return false;
+  const before = a.questionnaire;
+  const after = b.questionnaire;
+  if (before && after) {
+    if (before.notes?.text !== after.notes?.text || before.notes?.focused !== after.notes?.focused) return false;
+    // Moving an answered question's pointer makes that question unanswered again. This is the
+    // only counter change caused by Up/Down; a terminal user confirming another answer is drift.
+    const unchanged = before.answered === after.answered && before.unanswered === after.unanswered;
+    const edited = before.answered && !after.answered && after.unanswered === before.unanswered + 1 &&
+      pointedOption(a)?.id !== pointedOption(b)?.id;
+    if (before.submit !== after.submit || (!unchanged && !edited)) return false;
+  }
   const af = optionFacts(a);
   const bf = optionFacts(b);
   return af.length === bf.length && af.every((value, index) => sameOptionFacts(value, bf[index]!));
@@ -502,12 +515,12 @@ async function commitAt(
     current.model,
     key === "Space" ? (model) => toggleAccepted(current.model, model, id) : () => false,
     key === "Enter",
-    key === "Enter",
+    key === "Enter" && !current.model.plan,
   );
 }
 
 async function runChoose(args: PickerActionArgs, id: string): Promise<ActionResult> {
-  if (args.picker.kind !== "single") return { status: "changed" };
+  if (args.picker.kind !== "single" || args.picker.questionnaire) return { status: "changed" };
   const initial = await readCurrent(args);
   if (!initial.ok) return initial.result;
   const walked = await walkTo(args, initial.value, id);
@@ -547,6 +560,126 @@ async function runDelete(args: PickerActionArgs, id: string): Promise<ActionResu
     model.identity.startsWith("agents:delete:") && model.title === `Permanently delete “${option.label}”?`, false, false);
 }
 
+/** A question option tap only moves its pointer. Confirming the answer is a separate user action. */
+async function runFocus(args: PickerActionArgs, id: string): Promise<ActionResult> {
+  if (args.picker.kind !== "single" || !args.picker.questionnaire) return { status: "changed" };
+  const initial = await readCurrent(args);
+  if (!initial.ok) return initial.result;
+  const walked = await walkTo(args, initial.value, id);
+  return walked.ok ? { status: "sent" } : walked.result;
+}
+
+async function runQuestion(args: PickerActionArgs, direction: "previous" | "next"): Promise<ActionResult> {
+  const question = args.picker.questionnaire;
+  if (args.picker.kind !== "single" || !question) return { status: "changed" };
+  const nextIndex = question.index + (direction === "next" ? 1 : -1);
+  if (nextIndex < 1 || nextIndex > question.total) return { status: "changed" };
+  const sent = await guardedKey(args, [question.notes?.focused
+    ? direction === "next" ? "ctrl+n" : "ctrl+p"
+    : direction === "next" ? "Right" : "Left"]);
+  if (sent.status !== "sent") return sent;
+  return readCommitOutcome(args, args.picker, (model) => model.questionnaire?.index === nextIndex &&
+    model.questionnaire.total === question.total && model.questionnaire.unanswered === question.unanswered,
+  false, false);
+}
+
+async function confirmQuestion(args: PickerActionArgs): Promise<ActionResult> {
+  const question = args.picker.questionnaire;
+  const pointer = pointedOption(args.picker);
+  if (!question || question.notes?.focused || !pointer || !/^[1-9]$/.test(pointer.id)) return { status: "changed" };
+  // Do not open Codex's secondary "submit unanswered questions" modal. Earlier questions remain
+  // reachable through the header arrows, so the final button can require their explicit answers.
+  const otherUnanswered = question.unanswered - (question.answered ? 0 : 1);
+  if (question.submit === "all" && otherUnanswered > 0) return { status: "changed" };
+  // Digits confirm the pointed answer even on "None of the above". Enter on that row instead
+  // focuses notes, so using Enter would contradict the explicit submit button's label.
+  const sent = await guardedKey(args, [pointer.id]);
+  if (sent.status !== "sent") return sent;
+  const unanswered = question.unanswered - (question.answered ? 0 : 1);
+  return readCommitOutcome(args, args.picker, (model) => question.submit === "answer" &&
+    model.questionnaire?.index === question.index + 1 && model.questionnaire.total === question.total &&
+    model.questionnaire.unanswered === unanswered, question.submit === "all", false);
+}
+
+/** Only notes and this question's confirmation flag may change while editing its composer. */
+function sameQuestionExceptNotes(a: PickerModel, b: PickerModel): boolean {
+  if (!samePickerStage(a, b) || !a.questionnaire || !b.questionnaire) return false;
+  const before = a.questionnaire;
+  const after = b.questionnaire;
+  const countStable = before.answered === after.answered && before.unanswered === after.unanswered;
+  const edited = before.answered && !after.answered && after.unanswered === before.unanswered + 1;
+  return (countStable || edited) && before.submit === after.submit &&
+    a.options.length === b.options.length && a.options.every((option, index) => {
+      const other = b.options[index]!;
+      return sameOptionFacts(option, other) && option.pointed === other.pointed;
+    });
+}
+
+function notesLanded(text: string, model: PickerModel): boolean {
+  const draft = model.questionnaire?.notes?.text;
+  if (draft === undefined) return false;
+  return draft === text || draftCarriesSend(text, draft.replace(/\n/g, " "), { requireTail: true }) ||
+    codexDraftCarriesSend(text, draft, "");
+}
+
+async function runAnswer(args: PickerActionArgs, notes: string): Promise<ActionResult> {
+  const text = notes.replace(/\r\n?/g, "\n");
+  if (/\p{Cc}/u.test(text.replace(/[\n\t]/g, ""))) return { status: "changed" };
+  const question = args.picker.questionnaire;
+  if (!question || (question.submit === "all" && question.unanswered - (question.answered ? 0 : 1) > 0)) {
+    return { status: "changed" };
+  }
+  if (!question.notes && !text.trim()) return confirmQuestion(args);
+  const initial = await readCurrent(args);
+  if (!initial.ok) return initial.result;
+  let current = initial.value;
+
+  async function changeNoteFocus(key: "Escape" | "Tab", present: boolean): Promise<ActionResult | null> {
+    const currentArgs = argsFor(args, current);
+    const sent = await guardedKey(currentArgs, [key]);
+    if (sent.status !== "sent") return sent;
+    const next = await readBack(currentArgs, current.model, (model) =>
+      sameQuestionExceptNotes(current.model, model) &&
+      (present ? model.questionnaire?.notes?.focused === true : !model.questionnaire?.notes));
+    if (!next) return { status: "changed" };
+    current = next;
+    return null;
+  }
+
+  // A retry after a lost response uses the draft already in Codex, never appends it again.
+  // Replacing a different draft is explicit; Escape is safe only on verified notes.
+  if (current.model.questionnaire?.notes?.text && current.model.questionnaire.notes.text !== text) {
+    const failure = await changeNoteFocus("Escape", false);
+    if (failure) return failure;
+  }
+  if (!current.model.questionnaire?.notes?.focused) {
+    const failure = await changeNoteFocus("Tab", true);
+    if (failure) return failure;
+  }
+  if (!notesLanded(text, current.model) && text.length > 0) {
+    if (current.model.questionnaire?.notes?.text) return { status: "changed" };
+    const currentArgs = argsFor(args, current);
+    const guard = await guardDialog(target(currentArgs));
+    if (!guard.ok) return guard.result;
+    // Bracketed paste keeps blank lines and Enter characters inside the native note editor.
+    const typed = await sendSearchText(currentArgs, "\x1b[200~" + text + "\x1b[201~");
+    if (typed.status !== "sent") return typed;
+    const landed = await readBack(currentArgs, current.model, (model) =>
+      sameQuestionExceptNotes(current.model, model) && model.questionnaire?.notes?.focused === true &&
+      notesLanded(text, model));
+    if (!landed) return { status: "changed" };
+    current = landed;
+  }
+  if (!current.model.questionnaire?.notes?.focused) return { status: "changed" };
+  const currentArgs = argsFor(args, current);
+  const sent = await guardedKey(currentArgs, ["Enter"]);
+  if (sent.status !== "sent") return sent;
+  return readCommitOutcome(currentArgs, current.model, (model) =>
+    question.submit === "answer" && model.questionnaire?.index === question.index + 1 &&
+    model.questionnaire.total === question.total && model.questionnaire.unanswered === question.unanswered - (question.answered ? 0 : 1),
+  question.submit === "all", false);
+}
+
 async function runToggle(args: PickerActionArgs, id: string): Promise<ActionResult> {
   if (args.picker.kind !== "multiple") return { status: "changed" };
   const option = args.picker.options.find((candidate) => candidate.id === id);
@@ -562,13 +695,19 @@ async function runClose(
   args: PickerActionArgs,
   intent: "confirm" | "cancel",
 ): Promise<ActionResult> {
+  if (args.picker.questionnaire) {
+    // Escape interrupts the whole Codex turn, rather than dismissing just the question card.
+    return intent === "confirm" ? confirmQuestion(args) : { status: "changed" };
+  }
   if (intent === "confirm" && args.picker.kind !== "multiple") {
     return { status: "changed" };
   }
   const key = intent === "confirm" ? "Enter" : "Escape";
   const sent = await guardedKey(args, [key]);
   if (sent.status !== "sent") return sent;
-  return readCommitOutcome(args, args.picker, () => false, true,
+  // Escape on a review submenu goes back to Codex's preset list rather than closing (REVIEW_NOTES.md).
+  const backTo = intent === "cancel" && /^review:(?:base|commit)$/.test(args.picker.identity) ? "review:preset" : null;
+  return readCommitOutcome(args, args.picker, (model) => model.identity === backTo, true,
     args.picker.identity === "agents:help" || args.picker.identity.startsWith("agents:delete:"));
 }
 
@@ -745,6 +884,12 @@ async function dispatch(args: PickerActionArgs): Promise<ActionResult> {
       return runChoose(args, args.intent.id);
     case "delete":
       return runDelete(args, args.intent.id);
+    case "focus":
+      return runFocus(args, args.intent.id);
+    case "question":
+      return runQuestion(args, args.intent.direction);
+    case "answer":
+      return runAnswer(args, args.intent.notes);
     case "toggle":
       return runToggle(args, args.intent.id);
     case "move":

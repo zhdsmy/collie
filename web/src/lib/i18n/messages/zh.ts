@@ -1032,6 +1032,8 @@ export const zh: Dictionary = {
   "prompt.approval.hideCommand": "收起命令",
   "prompt.approval.showCommand": "展开完整命令",
   "prompt.approval.persistentOptions": "持久授权（仅终端操作）",
+  "dialog.picker.notes": "补充说明或自定义回答（可选）",
+  "dialog.picker.notesPlaceholder": "补充细节，或选择「以上都不是」后填写自己的回答。",
   "dialog.picker.searchAria": "搜索选择器选项",
   "dialog.picker.apply": "应用",
   "dialog.picker.clearSearch": "清除搜索",
@@ -1042,6 +1044,14 @@ export const zh: Dictionary = {
   "dialog.picker.noResults": "没有匹配的选项",
   "dialog.picker.confirm": "确认并关闭",
   "dialog.agents.deleteAria": "删除 {label}",
+  "dialog.picker.questionProgress": "问题 {index}/{total}",
+  "dialog.picker.unanswered.one": "{count} 个未回答",
+  "dialog.picker.unanswered.other": "{count} 个未回答",
+  "dialog.picker.previousQuestion": "上一题",
+  "dialog.picker.nextQuestion": "下一题",
+  "dialog.picker.submitAnswer": "确认答案",
+  "dialog.picker.submitAll": "提交全部答案",
+  "dialog.picker.answerRemaining": "提交前请回答剩余问题。",
 
   "dialog.sessions.title": "恢复会话",
   "dialog.sessions.forkTitle": "创建会话分支",
@@ -1050,6 +1060,10 @@ export const zh: Dictionary = {
   "dialog.sessions.search": "搜索会话",
   "dialog.sessions.searchAction": "搜索",
 
+  "dialog.plan.title": "计划",
+  "dialog.plan.recap": "对话回顾",
+  "dialog.plan.body": "计划正文",
+  "dialog.plan.partial": "当前仅显示终端可见的计划片段。",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox": "未检测到 Agent 输入框，可能正处于弹窗或菜单中。未输入任何内容。",

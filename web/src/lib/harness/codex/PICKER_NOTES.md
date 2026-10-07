@@ -69,13 +69,11 @@ metadata, without copying authentication or changing the user's configuration.
 ## Scope (2026-10-02)
 
 Model/reasoning, statusline configuration, saved-session and agent pickers, and command
-approvals and folder trust are cardified. Since 2026-10-07 the `request_user_input` option list
-is a digit card again (ASK_NOTES.md). Its notes state, asynchronous questions, plan decisions and
-review selection stay in the native terminal view.
-Their captured text and keyboard hints remain visible; Collie does not expand,
-answer, or confirm those dialogs automatically. Use the Composer's native keys.
+approvals and folder trust are cardified. Since 2026-10-08 the question card (with question
+navigation and notes), the Plan decisions and the `/review` pickers are cards again, restored on
+Codex 0.160.1 (ASK_NOTES.md, PLAN_NOTES.md, REVIEW_NOTES.md). Asynchronous questions stay in the
+native terminal view; Collie does not expand or answer them.
 
-The 0.154 multi-step question picker stays retired; `ASK_NOTES.md` records its probes.
 Folder trust uses
 the upstream card for the captured `Folder access` layout; unknown layouts remain native.
 Composer recognition and prompt binding still protect ordinary chat sends when

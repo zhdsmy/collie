@@ -1028,6 +1028,8 @@ export const zhTW: Dictionary = {
   "prompt.approval.hideCommand": "收合命令",
   "prompt.approval.showCommand": "展開完整命令",
   "prompt.approval.persistentOptions": "持續授權（僅限終端操作）",
+  "dialog.picker.notes": "補充說明或自訂回答（選填）",
+  "dialog.picker.notesPlaceholder": "補充細節，或選擇「以上皆非」後填寫自己的回答。",
   "dialog.picker.searchAria": "搜尋選擇器選項",
   "dialog.picker.apply": "套用",
   "dialog.picker.clearSearch": "清除搜尋",
@@ -1038,6 +1040,14 @@ export const zhTW: Dictionary = {
   "dialog.picker.noResults": "沒有符合的選項",
   "dialog.picker.confirm": "確認並關閉",
   "dialog.agents.deleteAria": "刪除 {label}",
+  "dialog.picker.questionProgress": "問題 {index}/{total}",
+  "dialog.picker.unanswered.one": "{count} 個未回答",
+  "dialog.picker.unanswered.other": "{count} 個未回答",
+  "dialog.picker.previousQuestion": "上一題",
+  "dialog.picker.nextQuestion": "下一題",
+  "dialog.picker.submitAnswer": "確認答案",
+  "dialog.picker.submitAll": "提交全部答案",
+  "dialog.picker.answerRemaining": "提交前請回答剩餘問題。",
 
   "dialog.sessions.title": "恢復對話",
   "dialog.sessions.forkTitle": "建立對話分支",
@@ -1046,6 +1056,10 @@ export const zhTW: Dictionary = {
   "dialog.sessions.search": "搜尋對話",
   "dialog.sessions.searchAction": "搜尋",
 
+  "dialog.plan.title": "計畫",
+  "dialog.plan.recap": "對話回顧",
+  "dialog.plan.body": "計畫內容",
+  "dialog.plan.partial": "目前僅顯示終端可見的計畫片段。",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox": "未偵測到 Agent 輸入框，可能正處於彈出視窗或選單中。未輸入任何內容。",

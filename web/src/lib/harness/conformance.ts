@@ -388,6 +388,7 @@ export function emittableKeys(block: Block): string[] | null {
         ...(block.menu.nav.leftRight !== undefined ? [...MENU_LEFT_KEYS, ...MENU_RIGHT_KEYS] : []),
       ];
     case "picker":
+      if (block.picker.questionnaire) return ["Up", "Down", "Left", "Right", "Tab", "Escape", "Enter", "ctrl+n", "ctrl+p", ...block.picker.options.map((option) => option.id)];
       return block.picker.kind === "multiple"
         ? ["Up", "Down", "Left", "Right", "Space", "Backspace", "Enter", "Escape"]
         : ["Up", "Down", "Enter", "Escape"];

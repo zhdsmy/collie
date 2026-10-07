@@ -38,6 +38,8 @@ const REVIEWS = [
   "codex--review-base-branch.txt",
   "codex--review-commit.txt",
   "codex--v0160-review-preset.txt",
+  "codex--v0160-review-base-branch.txt",
+  "codex--v0160-review-commit.txt",
 ];
 
 const PICKERS = [
@@ -86,21 +88,16 @@ const QUESTIONS = [
   "codex--v0154-question-q2-selected.txt",
   "codex--v0154-question-q2-unanswered.txt",
   "codex--v0154-question-q2.txt",
+  "codex--v0160-question-q2-nav.txt",
+  "codex--v0160-question-notes-text.txt",
+  "codex--v0160-question-all-answered.txt",
 ];
-// Option focus on a question: each lifts a digit-per-option card. The notes captures above stay native.
+// Every question state lifts as one picker card, notes included (ASK_NOTES.md).
 const LIFTED_QUESTIONS = [
+  ...QUESTIONS,
   "codex--ask-fruit.txt",
   "codex--ask-wizard-q1.txt",
   "codex--ask-wizard-q2.txt",
-  "codex--v0160-question.txt",
-  "codex--v0154-question-q1-answered.txt",
-  "codex--v0154-question-q1-return.txt",
-  "codex--v0154-question-q1-revised.txt",
-  "codex--v0154-question-q1-selected.txt",
-  "codex--v0154-question-q1.txt",
-  "codex--v0154-question-q2-selected.txt",
-  "codex--v0154-question-q2-unanswered.txt",
-  "codex--v0154-question-q2.txt",
 ];
 const PLANS = [
   "codex--v0154-plan-long.txt",
@@ -108,6 +105,7 @@ const PLANS = [
   "codex--v0154-plan-short-third.txt",
   "codex--v0154-plan-short.txt",
   "codex--v0160-plan-prompt.txt",
+  "codex--v0160-plan-pointer-third.txt",
 ];
 
 const ASYNC_QUESTIONS = [
@@ -177,6 +175,7 @@ const PINNED = [
   "codex--v0157-idle.txt",
   "codex--v0158-goal-notice.txt",
   "codex--v0160-warning-idle.txt",
+  "codex--v0160-question-unanswered-confirm.txt",
   "codex--v0160-warnings-panel.txt",
   "codex--working.txt",
 ];
@@ -194,6 +193,7 @@ const DIALOG = [
   "codex--ask-wizard-q2.txt",
   "codex--trust-prompt.txt",
   "codex--v0160-warnings-panel.txt",
+  "codex--v0160-question-unanswered-confirm.txt",
   "codex--v0156-approval-exec-2opt.txt",
   "codex--v0156-approval-exec-wrapped-50.txt",
   "codex--v0156-approval-exec-wrapped.txt",
@@ -203,6 +203,8 @@ const DIALOG = [
 
 const ownFixtures = [
   ...PICKERS,
+  ...REVIEWS,
+  ...PLANS,
   ...LIFTED_QUESTIONS,
   "codex--approval-exec.txt",
   "codex--v0156-approval-exec-2opt.txt",
@@ -905,11 +907,37 @@ describe("codexBuildBlocks", () => {
     },
   );
 
-  it.each(LIFTED_QUESTIONS)("%s: lifts a question card whose buttons send one digit each", (name) => {
-    const prompt = codexAdapter.buildBlocks(fixtureLines(name)).find((b) => b.kind === "prompt-select");
-    if (prompt?.kind !== "prompt-select") throw new Error("no question card");
-    expect(prompt.prompt.options.map((o) => o.keys)).toEqual(prompt.prompt.options.map((_, i) => [String(i + 1)]));
-    expect(prompt.prompt.options.at(-1)?.label).toBe("None of the above");
+  it.each(LIFTED_QUESTIONS)("%s: lifts the question as one picker card with its native state", (name) => {
+    const block = codexAdapter.buildBlocks(fixtureLines(name)).find((b) => b.kind === "picker");
+    if (block?.kind !== "picker") throw new Error("no question card");
+    expect(block.picker.questionnaire).toBeDefined();
+    expect(block.picker.options.map((o) => o.id)).toEqual(block.picker.options.map((_, i) => String(i + 1)));
+    expect(block.picker.options.at(-1)?.label).toBe("None of the above");
+    expect(block.picker.options.filter((o) => o.pointed)).toHaveLength(1);
+  });
+
+  it("lifts the whole question, so the mirror above repeats neither header nor question", () => {
+    const blocks = codexAdapter.buildBlocks(fixtureLines("codex--ask-fruit.txt"));
+    const card = blocks.find((b) => b.kind === "picker");
+    if (card?.kind !== "picker") throw new Error("no question card");
+    expect(card.picker.questionnaire).toMatchObject({ index: 1, total: 1, submit: "all" });
+    expect(card.picker.title).toBe("Pick a fruit?");
+    expect(card.picker.options.map((o) => o.label)).toEqual(["Apple (Recommended)", "Pear", "None of the above"]);
+    expect(card.picker.options[1]!.description).toBe("Choose a soft, juicy pear.");
+    const raw = blocks[0];
+    if (raw?.kind !== "raw") throw new Error("no mirror above the card");
+    expect(raw.lines.some((line) => lineText(line).trim() === "Pick a fruit?")).toBe(false);
+    expect(raw.lines.some((line) => /^\s*Question 1\/1 \(/.test(lineText(line)))).toBe(false);
+  });
+
+  it("reads a 0.160.1 set: question 2 reached by arrow, notes text, and the count-less header", () => {
+    expect(detectAskRegion(fixtureLines("codex--v0160-question-q2-nav.txt"))?.model.questionnaire)
+      .toMatchObject({ index: 2, total: 2, unanswered: 2, answered: false, submit: "all" });
+    expect(detectAskRegion(fixtureLines("codex--v0160-question-notes-text.txt"))?.model.questionnaire?.notes)
+      .toEqual({ text: "备注 note 1", focused: true });
+    // Every question answered: Codex prints `Question 2/2` with no count.
+    expect(detectAskRegion(fixtureLines("codex--v0160-question-all-answered.txt"))?.model.questionnaire)
+      .toMatchObject({ index: 2, total: 2, unanswered: 0, answered: true, submit: "all" });
   });
 
   it("ask refuses non-consecutive digits and a missing header", () => {

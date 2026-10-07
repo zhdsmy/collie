@@ -1,0 +1,25 @@
+
+
+  [0m[38;2;99;168;248m>_ [0m[1mOpenAI Codex[0m[2m (v0.160.1)[0m
+     [0m[2m/private/tmp/collie-canary-project[0m
+
+  [0m[38;2;99;168;248mThis looks like the start of a perfectly reasonable rabbit hole.[0m
+
+  [0m[1mTip:[0m When worktree support is available, use [0m[1m/worktree[0m to start or continue a conversation in a separate Git worktree.
+
+
+[0m[1m[2m[48;2;66;66;79m› [0m[48;2;66;66;79mCall request_user_input exactly once with two questions: first "Pick a fruit?" with options Apple and Pear, second    [0m
+[0m[48;2;66;66;79m  "Pick a color?" with options Red and Blue. After I answer, reply with only my answers and any notes.                  [0m
+
+ 
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[48;2;57;57;71m  [0m[2m[48;2;57;57;71mQuestion 1/2 (1 unanswered)[0m[48;2;57;57;71m                                                                                           [0m
+[0m[48;2;57;57;71m  [0m[38;2;99;168;248m[48;2;57;57;71mPick a fruit?[0m[48;2;57;57;71m                                                                                                         [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[48;2;57;57;71m    1. Apple              [0m[2m[48;2;57;57;71mChoose Apple.[0m[48;2;57;57;71m                                                                                 [0m
+[0m[48;2;57;57;71m  [0m[1m[38;2;0;0;46m[48;2;99;168;248m› 2. Pear               [0m[38;2;0;0;46m[48;2;99;168;248mChoose Pear.[0m[1m[38;2;0;0;46m[48;2;99;168;248m                                                                                [0m[48;2;57;57;71m  [0m
+[0m[48;2;57;57;71m    3. None of the above  [0m[2m[48;2;57;57;71mOptionally, add details in notes (tab)[0m[48;2;57;57;71m                                                        [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71m›[0m[48;2;57;57;71m 备注 note 1                                                                                                         [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[48;2;57;57;71m  [0m[1m[38;2;205;214;244m[48;2;57;57;71mtab[0m[2m[48;2;57;57;71m or [0m[1m[38;2;205;214;244m[48;2;57;57;71mesc[0m[2m[48;2;57;57;71m to clear notes | [0m[1m[38;2;205;214;244m[48;2;57;57;71menter[0m[38;2;135;140;164m[48;2;57;57;71m to submit answer[0m[48;2;57;57;71m                                                                    [0m

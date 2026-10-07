@@ -1053,6 +1053,8 @@ export const de: Dictionary = {
   "prompt.approval.hideCommand": "Befehl einklappen",
   "prompt.approval.showCommand": "Vollständigen Befehl anzeigen",
   "prompt.approval.persistentOptions": "Dauerhafte Berechtigungen (nur im Terminal)",
+  "dialog.picker.notes": "Anmerkungen oder eigene Antwort (optional)",
+  "dialog.picker.notesPlaceholder": "Details ergänzen oder „Keine der Optionen“ wählen und eine eigene Antwort schreiben.",
   "dialog.picker.searchAria": "Optionen im Auswahlmenü durchsuchen",
   "dialog.picker.apply": "Anwenden",
   "dialog.picker.clearSearch": "Suche löschen",
@@ -1063,6 +1065,14 @@ export const de: Dictionary = {
   "dialog.picker.noResults": "Keine passenden Optionen",
   "dialog.picker.confirm": "Bestätigen und schließen",
   "dialog.agents.deleteAria": "{label} löschen",
+  "dialog.picker.questionProgress": "Frage {index}/{total}",
+  "dialog.picker.unanswered.one": "{count} unbeantwortet",
+  "dialog.picker.unanswered.other": "{count} unbeantwortet",
+  "dialog.picker.previousQuestion": "Vorherige Frage",
+  "dialog.picker.nextQuestion": "Nächste Frage",
+  "dialog.picker.submitAnswer": "Antwort absenden",
+  "dialog.picker.submitAll": "Alle Antworten absenden",
+  "dialog.picker.answerRemaining": "Beantworte die übrigen Fragen, bevor du sie absendest.",
 
   "dialog.sessions.title": "Sitzung fortsetzen",
   "dialog.sessions.forkTitle": "Sitzung verzweigen",
@@ -1071,6 +1081,10 @@ export const de: Dictionary = {
   "dialog.sessions.search": "Sitzungen suchen",
   "dialog.sessions.searchAction": "Suchen",
 
+  "dialog.plan.title": "Plan",
+  "dialog.plan.recap": "Gesprächsrückblick",
+  "dialog.plan.body": "Planinhalt",
+  "dialog.plan.partial": "Nur der sichtbare Teil des Plans ist verfügbar.",
 
   // --- reply (the free-text reply race guard, lib/reply-action.ts) ---
   "reply.blocked.noBox":

@@ -880,6 +880,11 @@ export function AgentChat({
     () => blocks.some((b) => b.kind === "unread-dialog"),
     [blocks],
   );
+  // A Codex plan card asks the journal for the plan's own Markdown (lib/plan-content.ts).
+  const planPresent = useMemo(
+    () => blocks.some((block) => block.kind === "picker" && block.picker.plan !== undefined),
+    [blocks],
+  );
 
   // Both are threaded to the composer: the RAW value (live) plus a stabilised one. extractInputDraft
   // is stateless, so it can't distinguish a stranded draft from the ~350ms flash where our OWN
@@ -1357,7 +1362,7 @@ export function AgentChat({
   const latestReply = useLatestReply({
     paneId,
     scope,
-    enabled: historyAvailable && prefs.expandClippedReply,
+    enabled: historyAvailable && (prefs.expandClippedReply || planPresent),
     mirrorText: display,
   });
   const placement = useMemo(
@@ -1383,7 +1388,7 @@ export function AgentChat({
   const turnImage = mirrorImages.turnImage !== failedTurnImage ? mirrorImages.turnImage : null;
   // Find searches the mirror, so while it is open the mirror is WHOLE and the card stands down —
   // otherwise a hit inside the reply would be unfindable in the one surface find can highlight.
-  const clippedReply = prefs.expandClippedReply && placement?.fit === "clipped" && !findOpen ? latestReply : null;
+  const clippedReply = prefs.expandClippedReply && !planPresent && placement?.fit === "clipped" && !findOpen ? latestReply : null;
   // Collapsing the card is a judgement about ONE message ("show me the raw rows instead"), so it is
   // remembered by uuid: a new reply arrives expanded without an effect to reset anything.
   const [collapsedReply, setCollapsedReply] = useState<string | null>(null);
@@ -2729,6 +2734,7 @@ export function AgentChat({
               onUnreadDialogAction={handleUnreadDialogAction}
               onPickerAction={handlePickerAction}
               pickerAutomating={modelSwitching && modelTarget !== null}
+              planEntry={planPresent ? latestReply : null}
               promptDisabled={readOnly || gone}
               composing={composing}
               faceClassName={mirrorFace.className}

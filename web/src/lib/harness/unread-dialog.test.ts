@@ -56,11 +56,12 @@ describe("the cancel key each adapter declares", () => {
     expect(adapterFor("omp")!.modalOnScreen).toBeTypeOf("function");
   });
   it("codex offers Escape only where its footer names Esc as the way back", () => {
-    // Plan, /review and Warnings print `esc back`, `esc to go back` or `esc dismiss & close`, and each
-    // was pressed live on 0.160.1 (codex/MODAL_NOTES.md). A question prints `esc to interrupt`, and
-    // Esc there ends the whole turn (codex/ASK_NOTES.md), so it never gets the card.
+    // Warnings prints `esc dismiss & close` and the unanswered-questions step `esc to go back`; each
+    // was pressed live on 0.160.1 (codex/MODAL_NOTES.md, ASK_NOTES.md). Plan and /review screens are
+    // picker cards now. A question prints `esc to interrupt`, and Esc there ends the whole turn, so
+    // it never gets this card.
     expect(adapterFor("codex")!.modalOnScreen).toBeTypeOf("function");
-    for (const name of ["codex--v0160-plan-prompt.txt", "codex--v0160-review-preset.txt", "codex--v0160-warnings-panel.txt"]) {
+    for (const name of ["codex--v0160-question-unanswered-confirm.txt", "codex--v0160-warnings-panel.txt"]) {
       expect(cardOf(pass("codex", fixtureLines(name)))?.kind, name).toBe("unread-dialog");
     }
     for (const name of ["codex--v0160-question.txt", "codex--ask-fruit.txt", "codex--ask-notes-focused.txt"]) {
@@ -269,18 +270,11 @@ const CARD_FIXTURES = {
     ],
   },
   codex: {
-    // Every native Plan, /review and Warnings screen: raw, no input box, and a footer naming Esc as
-    // the way back. Native QA screens print `esc to interrupt` and are deliberately absent.
+    // Raw, no input box, and a footer naming Esc as the way back: the Warnings panel and Codex's own
+    // "Submit with unanswered questions?" step. Plan, /review and question screens have cards of
+    // their own, and a question's `esc to interrupt` never matches.
     modals: [
-      "codex--review-base-branch.txt",
-      "codex--review-commit.txt",
-      "codex--review-scope.txt",
-      "codex--v0154-plan-long.txt",
-      "codex--v0154-plan-short-second.txt",
-      "codex--v0154-plan-short-third.txt",
-      "codex--v0154-plan-short.txt",
-      "codex--v0160-plan-prompt.txt",
-      "codex--v0160-review-preset.txt",
+      "codex--v0160-question-unanswered-confirm.txt",
       "codex--v0160-warnings-panel.txt",
     ],
     notModals: [],

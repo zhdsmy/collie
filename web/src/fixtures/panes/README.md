@@ -26,6 +26,19 @@ MCP server (`/usr/bin/false`) to raise a warning. One small Plan-mode turn asked
 only content; ANSI styling and native rows are unchanged. Esc was pressed on each screen except the
 question; what it did is in `web/src/lib/harness/codex/MODAL_NOTES.md`.
 
+## Codex 0.160.1 question, Plan and review cards (captured 2026-10-08)
+
+`codex--v0160-question-q2-nav.txt`, `codex--v0160-question-unanswered-confirm.txt`,
+`codex--v0160-question-notes-text.txt`, `codex--v0160-question-all-answered.txt`,
+`codex--v0160-plan-pointer-third.txt`, `codex--v0160-review-base-branch.txt` and
+`codex--v0160-review-commit.txt` come from the canary's own isolated Herdr session, whose client
+reports a terminal background, so these screens carry Codex's panel fill (the 2026-10-06 captures
+above do not). Test prompts, a scratch git repo and synthetic notes are the only content. One
+sanitization: the per-user temp folder in the startup header became `/private/tmp`, which shortens
+that row; nothing a grammar reads moved. ANSI and native rows are otherwise unchanged. The keys
+pressed between them are in `web/src/lib/harness/codex/ASK_NOTES.md`, `PLAN_NOTES.md` and
+`REVIEW_NOTES.md`.
+
 ## Claude AskUserQuestion written in Chinese (captured 2026-10-03)
 
 `claude--v21287-select-cjk-question.txt` is a real Claude Code 2.1.287 dialog from an isolated
@@ -97,7 +110,7 @@ deterministic local Responses provider. The short variants preserve the entire
 plan and native pointer states; `long` contains only the tail of a 24-section
 plan. The remaining captures show the native decision outcomes.
 
-These screens now remain native, along with review and folder-trust dialogs.
+The question and plan screens are cards again since 2026-10-08; the asynchronous ones stay native.
 The captures guard against accidental cardification, missing native text, and
 ordinary chat submissions into modal input. Collapsed async questions retain
 their native Alt+Up hint and ordinary composer. See

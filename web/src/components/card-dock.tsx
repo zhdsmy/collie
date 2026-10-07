@@ -21,6 +21,8 @@ import { MenuBlock, type MenuBlockAction } from "@/components/menu-block";
 import { AutocompleteBlock } from "@/components/autocomplete-block";
 import { UnreadDialogBlock } from "@/components/unread-dialog-block";
 import { PickerBlock } from "@/components/picker-block";
+import type { TranscriptEntry } from "@/lib/types";
+import { completePlanText } from "@/lib/plan-content";
 
 // ── THE CARD DOCKS IN ONE SLOT (.adr/0059) ─────────────────────────────────────────────────────
 // The lifted card used to render INSIDE the mirror's scroller, after the <pre>, so where its bottom
@@ -82,6 +84,8 @@ export interface CardDockProps {
   onUnreadDialogAction?: (key: string, cancel: UnreadDialogModel) => void | Promise<void>;
   onPickerAction?: (action: PickerIntent, picker: PickerModel) => void | Promise<void>;
   pickerAutomating?: boolean;
+  /** Candidate original plan. Its content is displayed only after matching the native plan. */
+  planEntry?: TranscriptEntry | null;
   /** Disable every card's controls (read-only device, gone pane). */
   promptDisabled?: boolean;
   /** The body draws no mirror (Chat), so an unread dialog carries the screen's rows itself. */
@@ -109,6 +113,7 @@ function liftedCard({
   onUnreadDialogAction,
   onPickerAction,
   pickerAutomating,
+  planEntry = null,
   promptDisabled,
   showScreen,
 }: CardDockProps): ReactNode {
@@ -190,6 +195,7 @@ function liftedCard({
         "after:absolute after:inset-0 after:z-10 after:rounded-[inherit] after:bg-background/10 after:backdrop-blur-[1px] after:ring-1 after:ring-inset after:ring-white/10")}>
         <PickerBlock
           picker={pickerBlock.picker}
+          planText={pickerBlock.picker.plan ? completePlanText(pickerBlock.picker.plan, planEntry) : null}
           disabled={promptDisabled || !onPickerAction}
           onAction={(action) => onPickerAction?.(action, pickerBlock.picker)}
         />

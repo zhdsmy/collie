@@ -30,6 +30,14 @@ export function painted(line: StyledLine, flag: "bold" | "dim"): boolean {
   return text.length > 0 && text.every((segment) => segment[flag] === true);
 }
 
+/** The pointed row of a Codex list: its first painted segment (the `›`, digit and label) is bold.
+ *  0.154 painted the whole row bold cyan; 0.158+ fills it with the selection colour and bolds only
+ *  the label (PICKER_NOTES.md), so the colour is never part of the test. */
+export function pointedRow(line: StyledLine): boolean {
+  const first = line.segments.find((segment) => segment.text.trim().length > 0);
+  return first?.bold === true && first.dim !== true;
+}
+
 // The status row under the composer. v0.149.0 put at least two fields before Context:
 // `  <model> · <cwd> · Context N% left[ · weekly N% left]`. v0.150.1 moved Context directly
 // after the model and put branch/change fields after it:

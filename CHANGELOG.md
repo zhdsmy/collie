@@ -23,6 +23,15 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Added
+
+- **Codex questions, plans and reviews are answered from cards again.** A question card switches
+  between questions, confirms each answer, waits for every earlier answer before Submit all, and
+  takes notes in the card. The Plan card shows the plan with its three choices always on screen,
+  and the review card picks a base branch or commit. All three follow Codex 0.160.1 and were
+  pressed live. Today's one-digit question card gives way to the full card, and asynchronous
+  questions stay in the terminal.
+
 ## [1.17.2+collie.3] - 2026-10-07
 
 ### Added

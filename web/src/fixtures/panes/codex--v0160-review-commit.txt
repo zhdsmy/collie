@@ -1,0 +1,19 @@
+
+
+  [0m[38;2;99;168;248m>_ [0m[1mOpenAI Codex[0m[2m (v0.160.1)[0m
+     [0m[2m/private/tmp/collie-canary-project[0m
+
+  [0m[38;2;99;168;248mA half-formed idea will do.[0m
+
+  [0m[1mTip:[0m Use the [0m[1mdesktop app[0m. Run [0m[38;2;166;227;161mcodex app[0m to open it. It installs automatically if needed.
+ 
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[48;2;57;57;71m  [0m[1m[48;2;57;57;71mSelect a commit to review[0m[48;2;57;57;71m                                                                                             [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[48;2;57;57;71m  [0m[2m[48;2;57;57;71mType to search commits[0m[48;2;57;57;71m                                                                                                [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[1m[38;2;0;0;46m[48;2;99;168;248m› add b.txt on feature                                                                                                  [0m
+[0m[48;2;57;57;71m  add a.txt                                                                                                             [0m
+[0m[48;2;57;57;71m  first commit                                                                                                          [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+  [0m[1m[38;2;205;214;244menter[0m[2m select · [0m[1m[38;2;205;214;244mesc[0m[2m back                                                                                               [0m

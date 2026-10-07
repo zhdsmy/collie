@@ -536,6 +536,15 @@ describe("submitPickerIntent", () => {
     expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Enter"]]);
   });
 
+  it("does not confirm a plan when a different plan appears after Enter", async () => {
+    const plan = fixturePicker("codex--v0154-plan-short.txt");
+    const successor = fixturePicker("codex--v0154-plan-long.txt");
+    scriptWithClosedPicker(plan, plan, plan, successor);
+    const res = await submitPickerIntent(args(plan, { kind: "choose", id: "1" }));
+    expect(res).toEqual({ status: "changed" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Enter"]]);
+  });
+
   it("sends Enter only for multiple confirm and Escape for cancel", async () => {
     const model = pickerModel({ pointer: "alpha" });
     scriptWithClosedPicker(model, null, model, null);
@@ -543,6 +552,18 @@ describe("submitPickerIntent", () => {
     expect(await submitPickerIntent(args(model, { kind: "confirm" }))).toEqual({ status: "sent" });
     expect(await submitPickerIntent(args(model, { kind: "cancel" }))).toEqual({ status: "sent" });
     expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Enter"], ["Escape"]]);
+  });
+
+  it("counts a review submenu's Escape back to the preset list as done, and nothing else", async () => {
+    const base = { ...pickerModel({ pointer: "alpha" }), identity: "review:base" };
+    const preset = { ...pickerModel({ pointer: "beta" }), identity: "review:preset", title: "Select a review preset" };
+    script(base, preset);
+    expect(await submitPickerIntent(args(base, { kind: "cancel" }))).toEqual({ status: "sent" });
+    // Any other picker that replaces the one being cancelled is a race, not the expected way back.
+    const plain = pickerModel({ pointer: "alpha" });
+    script(plain, preset);
+    expect(await submitPickerIntent(args(plain, { kind: "cancel" }))).toEqual({ status: "changed" });
+    expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Escape"], ["Escape"]]);
   });
 
   it("serializes overlapping actions for the same scoped pane", async () => {

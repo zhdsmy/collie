@@ -1,24 +1,120 @@
 # Codex `request_user_input` — keystroke recipe
 
-## Current card — Codex 0.160.1, verified 2026-10-07
+## The question card on Codex 0.160.1 — restored 2026-10-08
 
-The option list is a `prompt-select` card again (`ask.ts`, upstream's detector). Each option
-sends its own digit once; nothing else is offered. Codex 0.160.1's `request_user_input/mod.rs`
-selects and commits that option, then moves to the next question or submits on the last. When
-an earlier question is still unanswered, Codex opens its own `Submit with unanswered questions?`
-confirmation instead, and that screen stays native.
+The whole question is one picker card again: the header, the question, every option, question
+navigation, an explicit confirmation and the notes box. It was retired on 2026-09-17 and
+restored at the operator's request after a live check showed the keys unchanged since 0.154.
+Codex 0.160.1 changed only the paint, and the detector follows it:
 
-Notes focus (`tab or esc to clear notes`, a `› Add notes` row), wrapped labels, partial option
-lists, a countdown header and output below the footer stay native. Esc interrupts the turn and
-is never sent. Asynchronous questions, plan prompts and review pickers are not part of this card.
+| Change since 0.154 | What the detector reads now |
+| --- | --- |
+| The unanswered question is the theme accent (`rgb(99,168,248)`), not ANSI cyan | One shared foreground on every question segment; the default foreground is "answered" |
+| The pointed row is a selection fill, with only the label bold | The pointer row's first segment is bold (`pointedRow` in `markers.ts`) |
+| Herdr's panes report no terminal background, so most screens have no panel fill | The fill is optional; the header still has to be dim |
+| Every question answered: the header is `Question 2/2`, with no count | The count is optional and reads as zero |
 
-Live: `bun run canary --agent codex --scenario dialogs --card-dialogs` in an isolated Herdr
-session lifted `Pick a fruit?` with Apple, Pear and None of the above, pressed Pear's `2`, and
-Codex recorded `answer: Pear` and replied. The probe sends the card's keys through Herdr; the
-browser's bound `/keys` write is pinned by `web/e2e/codex-dialog-cards.spec.ts`.
+The `None of the above` description lost its period, which no check reads.
 
-The sections below are the earlier probes: the 0.154 multi-step picker card (retired
-2026-09-17) and the 0.149 digit recipe this card follows.
+Verified live on 2026-10-08 in an isolated canary Herdr session, through the checkout's real
+`submitPickerIntent` and the bridge's own `readPane`, `keysPane` and `replyPane` handlers, with
+the prompt binding on every write. Two questions, one model turn:
+
+| Card action | Keys sent | Native result |
+| --- | --- | --- |
+| Next question | `Right` | Question 2 of 2, the earlier selection kept |
+| Submit all answers while question 1 is open | none | Refused (`changed`); the card disables the button |
+| Option tap | `Down` | Pointer only; nothing answered |
+| Submit answer with a note | `Tab`, a bracketed paste, `Enter` | Question 1 committed with its note; the blank line inside survives (`user_note: 第一行 note\n\n第三行 3`) |
+| Previous and next question | `Left`, `Right` | The note and both selections kept |
+| Submit all answers | the pointed digit | Codex recorded `Pear` with its note and `Blue` |
+
+Codex's own `Submit with unanswered questions?` step is never opened by the card. Opened by a
+digit typed at the desk, it gets the unread-dialog card: its footer says `esc to go back`, and Esc,
+pressed live, returned to the first unanswered question without interrupting the turn
+(`mod.rs`: Esc and Backspace share that branch). Esc on a question with no notes still
+interrupts the whole turn and is never sent.
+
+Source cross-check: `openai/codex` tag `rust-v0.160.1`,
+`codex-rs/tui/src/bottom_pane/request_user_input/mod.rs` has no key-handling change from 0.154.
+Captures: `codex--v0160-question*.txt`.
+
+Asynchronous questions (`request_user_input_async`) stay native. Codex registers that tool only
+for a model whose catalog lists it, and the operator's model lists none.
+
+## Notes inside the card — Codex 0.154.0, verified 2026-09-14
+
+The `codex--v0154-notes-*.txt` corpus comes from a disposable native Codex pane with
+an isolated configuration and a deterministic loopback Responses provider. No production
+credentials or model calls were used. `empty`, `text`, `returned`, `multiline`,
+`multiline-focused`, and `completed` preserve the actual ANSI output.
+
+The complete question remains a picker while notes are visible. The native footer distinguishes
+notes focus from restored option focus: the latter has question-navigation hints. A phone draft
+stays local until explicit submission and is retained when browsing other questions.
+
+Verified through the checkout's real `submitPickerIntent`, guard and bridge API:
+
+- Tab from options enters notes without clearing an existing note.
+- Escape on a verified visible notes composer clears notes and returns to choices; Escape is
+  never sent from a question without notes.
+- Bracketed paste preserves Chinese text, digits and blank lines without submitting.
+- After read-back verifies the note, one Enter confirms it and advances/submits the questionnaire.
+- A matching note already present is submitted without typing it again. An uncertain write stops;
+  committing keys are not retried.
+- Ctrl+N/Ctrl+P navigate while notes have focus; Left/Right navigate when choices have focus.
+  Returning restores the note and option focus. Up/Down can change the selected option in notes.
+- Selecting `None of the above` and submitting a note returns a custom answer. The final capture
+  shows both original answer labels plus exact `user_note:` values, including interior blank lines.
+
+Unrecognised footers, partial option lists, countdowns and clipped question headers still fail
+closed. Native text outside the visible composer is never reconstructed from the conversation.
+
+## Previous option-only card flow — Codex 0.154.0, verified 2026-09-13
+
+The `codex--v0154-question-*.txt` fixtures were captured from the installed Codex TUI
+in a disposable Herdr pane, with a separate temporary configuration and a deterministic
+local Responses provider. The provider supplied two tool questions; Codex itself rendered
+every frame and handled every key. No external model or daily credentials were used.
+
+The whole painted region, including the leading spacer, `Question X/Y (N unanswered)`
+header and wrapped question, becomes a `picker`. The old generic caption and duplicated
+raw question disappear. An unanswered question is cyan; a committed question uses the
+default foreground. This paint distinction matters when editing a previous answer.
+
+| Card action | Verified native behavior |
+| --- | --- |
+| Select an option | Up/Down walks one step at a time with guarded read-back; it does not submit. Moving an answered question's pointer invalidates its confirmation and increases the unanswered count. |
+| Previous/next question | Left/Right changes the question while retaining each question's selected option. No answer is submitted. |
+| Confirm answer | Send the currently pointed digit once, after a fresh full guard. Codex confirms it and advances to the next question. |
+| Submit all answers | Send the pointed digit only after every other question is confirmed. Codex sends the entire answer map and closes the card. |
+| Native notes | Tab focuses the notes field and the footer changes. That state stays raw; card buttons cannot type into it. |
+
+The digit on the explicit confirmation button is intentional: Enter on the native
+`None of the above` row opens notes, while its digit confirms that label directly,
+matching the previous Collie behavior. Escape interrupts the entire turn, so question
+cards never expose the picker's ordinary Cancel action.
+
+The last-question footer says `submit all` even when earlier questions are unanswered.
+Codex would then open `Submit unanswered questions?`; the phone disables its final
+button until the earlier questions are confirmed. Header navigation remains available.
+
+Non-blocking requests can acquire an `auto-resolves in …` countdown. This changing header stays
+raw so the native deadline remains visible; a timed dialog is never mistaken for a persistent card.
+In the live sandbox an untouched second request expired to an empty answer map, and the client
+refused every attempted card action on its countdown frame without emitting keys.
+
+The checkout's actual `submitPickerIntent` guard/API modules were exercised against
+the disposable pane: confirm question 1, return from question 2, revise question 1,
+confirm it again, select question 2, navigate both directions, and explicitly submit.
+The completion capture contains the corrected first answer and retained second answer.
+A second completed live flow selected `None of the above` in both questions through the same
+client actions; the returned map contained that label for both answers, without entering notes.
+
+Source cross-check: `openai/codex` tag `rust-v0.154.0`,
+`codex-rs/tui/src/bottom_pane/request_user_input/{mod.rs,render.rs}`.
+
+## Historical digit-only flow — Codex 0.149.0
 
 Captured 2026-08-22 on Codex v0.149.0 in a sandbox pane (feature flag
 `default_mode_request_user_input` was enabled in the host config; the tool announces itself as
@@ -48,7 +144,7 @@ Live-probed, in this session:
 | `tab` | Opens the notes box: a `› Add notes` row appears and the footer flips to `tab or esc to clear notes | enter to submit answer`. A second `tab` leaves it. |
 | `esc` | Interrupts the WHOLE conversation ("Conversation interrupted — tell the model what to do differently") — probed on a throwaway card. Never emitted. |
 
-What the retired adapter emitted: one button per option row, `keys: ["N"]` — a digit answers the current
+What the adapter emits: one button per option row, `keys: ["N"]` — a digit answers the current
 question, which on the last unanswered question submits the set, so multi-question calls step
 through as consecutive lifted cards with no extra choreography. The complete captured layout is
 required: `Question X/Y (N unanswered)` header, a non-empty question line, consecutive `1..n`
@@ -61,12 +157,13 @@ Typing notes from the phone is deliberately not offered — it has no probed rec
 A read-only inspection found cards with wrapped questions and descriptions. One footer put
 `esc to interrupt` on its own final row. The released detector returned null for that card.
 
-The former detector tests applied those layout changes to the public fruit capture through
+`ask.test.ts` applies those layout changes to the public fruit capture through
 `parseAnsi → splitLines`. These are synthetic variants, not new byte-faithful captures.
-The parser joined question and description rows, kept the original rows in its signature,
-and accepted the standalone interrupt hint only directly below the submit footer.
-A continuation had to belong to an existing description and start at or beyond its column.
-Wrapped labels, incomplete options, notes mode, and output after the footer stayed raw.
+The parser joins question and description rows, keeps the original rows in its signature,
+and accepts the standalone interrupt hint only directly below the submit footer.
+A continuation must belong to an existing description and start at or beyond its column.
+Wrapped labels, incomplete options, notes mode, and output after the footer stay raw.
 
-No keys were sent to the observed work session. Current `ask.test.ts` retains the wrapped
-samples to check native text preservation and composer locking, without card actions.
+The digit recipe above is unchanged. No keys are sent while the wrapped card is only being
+detected. The v1.9.0 parser change is layout-only: the native notes card and its guarded
+multi-question navigation remain the downstream behavior.

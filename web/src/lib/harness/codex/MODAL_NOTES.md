@@ -1,8 +1,10 @@
 # Codex native modals and the unread-dialog card
 
-Codex's Plan prompt, `/review` pickers and Warnings panel stay native: no grammar reads them. Each
-gets the unread-dialog card (.adr/0053) because its own footer names Esc as the way back. In Chat,
-where no mirror is drawn, that card carries the screen's rows and is the only place the screen shows.
+Codex's Warnings panel and its own `Submit with unanswered questions?` step stay native: no grammar
+reads them. Each gets the unread-dialog card (.adr/0053) because its own footer names Esc as the way
+back. In Chat, where no mirror is drawn, that card carries the screen's rows and is the only place
+the screen shows. Since 2026-10-08 the Plan prompt and the `/review` pickers have picker cards of
+their own (PLAN_NOTES.md, REVIEW_NOTES.md); this file keeps their 2026-10-06 Esc probe.
 
 ## Live probe, Codex 0.160.1 (2026-10-06)
 

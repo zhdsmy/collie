@@ -1,8 +1,11 @@
-// Codex keeps native plan and review screens. Collie lifts current resume/model/agent pickers,
-// trust, approvals and `request_user_input` questions (a digit answers the current question; the
-// notes state stays native, ASK_NOTES.md) while composerReady/composerPrompt guard ordinary chat
-// submissions. A native modal whose footer names Esc as its way back gets the unread-dialog card
-// (.adr/0053), which is how Chat, where no mirror is drawn, shows it at all (MODAL_NOTES.md).
+// Codex keeps its native Warnings and other footer-named modals behind the unread-dialog card.
+// Collie lifts resume/model/agent pickers, trust and approvals, and three dialogs as picker cards:
+// `request_user_input` questions (pointer, question navigation, explicit confirmation and in-card
+// notes, ASK_NOTES.md), the Plan prompt (PLAN_NOTES.md) and the `/review` pickers
+// (REVIEW_NOTES.md). composerReady/composerPrompt guard ordinary chat submissions independently. A
+// native modal whose footer names Esc as its way back and that no grammar lifts gets the
+// unread-dialog card (.adr/0053), which is how Chat, where no mirror is drawn, shows it at all
+// (MODAL_NOTES.md).
 
 import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { HarnessAdapter } from "../types";
@@ -19,6 +22,8 @@ import { detectTrustRegion } from "./trust";
 import { detectPickerRegion } from "./picker";
 import { detectResumeRegion } from "./resume";
 import { detectAgentsRegion } from "./agents";
+import { detectPlanRegion } from "./plan";
+import { detectReviewRegion } from "./review";
 import { decorateCodexDisplay } from "./display";
 import { codexDraftCarriesSend } from "./paste";
 import { draftCarriesSend } from "../../draft-match";
@@ -28,7 +33,8 @@ function raw(lines: StyledLine[]): Block {
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
-  const picker = detectResumeRegion(lines) ?? detectAgentsRegion(lines) ?? detectPickerRegion(lines);
+  const picker = detectPlanRegion(lines) ?? detectReviewRegion(lines) ?? detectResumeRegion(lines) ??
+    detectAgentsRegion(lines) ?? detectPickerRegion(lines) ?? detectAskRegion(lines);
   if (picker) {
     const before = trimTrailingBlank(lines.slice(0, picker.startLine));
     return [
@@ -36,7 +42,7 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
       { kind: "picker", picker: picker.model, lines: lines.slice(picker.startLine) },
     ];
   }
-  const prompt = detectTrustRegion(lines) ?? detectApprovalRegion(lines) ?? detectAskRegion(lines);
+  const prompt = detectTrustRegion(lines) ?? detectApprovalRegion(lines);
   if (prompt) {
     const before = trimTrailingBlank(lines.slice(0, prompt.startLine));
     const blocks: Block[] = [];

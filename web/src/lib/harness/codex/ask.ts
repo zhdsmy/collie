@@ -1,112 +1,203 @@
-// Codex's `request_user_input` question card — a `Question X/Y (N unanswered)` header, the
-// question line, pointer-numbered options with two-space-split descriptions (including the
-// tool's own auto-added "None of the above" row), and a `tab to add notes | enter to submit …`
-// footer. Digits confirm directly: a digit answers the CURRENT question, advancing a
-// multi-question set and submitting on the last one (live-probed 2026-08-22 on 1-question and
-// 2-question calls; ASK_NOTES.md). The notes flow stays in the terminal: when the notes box is
-// focused the footer flips to `tab or esc to clear notes …` and this detector refuses — a digit
-// would type into the box. Esc interrupts the WHOLE conversation and is never emitted. Pure;
-// no pane access.
-
+// Codex request_user_input: the whole question becomes a picker card. Option taps move the native
+// pointer; a separate confirmation uses its digit. ASK_NOTES.md records why Enter differs on the
+// notes row. The note composer stays in the card; its own guarded flow never sends option digits.
 import type { StyledLine } from "../../blocks";
-import type { PromptModel, PromptOption } from "../prompt-model";
-import { lastNonBlankIndex, lineText, regionSignature, rstrip, skipBlanksUp } from "./markers";
+import type { PickerModel, PickerOption } from "../picker-model";
+import { lastNonBlankIndex, lineText, pointedRow, regionSignature, rstrip, skipBlanksUp } from "./markers";
 
 export interface AskRegion {
-  model: PromptModel;
+  model: PickerModel;
   startLine: number;
 }
 
-// Both captured footer variants start with the notes hint and carry an enter-submit verb
-// (`enter to submit answer` mid-set, `enter to submit all` on the final question).
-const FOOTER = /^\s*tab to add notes \| enter to submit\b/;
-// The notes-focused footer — the state in which a digit types instead of answering.
-const NOTES_FOOTER = /^\s*tab or esc to clear notes\b/;
-const NOTES_BOX = /^\s*› Add notes\b/;
-const HEADER = /^\s*Question (\d+)\/(\d+) \(\d+ unanswered\)$/;
-// Selected rows lead with `  › `, unselected with four spaces.
+// Upstream allows the interrupt hint to occupy its own row when the footer wraps. Keep the
+// answer/navigation captures because the card model uses them to preserve native state.
+const FOOTER = /^\s*tab to add notes \| enter to submit (answer|all)( \| ←\/→ (?:to )?navigate questions)?(?: \| esc to interrupt)?$/;
+const NOTES_FOOTER = /^\s*tab or esc to clear notes \| enter to submit (answer|all)( \| ←\/→ (?:to )?navigate questions)?$/;
+const NOTE_ROW = /^\s*›(?: |$)/;
+// Codex drops the count once every question holds an answer (`Question 2/2`, 0.160.1).
+const HEADER = /^\s*Question (\d+)\/(\d+)(?: \((\d+) unanswered\))?$/;
 const OPTION = /^(?:\s{2}› |\s{4})([1-9])\. (.+)$/;
+const MAX_ROWS = 100;
 
-/** request_user_input card at the tail, or null. */
+/** A complete painted question at the buffer tail, including its optional native notes. */
 export function detectAskRegion(lines: StyledLine[]): AskRegion | null {
-  const texts = lines.map((l) => rstrip(lineText(l)));
+  const texts = lines.map((line) => rstrip(lineText(line)));
   const end = lastNonBlankIndex(texts);
-  let fi = end;
-  if (/^\s*esc to interrupt$/.test(texts[fi] ?? "")) fi--;
-  if (fi < 0) return null;
-  // The notes-focused state is explicitly refused rather than merely unrecognized, so the
-  // refusal survives layout drift in the rows above.
-  if (NOTES_FOOTER.test(texts[fi]!)) return null;
-  if (!FOOTER.test(texts[fi]!)) return null;
+  if (end < 0) return null;
 
-  // One blank row separates the footer from the option run. Descriptions may wrap.
-  const bottom = skipBlanksUp(texts, fi - 1);
-  if (bottom < 0) return null;
-  if (NOTES_BOX.test(texts[bottom]!)) return null;
+  let footerRow = end;
+  if (/^\s*esc to interrupt$/.test(texts[footerRow]!)) footerRow--;
+  if (footerRow < 0) return null;
+  const footerText = texts[footerRow]!.trim();
+  const notesFooter = NOTES_FOOTER.exec(footerText);
+  const footer = notesFooter ?? FOOTER.exec(footerText);
+  if (!footer) return null;
 
-  const options: PromptOption[] = [];
+  const headerFloor = Math.max(0, footerRow - MAX_ROWS);
+  let header = footerRow - 1;
+  for (; header >= headerFloor; header--) {
+    if (HEADER.test(texts[header]!)) break;
+  }
+  if (header < headerFloor) return null;
+
+  const progress = HEADER.exec(texts[header]!)!;
+  const index = Number(progress[1]);
+  const total = Number(progress[2]);
+  const unanswered = Number(progress[3] ?? 0);
+  if (index < 1 || index > total || total > 100 || unanswered > total) return null;
+  if (!notesFooter && (total > 1) !== Boolean(footer[2])) return null;
+  if (total > 1 && (index === total) !== (footer[1] === "all")) return null;
+
+  // The question surface is filled (`rgb(57,57,71)`) only when the terminal reports its background;
+  // Herdr's own panes report none, so an unfilled surface (`background` undefined) is the common case.
+  const headerInk = lines[header]!.segments.filter((segment) => segment.text.trim());
+  const background = headerInk[0]?.bg;
+  if (!headerInk.length || !headerInk.every((segment) => segment.dim && segment.bg === background)) return null;
+
+  const firstOption = texts.findIndex((text, row) => row > header && row < footerRow && OPTION.test(text));
+  if (firstOption < 0) return null;
+  const questionLines = lines.slice(header + 1, firstOption).filter((line) => lineText(line).trim());
+  const questionInk = questionLines.flatMap((line) => line.segments.filter((segment) => segment.text.trim()));
+  if (!questionInk.length || questionInk.some((segment) => segment.bold || segment.dim || segment.bg !== background)) {
+    return null;
+  }
+  const answered = questionInk.every((segment) => segment.fg === undefined);
+  // Unanswered paints one accent colour: ANSI cyan on 0.154, the theme accent (`rgb(99,168,248)`)
+  // on 0.160.1. The colour itself is the theme's, so only its sameness is checked.
+  if (!answered && !questionInk.every((segment) => segment.fg === questionInk[0]!.fg)) return null;
+  if ((answered && unanswered === total) || (!answered && unanswered === 0)) return null;
+  const question = questionLines.map((line) => lineText(line).trim()).join(" ");
+
+  const options: PickerOption[] = [];
+  const notesStart = notesFooter
+    ? texts.findIndex(
+        (text, row) => row > firstOption && row < footerRow && !texts[row - 1]!.trim() && NOTE_ROW.test(text),
+      )
+    : -1;
+  if (notesFooter && notesStart < 0) return null;
+  const optionsEnd = notesFooter ? notesStart : footerRow;
+  const optionsLast = skipBlanksUp(texts, optionsEnd - 1);
+  if (optionsLast < firstOption) return null;
   let continuation: string[] = [];
-  let i = bottom;
-  for (; i >= 0; i--) {
-    const t = texts[i]!;
-    if (NOTES_BOX.test(t)) return null;
-    const opt = OPTION.exec(t);
-    if (opt === null) {
-      if (/^ {6,}\S/.test(t) && !/^\s*\d+\./.test(t)) {
-        continuation.unshift(t);
-        continue;
-      }
-      break;
+  let descriptionColumn: number | undefined;
+
+  for (let row = firstOption; row <= optionsLast; row++) {
+    const text = texts[row]!;
+    if (!text.trim()) {
+      // Blank rows belong between the options and the footer/notes box, not between options.
+      return null;
     }
-    const raw = opt[2]!.trim();
+
+    const match = OPTION.exec(text);
+    if (!match) {
+      if (!options.length || !/^\s{6,}\S/.test(text) || /^\s*\d+\./.test(text)) return null;
+      continuation.push(text);
+      continue;
+    }
+
+    const optionNumber = Number(match[1]);
+    if (optionNumber !== options.length + 1) return null;
+    const raw = match[2]!.trim();
     const split = raw.split(/\s{2,}/);
     const label = (split[0] ?? raw).trim();
     const description = split.slice(1).join(" ").trim();
-    const option: PromptOption = { label, keys: [opt[1]!] };
+
     if (continuation.length > 0) {
-      // Only description rows may continue. A label-only option stays raw when it wraps.
-      const separator = /\s{2,}/.exec(raw);
-      if (separator === null) return null;
-      const descriptionColumn = t.indexOf(raw) + separator.index + separator[0].length;
-      if (description === "" || continuation.some((row) => row.search(/\S/) < descriptionColumn)) {
+      // Wrapped rows must continue the previous option's description at its original column.
+      const column = descriptionColumn;
+      if (column === undefined || continuation.some((line) => line.search(/\S/) < column)) {
         return null;
       }
-      option.description = [description, ...continuation.map((row) => row.trim())].join(" ");
+      const previous = options.at(-1)!;
+      previous.description = [previous.description, ...continuation.map((line) => line.trim())]
+        .filter(Boolean)
+        .join(" ");
       continuation = [];
-    } else if (description !== "") option.description = description;
-    options.unshift(option);
-  }
-  if (continuation.length > 0 || options.length < 2) return null;
-  for (let k = 0; k < options.length; k++) {
-    if (options[k]!.keys[0] !== String(k + 1)) return null;
+    }
+
+    const pointed = match[0]!.includes("›");
+    if (pointed && !pointedRow(lines[row]!)) return null;
+    options.push({
+      id: match[1]!,
+      label,
+      description,
+      pointed,
+      current: false,
+      checked: false,
+      orderable: false,
+    });
+    const separator = /\s{2,}/.exec(raw);
+    descriptionColumn = separator === null ? undefined : text.indexOf(raw) + separator.index + separator[0].length;
   }
 
-  const questionEnd = skipBlanksUp(texts, i);
-  let header = questionEnd;
-  while (header >= 0 && /^ {2}\S/.test(texts[header]!) && !HEADER.test(texts[header]!)) {
-    if (NOTES_BOX.test(texts[header]!)) return null;
-    header--;
+  if (continuation.length > 0) {
+    if (descriptionColumn === undefined || continuation.some((line) => line.search(/\S/) < descriptionColumn)) {
+      return null;
+    }
+    const previous = options.at(-1)!;
+    previous.description = [previous.description, ...continuation.map((line) => line.trim())]
+      .filter(Boolean)
+      .join(" ");
   }
-  if (header < 0 || !HEADER.test(texts[header]!) || header === questionEnd) return null;
-  const question = texts.slice(header + 1, questionEnd + 1).map((row) => row.trim()).join(" ");
-  const signature = regionSignature(lines, header, end + 1);
-  if (signature === "") return null;
+  if (options.length < 2 || options.filter((option) => option.pointed).length !== 1) return null;
+
+  let notes: { text: string; focused: boolean } | undefined;
+  if (notesFooter) {
+    const noteLines = lines.slice(notesStart, footerRow);
+    if (noteLines.some((line) => line.segments.some((segment) => segment.text.trim() && segment.bg !== background))) {
+      return null;
+    }
+    const noteMatch = /^\s*›\s?(.*)$/.exec(texts[notesStart]!);
+    if (!noteMatch) return null;
+    const first = noteMatch[1]!;
+    const placeholder = first === "Add notes" && lines[notesStart]!.segments
+      .filter((segment) => segment.text.includes("Add notes"))
+      .every((segment) => segment.dim);
+    const continuationLines = texts.slice(notesStart + 1, footerRow);
+    if (continuationLines.some((line) => line.trim() && !/^\s{4}/.test(line))) return null;
+    const text = [placeholder ? "" : first, ...continuationLines.map((line) => line.replace(/^\s{4}/, ""))]
+      .join("\n")
+      .trimEnd();
+    notes = { text, focused: !footer[2] };
+  }
+
+  // A filled surface owns its blank spacer rows above the header; unfilled, nothing marks them.
+  let start = header;
+  if (background !== undefined) {
+    while (
+      start > 0 &&
+      !texts[start - 1]!.trim() &&
+      lines[start - 1]!.segments.length > 0 &&
+      lines[start - 1]!.segments.every((segment) => segment.bg === background)
+    ) {
+      start--;
+    }
+  }
+  const signature = regionSignature(lines, start, end + 1);
+  const questionnaire: NonNullable<PickerModel["questionnaire"]> = {
+    index,
+    total,
+    unanswered,
+    answered,
+    submit: index === total ? "all" : "answer",
+  };
+  if (notes) questionnaire.notes = notes;
 
   return {
-    // The block starts at the question's first row, so the card's own question line is not also
-    // painted in the raw mirror above it. Only the `Question X/Y` header stays above (the card
-    // prints no header). Between the question and the options sit blank rows and nothing else, so
-    // the card hides no row.
-    startLine: header + 1,
+    startLine: start,
     model: {
-      question,
+      kind: "single",
+      identity: "question:" + index + "/" + total + ":" + question,
+      title: question,
+      description: [],
       options,
-      // `select` pins the renderer's caption; the KEYS carry this harness's probed recipe. The
-      // family doc describes Claude's digit-then-Enter — Codex's card submits on the digit alone
-      // (probed, ASK_NOTES.md), and the explicit per-option `keys` are what the send path uses.
-      family: "select",
-      coreSignature: question,
+      query: null,
+      preview: [],
+      footer: footerText,
       signature,
+      regionSignature: signature,
+      questionnaire,
     },
   };
 }

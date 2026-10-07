@@ -49,6 +49,22 @@ function promptOf(s: Screen): PromptLike | null {
   return block.prompt as PromptLike;
 }
 
+/** The fields of a `picker` block the canary reads: the Codex question card. Restated likewise. */
+interface QuestionLike {
+  readonly title: string;
+  readonly options: readonly { readonly id: string; readonly label: string; readonly pointed: boolean }[];
+  readonly questionnaire?: { readonly index: number; readonly total: number };
+}
+
+function questionOf(s: Screen): QuestionLike | null {
+  const block = s.blocks.find((b) => b.kind === "picker");
+  if (block === undefined || !("picker" in block)) return null;
+  // SAFETY: a `picker` block carries its PickerModel in `picker` (web/src/lib/blocks.ts); the fields
+  // restated in QuestionLike are a subset of it, and only a model with `questionnaire` is returned.
+  const picker = block.picker as QuestionLike;
+  return picker.questionnaire === undefined ? null : picker;
+}
+
 function lifted(s: Screen): string {
   const kinds = s.blocks.filter((b) => b.kind !== "raw").map((b) => b.kind);
   return kinds.length === 0 ? "raw only" : kinds.join(",");
@@ -307,8 +323,9 @@ async function claudeDialogs(ctx: AgentContext, questionsOnly = false): Promise<
 
 /**
  * Codex, started so that it asks: command approval and patch approval, both declined, and a
- * `request_user_input` question answered with the card's Pear digit. The feature flag lets the
- * question come in Default mode; Esc is never pressed on it, because it interrupts the turn.
+ * `request_user_input` question answered the way its card does it: the pointer walked to Pear, then
+ * Pear's digit. The feature flag lets the question come in Default mode; Esc is never pressed on it,
+ * because it interrupts the turn.
  */
 async function codexDialogs(ctx: AgentContext, execOnly = false): Promise<CaseResult[]> {
   const cases: CaseResult[] = [];
@@ -337,20 +354,28 @@ async function codexDialogs(ctx: AgentContext, execOnly = false): Promise<CaseRe
       cases.push(...unreached(["ask-open", "ask-answer"], `no question came (${file})`));
     }
     else {
-      cases.push(judgePrompt(d, s, "ask-open", { family: "select", labels: ["Apple", "Pear", "None of the above"] }));
-      const pear = promptOf(s)?.options.find((o) => /^Pear\b/.test(o.label));
-      if (pear === undefined) cases.push(failCase("ask-answer", "no Pear option to press"));
+      const question = questionOf(s);
+      const openFile = d.save("dialogs-ask-open", s);
+      const labels = question?.options.map((o) => o.label) ?? [];
+      const complete = ["Apple", "Pear", "None of the above"].every((label) => labels.some((l) => l.startsWith(label)));
+      cases.push(question !== null && complete && !s.unread
+        ? passCase("ask-open", `question card: ${labels.join(" / ")}`)
+        : failCase("ask-open", `${question === null ? `no question card (${lifted(s)})` : `options ${labels.join(" / ")}`} (${openFile})`));
+      const pear = question?.options.find((o) => /^Pear\b/.test(o.label));
+      // The card's own two steps: an option tap walks the pointer, Submit answer sends its digit.
+      const onPear = pear === undefined ? null : await walkTo(d, "›", /^\d\. Pear\b/, "Down");
+      if (pear === undefined || onPear === null) cases.push(failCase("ask-answer", "the pointer never reached Pear"));
       else {
-        d.keys(pear.keys);
+        d.keys([pear.id]);
         const after = await waitSettled(d, BUSY_TURN_TIMEOUT_MS);
         if (after === null) {
           const file = d.save("dialogs-ask-answer-stuck", await d.screen());
-          cases.push(failCase("ask-answer", `pressed ${pear.keys.join(" ")}; the agent did not settle (${file})`));
+          cases.push(failCase("ask-answer", `pressed Down and ${pear.id}; the agent did not settle (${file})`));
         }
         else {
           const file = d.save("dialogs-ask-answer", after);
-          const answered = after.texts.some((t) => /Pear/.test(t)) && promptOf(after) === null;
-          cases.push(answered ? passCase("ask-answer", `pressed ${pear.keys.join(" ")}, answered Pear`) : failCase("ask-answer", `no Pear answer on screen (${file})`));
+          const answered = after.texts.some((t) => /answer: Pear/.test(t)) && questionOf(after) === null;
+          cases.push(answered ? passCase("ask-answer", `pressed Down and ${pear.id}, answered Pear`) : failCase("ask-answer", `no Pear answer on screen (${file})`));
         }
       }
     }
