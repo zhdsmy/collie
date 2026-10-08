@@ -23,11 +23,14 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.18.0+collie.2] - 2026-10-09
+
 ### Fixed
 
 - **A long command in a card's question wraps inside the card.** A question carrying an unbroken
   token, such as a host fingerprint or a piped command, ran past the right edge of the Codex
   question card and every other card that shows a question heading; it now breaks within the card.
+  ([38592d0a](https://github.com/zhdsmy/collie/commit/38592d0a))
 
 ## [1.18.0+collie.1] - 2026-10-08
 
