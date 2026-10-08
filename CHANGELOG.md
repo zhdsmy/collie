@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.18.0+collie.1] - 2026-10-08
+
 ### Changed
 
-- **Follow upstream 1.18.0 while keeping the compact Collie controls.** Adopt authenticated reads, secret masking, offline copies and action locks, left-hand layout, file previews and links, branch launchers, new locales and harness fixes; preserve downstream cards, fonts and direct typing. Clear recent Codex models on unpair and establish live reads in the canary. See [the integration report](docs/upstream-v1.18.0.md).
+- **Follow upstream 1.18.0 while keeping the compact Collie controls.** Adopt authenticated reads, secret masking, offline copies and action locks, left-hand layout, file previews and links, branch launchers, new locales and harness fixes; preserve downstream cards, fonts and direct typing. Clear recent Codex models on unpair and establish live reads in the canary. See [the integration report](docs/upstream-v1.18.0.md). ([122ab1a1](https://github.com/zhdsmy/collie/commit/122ab1a1))
 
 ## [1.17.2+collie.4] - 2026-10-08
 
