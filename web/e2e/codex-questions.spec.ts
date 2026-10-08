@@ -108,3 +108,28 @@ for (const width of [320, 390]) {
     }
   }
 }
+
+// A question naming a command or fingerprint carries tokens wider than the phone; the heading must
+// wrap them inside the card instead of pushing past its edge.
+for (const width of [320, 390]) {
+  test(`Codex question with a long unbroken token wraps: ${width}`, async ({ page }) => {
+    const question = "是否运行 ssh-keyscan -t ed25519 host.wolf-lake.ts.net|ssh-keygen -E sha256 -lf /dev/stdin 并核对 SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s";
+    const text = fixture("q1").replace(question1.slice(0, question1.indexOf(" 说明？")), question);
+    await page.setViewportSize({ width, height: 844 });
+    await page.addInitScript(() => {
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+    });
+    await installApiStub(page);
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+        ? Object.assign({}, agent, { agent: "codex", status: "blocked", hasSession: true }) : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
+      (route) => route.fulfill({ json: { paneId: "w1:p1", text, truncated: false, revision: 1 } }));
+    await page.goto("/pane/w1:p1");
+    const header = page.getByRole("group", { name: `${question} 说明？`, exact: true }).locator('[data-slot="prompt-header"]');
+    await expect(header).toBeVisible();
+    expect(await header.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
+  });
+}

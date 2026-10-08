@@ -218,7 +218,7 @@ export function QuestionHeading({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-start gap-1.5 pl-0.5">
       <span className="mt-[3px] flex">{accentTick}</span>
-      <div className="font-content text-sm font-medium text-foreground">{children}</div>
+      <div className="font-content min-w-0 text-sm font-medium text-foreground wrap-anywhere">{children}</div>
     </div>
   );
 }
