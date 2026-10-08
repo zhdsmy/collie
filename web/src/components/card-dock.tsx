@@ -13,6 +13,7 @@ import {
 } from "@/lib/blocks";
 import type { MultiSelectIntent } from "@/lib/multi-select-action";
 import type { PickerIntent, PickerModel } from "@/lib/harness/picker-model";
+import type { Scope } from "@/lib/scope";
 import { PromptSelectBlock, type PromptBlockAction } from "@/components/prompt-select-block";
 import { WizardBlock } from "@/components/wizard-block";
 import { PreviewSelectBlock, type PreviewBlockAction } from "@/components/preview-select-block";
@@ -20,7 +21,8 @@ import { MultiSelectBlock } from "@/components/multi-select-block";
 import { MenuBlock, type MenuBlockAction } from "@/components/menu-block";
 import { AutocompleteBlock } from "@/components/autocomplete-block";
 import { UnreadDialogBlock } from "@/components/unread-dialog-block";
-import { PickerBlock } from "@/components/picker-block";
+import { PickerBlock, type PickerBlockProps } from "@/components/picker-block";
+import { useLive } from "@/lib/liveness";
 import type { TranscriptEntry } from "@/lib/types";
 import { completePlanText } from "@/lib/plan-content";
 
@@ -90,6 +92,12 @@ export interface CardDockProps {
   promptDisabled?: boolean;
   /** The body draws no mirror (Chat), so an unread dialog carries the screen's rows itself. */
   showScreen?: boolean;
+  /** The pane the card answers for, and its scope. The prompt card enables only while the bridge has
+   *  answered a read for it lately (lib/liveness.ts, M46 spec 11). */
+  paneId?: string;
+  scope?: Scope;
+  /** The screen is drawn from the on-device cache (M46 spec 10): the prompt card stays locked. */
+  stale?: boolean;
   /** The soft keyboard is up: the dock's cap drops from 55dvh to 40dvh. */
   composing?: boolean;
   /** The mirror's chosen face (`mirrorFont`), so a card's `font-mono` rows and its Terminal mirror
@@ -100,6 +108,19 @@ export interface CardDockProps {
    *  to Terminal) still focuses the composer, exactly as it
    *  did while the card lived inside the mirror. The handler declines a tap on a control itself. */
   onClick?: (event: MouseEvent<HTMLDivElement>) => void;
+}
+
+/** A picker card under the prompt card's lock (lib/liveness.ts, M46 spec 11): a saved copy, or a
+ *  pane the bridge has not answered for lately, never acts. Its own component, so `useLive` is not
+ *  called on only one branch of `liftedCard`. */
+function LivePickerBlock({ paneId, scope, stale, disabled, ...props }: PickerBlockProps & {
+  paneId?: string;
+  scope?: Scope;
+  stale?: boolean;
+}) {
+  const live = useLive(paneId ?? "", scope);
+  const offline = stale === true || (paneId !== undefined && !live);
+  return <PickerBlock {...props} disabled={disabled || offline} />;
 }
 
 /** The one card on screen, as a React element, or null when every block is raw. */
@@ -116,6 +137,9 @@ function liftedCard({
   planEntry = null,
   promptDisabled,
   showScreen,
+  paneId,
+  scope,
+  stale,
 }: CardDockProps): ReactNode {
   const promptBlock = blocks.find((b): b is PromptBlock => b.kind === "prompt-select");
   if (promptBlock) {
@@ -124,6 +148,9 @@ function liftedCard({
         prompt={promptBlock.prompt}
         lines={promptBlock.lines}
         disabled={promptDisabled || !onPromptAction}
+        paneId={paneId}
+        scope={scope}
+        stale={stale}
         onAction={(action) => onPromptAction?.(action, promptBlock.prompt) ?? false}
       />
     );
@@ -193,11 +220,14 @@ function liftedCard({
     return (
       <div inert={pickerAutomating} className={cn("relative isolate rounded-xl", pickerAutomating &&
         "after:absolute after:inset-0 after:z-10 after:rounded-[inherit] after:bg-background/10 after:backdrop-blur-[1px] after:ring-1 after:ring-inset after:ring-white/10")}>
-        <PickerBlock
+        <LivePickerBlock
           picker={pickerBlock.picker}
           planText={pickerBlock.picker.plan ? completePlanText(pickerBlock.picker.plan, planEntry) : null}
           disabled={promptDisabled || !onPickerAction}
           onAction={(action) => onPickerAction?.(action, pickerBlock.picker)}
+          paneId={paneId}
+          scope={scope}
+          stale={stale}
         />
       </div>
     );

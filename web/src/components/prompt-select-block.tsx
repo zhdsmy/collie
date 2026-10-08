@@ -16,6 +16,8 @@ import { Collapse } from "@/components/ui/collapse";
 import { MIRROR_INVERT, MIRROR_SPACE } from "@/components/mirror-space";
 import { RawMirror } from "@/components/raw-mirror";
 import { hasResizeObserver } from "@/lib/env";
+import { useLive } from "@/lib/liveness";
+import type { Scope } from "@/lib/scope";
 import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -41,6 +43,17 @@ export interface PromptSelectBlockProps {
   onAction: (action: PromptBlockAction) => boolean | void | Promise<boolean | void>;
   /** Read-only device or a gone pane: buttons still render (for context) but can't be pressed. */
   disabled?: boolean;
+  /**
+   * The pane this card answers for. With it, the card enables only while the bridge has answered a
+   * read for that pane lately (lib/liveness.ts); without it (a presentational test) liveness is not
+   * asked. M46 spec 11: a card drawn from cached state can be hours old, so a tap on it must never
+   * reach the pane. No queue, no retry, no auto-answer once the bridge is back.
+   */
+  paneId?: string;
+  scope?: Scope;
+  /** The parent drew this screen from the on-device cache (M46 spec 10). Locks the card like a lost
+   *  bridge does, whatever the liveness stamp says. */
+  stale?: boolean;
 }
 
 // Family-aware caption at the top of the card — orients the reader ("the terminal is asking you
@@ -318,8 +331,12 @@ function ApprovalContext({ approval }: { approval: NonNullable<PromptModel["appr
 //
 // Only the empty, unfocused state offers the composer, whose Send drives digit → focus → type →
 // Enter and lands as DENY-with-feedback (the agent re-plans) — which is what the button says.
-export function PromptSelectBlock({ prompt, lines, onAction, disabled }: PromptSelectBlockProps) {
+export function PromptSelectBlock({ prompt, lines, onAction, disabled, paneId, scope, stale }: PromptSelectBlockProps) {
   useLocale();
+  // M46 spec 11: read the dialog, never answer it from a screen the bridge has not just confirmed.
+  // `useLive` is called unconditionally (hooks); an absent `paneId` simply never counts as offline.
+  const live = useLive(paneId ?? "", scope);
+  const offline = stale === true || (paneId !== undefined && !live);
   const [sending, setSending] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   // Focused from an effect rather than with `autoFocus`: the attribute only acts on the very first
@@ -333,7 +350,7 @@ export function PromptSelectBlock({ prompt, lines, onAction, disabled }: PromptS
   const [draft, setDraft] = useState("");
   const feedback = prompt.feedback;
   const terminalFocused = feedback?.focused ?? false;
-  const locked = Boolean(disabled) || sending !== null || terminalFocused;
+  const locked = Boolean(disabled) || offline || sending !== null || terminalFocused;
   const feedbackCopy = feedback
     ? feedbackCopyFor(feedback.purpose === "free-text" ? "free-text" : "plan-change")
     : null;
@@ -401,6 +418,8 @@ export function PromptSelectBlock({ prompt, lines, onAction, disabled }: PromptS
       {prompt.approval ? <ApprovalContext approval={prompt.approval} /> : <>
         <OptionGroupCaption>{prompt.caption ?? familyCaption(prompt.family)}</OptionGroupCaption>
         {prompt.subject && prompt.subject.length > 0 ? <PromptSubject subject={prompt.subject} /> : null}
+        {/* A dialog that names itself (`/resume`'s "Resume session") already shows its title as the
+            caption; saying it twice adds nothing. */}
         {prompt.question !== prompt.caption ? (
           <p
             data-slot="prompt-question"
@@ -409,8 +428,17 @@ export function PromptSelectBlock({ prompt, lines, onAction, disabled }: PromptS
             {prompt.question}
           </p>
         ) : null}
-        {options}
       </>}
+      {offline ? (
+        <p
+          data-slot="prompt-offline-note"
+          role="status"
+          className="pl-0.5 text-xs leading-snug text-muted-foreground"
+        >
+          {t("prompt.reconnectNote")}
+        </p>
+      ) : null}
+      {prompt.approval ? null : options}
 
       {/* The inline text input, in whichever of its states this screen is in. OUR OWN send comes
           first: the choreography focuses the row and fills it, so from the moment Send is pressed the

@@ -26,6 +26,14 @@ import { splitLines } from "./blocks";
 import { acquirePaneAction, submitPickerIntent } from "./picker-action";
 import { runCodexModelSwitch, type CodexModelSwitchProgress } from "./codex-model-switch";
 import type { CodexModelTarget } from "./harness/codex/model-field";
+
+// M46 spec 11 refuses a send to a pane the bridge has not answered lately (lib/liveness.ts). These
+// cases drive sends against a mocked network and never poll first, so they pin the pane live; the
+// gating itself is covered by liveness.test.ts and the *-offline suites.
+vi.mock("@/lib/liveness", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/liveness")>()),
+  isLive: () => true,
+}));
 import type { PaneReadResponse, SnapshotResponse } from "./types";
 
 const mockFetchPane = vi.mocked(fetchPane);

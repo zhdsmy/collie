@@ -9,6 +9,14 @@ import {
   runCodexModeSwitch,
   type CodexMode,
 } from "./codex-mode-switch";
+
+// M46 spec 11 refuses a send to a pane the bridge has not answered lately (lib/liveness.ts). These
+// cases drive sends against a mocked network and never poll first, so they pin the pane live; the
+// gating itself is covered by liveness.test.ts and the *-offline suites.
+vi.mock("@/lib/liveness", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/liveness")>()),
+  isLive: () => true,
+}));
 import { fixtureSnapshot } from "@/test/handlers";
 
 vi.mock("./api", async (importOriginal) => ({

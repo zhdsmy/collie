@@ -117,10 +117,22 @@ export const UI_FONT_URLS = [
   "/fonts/ui-geist-1.800-latin.woff2",
 ] as const;
 
+/**
+ * Faces that ride under a shipped UI face's family name and cover what it cannot draw. Today one:
+ * Play 400, Cyrillic only, declared in index.css as a second "Aldrich" @font-face behind a
+ * `unicode-range` (Aldrich has no Cyrillic). It is LAZY exactly like the Nerd Font symbols: a
+ * browser fetches it only when Cyrillic text is rendered, so it is not preloaded, not in
+ * `UI_FONT_URLS` (there is no Typeface choice for it and no metric twin of its own), and not in
+ * the precache. It IS in `FONT_URLS`, because that is the set the activate sweep keeps: left out,
+ * a cached copy would be deleted on every activate and fetched again on the next Russian load.
+ */
+export const UI_COMPANION_FONT_URLS = ["/fonts/ui-play-2.101-cyrillic.woff2"] as const;
+
 export const FONT_URLS = [
   "/fonts/nerd-symbols-3.5.0-pua.woff2",
   "/fonts/nerd-symbols-3.5.0-spua.woff2",
   ...UI_FONT_URLS,
+  ...UI_COMPANION_FONT_URLS,
   "/fonts/terminal-geist-mono-77f0563-normal.woff2",
   "/fonts/terminal-geist-mono-77f0563-italic.woff2",
 ] as const;

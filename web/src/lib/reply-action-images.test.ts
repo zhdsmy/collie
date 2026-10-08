@@ -1,8 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/setup";
 import { sendGuardedReply } from "./reply-action";
 import { t } from "./i18n";
+
+// M46 spec 11 refuses a send to a pane the bridge has not answered lately (lib/liveness.ts). These
+// cases drive sends against a mocked network and never poll first, so they pin the pane live; the
+// gating itself is covered by liveness.test.ts and the *-offline suites.
+vi.mock("@/lib/liveness", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/liveness")>()),
+  isLive: () => true,
+}));
 
 const A = "/test-state/uploads/first.jpg";
 const B = "/test-state/uploads/second.png";

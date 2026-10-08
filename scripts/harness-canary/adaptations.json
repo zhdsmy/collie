@@ -561,6 +561,8 @@
       "sources": ["web/src/lib/harness/omp/markers.ts", "web/src/lib/harness/omp/chrome.ts", "web/src/lib/harness/omp/rule.ts", "web/src/lib/harness/omp/pi-shape.ts"],
       "tests": ["web/src/lib/harness/omp.test.ts", "web/src/lib/harness/omp/chrome.test.ts"],
       "fixtures": [
+        { "path": "web/src/fixtures/panes/omp--v18-8-slash-palette.txt", "agent": "omp", "expect": { "block": "raw" } },
+        { "path": "web/src/fixtures/panes/omp--v18-8-slash-palette-w48.txt", "agent": "omp", "expect": { "block": "raw" } },
         { "path": "web/src/fixtures/panes/omp--fresh-effort-hint.txt", "agent": "omp", "expect": { "block": "raw", "statusLinesMin": 1 } },
         { "path": "web/src/fixtures/panes/omp--v18-rule-effort-hint.txt", "agent": "omp", "expect": { "block": "raw", "statusLinesMin": 1 } },
         { "path": "web/src/fixtures/panes/omp--v18-pi-effort-hint.txt", "agent": "omp", "expect": { "block": "raw", "statusLinesMin": 1 } },
@@ -610,8 +612,8 @@
       "id": "shared.picker",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/picker-block.tsx", "web/src/lib/harness/picker-model.ts"],
-      "tests": ["web/src/components/picker-block.test.tsx"],
+      "sources": ["web/src/components/picker-block.tsx", "web/src/lib/harness/picker-model.ts", "web/src/components/card-dock.tsx", "web/src/lib/liveness.ts"],
+      "tests": ["web/src/components/picker-block.test.tsx", "web/src/components/card-dock.test.tsx"],
       "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0154-picker-model.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 2 } }],
       "live": false,
       "verified": null

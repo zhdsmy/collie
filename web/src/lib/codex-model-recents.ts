@@ -202,6 +202,29 @@ export function useCodexModelRecents(codexSessionKey: string | undefined): UseCo
   };
 }
 
+/**
+ * Every session's list and the legacy global one, for the unpair wipe (lib/wipe.ts): what a Codex
+ * session ran is what a pairing leaves behind, not a preference of this phone.
+ */
+export function clearAllCodexModelRecents(): void {
+  try {
+    const store = storage();
+    if (store) {
+      const doomed: string[] = [];
+      for (let i = 0; i < store.length; i++) {
+        const key = store.key(i);
+        if (key === CODEX_MODEL_RECENTS_STORAGE_KEY || key?.startsWith(CODEX_MODEL_RECENTS_STORAGE_PREFIX)) doomed.push(key);
+      }
+      for (const key of doomed) store.removeItem(key);
+    }
+  } catch {
+    // Private mode or a storage failure: the in-memory lists still go below.
+  }
+  const keys = [...stores.keys()];
+  stores.clear();
+  for (const key of keys) notify(key);
+}
+
 /** Test seam; only clears session keys loaded by this module, never the legacy v1 entry. */
 export function __resetCodexModelRecents(): void {
   const keys = new Set([...stores.keys(), ...listeners.keys()]);

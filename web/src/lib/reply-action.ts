@@ -22,9 +22,10 @@ import { describeApiError, describeThrownError } from "./api-error-message";
 import { parseAnsi } from "./ansi";
 import { splitLines, type StyledLine } from "./blocks";
 import { t } from "./i18n";
-import { draftCarriesSend } from "./draft-match";
+import { draftCarriesSend, PRINTABLE_ASCII, REDACT_MASK } from "./draft-match";
 import { adapterFor, type HarnessAdapter } from "./harness";
 import { POLL_ATTEMPTS, POLL_DELAY_MS, defaultSleep, type Sleep } from "./harness/guard";
+import { isLive } from "./liveness";
 import { detectNoEchoPrompt } from "./no-echo";
 import { paneScopeKey, type Scope } from "./scope";
 import {
@@ -54,7 +55,13 @@ export type ReplyOutcome =
    *  that the screen is deliberately not showing it — see lib/no-echo.ts. */
   | { status: "stalled"; error: string; noEcho?: string }
   /** Transport/RPC failure. `textDelivered` = text is in the pane but unsubmitted; don't resend. */
-  | { status: "error"; error: string; textDelivered?: boolean };
+  | { status: "error"; error: string; textDelivered?: boolean }
+  /**
+   * Nothing was read, typed or sent: the bridge has not answered a read for this pane lately, so the
+   * screen the caller acted on may be cached or hours old (M46 spec 11). The caller keeps the draft.
+   * There is no queue and no retry: a person sends again once the pane reads live.
+   */
+  | { status: "refused"; reason: "offline"; error: string };
 
 export { draftCarriesSend, MIN_MATCH_CHARS } from "./draft-match";
 
@@ -147,11 +154,14 @@ export type ComposerPrepResult =
 
 // A prefix can be a partially painted echo. Require the tail that fits in the visible draft;
 // a scrolled composer may expose fewer than 32 characters. The draft matcher supplies the
-// minimum match length before this tail check runs.
+// minimum match length before this tail check runs. A `•` in the draft may stand for one
+// printable ASCII character of the send (REDACT_MASK, the bridge's secret mask).
 function carriesReplyTail(sent: string, draft: string | null): boolean {
-  const visible = draft?.replace(/\s/g, "") ?? "";
-  const tail = Array.from(sent.replace(/\s/g, "")).slice(-Math.min(32, Array.from(visible).length)).join("");
-  return visible.length > 0 && tail.length > 0 && visible.endsWith(tail);
+  const visible = Array.from(draft?.replace(/\s/g, "") ?? "");
+  const tail = Array.from(sent.replace(/\s/g, "")).slice(-Math.min(32, visible.length));
+  if (visible.length === 0 || tail.length === 0) return false;
+  const seen = visible.slice(-tail.length);
+  return seen.every((ch, i) => ch === tail[i] || (ch === REDACT_MASK && PRINTABLE_ASCII.test(tail[i]!)));
 }
 
 function aborted(args: Pick<GuardedReplyArgs, "signal">): boolean {
@@ -167,6 +177,11 @@ function cancelledReply(): ReplyOutcome {
  * `/model` can type the command and then drive its child pickers without releasing ownership.
  */
 export async function sendGuardedReply(args: GuardedReplyArgs): Promise<ReplyOutcome> {
+  // M46 spec 11: the backstop behind every disabled Send. A UI that slipped through (a stale render,
+  // a handler held across an outage) still cannot reach the bridge from a pane it has not just read.
+  if (!isLive(args.paneId, args.scope)) {
+    return { status: "refused", reason: "offline", error: t("composer.send.reconnect") };
+  }
   if (aborted(args)) return cancelledReply();
   const key = paneScopeKey(args.scope, args.paneId);
   if (args.owner !== undefined && !ownsPaneAction(args.owner, key)) return cancelledReply();

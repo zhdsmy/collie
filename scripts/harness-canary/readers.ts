@@ -30,7 +30,8 @@ export interface Adapter {
 
 export type ReplyOutcome =
   | { readonly status: "sent" }
-  | { readonly status: "blocked" | "stalled" | "error"; readonly error: string };
+  | { readonly status: "blocked" | "stalled" | "error"; readonly error: string }
+  | { readonly status: "refused"; readonly reason: "offline"; readonly error: string };
 
 export interface Readers {
   /** The checkout the readers came from. */
@@ -54,6 +55,9 @@ interface HarnessModule {
   buildBlocks(lines: Line[], ctx: { agent: string }): Block[];
   adapterFor(agent: string | undefined): Adapter | undefined;
 }
+interface ApiModule {
+  fetchPane(paneId: string): Promise<{ text: string }>;
+}
 interface ReplyModule {
   draftCarriesSend(sent: string, draft: string | null): boolean;
   sendGuardedReply(args: { paneId: string; text: string; agent: string }): Promise<ReplyOutcome>;
@@ -70,6 +74,7 @@ export async function loadReaders(root: string): Promise<Readers> {
   const blocks: BlocksModule = await import(join(lib, "blocks.ts"));
   const harness: HarnessModule = await import(join(lib, "harness", "index.ts"));
   const reply: ReplyModule = await import(join(lib, "reply-action.ts"));
+  const api: ApiModule = await import(join(lib, "api.ts"));
   return {
     root,
     parse: (text) => blocks.splitLines(ansi.parseAnsi(text)),
@@ -77,6 +82,10 @@ export async function loadReaders(root: string): Promise<Readers> {
     buildBlocks: (lines, agent) => harness.buildBlocks(lines, { agent }),
     adapterFor: (agent) => harness.adapterFor(agent),
     draftCarriesSend: (sent, draft) => reply.draftCarriesSend(sent, draft),
-    sendGuardedReply: (paneId, text, agent) => reply.sendGuardedReply({ paneId, text, agent }),
+    sendGuardedReply: async (paneId, text, agent) => {
+      // Use the phone's read path to establish liveness before its offline send guard runs.
+      await api.fetchPane(paneId);
+      return reply.sendGuardedReply({ paneId, text, agent });
+    },
   };
 }

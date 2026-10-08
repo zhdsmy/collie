@@ -7,6 +7,14 @@ import { codexAdapter } from "./harness/codex";
 import { parseAnsi } from "./ansi";
 import { splitLines } from "./blocks";
 
+// M46 spec 11 refuses a send to a pane the bridge has not answered lately (lib/liveness.ts). These
+// cases drive sends against a mocked network and never poll first, so they pin the pane live; the
+// gating itself is covered by liveness.test.ts and the *-offline suites.
+vi.mock("@/lib/liveness", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/liveness")>()),
+  isLive: () => true,
+}));
+
 const capture = readFileSync(join(import.meta.dirname, "../fixtures/panes/codex--v0154-particles-working.txt"), "utf8");
 const paint = "\u001b[0m\u001b[48;2;57;57;71m";
 const dot = "\u001b[0m\u001b[38;2;110;114;134m\u001b[48;2;57;57;71m⠄" + paint;
