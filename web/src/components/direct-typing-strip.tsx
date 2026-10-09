@@ -20,12 +20,15 @@ import { t } from "@/lib/i18n";
 // refusing it, and a draft that vanished without a word would read as lost.
 export function DirectTypingStrip({ draftKept, onStop }: { draftKept: boolean; onStop: () => void }) {
   useLocale();
+  // Full-width banner, not a quiet row: this mode streams keystrokes into a
+  // live terminal, and the 2026-10-07 phone trap was an armed session nobody
+  // noticed. Destructive tint + STOP button, always in flow above the input.
   return (
-    <div className="flex items-center gap-2 px-1 pb-1 text-xs text-primary">
+    <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">
       <Keyboard className="size-3.5 shrink-0" />
       <span className="min-w-0 flex-1 truncate">
-        <span className="font-medium">{t("sendMode.armed.title")}</span>
-        <span className="text-muted-foreground">
+        <span>{t("sendMode.armed.title")}</span>
+        <span className="opacity-80">
           {" — "}
           {draftKept ? t("sendMode.armed.draftKept") : t("sendMode.armed.hint")}
         </span>

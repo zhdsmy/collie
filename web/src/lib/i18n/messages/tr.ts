@@ -1024,6 +1024,8 @@ export const tr: Dictionary = {
   "stt.error.micRefused": "Mikrofon erişimi reddedildi.",
   "directTyping.status.armed": "Terminale yazılıyor, tuşlar siz yazdıkça gönderilir.",
   "directTyping.status.disarmed": "Yanıt göndermeye geri dön",
+  "directTyping.status.agentChanged": "Yazma modu kapatıldı: bölmenin aracısı değişti.",
+  "directTyping.status.idleTimeout": "Yazma modu kapatıldı: 60 saniyedir tuş yok.",
   "directTyping.status.interrupted": "Terminale yazma durduruldu, bölme görünümü kesintiye uğradı.",
   "directTyping.status.backgrounded": "Terminale yazma durduruldu, uygulama arka plana alındı.",
   "apiError.unknown": "Bir sorun oluştu. Tekrar deneyin.",

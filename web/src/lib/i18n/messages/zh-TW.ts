@@ -1160,6 +1160,8 @@ export const zhTW: Dictionary = {
   // --- directTyping (the composer's "Type into terminal" mode, hooks/use-direct-typing.ts) ---
   "directTyping.status.armed": "已直接連線終端機，按鍵即時傳送。",
   "directTyping.status.disarmed": "已切換為傳送一般訊息",
+  "directTyping.status.agentChanged": "輸入模式已關閉：窗格的智能體已更換。",
+  "directTyping.status.idleTimeout": "輸入模式已關閉：60秒無按鍵。",
   "directTyping.status.interrupted": "已中斷終端機直接連線：窗格檢視被中斷。",
   "directTyping.status.backgrounded": "已中斷終端機直接連線：應用程式進入背景。",
 

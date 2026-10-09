@@ -1188,6 +1188,8 @@ export const de: Dictionary = {
   // --- directTyping (the composer's "Type into terminal" mode, hooks/use-direct-typing.ts) ---
   "directTyping.status.armed": "Direkteingabe im Terminal aktiv. Tastenanschläge werden direkt gesendet.",
   "directTyping.status.disarmed": "Zurück zur regulären Eingabe von Antworten.",
+  "directTyping.status.agentChanged": "Type-Modus aus: Der Agent im Pane hat gewechselt.",
+  "directTyping.status.idleTimeout": "Type-Modus aus: 60 Sekunden keine Taste.",
   "directTyping.status.interrupted":
     "Direkteingabe im Terminal beendet, da die Pane-Ansicht unterbrochen wurde.",
   "directTyping.status.backgrounded":

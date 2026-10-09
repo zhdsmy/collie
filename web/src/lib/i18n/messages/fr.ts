@@ -1024,6 +1024,8 @@ export const fr: Dictionary = {
   "stt.error.micRefused": "L'accès au microphone a été refusé.",
   "directTyping.status.armed": "Saisie dans le terminal : les touches s'envoient lors de la frappe.",
   "directTyping.status.disarmed": "Retour à l'envoi de réponses",
+  "directTyping.status.agentChanged": "Mode de saisie coupé : l'agent du volet a changé.",
+  "directTyping.status.idleTimeout": "Mode de saisie coupé : aucune touche depuis 60 secondes.",
   "directTyping.status.interrupted": "Saisie dans le terminal interrompue : la vue du volet a été interrompue.",
   "directTyping.status.backgrounded": "Saisie dans le terminal interrompue : l'application est passée en arrière-plan.",
   "apiError.unknown": "Une erreur est survenue. Réessayez.",

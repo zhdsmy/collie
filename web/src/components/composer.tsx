@@ -548,6 +548,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       // The field is a live keyboard from here, not a draft, so an Undo would have nowhere to go.
       endUndoWindow();
     },
+    // Identity for the agent-change disarm: the mode belongs to the session
+    // that armed it. "shell" when the pane has no agent (agent exits, pane
+    // falls back to shell) — a change there disarms with a notice.
+    agentKey: agent ?? "shell",
   });
 
   // ── VOICE (ADR 0029) ──────────────────────────────────────────────────────────────────────────

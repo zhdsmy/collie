@@ -1186,6 +1186,8 @@ export const es: Dictionary = {
   // --- directTyping (the composer's "Type into terminal" mode, hooks/use-direct-typing.ts) ---
   "directTyping.status.armed": "Escribiendo en la terminal. Las pulsaciones se envían al instante.",
   "directTyping.status.disarmed": "Restablecido el envío de respuestas.",
+  "directTyping.status.agentChanged": "Modo de escritura desactivado: el agente del panel cambió.",
+  "directTyping.status.idleTimeout": "Modo de escritura desactivado: 60 segundos sin teclas.",
   "directTyping.status.interrupted":
     "Escritura en terminal detenida. Se interrumpió la vista del panel.",
   "directTyping.status.backgrounded":

@@ -1256,6 +1256,8 @@ export const en = {
   // --- directTyping (the composer's "Type into terminal" mode, hooks/use-direct-typing.ts) ---
   "directTyping.status.armed": "Typing into the terminal — keys send as you type.",
   "directTyping.status.disarmed": "Back to sending replies",
+  "directTyping.status.agentChanged": "Type mode off — the pane's agent changed.",
+  "directTyping.status.idleTimeout": "Type mode off — no key for 60 seconds.",
   "directTyping.status.interrupted":
     "Stopped typing into the terminal — the pane view was interrupted.",
   "directTyping.status.backgrounded":
