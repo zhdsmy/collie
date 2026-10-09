@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.18.1+collie.1] - 2026-10-09
+
 ### Changed
 
-- **Follow upstream 1.18.1 while keeping the Collie type mode.** Adopt Claude slash-command rows in Chat, long Grok drafts and the Grok /model picker, the New space sheet's final height, the CJK journal read fix, the pointed agent footer and the wider full-reply probe; type mode now also switches off when the agent changes and after a minute without a key, with accessory taps counting as keys, under the red armed banner. See [the integration report](docs/upstream-v1.18.1.md).
+- **Follow upstream 1.18.1 while keeping the Collie type mode.** Adopt Claude slash-command rows in Chat, long Grok drafts and the Grok /model picker, the New space sheet's final height, the CJK journal read fix, the pointed agent footer and the wider full-reply probe; type mode now also switches off when the agent changes and after a minute without a key, with accessory taps counting as keys, under the red armed banner. See [the integration report](docs/upstream-v1.18.1.md). ([3612f222](https://github.com/zhdsmy/collie/commit/3612f222))
 
 ## [1.18.0+collie.2] - 2026-10-09
 
