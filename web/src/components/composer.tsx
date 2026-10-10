@@ -1,15 +1,15 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { ChangeEvent, ClipboardEvent, CSSProperties } from "react";
+import type { ChangeEvent, ClipboardEvent, CSSProperties, ReactNode } from "react";
 import { useRevalidator } from "react-router";
-import { Check, FileText, Image, Keyboard, Lightbulb, Loader2, Mic, Paperclip, Send, Settings2, Slash, Square, Terminal, Zap } from "lucide-react";
+import { Check, FileText, Image, Keyboard, Lightbulb, Loader2, Mic, Paperclip, Pencil, Send, Settings2, Slash, Square, Terminal, X, Zap } from "lucide-react";
 
 import { applyDraftFontSize, fontStack, inputFocusZoomsPage } from "@/hooks/use-display-prefs";
 import type { DisplayPrefs, Hand } from "@/hooks/use-display-prefs";
 import { usePendingConfirm } from "@/hooks/use-pending-confirm";
 import { useDirectTyping } from "@/hooks/use-direct-typing";
 import { useLocale } from "@/hooks/use-locale";
-import { t as translate } from "@/lib/i18n";
+import { t as translate, tn as translatePlural } from "@/lib/i18n";
 import { holdsMask } from "@/lib/masked-text";
 import { setStatus } from "@/lib/status";
 import { buzz } from "@/lib/haptics";
@@ -18,12 +18,14 @@ import { useBusyWhile } from "@/lib/busy";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChatInput } from "@/components/ui/chat/chat-input";
-import { DirectKeyboardAccessory } from "@/components/direct-keyboard-accessory";
+import { NavTray } from "@/components/nav-tray";
+import { KeyBoardEditor } from "@/components/key-board-editor";
 import { CommandPalette } from "@/components/command-palette";
 import { QuickActionsContent } from "@/components/quick-actions";
 import { ActionsRow } from "@/components/actions-row";
 import { Collapse } from "@/components/ui/collapse";
-import { ComposerDock } from "@/components/ui/composer-dock";
+import { ComposerDock as TipDock } from "@/components/ui/composer-dock";
+import { SectionLabel } from "@/components/ui/section-label";
 import { BottomSheet } from "@/components/ui/sheet";
 import { ActionRow } from "@/components/action-sheet-rows";
 import { AnchoredMenu } from "@/components/ui/anchored-menu";
@@ -31,7 +33,7 @@ import * as api from "@/lib/api";
 import { describeApiError, describeThrownError } from "@/lib/api-error-message";
 import { commandsFor } from "@/lib/agent-commands";
 import { useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux-capability";
-import { useOperatorCommands, useUploadCapability } from "@/lib/operator-config";
+import { useOperatorCommands, useOperatorKeys, useUploadCapability } from "@/lib/operator-config";
 import {
   acceptAttribute,
   attachmentKind,
@@ -46,6 +48,8 @@ import {
   removeMarker,
   uploadLimits,
 } from "@/lib/attachments";
+import { ctrlPresetsFor } from "@/lib/operator-keys";
+import { useKeyBoard } from "@/lib/key-board-store";
 import { isDestructiveInput } from "@/lib/destructive";
 import { useHostLabel } from "@/components/crew-provider";
 import { fitsDraftStore, loadDraftEntry, saveDraft } from "@/lib/drafts";
@@ -197,14 +201,14 @@ interface ComposerProps {
 }
 
 // The composer cluster at the bottom of the pane view — everything a phone keyboard can't do on its
-// own: quick actions, an agent-aware slash-command palette, a direct-input keyboard (via
+// own: quick actions, an agent-aware slash-command palette, Keys and direct typing (via
 // `pane.send_keys`), attachment upload, display prefs, and the reply Send (with a destructive-command
-// two-tap guard). Draft, sending, upload, pending preview, Quick/Agent sheets and the tip dock
+// two-tap guard). Draft, sending, upload, pending preview, Keys/tip docks and Quick/Agent sheets
 // are local state; `onSent` asks AgentChat to re-follow the tail, and the composer
 // exposes `focusInput` so the mirror tap can bring up the keyboard.
 //
 // Display is a sheet owned by AgentChat. Quick/Agent are sheets here; the tip stays in a dock.
-type ComposerDrawer = "quick" | "cmd" | "tip" | null;
+type ComposerDrawer = "quick" | "cmd" | "keys" | "tip" | null;
 
 
 
@@ -222,6 +226,57 @@ const SENT_ECHO_GRACE_MS = 5_000;
 // Burst window for post-keypress revalidation (see scheduleKeyRevalidate).
 const KEY_REVALIDATE_MS = 300;
 
+// Shared in-flow dock chrome for Keys/Quick — an IN-FLOW panel (never an overlay), so the terminal
+// mirror's flex-1 box shrinks and its tail stays visible while the dock is open (a covering sheet
+// hid exactly the prompt you were driving). Full-bleed top border + capped height keep the mirror
+// usable on a phone. The header (title + Close X) is a NON-scrolling child of a flex column; only the
+// body below it scrolls (max-h + overflow), so the Close X can never scroll out of reach on a short
+// viewport with a tall tray. One wrapper so Keys and Quick can't drift apart.
+function ComposerDock({
+  title,
+  onEdit,
+  onClose,
+  children,
+}: {
+  title: string;
+  /** Draws a pencil beside the label, centred on it. Only the Keys dock has one (ADR 0092). */
+  onEdit?: () => void;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="-mx-3 mb-2 flex flex-col border-t border-border bg-background">
+      <div className="flex items-center justify-between px-3 pt-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionLabel>{title}</SectionLabel>
+          {onEdit !== undefined && (
+            // 28px drawn, 44px reached: the `::before` reaches 8px past each edge into the header's own
+            // padding and the dock's gap, the same trade the Close X beside it makes (DESIGN.md §6).
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative -ml-1 size-7 text-muted-foreground before:absolute before:-inset-2 before:content-['']"
+              onClick={onEdit}
+              aria-label={translate("composer.dock.editKeys")}
+            >
+              <Pencil className="size-3.5" />
+            </Button>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 text-muted-foreground"
+          onClick={onClose}
+          aria-label={translate("composer.dock.closeAria", { title })}
+        >
+          <X className="size-4" />
+        </Button>
+      </div>
+      <div className="max-h-[45dvh] min-h-0 overflow-y-auto">{children}</div>
+    </div>
+  );
+}
 
 /** How long the attach button holds its pressed tone, in ms. Just under the sheet's own 240ms
  *  entrance, so the flash hands over to the sheet rather than lingering behind it. */
@@ -480,7 +535,32 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const [previewDismissed, setPreviewDismissed] = useState(false);
   // Composer sheets are mutually exclusive — at most one open (Keys / Quick / Agent / Display).
   const [drawer, setDrawer] = useState<ComposerDrawer>(null);
+  // Keys staged in the (unmounted-on-close) NavTray, pushed up so leaving the Keys dock can guard a
+  // composed sequence. See requestDrawer.
+  const [queuedKeys, setQueuedKeys] = useState(0);
+  // Two-tap guard for discarding that sequence. Separate from sendConfirm so an armed "Really send?"
+  // and an armed discard can't clobber each other.
+  const discardConfirm = usePendingConfirm();
+
+  // The SINGLE choke point for every drawer transition. Closing the Keys dock destroys the composed
+  // queue (NavTray unmounts, useKeyQueue resets) — deliberate, because a queue that survived into a
+  // later open would let Send fire yesterday's chord sequence into today's TUI state, and this
+  // surface's whole safety story is "you review exactly what is about to go on the wire". So the fix
+  // for a mis-tap is a confirm, not persistence.
+  //
+  // Routed through here rather than guarding the dock's ✕ alone: the Keys toggle and the Quick /
+  // Agent / Display buttons all unmount the tray just as effectively. An armed-but-EMPTY queue (a
+  // lone `once` modifier, no chips) does not arm the confirm — one tap of setup isn't work worth
+  // protecting, and over-guarding just trains you to double-tap through it reflexively.
   function requestDrawer(next: ComposerDrawer) {
+    if (drawer === "keys" && next !== "keys" && queuedKeys > 0 && !discardConfirm.confirm("discard")) {
+      setStatus(
+        translatePlural("composer.discard.confirmKeys", queuedKeys, { count: queuedKeys }),
+        "info",
+      );
+      return;
+    }
+    discardConfirm.reset();
     onDockOpen?.();
     if (next !== null && direct.active) direct.deactivateSilently();
     setDrawer(next);
@@ -685,7 +765,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // its text tracks and that the send()-time pre-clear sweeps.
   const effectiveStable = suppressEcho(terminalDraft);
   const effectiveRaw = suppressEcho(rawTerminalDraft);
-  const writing = sending || uploading || direct.active || direct.busy;
+  const writing = sending || uploading || direct.active || direct.busy || queuedKeys > 0;
   useEffect(() => {
     onWritingChange?.(writing);
     return () => onWritingChange?.(false);
@@ -877,7 +957,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     if (pressTimer.current !== null) clearTimeout(pressTimer.current);
     pressTimer.current = setTimeout(() => setPressed(false), ATTACH_PRESS_MS);
   }
-  // Keep the direct-input accessory's unavailable keys visible but disabled.
+  // The Keys tray's preset row, resolved the same way from the same one-shot read of /api/config.
+  const keyPresets = ctrlPresetsFor(agent, useOperatorKeys());
+  // The key board (ADR 0092): the pad the Keys dock draws. A hook, so an edit made in the
+  // editor sheet shows in the dock at once.
+  const keyBoard = useKeyBoard();
+  const [keysEditorOpen, setKeysEditorOpen] = useState(false);
+  // Empty on every adapter that refuses nothing, and empty for Herdr's six as far as this tray is
+  // concerned — it offers none of the paging/edit keys Herdr rejects, so nothing greys out there.
   const unsupportedKeys = useMuxUnsupportedKeys();
 
   function focusInputImmediately() {
@@ -1431,7 +1518,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         {/* File input stays mounted here (not inside the keyboard-only key row) so the picker
             callback survives the keyboard collapsing. Attach fires it from the reply-input row
             below (always visible, not gated behind the keyboard-open quick keys); structural commands
-            (New tab/space, Kill) live elsewhere; Escape is on the direct-input keyboard. */}
+            (New tab/space, Kill) live elsewhere; Escape is on the Keys panel. */}
         {/* TWO inputs, because a phone's picker cannot be asked both questions at once. The
             camera roll is offered only when EVERY entry in `accept` maps to a gallery, so the
             extension list that makes a `.md` pickable is the very thing that hid the gallery on
@@ -1441,6 +1528,26 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         <input ref={photoRef} data-testid="attach-photos" type="file" accept={PHOTO_ACCEPT} multiple hidden onChange={onPickFile} />
         <input ref={fileRef} data-testid="attach-files" type="file" accept={accept} hidden onChange={onPickFile} />
 
+        {drawer === "keys" && (
+          <ComposerDock
+            title={translate("composer.controls.keys")}
+            onEdit={() => setKeysEditorOpen(true)}
+            onClose={closeDrawer}
+          >
+            <NavTray
+              // The chords THIS multiplexer refuses (M10/06). A key is not a capability: the Keys
+              // door is `sendKeys` (the lock above), and this is the list of holes behind it, so a
+              // refused chord greys its own button instead of being discovered by a failed send.
+              unsupportedKeys={unsupportedKeys}
+              onSend={pressKeys}
+              presets={keyPresets}
+              board={keyBoard}
+              onQueueChange={setQueuedKeys}
+              disabled={locked || offline}
+            />
+          </ComposerDock>
+        )}
+        <KeyBoardEditor open={keysEditorOpen} onClose={() => setKeysEditorOpen(false)} unsupportedKeys={unsupportedKeys} />
         {/* The portal keeps sheets viewport-anchored while the composer's Collapse animates. */}
         {(drawer === "quick" || drawer === "cmd") && createPortal(
           <BottomSheet
@@ -1473,9 +1580,9 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             lightbulb pill. The sentence is Claude's own and is shown verbatim: it names a command
             (`/clear`) and a number this app does not compute, so there is nothing here to translate. */}
         {drawer === "tip" && claudeTip && (
-          <ComposerDock title={translate("statusline.claude.hint")} onClose={closeDrawer}>
+          <TipDock title={translate("statusline.claude.hint")} onClose={closeDrawer}>
             <p className="px-3 py-2 font-mono text-xs leading-relaxed text-muted-foreground">{claudeTip}</p>
-          </ComposerDock>
+          </TipDock>
         )}
         {/* The one action row: Keys · Quick · Agent · ⚙ (Agent only when the pane's agent has
             commands). Display prefs used to sit on a second, permanent icon-only "View" row above
@@ -1525,9 +1632,17 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   */}
         <ActionsRow
           general={[
-              // Quick and Agent share `drawer`, so only one sheet opens at a time.
-              // One explicit mode owns both live text and the special-key accessory.
-              // Opening it exposes the keys without focusing the textarea.
+              // The Keys dock and Quick/Agent sheets share one open drawer.
+              {
+                id: "keys",
+                icon: Keyboard,
+                label: translate("composer.controls.keys"),
+                on: drawer === "keys",
+                expanded: drawer === "keys",
+                disabled: locked,
+                onSelect: () => requestDrawer(drawer === "keys" ? null : "keys"),
+              },
+              // Type is an explicit mode for sending live text into the terminal.
               {
                 id: "type",
                 icon: Terminal,
@@ -1537,7 +1652,6 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 word: translate("composer.controls.type"),
                 on: direct.active,
                 pressed: direct.active,
-                expanded: direct.active,
                 disabled: locked || sending,
                 onSelect: () => {
                   if (direct.active) {
@@ -1677,21 +1791,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         <Collapse open={direct.active || (recorder.busy && recorder.phase !== "requesting")}>
           {/* Armed indicator for direct typing, deliberately NOT only on the button and textarea —
               see the component. */}
-          {direct.active && (
-            <div id="composer-direct-keys">
-              <DirectTypingStrip draftKept={hasDraft} onStop={() => direct.deactivate()} />
-              <DirectKeyboardAccessory
-                key={`${direct.accessorySession}:${direct.row}`}
-                row={direct.row}
-                modifiers={direct.modifiers}
-                disabled={locked}
-                unsupportedKeys={unsupportedKeys}
-                onToggleRow={direct.toggleRow}
-                onToggleModifier={direct.toggleModifier}
-                onSendKeys={direct.sendAccessoryKeys}
-              />
-            </div>
-          )}
+          {direct.active && <DirectTypingStrip draftKept={hasDraft} onStop={() => direct.deactivate()} />}
           {/* The microphone's armed strip. Stop and ✕ are different actions: one transcribes the
               clip, the other throws it away. */}
           {recorder.busy && recorder.phase !== "requesting" && (

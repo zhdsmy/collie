@@ -14,6 +14,8 @@ import { server } from "@/test/setup";
 import { fixtureServers, recordReply } from "@/test/handlers";
 import { CrewProvider } from "./crew-provider";
 import { Composer, TUI_SETTLE_MS } from "./composer";
+import { addRow, chordKey, DEFAULT_BOARD, setCell } from "@/lib/key-board";
+import { resetKeyBoard, setKeyBoard } from "@/lib/key-board-store";
 import { type ServerSummary } from "@/lib/types";
 
 // M46 spec 11 turns every send off for a pane the bridge has not answered lately (lib/liveness.ts).
@@ -155,6 +157,7 @@ describe("Composer — actions belt", () => {
       const group = screen.getByRole("group", { name: translate("composer.controls.label") });
       const buttons = within(group).getAllByRole("button");
       expect(buttons.map((button) => button.textContent)).toEqual([
+        translate("composer.controls.keys"),
         translate("composer.controls.type"),
         translate("composer.controls.quick"),
         translate("composer.controls.agent"),
@@ -179,67 +182,7 @@ describe("Composer — actions belt", () => {
     expect(within(group).getByRole("button", { name: "Type into terminal" })).toBeEnabled();
   });
 
-  it("sends accessory chords immediately and resets keys when Input is reopened", async () => {
-    const user = userEvent.setup();
-    const onWritingChange = vi.fn();
-    const sent: string[] = [];
-    server.use(http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-      // SAFETY: this route receives the app-owned sendKeys payload under test.
-      const body = await request.json() as { keys: string[] };
-      sent.push(...body.keys);
-      return HttpResponse.json({ ok: true });
-    }));
-    renderComposer({ onWritingChange });
-    const type = screen.getByRole("button", { name: "Type into terminal" });
-    expect(screen.queryByRole("button", { name: "Keys" })).toBeNull();
-    await user.click(type);
-    const accessory = screen.getByTestId("direct-keyboard-accessory");
-    expect(type).toHaveAttribute("aria-expanded", "true");
-    expect(onWritingChange).toHaveBeenLastCalledWith(true);
-    expect(screen.getByPlaceholderText(/type into the terminal/i)).not.toHaveFocus();
-    await user.click(within(accessory).getByRole("button", { name: "Ctrl" }));
-    await user.click(within(accessory).getByRole("button", { name: "Tab" }));
-    await waitFor(() => expect(sent).toEqual(["ctrl+Tab"]));
-    expect(within(accessory).getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
-    expect(screen.queryByRole("button", { name: "Clear queued keys" })).toBeNull();
-    await user.click(within(accessory).getByRole("button", { name: "Ctrl" }));
-    await user.click(within(accessory).getByRole("button", { name: "Ctrl" }));
-    await user.click(within(accessory).getByRole("button", { name: "Show key combos" }));
-    await user.click(type);
-    await waitFor(() => expect(screen.queryByTestId("direct-keyboard-accessory")).toBeNull());
-    expect(onWritingChange).toHaveBeenLastCalledWith(false);
-    await user.click(type);
-    expect(screen.getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "off");
-    expect(screen.getByRole("button", { name: "Tab" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Shift+Tab" })).toBeNull();
-    expect(sent).toEqual(["ctrl+Tab"]);
-  });
 
-  it("walks the switch to the combos row and sends a combo whole, leaving a latched Ctrl armed", async () => {
-    const user = userEvent.setup();
-    const sent: string[] = [];
-    server.use(http.post(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
-      // SAFETY: this route receives the app-owned sendKeys payload under test.
-      const body = await request.json() as { keys: string[] };
-      sent.push(...body.keys);
-      return HttpResponse.json({ ok: true });
-    }));
-    renderComposer();
-    await user.click(screen.getByRole("button", { name: "Type into terminal" }));
-    // The accessory remounts per row (its key), so it is looked up again after every switch.
-    const accessory = () => screen.getByTestId("direct-keyboard-accessory");
-    await user.click(within(accessory()).getByRole("button", { name: "Ctrl" }));
-    await user.click(within(accessory()).getByRole("button", { name: "Show key combos" }));
-    await user.click(within(accessory()).getByRole("button", { name: "Shift+Tab" }));
-    await user.click(within(accessory()).getByRole("button", { name: "Ctrl+C" }));
-    await waitFor(() => expect(sent).toEqual(["shift+Tab", "ctrl+c"]));
-    // Combos, then the rarely used function keys, then back where the walk started.
-    // Still latched, and said so on the pages that have no Ctrl key of their own.
-    await user.click(within(accessory()).getByRole("button", { name: "Show function keys · Ctrl" }));
-    expect(within(accessory()).getByRole("button", { name: "F1" })).toBeVisible();
-    await user.click(within(accessory()).getByRole("button", { name: "Show navigation keys · Ctrl" }));
-    expect(within(accessory()).getByRole("button", { name: "Ctrl" })).toHaveAttribute("data-mode", "once");
-  });
 });
 
 describe("Composer — send", () => {
@@ -1084,30 +1027,6 @@ describe("Composer — typing into the terminal", () => {
       expect(screen.queryByPlaceholderText(/type into the terminal/i)).toBeNull(),
     );
     expect(screen.getByTestId("status")).toHaveTextContent(/no key for 60 seconds/i);
-  });
-
-  // Arming opens no phone keyboard, so the accessory row can be the only thing touched: its keys and
-  // its modifier toggle count as activity just as typed keys do.
-  it("restarts the idle clock on accessory taps", async () => {
-    server.use(
-      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async () => {
-        return HttpResponse.json({ ok: true });
-      }),
-    );
-    renderComposerWithStatus();
-    vi.useFakeTimers();
-    startDirectTyping();
-    const accessory = screen.getByTestId("direct-keyboard-accessory");
-    try {
-      act(() => vi.advanceTimersByTime(59_000));
-      fireEvent.click(within(accessory).getByRole("button", { name: "Ctrl" }));
-      act(() => vi.advanceTimersByTime(59_000));
-      fireEvent.click(within(accessory).getByRole("button", { name: "Tab" }));
-      act(() => vi.advanceTimersByTime(59_000));
-      expect(screen.getByPlaceholderText(/type into the terminal/i)).toBeInTheDocument();
-    } finally {
-      vi.useRealTimers();
-    }
   });
 
   it("sends committed keyboard text as literal ordered keys with no implicit Enter", async () => {
@@ -4103,5 +4022,233 @@ describe("Composer — a draft that holds masked text", () => {
     renderComposerWithStatus();
     fireEvent.change(screen.getByPlaceholderText(/type a reply/i), { target: { value: "ghp_••••••••" } });
     expect(screen.getByRole("button", { name: "Send" })).not.toBeDisabled();
+  });
+});
+
+describe("Composer — keys dock (in-flow, not an overlay)", () => {
+  it("tapping Keys docks the NavTray in the normal flow (no fixed overlay) and toggles it closed", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    const keys = screen.getByRole("button", { name: "Keys" });
+    expect(keys).toHaveAttribute("aria-expanded", "false");
+    // Closed by default — the tray isn't mounted.
+    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
+
+    await user.click(keys);
+    expect(keys).toHaveAttribute("aria-expanded", "true");
+
+    // The NavTray is now mounted (its Esc key is a good witness)…
+    const esc = screen.getByRole("button", { name: "Esc" });
+    expect(esc).toBeInTheDocument();
+    // …and it is IN-FLOW, not inside a fixed overlay/dialog (the BottomSheet's covering role="dialog").
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(esc.closest('[aria-modal="true"]')).toBeNull();
+    expect(esc.closest(".fixed")).toBeNull();
+
+    // Tapping Keys again closes the dock (single-valued drawer toggle).
+    await user.click(keys);
+    expect(keys).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
+  });
+
+  it("the dock's own X close button dismisses it", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+    expect(screen.getByRole("button", { name: "Esc" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close Keys" }));
+    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
+  });
+
+  it("the pencil sits beside the KEYS label on the same line, ahead of the close X, and opens the editor", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+
+    const pencil = screen.getByRole("button", { name: "Edit keys" });
+    const close = screen.getByRole("button", { name: "Close Keys" });
+    // The pencil and the label share one group, which is on the header row; the close X is the row's far end.
+    const group = pencil.parentElement;
+    expect(group).toHaveClass("items-center");
+    expect(group?.textContent).toContain("Keys");
+    expect(group?.contains(close)).toBe(false);
+    expect(group?.parentElement).toBe(close.parentElement);
+    expect(pencil.compareDocumentPosition(close) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    // 28px drawn, 44px reached, like the X beside it.
+    expect(pencil).toHaveClass("size-7");
+    expect(pencil.className).toContain("before:-inset-2");
+    // Quick has no pencil.
+    expect(screen.queryByRole("dialog", { name: "Edit keys" })).toBeNull();
+
+    await user.click(pencil);
+    expect(screen.getByRole("dialog", { name: "Edit keys" })).toBeInTheDocument();
+    // The dock stays put behind the sheet.
+    expect(screen.getAllByRole("button", { name: "Esc" }).length).toBeGreaterThan(0);
+  });
+
+  it("the Keys dock header holds the KEYS label and the pencil and no machine name, on a crew too", async () => {
+    const user = userEvent.setup();
+    renderComposerWithStatus({ scope: { host: "workshop" } }, fixtureServers);
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+
+    const pencil = screen.getByRole("button", { name: "Edit keys" });
+    const group = pencil.parentElement!;
+    // The group is the label and the pencil, nothing else: two children, no chip, no machine word.
+    expect(group.children).toHaveLength(2);
+    expect(group.textContent).toBe("Keys");
+    const header = group.parentElement!;
+    expect(header.textContent).not.toMatch(/workshop/i);
+    expect(header.querySelector("[data-slot='host-chip']")).toBeNull();
+  });
+
+  it("a custom key from the board goes out through the same pane.send_keys, a sequence in order", async () => {
+    const user = userEvent.setup();
+    let sentKeys: string[] | null = null;
+    server.use(
+      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        sentKeys = (await request.json()).keys;
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    const seq = chordKey(["ctrl+b", "c"]);
+    if (seq === null) throw new Error("bad key");
+    setKeyBoard(setCell(addRow(DEFAULT_BOARD), 14, seq));
+    try {
+      renderComposer();
+      await user.click(screen.getByRole("button", { name: "Keys" }));
+      await user.click(screen.getByRole("button", { name: "Ctrl+B, then C" }));
+      await waitFor(() => expect(sentKeys).toEqual(["ctrl+b", "c"]));
+    } finally {
+      resetKeyBoard();
+    }
+  });
+
+  it("routes a docked key press through pane.send_keys", async () => {
+    const user = userEvent.setup();
+    let sentKeys: string[] | null = null;
+    server.use(
+      http.post<never, { keys: string[] }>(/\/api\/pane\/[^/]+\/keys$/, async ({ request }) => {
+        const body = await request.json();
+        sentKeys = body.keys;
+        return HttpResponse.json({ ok: true });
+      }),
+    );
+    renderComposer();
+
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+    await user.click(screen.getByRole("button", { name: "Esc" }));
+
+    await waitFor(() => expect(sentKeys).toEqual(["Escape"]));
+  });
+});
+
+
+describe("Composer — a composed key queue is guarded on the way out", () => {
+  /** Open Keys and stage one chord, so the queue is genuinely dirty. */
+  async function stageAKey(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+    await user.click(screen.getByRole("button", { name: "Ctrl" }));
+    await user.click(screen.getByRole("button", { name: "Tab" }));
+    expect(screen.getByRole("button", { name: "Remove Ctrl Tab" })).toBeInTheDocument();
+  }
+
+  it("blocks external model actions until the staged keys are removed", async () => {
+    const user = userEvent.setup();
+    const onWritingChange = vi.fn();
+    renderComposer({ onWritingChange });
+    expect(onWritingChange).toHaveBeenLastCalledWith(false);
+
+    await stageAKey(user);
+    expect(onWritingChange).toHaveBeenLastCalledWith(true);
+
+    await user.click(screen.getByRole("button", { name: "Remove Ctrl Tab" }));
+    expect(onWritingChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it("the dock's X needs a second tap while keys are staged", async () => {
+    const user = userEvent.setup();
+    renderComposerWithStatus();
+    await stageAKey(user);
+
+    await user.click(screen.getByRole("button", { name: "Close Keys" }));
+    // Still open — the composed sequence is not thrown away on one tap.
+    expect(screen.getByRole("button", { name: "Remove Ctrl Tab" })).toBeInTheDocument();
+    expect(screen.getByTestId("status")).toHaveTextContent(/discard 1 queued key/i);
+
+    await user.click(screen.getByRole("button", { name: "Close Keys" }));
+    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
+  });
+
+  // The ✕ is not the only exit — the Keys toggle and the other drawer buttons unmount the tray just
+  // as effectively, which is why the guard lives on the drawer transition rather than the button.
+  // `getAllByRole` + a filter on `aria-expanded` used to be load-bearing here because the tray's own
+  // segmented "Keys" tab shared the Controls row toggle's accessible name; that tab is gone (the tray
+  // is one fixed pad now), so a plain `getByRole` would resolve too, but the filter still says
+  // precisely which button this helper means.
+  const controlsToggle = (name: string): HTMLElement => {
+    const toggle = screen
+      .getAllByRole("button", { name })
+      .find((b) => b.hasAttribute("aria-expanded"));
+    // Asserted as a real failure rather than by widening `undefined` away: if the toggle is gone,
+    // that IS the bug, and the case should say so here instead of at the first property read.
+    if (!toggle) throw new Error(`no aria-expanded toggle named ${name}`);
+    return toggle;
+  };
+
+  it.each([
+    ["the Keys toggle", () => controlsToggle("Keys")],
+    ["the Quick toggle", () => controlsToggle("Quick")],
+    ["the Display gear", () => screen.getByRole("button", { name: "Display settings" })],
+  ])("%s also needs a second tap while keys are staged", async (_label, getButton) => {
+    const user = userEvent.setup();
+    renderComposerWithStatus();
+    await stageAKey(user);
+
+    await user.click(getButton());
+    expect(screen.getByRole("button", { name: "Remove Ctrl Tab" })).toBeInTheDocument();
+
+    await user.click(getButton());
+    expect(screen.queryByRole("button", { name: "Remove Ctrl Tab" })).not.toBeInTheDocument();
+  });
+
+  // Over-guarding trains you to double-tap through the confirm reflexively, which kills its value
+  // where it matters. One tap of setup is not work worth protecting.
+  it("an armed modifier with NO staged keys closes on the first tap", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+    await user.click(screen.getByRole("button", { name: "Ctrl" })); // armed, but nothing staged
+    await user.click(screen.getByRole("button", { name: "Close Keys" }));
+
+    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
+  });
+
+  it("a clean Keys dock closes on the first tap", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    await user.click(screen.getByRole("button", { name: "Keys" }));
+    await user.click(screen.getByRole("button", { name: "Close Keys" }));
+
+    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
+  });
+
+  // The count must not outlive the tray: a stale value would arm a phantom confirm on a later,
+  // perfectly clean close.
+  it("does not arm a phantom confirm on a later clean open", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    await stageAKey(user);
+
+    await user.click(screen.getByRole("button", { name: "Close Keys" })); // arm
+    await user.click(screen.getByRole("button", { name: "Close Keys" })); // discard
+
+    await user.click(screen.getByRole("button", { name: "Keys" })); // reopen, empty
+    await user.click(screen.getByRole("button", { name: "Close Keys" }));
+    expect(screen.queryByRole("button", { name: "Esc" })).not.toBeInTheDocument();
   });
 });

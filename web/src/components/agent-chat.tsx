@@ -17,6 +17,8 @@ import { useNav } from "@/hooks/use-nav";
 import { useDashPrefs, openForCount } from "@/hooks/use-dash-prefs";
 import { useAgentStart } from "@/hooks/use-agent-start";
 import { useLaunchers } from "@/lib/launchers";
+import { shortenHome } from "@/lib/shorten-home";
+import { useNoPromptsGuard } from "@/hooks/use-no-prompts-guard";
 import { buzz } from "@/lib/haptics";
 import { handOf, mirrorFont, useDisplayPrefs } from "@/hooks/use-display-prefs";
 import { useChatWindow } from "@/hooks/use-chat-window";
@@ -80,6 +82,9 @@ import { HostStaleBanner } from "@/components/host-stale-banner";
 import { useAmbientHost, useHostHealth, useCrew } from "@/components/crew-provider";
 import { HostChip } from "@/components/host-chip";
 import { MaskedHint } from "@/components/masked-hint";
+import { ModelTag } from "@/components/model-tag";
+import { useModelOnScreen } from "@/hooks/use-model-on-screen";
+import { modelLabel } from "@/lib/model-label";
 import { useMaskedHintRetired } from "@/lib/masked-hint";
 import { entriesHoldMask, holdsMask } from "@/lib/masked-text";
 import { writeRefusal } from "@/lib/host-health";
@@ -118,16 +123,15 @@ import { readClaudeModeState } from "@/lib/harness/claude/mode";
 import { claudeHintText } from "@/lib/harness/claude/chrome";
 import { useHeldStatusLines } from "@/hooks/use-held-statuslines";
 import { panesOfTab } from "@/lib/pane-ordinal";
-import { branchOffRepos } from "@/lib/branch-off";
+import { paneInRepo } from "@/lib/branch-off";
 import { useOptionalRootData } from "@/lib/route-data";
-import { NewSpaceSheet } from "@/components/new-space-sheet";
 import { hasJournalAdapter, reportsSessionOnFirstPrompt } from "@/lib/journal-agents";
 import { journalReadingOf, paneBody, type JournalReading } from "@/lib/chat-gate";
 import { paneRowKey, paneScope } from "@/lib/hosts";
 import { paneScopeKey } from "@/lib/scope";
 import { usePins } from "@/lib/pins";
 import { paneFilesDir } from "@/lib/file-paths";
-import { changesPath, filesPath, historyPath, panePath, spacePath } from "@/lib/nav";
+import { changesPath, filesPath, historyPath, newPath, panePath, spacePath } from "@/lib/nav";
 import { isReadOnly, statusLabel } from "@/lib/types";
 import { usePairing } from "@/lib/pairing";
 import type { AgentView, BridgeStatus, DeviceAuth, ServerSummary, SessionModel, TabView } from "@/lib/types";
@@ -197,6 +201,14 @@ interface AgentChatProps {
   onBackArrow?: () => void;
   onSelect: (paneId: string) => void;
 }
+
+/** How many rows at the raw screen's tail count as its footer when the model label asks if it is named. */
+const RAW_FOOTER_ROWS = 8;
+const NO_ROWS: readonly string[] = [];
+
+/** The plain text of one parsed terminal row. */
+const rowText = (line: { segments: readonly { text: string }[] }): string =>
+  line.segments.map((segment) => segment.text).join("");
 
 /**
  * The fold chevron's accessible name, chosen for what is actually on screen. The glyph names
@@ -293,9 +305,8 @@ export function AgentChat({
   // hook already refuses on a saved HERD, and this adds what only this view knows, that THIS pane's
   // last read failed or its screen is a saved copy. Set below, once both facts exist.
   const structuralWritesOff = useRef(false);
-  const { newTab, newSpace, launch, launching, creatingTab, branchOff } = useSpaceActions(
-    () => !structuralWritesOff.current,
-  );
+  const canWriteHere = useCallback(() => !structuralWritesOff.current, []);
+  const { newTab, launch, launching, creatingTab } = useSpaceActions(canWriteHere);
   // The pane's light-theme inversion override (lib/mirror-invert.ts). Read once at mount, which is
   // enough: DetailRoute keys this component by `paneScopeKey(scope, paneId)` — the full address, not
   // the id, for the reason that file records — so a walk to another pane, session or host remounts it
@@ -322,15 +333,13 @@ export function AgentChat({
   );
 
   const { launchers, home: launchersHome } = useLaunchers(scope);
-  // "New agent on a branch" (ADR 0089): the repo this pane sits in, read off the root snapshot's
-  // spaces. Null for a pane outside a Git repo, which is what keeps the ⋯ row away from it. The
-  // other two gates (the capability, the lead scope) are the actions sheet's own.
+  // A row that skips permission prompts is confirmed once per device before it starts (ADR 0094).
+  const { guard: guardNoPrompts, sheet: noPromptsSheet } = useNoPromptsGuard();
+  // "New agent in a worktree" (ADR 0089, M48): offered for a pane whose space sits in a Git repo, read
+  // off the root snapshot's spaces. The other two gates (the capability, the lead scope) are the
+  // actions sheet's own. It goes to the New page on this pane's folder with the worktree switch on.
   const rootSpaces = useOptionalRootData()?.workspaces;
-  const branchOffTarget = useMemo(
-    () => (agent === undefined || rootSpaces === undefined ? null : branchOffRepos(rootSpaces, agent.workspaceId)),
-    [agent, rootSpaces],
-  );
-  const [branchOffOpen, setBranchOffOpen] = useState(false);
+  const branchOffOffered = agent !== undefined && rootSpaces !== undefined && paneInRepo(rootSpaces, agent.workspaceId);
   // Single display-prefs instance: the View controls (in <Composer>) write it, the mirror reads it.
   const {
     prefs,
@@ -1379,6 +1388,27 @@ export function AgentChat({
     [chatShown, chatEntries, display],
   );
   const maskedHintRetired = useMaskedHintRetired();
+  // THE MODEL LABEL STANDS DOWN WHILE THE SCREEN NAMES THE MODEL. The label above the belt would say it
+  // twice beside a statusline or footer that already prints it (Claude's configured statusline, Codex's
+  // footer, pi's footer). The rows judged are the ones this phone DRAWS near the bottom: the lifted
+  // statusline strip for a harness with an adapter, in either body (the strip stands below Chat too),
+  // and the last rows of the raw screen for one without (pi) or in raw-terminal mode, which only the
+  // Terminal body draws. Zen hides the strip, so it hides the footer for the adapter case. The bridge
+  // parses no screen, so the already-computed `statusLines` is the signal; hooks/use-model-on-screen.ts
+  // holds the answer across frames so a dialog or a redraw cannot blink the label.
+  const modelWords = modelLabel(agent?.model);
+  const footerLifted = grammarsOn && adapterFor(agent?.agent) !== undefined;
+  const footerRows = useMemo(() => {
+    if (footerLifted) return statusLines.map(rowText);
+    if (chatShown) return NO_ROWS; // Chat draws no raw footer, so there is nothing to parse
+    return splitLines(parseAnsi(display)).slice(-RAW_FOOTER_ROWS).map(rowText);
+  }, [footerLifted, statusLines, display, chatShown]);
+  const modelOnScreen = useModelOnScreen(
+    `${paneId}|${modelWords ?? ""}`,
+    footerLifted ? !zen : !chatShown,
+    footerRows,
+    modelWords,
+  );
   const maskedHintOpen = maskOnScreen && !maskedHintRetired;
   // THE SAVED COPY'S DATE, for whichever body is on screen (M46 specs 09 and 10). Chat dates its own
   // window, read back from the Chat tail the phone kept; the terminal dates the last-seen mirror the
@@ -2856,6 +2886,9 @@ export function AgentChat({
               data-slot="draft-notice-slot"
               className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-3 pb-2"
             />
+            {/* The pane's model, small on the mirror's bottom-right corner, over both bodies alike
+                and under the notice slot above (model-tag.tsx says why there). */}
+            <ModelTag model={modelOnScreen ? undefined : agent?.model} />
           </div>
 
           {/* Own a layout row, so the progress controls can never cover the picker's footer. */}
@@ -3155,13 +3188,21 @@ export function AgentChat({
               readOnly
                 ? undefined
                 : (command: string) => {
-                    // Close first: the launch navigates into the new pane, and a sheet still up
-                    // while the route changes under it would have to be dismissed on the screen
-                    // you just arrived at (same order the deleted LaunchSheet used).
-                    closeDrawer();
-                    // Beside THIS pane — the switcher's launch always opens a tab in this pane's
-                    // Space, on this pane's own host (server.ts resolves `paneId` there).
-                    void launch(command, paneId);
+                    const row = launchers.find((l) => l.command === command);
+                    guardNoPrompts({
+                      item: row ?? { command },
+                      machine: scope?.host ?? "",
+                      folder: shortenHome(row?.cwd ?? agent?.cwd ?? launchersHome, launchersHome) || "~",
+                      go: () => {
+                        // Close first: the launch navigates into the new pane, and a sheet still up
+                        // while the route changes under it would have to be dismissed on the screen
+                        // you just arrived at (same order the deleted LaunchSheet used).
+                        closeDrawer();
+                        // Beside THIS pane — the switcher's launch always opens a tab in this pane's
+                        // Space, on this pane's own host (server.ts resolves `paneId` there).
+                        void launch(command, paneId);
+                      },
+                    });
                   }
             }
             launching={launching}
@@ -3287,25 +3328,12 @@ export function AgentChat({
           // Pin to top / Unpin, the last read row (ADR 0070). No `onPinChange`: the Pinned group is
           // on the dashboard and in the switcher, not on this screen, so the sheet says it in a toast.
           herd={herd}
-          onBranchOff={branchOffTarget === null ? undefined : () => setBranchOffOpen(true)}
+          onBranchOff={
+            branchOffOffered
+              ? () => nav.down(newPath({ machine: scope?.host, pane: paneId, session: scope?.session }))
+              : undefined
+          }
         />
-        {/* "New agent on a branch" (ADR 0089): the new-space sheet in worktree mode, on this pane's
-            repo, with a branch name typed and an agent picker. `onCreate` is the plain space create
-            the sheet's type requires; a branch-off sheet never shows that side. */}
-        {branchOffTarget !== null && (
-          <NewSpaceSheet
-            open={branchOffOpen}
-            onClose={() => setBranchOffOpen(false)}
-            onCreate={newSpace}
-            repos={branchOffTarget.repos}
-            scope={scope}
-            branchOff={{
-              workspaceId: branchOffTarget.selected,
-              launchers,
-              onCreate: (workspaceId, branch, extras) => branchOff(workspaceId, branch, extras, scope),
-            }}
-          />
-        )}
         {/* This pane's own settings — one switch today, the prompt-cache warning (ADR 0042). Scoped to
             the PANE's machine, because `?host=` there names where the pane lives; the preference itself
             lands on the collie this phone is talking to, which is the only one that can push. */}
@@ -3326,6 +3354,8 @@ export function AgentChat({
               : undefined
           }
         />
+        {/* "Start without prompts?" for a Launch row that skips permission prompts. */}
+        {noPromptsSheet}
       </div>
     </CompactStripLabels>
   );

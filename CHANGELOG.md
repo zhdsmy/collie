@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Changed
+
+- **Follow upstream 1.19.0 and try the original Keys panel.** Adopt the unified New page, per-machine launchers and one-off commands, the complete upstream Keys dock and editor, model labels, Claude mid-turn message repair and bounded service recovery. Preserve downstream cards, Type mode and session metadata; merge device cleanup and document the Cursor launcher boundary. See [the integration report](docs/upstream-v1.19.0.md).
+
 ## [1.18.1+collie.1] - 2026-10-09
 
 ### Changed
