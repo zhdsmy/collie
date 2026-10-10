@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.19.2+collie.1] - 2026-10-10
+
 ### Changed
 
-- **Follow upstream 1.19.2 with copy controls and safer replies.** Include the 1.19.1 help, pairing and macOS memory fixes; add block copying, opencode overlay guards, Muse submit settling and described omp questions. Preserve Collie's compact cards, original upstream Keys panel, viewport handling and guarded-send cancellation. See [the integration report](docs/upstream-v1.19.2.md).
+- **Follow upstream 1.19.2 with copy controls and safer replies.** Include the 1.19.1 help, pairing and macOS memory fixes; add block copying, opencode overlay guards, Muse submit settling and described omp questions. Preserve Collie's compact cards, original upstream Keys panel, viewport handling and guarded-send cancellation. See [the integration report](docs/upstream-v1.19.2.md). ([982099fe](https://github.com/zhdsmy/collie/commit/982099fe))
 
 ## [1.19.0+collie.1] - 2026-10-10
 
