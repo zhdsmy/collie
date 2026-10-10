@@ -404,6 +404,11 @@ export const zh: Dictionary = {
   "chat.strips.show.panes": "显示窗格，已隐藏 {panes}。",
   "chat.find.label": "在输出中查找",
   "chat.history.label": "对话历史",
+  "copyable.copy": "复制",
+  "copyable.command": "复制命令",
+  "copyable.output": "复制命令输出",
+  "copyable.done": "已复制到剪贴板",
+  "copyable.failed": "无法复制到剪贴板",
   "chat.copyOutput.label": "复制输出",
   "chat.copyOutput.done": "已将输出复制到剪贴板",
   "chat.copyOutput.failed": "无法复制输出",
@@ -1328,6 +1333,8 @@ export const zh: Dictionary = {
     "当前处于密码提示状态，终端无回显导致无法确认文本且未提交。输入的内容已写入窗格。",
   "reply.stalled.generic":
     "文字已发送到窗格，但暂时无法确认 Agent 输入框中的内容。未自动按 Enter 提交。如果输入的是弹窗快捷键，该操作可能已生效；请先检查终端，再决定是否重试。",
+  "reply.stalled.modal":
+    "消息未送达输入框。对话框、菜单或悬浮层之一占用了键盘，文本被送到了那里。未提交任何内容。",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "备注输入框未能打开，请检查对应窗格",

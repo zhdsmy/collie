@@ -555,9 +555,13 @@
       "origin": "upstream",
       "sources": ["web/src/lib/harness/omp/ask.ts", "web/src/lib/harness/omp/answer-editor.ts", "web/src/lib/harness/omp/index.ts"],
       "tests": ["web/src/lib/harness/omp/ask.test.ts", "web/src/lib/prompt-action.test.ts", "web/src/lib/reply-action.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/omp--v18-4-ask-single.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "fixtures": [
+        { "path": "web/src/fixtures/panes/omp--v18-4-ask-single.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 2 } },
+        { "path": "web/src/fixtures/panes/omp--v18-8-ask-single-described.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 3 } },
+        { "path": "web/src/fixtures/panes/omp--v18-8-ask-single-described-moved.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 3 } }
+      ],
       "live": false,
-      "verified": { "version": "18.4.10", "date": "2026-10-03", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/omp--v18-4-ask-single.txt" }
+      "verified": { "version": "18.8.7", "date": "2026-10-10", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/lib/harness/omp/ASK_NOTES.md" }
     },
     {
       "id": "omp.approval",

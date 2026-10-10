@@ -26,6 +26,8 @@ export interface UnreadDialogBlockProps {
   onAction: (key: string) => void | Promise<void>;
   /** Read-only device or a gone pane: everything renders (for context) but can't be pressed. */
   disabled?: boolean;
+  /** Follow the device's Wrap lines setting for any embedded mirror. */
+  wrap?: boolean;
   /**
    * The screen's own rows, for a body that draws no mirror (Chat). The card is then the only place
    * the dialog can be seen, so it carries them, opened at the end, where a modal's footer sits.
@@ -58,7 +60,7 @@ const VIEWPORT_CLASS =
   "min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain [scrollbar-gutter:stable] [scrollbar-width:thin]";
 const NAMES_A_DISMISS = /\besc\s+dismiss\b/i;
 
-export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled, screen }: UnreadDialogBlockProps) {
+export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled, screen, wrap }: UnreadDialogBlockProps) {
   useLocale();
   const [sending, setSending] = useState(false);
   const locked = disabled || sending;
@@ -133,10 +135,11 @@ export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled,
       {viewport && <RawMirror
         key={viewport.title}
         lines={viewport.lines}
+        wrap={wrap}
         tabIndex={0}
         className={VIEWPORT_CLASS}
       />}
-      {shown && <RawMirror ref={screenRef} lines={shown} tabIndex={0} className={VIEWPORT_CLASS} />}
+      {shown && <RawMirror ref={screenRef} lines={shown} wrap={wrap} tabIndex={0} className={VIEWPORT_CLASS} />}
       <span role="status" className="sr-only">
         {armed ? armedLabel : ""}
       </span>

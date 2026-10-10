@@ -421,6 +421,11 @@ export const de: Dictionary = {
   "chat.strips.show.panes": "Panes anzeigen. {panes} ausgeblendet.",
   "chat.find.label": "In Ausgabe suchen",
   "chat.history.label": "Verlauf",
+  "copyable.copy": "Kopieren",
+  "copyable.command": "Befehl kopieren",
+  "copyable.output": "Befehlsausgabe kopieren",
+  "copyable.done": "In die Zwischenablage kopiert",
+  "copyable.failed": "Konnte nicht in die Zwischenablage kopiert werden",
   "chat.copyOutput.label": "Ausgabe kopieren",
   "chat.copyOutput.done": "Ausgabe in die Zwischenablage kopiert",
   "chat.copyOutput.failed": "Ausgabe konnte nicht kopiert werden",
@@ -1349,6 +1354,8 @@ export const de: Dictionary = {
     "Dies ist eine Passwortabfrage ohne Zeichenecho. Der Text konnte nicht bestätigt und daher nicht übermittelt werden. Die Eingabe steht bereits im Pane.",
   "reply.stalled.generic":
     "Der Text wurde an das Terminal gesendet, konnte aber nicht im Eingabefeld des Agents bestätigt werden. Enter wurde nicht gesendet. Ein Dialogkürzel könnte bereits gewirkt haben; prüfe das Terminal vor einem erneuten Versuch.",
+  "reply.stalled.modal":
+    "Die Nachricht hat das Eingabefeld nicht erreicht: Ein Dialog, ein Menü oder ein Overlay hielt die Tastatur fest, der Text landete dort. Es wurde nichts gesendet.",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "Notizfeld konnte nicht geöffnet werden. Pane prüfen.",

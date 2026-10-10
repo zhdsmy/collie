@@ -12,6 +12,9 @@ for (const [theme, width] of [["light", 320], ["dark", 320], ["light", 1280]] as
     await page.addInitScript((value) => {
       localStorage.setItem("collie:theme:v1", value);
       localStorage.setItem("collie:locale:v1", "en");
+      if (!localStorage.getItem("collie:display-prefs:v4")) {
+        localStorage.setItem("collie:display-prefs:v4", JSON.stringify({ wrap: false }));
+      }
     }, theme);
     await installApiStub(page);
     let current = "";
@@ -61,6 +64,19 @@ for (const [theme, width] of [["light", 320], ["dark", 320], ["light", 1280]] as
         expect(await button.boundingBox()).toEqual(target);
         expect(await card.boundingBox()).toEqual(frame);
         await body.evaluate((node) => { node.scrollLeft = 0; node.scrollTop = 0; });
+
+        await page.evaluate(() => localStorage.setItem("collie:display-prefs:v4", JSON.stringify({ wrap: true })));
+        await page.reload();
+        await expect(body).toBeVisible();
+        expect(await body.evaluate((node) => ({
+          x: node.scrollWidth > node.clientWidth,
+          y: node.scrollHeight > node.clientHeight,
+        }))).toEqual({ x: false, y: true });
+        expect(await card.boundingBox()).toEqual(frame);
+        await page.screenshot({ path: testInfo.outputPath(`claude-settings-wrapped-${theme}.png`) });
+        await page.evaluate(() => localStorage.setItem("collie:display-prefs:v4", JSON.stringify({ wrap: false })));
+        await page.reload();
+        await expect(body).toBeVisible();
       }
       for (const name of ["Return", "Cycle dates", "Copy"]) {
         await expect(page.getByRole("button", { name, exact: true })).toHaveCount(0);

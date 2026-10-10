@@ -419,6 +419,11 @@ export const es: Dictionary = {
   "chat.strips.show.panes": "Mostrar paneles. {panes} ocultos.",
   "chat.find.label": "Buscar en la salida",
   "chat.history.label": "Historial de conversación",
+  "copyable.copy": "Copiar",
+  "copyable.command": "Copiar comando",
+  "copyable.output": "Copiar la salida del comando",
+  "copyable.done": "Copiado al portapapeles",
+  "copyable.failed": "No se pudo copiar al portapapeles",
   "chat.copyOutput.label": "Copiar salida",
   "chat.copyOutput.done": "Salida copiada al portapapeles",
   "chat.copyOutput.failed": "No se pudo copiar la salida",
@@ -1348,6 +1353,8 @@ export const es: Dictionary = {
     "Es una solicitud de contraseña. No muestra salida al escribir, por lo que el texto no se pudo confirmar ni enviar. El contenido introducido permanece en el panel.",
   "reply.stalled.generic":
     "El texto se envió al panel, pero no pudo verificarse en el campo de entrada del agente. No se envió Enter. Un atajo de diálogo podría haber surtido efecto; revisa el terminal antes de reintentar.",
+  "reply.stalled.modal":
+    "El mensaje no llegó al campo de entrada: un diálogo, un menú o una superposición retenía el teclado y el texto llegó allí. No se envió nada.",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "El campo de nota no se abrió. Revisa el panel.",

@@ -415,6 +415,11 @@ export const ja: Dictionary = {
   "chat.strips.show.panes": "ペインを表示（非表示: {panes}）",
   "chat.find.label": "出力内を検索",
   "chat.history.label": "会話履歴",
+  "copyable.copy": "コピー",
+  "copyable.command": "コマンドをコピー",
+  "copyable.output": "コマンド出力をコピー",
+  "copyable.done": "クリップボードにコピーしました",
+  "copyable.failed": "クリップボードにコピーできませんでした",
   "chat.copyOutput.label": "出力をコピー",
   "chat.copyOutput.done": "出力をクリップボードにコピーしました",
   "chat.copyOutput.failed": "出力をコピーできませんでした",
@@ -1340,6 +1345,8 @@ export const ja: Dictionary = {
     "パスワード入力プロンプトです。エコーバックがないため到達確認ができず、送信されませんでした。入力内容はペイン側に残っています。",
   "reply.stalled.generic":
     "テキストはペインに送られましたが、エージェントの入力欄では確認できませんでした。Enter は送られていません。ダイアログのショートカットは既に実行された可能性があります。再試行する前にターミナルを確認してください。",
+  "reply.stalled.modal":
+    "メッセージが入力欄に届きませんでした。ダイアログ、メニュー、オーバーレイのいずれかがキー入力を保持していたため、テキストはそちらに入力されました。送信は実行されていません。",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "ノート入力を開けませんでした。ペインを確認してください。",

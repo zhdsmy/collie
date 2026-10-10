@@ -410,6 +410,11 @@ export const zhTW: Dictionary = {
   "chat.strips.show.panes": "顯示窗格，已隱藏 {panes}。",
   "chat.find.label": "在輸出中尋找",
   "chat.history.label": "對話記錄",
+  "copyable.copy": "複製",
+  "copyable.command": "複製指令",
+  "copyable.output": "複製指令輸出",
+  "copyable.done": "已複製到剪貼簿",
+  "copyable.failed": "無法複製到剪貼簿",
   "chat.copyOutput.label": "複製輸出",
   "chat.copyOutput.done": "已將輸出複製到剪貼簿",
   "chat.copyOutput.failed": "無法複製輸出",
@@ -1324,6 +1329,8 @@ export const zhTW: Dictionary = {
     "目前處於密碼提示狀態，終端機沒有回顯，因此無法確認文字且尚未提交。輸入的內容已寫入窗格。",
   "reply.stalled.generic":
     "文字已傳送到窗格，但暫時無法確認 Agent 輸入框中的內容。未自動按 Enter 提交。如果輸入的是彈窗快捷鍵，該操作可能已生效；請先檢查終端，再決定是否重試。",
+  "reply.stalled.modal":
+    "訊息未送達輸入框。對話框、選單或懸浮層之一佔用了鍵盤，文字被送到了那裡。未提交任何內容。",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "備註輸入框未能開啟，請檢查對應窗格",

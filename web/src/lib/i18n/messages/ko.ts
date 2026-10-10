@@ -414,6 +414,11 @@ export const ko: Dictionary = {
   "chat.strips.show.panes": "창 표시. {panes} 숨김 상태.",
   "chat.find.label": "출력에서 검색",
   "chat.history.label": "대화 기록",
+  "copyable.copy": "복사",
+  "copyable.command": "명령 복사",
+  "copyable.output": "명령어 출력 복사",
+  "copyable.done": "클립보드에 복사했습니다",
+  "copyable.failed": "클립보드에 복사할 수 없습니다",
   "chat.copyOutput.label": "출력 복사",
   "chat.copyOutput.done": "출력을 클립보드에 복사함",
   "chat.copyOutput.failed": "출력을 복사할 수 없음",
@@ -1339,6 +1344,8 @@ export const ko: Dictionary = {
     "비밀번호 입력 프롬프트에서는 화면 표시가 없어 전송 여부를 검증할 수 없습니다. 작성한 내용은 창에 남아 있습니다.",
   "reply.stalled.generic":
     "텍스트를 창으로 보냈지만 에이전트 입력창에서 확인하지 못했습니다. Enter는 보내지 않았습니다. 대화상자 단축키는 이미 실행되었을 수 있으므로 다시 시도하기 전에 터미널을 확인하세요.",
+  "reply.stalled.modal":
+    "메시지가 입력창에 전달되지 않았습니다. 대화상자, 메뉴 또는 오버레이가 키보드를 점유하고 있어 텍스트가 그리로 전달되었습니다. 제출된 내용은 없습니다.",
 
   // --- previewAction (the preview-select dialog's note flow, lib/preview-action.ts) ---
   "previewAction.note.notOpened": "메모 입력창이 열리지 않았습니다. 창 상태를 확인하십시오.",

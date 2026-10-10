@@ -108,6 +108,9 @@ export interface CardDockProps {
    *  to Terminal) still focuses the composer, exactly as it
    *  did while the card lived inside the mirror. The handler declines a tap on a control itself. */
   onClick?: (event: MouseEvent<HTMLDivElement>) => void;
+  /** The device's Wrap lines setting, for the unread-dialog card, the one card that mirrors the whole
+   *  pane: its mirror wraps or pans as the pane mirror above it does (#372). */
+  wrap?: boolean;
 }
 
 /** A picker card under the prompt card's lock (lib/liveness.ts, M46 spec 11): a saved copy, or a
@@ -140,6 +143,7 @@ function liftedCard({
   paneId,
   scope,
   stale,
+  wrap,
 }: CardDockProps): ReactNode {
   const promptBlock = blocks.find((b): b is PromptBlock => b.kind === "prompt-select");
   if (promptBlock) {
@@ -211,6 +215,7 @@ function liftedCard({
         viewport={unreadBlock.viewport}
         screen={showScreen ? trimTrailingBlank(unreadBlock.lines).slice(-SCREEN_ROWS) : undefined}
         disabled={promptDisabled || !onUnreadDialogAction}
+        wrap={wrap}
         onAction={(key) => onUnreadDialogAction?.(key, unreadBlock.cancel)}
       />
     );

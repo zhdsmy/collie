@@ -95,6 +95,20 @@ describe("UnreadDialogBlock", () => {
     expect(container.querySelector("pre")).toBeNull();
   });
 
+  it.each(["screen", "viewport"])("wraps or pans the %s mirror by the device's Wrap lines", (kind) => {
+    const block = cardBlock();
+    const props = {
+      cancel: block.cancel, lines: block.lines, onAction: vi.fn(),
+      ...(kind === "screen" ? { screen: block.lines } : { viewport: { title: "Status", lines: block.lines } }),
+    };
+    const { container, rerender } = render(<UnreadDialogBlock {...props} wrap />);
+    expect(container.querySelector("pre")!.className).toContain("whitespace-pre-wrap");
+
+    rerender(<UnreadDialogBlock {...props} wrap={false} />);
+    expect(container.querySelector("pre")!.className).toContain("overflow-auto");
+    expect(container.querySelector("pre")!.className).not.toContain("whitespace-pre-wrap");
+  });
+
   // #339: the first tap arms, the second sends. An Escape over a screen nobody read can end a
   // question turn, so one stray tap must never do it.
   it("arms on the first tap and sends nothing", async () => {
