@@ -43,6 +43,10 @@ const REVIEWS = [
 ];
 
 const PICKERS = [
+  "codex--v0162-tool-approval-open.txt",
+  "codex--v0162-tool-approval-session.txt",
+  "codex--v0162-tool-approval-once.txt",
+  "codex--v0162-tool-approval-narrow.txt",
   "codex--v0158-agents-overview.txt",
   "codex--v0158-agents-overview-moved.txt",
   "codex--v0158-agents-overview-six.txt",

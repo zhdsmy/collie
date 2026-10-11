@@ -10,6 +10,55 @@ const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${
 test.use({ serviceWorkers: "block" });
 
 for (const theme of ["light", "dark"]) {
+  test(`Codex Computer Use permission card: ${theme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 320, height: 844 });
+    await page.addInitScript((colorMode) => {
+      localStorage.setItem("collie:theme:v1", colorMode);
+      localStorage.setItem("collie:locale:v1", "zh");
+    }, theme);
+    await installApiStub(page);
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+        ? { ...agent, agent: "codex", status: "blocked", hasSession: true } : agent),
+    } }));
+    let state = "open";
+    const writes: string[][] = [];
+    page.on("request", (request) => {
+      if (request.method() === "POST" && request.url().endsWith("/reply")) writes.push(["reply"]);
+    });
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
+      (route) => route.fulfill({ json: { paneId: "w1:p1", text: state === "closed" ? "Permission test completed."
+        : fixture(`codex--v0162-tool-approval-${state}.txt`), truncated: false, revision: 1 } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
+      // SAFETY: own client's payload; transitions were captured against an inert local MCP server.
+      const body = route.request().postDataJSON() as { keys: string[]; expected_prompt: string };
+      expect(body.expected_prompt).toContain('Allow Computer Use to use "TextEdit"?');
+      expect(body.keys).toEqual([state === "open" ? "Down" : "Enter"]);
+      writes.push(body.keys);
+      state = state === "open" ? "session" : "closed";
+      return route.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/pane/w1:p1");
+    const panel = page.getByRole("group", { name: 'Allow Computer Use to use "TextEdit"?', exact: true });
+    await expect(panel).toBeVisible();
+    await expect(panel.getByText("App: TextEdit", { exact: true })).toBeVisible();
+    for (const label of ["Allow", "Allow for this session", "Always allow", "Cancel"]) {
+      await expect(panel.getByRole("button", { name: new RegExp(`^${label} ${label === "Cancel" ? "Cancel" : "Run"} `) })).toBeVisible();
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(writes).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`computer-use-${theme}.png`), fullPage: true });
+    await page.getByRole("textbox").fill("Keep this draft until after the permission dialog.");
+    await page.getByRole("button", { name: zh["composer.send.sendAria"], exact: true }).click();
+    await expect(page.getByText(zh["composer.status.dialogWaiting"], { exact: true })).toBeVisible();
+    expect(writes).toEqual([]);
+    await expect(page.getByRole("textbox")).toHaveValue("Keep this draft until after the permission dialog.");
+    await panel.getByRole("button", { name: /^Allow for this session / }).click();
+    await expect(panel).toHaveCount(0);
+    expect(writes).toEqual([["Down"], ["Enter"]]);
+  });
+
   test(`Codex native simple dialogs: ${theme}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript((colorMode) => {

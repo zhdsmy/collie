@@ -1829,3 +1829,11 @@ The last seven rows were captured on opencode 1.18.34, the rest of this corpus o
 `idle`, not `blocked`, under the question dialogs probed in round two (see "Round two" in
 `QUESTION_NOTES.md`). Each of the seven was checked for user and host names, home paths, tokens and
 session ids and holds only probe strings and the model name.
+
+## Codex 0.162.1 MCP tool approval
+
+`codex--v0162-tool-approval-{open,session,once,narrow}.txt` are sanitized native ANSI captures
+from an isolated local MCP test on 2026-10-12. Only the dialog rows are retained; TextEdit is
+the test question, and no application was accessed. They cover initial/default selection,
+Down then Up, and description wrapping at 50 columns. Native keys and limits are recorded in
+[`ELICITATION_NOTES.md`](../../lib/harness/codex/ELICITATION_NOTES.md).

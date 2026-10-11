@@ -1,0 +1,11 @@
+[0m[48;2;57;57;71m  [0m[2m[48;2;57;57;71mField 1/1[0m[48;2;57;57;71m                                                                                                             [0m
+[0m[48;2;57;57;71m  Allow Computer Use to use "TextEdit"?                                                                                 [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[48;2;57;57;71m  App: TextEdit                                                                                                         [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[48;2;57;57;71m  [0m[1m[38;2;0;0;46m[48;2;99;168;248m› 1. Allow                   [0m[38;2;0;0;46m[48;2;99;168;248mRun the tool and continue[0m[1m[38;2;0;0;46m[48;2;99;168;248m                                          [0m[48;2;57;57;71m                      [0m
+[0m[48;2;57;57;71m    2. Allow for this session  [0m[2m[48;2;57;57;71mRun the tool and remember this choice for this session[0m[48;2;57;57;71m                                   [0m
+[0m[48;2;57;57;71m    3. Always allow            [0m[2m[48;2;57;57;71mRun the tool and remember this choice for future tool calls[0m[48;2;57;57;71m                              [0m
+[0m[48;2;57;57;71m    4. Cancel                  [0m[2m[48;2;57;57;71mCancel this tool call[0m[48;2;57;57;71m                                                                    [0m
+[0m[48;2;57;57;71m  [0m[1m[38;2;205;214;244m[48;2;57;57;71menter[0m[38;2;135;140;164m[48;2;57;57;71m to submit[0m[2m[48;2;57;57;71m | [0m[1m[38;2;205;214;244m[48;2;57;57;71mesc[0m[38;2;135;140;164m[48;2;57;57;71m to cancel[0m[48;2;57;57;71m                                                                                       [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m

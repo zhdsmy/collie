@@ -1,8 +1,9 @@
 // Codex keeps its native Warnings and other footer-named modals behind the unread-dialog card.
-// Collie lifts resume/model/agent pickers, trust and approvals, and three dialogs as picker cards:
+// Collie lifts resume/model/agent pickers, trust and approvals, and these dialogs as picker cards:
 // `request_user_input` questions (pointer, question navigation, explicit confirmation and in-card
 // notes, ASK_NOTES.md), the Plan prompt (PLAN_NOTES.md) and the `/review` pickers
-// (REVIEW_NOTES.md). composerReady/composerPrompt guard ordinary chat submissions independently. A
+// (REVIEW_NOTES.md), plus MCP tool approval forms (ELICITATION_NOTES.md).
+// composerReady/composerPrompt guard ordinary chat submissions independently. A
 // native modal whose footer names Esc as its way back and that no grammar lifts gets the
 // unread-dialog card (.adr/0053), which is how Chat, where no mirror is drawn, shows it at all
 // (MODAL_NOTES.md).
@@ -18,6 +19,7 @@ import {
 } from "./chrome";
 import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
+import { detectElicitationRegion } from "./elicitation";
 import { detectTrustRegion } from "./trust";
 import { detectPickerRegion } from "./picker";
 import { detectResumeRegion } from "./resume";
@@ -34,7 +36,7 @@ function raw(lines: StyledLine[]): Block {
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   const picker = detectPlanRegion(lines) ?? detectReviewRegion(lines) ?? detectResumeRegion(lines) ??
-    detectAgentsRegion(lines) ?? detectPickerRegion(lines) ?? detectAskRegion(lines);
+    detectAgentsRegion(lines) ?? detectPickerRegion(lines) ?? detectAskRegion(lines) ?? detectElicitationRegion(lines);
   if (picker) {
     const before = trimTrailingBlank(lines.slice(0, picker.startLine));
     return [

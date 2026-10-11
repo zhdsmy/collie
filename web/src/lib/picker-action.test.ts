@@ -172,6 +172,20 @@ function args(picker: PickerModel, intent: Parameters<typeof submitPickerIntent>
   };
 }
 
+it("refuses a tool approval if its target app changes during the option walk", async () => {
+  mockAdapterFor.mockReturnValue(codexAdapter);
+  const open = fixtureText("codex--v0162-tool-approval-open.txt");
+  let current = open;
+  mockFetchPane.mockImplementation(async () => ({ paneId: "w1:p1", text: current, revision: 7, truncated: false }));
+  mockSendKeys.mockImplementation(async () => {
+    current = fixtureText("codex--v0162-tool-approval-session.txt").replaceAll("TextEdit", "Preview");
+    return { ok: true as const };
+  });
+  const picker = fixturePicker("codex--v0162-tool-approval-open.txt");
+  expect(await submitPickerIntent(args(picker, { kind: "choose", id: "2" }))).toEqual({ status: "changed" });
+  expect(mockSendKeys.mock.calls.map((call) => call[1])).toEqual([["Down"]]);
+});
+
 beforeEach(() => {
   mockFetchPane.mockReset();
   mockSendKeys.mockReset();

@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex Computer Use permissions render as guarded selection cards.** Single-field MCP tool approvals show the request, app details and exact one-time, session or persistent permission choices. Incomplete or unfamiliar forms retain the native fallback.
+
 ## [1.19.2+collie.1] - 2026-10-10
 
 ### Changed

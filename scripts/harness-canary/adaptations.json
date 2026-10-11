@@ -87,6 +87,20 @@
       "verified": { "version": "0.156.1", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus" }
     },
     {
+      "id": "codex.tool-approval",
+      "agent": "codex",
+      "origin": "downstream",
+      "sources": ["web/src/lib/harness/codex/elicitation.ts", "web/src/lib/harness/codex/index.ts"],
+      "tests": ["web/src/lib/harness/codex/elicitation.test.ts", "web/src/lib/harness/codex.test.ts", "web/src/lib/picker-action.test.ts", "web/e2e/codex-dialog-cards.spec.ts"],
+      "fixtures": [
+        { "path": "web/src/fixtures/panes/codex--v0162-tool-approval-open.txt", "agent": "codex", "expect": { "block": "picker", "title": "Allow Computer Use to use \"TextEdit\"?", "minOptions": 4 } },
+        { "path": "web/src/fixtures/panes/codex--v0162-tool-approval-session.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 4 } },
+        { "path": "web/src/fixtures/panes/codex--v0162-tool-approval-narrow.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 4 } }
+      ],
+      "live": false,
+      "verified": { "version": "0.162.1", "date": "2026-10-12", "how": "isolated inert MCP form: Up/Down/Esc and guarded picker plus bridge Enter; session and cancel responses verified at 100/50 columns; no model call", "evidence": "web/src/lib/harness/codex/ELICITATION_NOTES.md" }
+    },
+    {
       "id": "codex.ask",
       "agent": "codex",
       "origin": "downstream",
