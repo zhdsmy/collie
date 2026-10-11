@@ -23,9 +23,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+
+## [1.19.2+collie.2] - 2026-10-12
+
 ### Fixed
 
-- **Codex Computer Use permissions render as guarded selection cards.** Single-field MCP tool approvals show the request, app details and exact one-time, session or persistent permission choices. Incomplete or unfamiliar forms retain the native fallback.
+- **Codex Computer Use permissions render as guarded selection cards.** Single-field MCP tool approvals show the request, app details and exact one-time, session or persistent permission choices. Incomplete or unfamiliar forms retain the native fallback. ([acd3a7d5](https://github.com/zhdsmy/collie/commit/acd3a7d5))
 
 ## [1.19.2+collie.1] - 2026-10-10
 
