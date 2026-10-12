@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.19.2+collie.4] - 2026-10-12
+
 ### Fixed
 
-- **Rejoin wrapped lines also joins the message you sent.** Codex and Claude Code wrap your own message the same way as a reply, so a long upload path in it broke across two rows. Your turns in the session log now prove those breaks too, and the joined rows share one painted block; a diff block is still never joined.
+- **Rejoin wrapped lines also joins the message you sent.** Codex and Claude Code wrap your own message the same way as a reply, so a long upload path in it broke across two rows. Your turns in the session log now prove those breaks too, and the joined rows share one painted block; a diff block is still never joined. ([f76b3bb4](https://github.com/zhdsmy/collie/commit/f76b3bb4))
 
 ## [1.19.2+collie.3] - 2026-10-12
 
