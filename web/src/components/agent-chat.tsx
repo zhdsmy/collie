@@ -3100,7 +3100,7 @@ export function AgentChat({
               </Collapse>
 
               {/* One boundary separates the terminal status strip from the input controls. */}
-              <div data-slot="chrome-block" className="border-t border-rule bg-chrome">
+              <div data-slot="chrome-block" className="relative border-t border-rule bg-chrome">
                 <Composer
                   ref={composerRef}
                   paneId={paneId}

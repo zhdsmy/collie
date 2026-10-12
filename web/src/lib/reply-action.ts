@@ -227,7 +227,7 @@ async function sendGuardedReplyOwned(args: GuardedReplyArgs): Promise<ReplyOutco
   const prepared = await runPreType?.();
   if (aborted(args)) return cancelledReply();
   if (prepared?.abort) return prepared.abort;
-  const beforeDraft = prepared?.beforeDraft;
+  let beforeDraft = prepared?.beforeDraft;
 
   const onWire = (part: string): string => (adapter.bracketedPaste?.(part) ? bracketPaste(part) : part);
   const chunks = adapter.replyChunks?.(args.text) ?? [args.text];
@@ -248,6 +248,7 @@ async function sendGuardedReplyOwned(args: GuardedReplyArgs): Promise<ReplyOutco
       const split = newlineRefusal(adapter, args.text, lines);
       if (split !== null) return split;
       previousDraft = adapter.extractInputDraft(lines);
+      beforeDraft = previousDraft;
     } catch (e) {
       return { status: "error", error: message(e) };
     }
@@ -282,6 +283,7 @@ async function sendGuardedReplyOwned(args: GuardedReplyArgs): Promise<ReplyOutco
         if (draft !== previousDraft && adapter.composerReady?.(lines) && literalDraftCarriesSend(delivered, draft) && carriesReplyTail(delivered, draft)) {
           verified = true;
           previousDraft = draft;
+          beforeDraft = draft;
           break;
         }
       } catch {
