@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Rejoin wrapped lines also joins the message you sent.** Codex and Claude Code wrap your own message the same way as a reply, so a long upload path in it broke across two rows. Your turns in the session log now prove those breaks too, and the joined rows share one painted block; a diff block is still never joined.
+
 ## [1.19.2+collie.3] - 2026-10-12
 
 ### Fixed

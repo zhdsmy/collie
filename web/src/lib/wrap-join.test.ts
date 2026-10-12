@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseAnsi } from "./ansi";
-import { splitLines } from "./blocks";
+import { splitLines, type StyledLine } from "./blocks";
 import type { TranscriptEntry } from "./types";
 import { foldSource, NO_JOINS, planJoins, proseSource } from "./wrap-join";
 
@@ -11,6 +11,7 @@ import { foldSource, NO_JOINS, planJoins, proseSource } from "./wrap-join";
 
 const lines = (screen: string) => splitLines(parseAnsi(screen));
 const plan = (screen: string, source: string) => planJoins(lines(screen), foldSource(source));
+type Surface = NonNullable<StyledLine["surface"]>;
 
 describe("planJoins", () => {
   it("joins a Claude bullet's hanging-indent rows and keeps the breaks the author wrote", () => {
@@ -121,6 +122,21 @@ describe("planJoins", () => {
     expect(joins).toBe(NO_JOINS);
   });
 
+  it("joins rows inside a user echo, never across its edge or inside a diff", () => {
+    const user = { kind: "user", background: "#1c1c1c" } as const;
+    const diff = { kind: "diff", background: "rgb(33,58,43)" } as const;
+    const echo = (top: Surface, bottom?: Surface) => {
+      const rows = lines("› please keep the version files and\n  the changelog heading in agreement");
+      rows[0]!.surface = top;
+      if (bottom) rows[1]!.surface = bottom;
+      return rows;
+    };
+    const source = foldSource("please keep the version files and the changelog heading in agreement");
+    expect(planJoins(echo(user, user), source).get(1)).toEqual({ indent: 2, trail: 0, space: true });
+    expect(planJoins(echo(user), source)).toBe(NO_JOINS);
+    expect(planJoins(echo(diff, diff), source)).toBe(NO_JOINS);
+  });
+
   it("does nothing without a source", () => {
     expect(plan("  some prose that wraps here and\n    continues on the next row", "")).toBe(NO_JOINS);
   });
@@ -134,7 +150,7 @@ describe("proseSource", () => {
     parts,
   });
 
-  it("keeps what the agent said and drops tool calls, user turns and abandoned branches", () => {
+  it("keeps what the agent and the user said and drops tool calls and abandoned branches", () => {
     const rewound = entry("assistant", [{ kind: "text", text: "rewound" }]);
     rewound.abandoned = true;
     const source = proseSource([
@@ -146,6 +162,6 @@ describe("proseSource", () => {
       ]),
       rewound,
     ]);
-    expect(source).toBe("plan\n\nIt is a phone UI.");
+    expect(source).toBe("describe it\n\nplan\n\nIt is a phone UI.");
   });
 });

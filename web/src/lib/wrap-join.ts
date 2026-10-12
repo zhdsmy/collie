@@ -57,11 +57,11 @@ export interface FoldedSource {
   readonly at: readonly number[];
 }
 
-/** Everything the agent said, in order: the text the TUI laid out on screen. Tool calls are not prose,
- *  and a user turn is drawn from the composer, so both stay out. */
+/** Everything said in the session, in order: the text the TUI laid out on screen, the user's own
+ *  turns included, since their echo is wrapped the same way. Tool calls are not prose and stay out. */
 export function proseSource(entries: readonly TranscriptEntry[]): string {
   return entries
-    .filter((entry) => entry.role === "assistant" && entry.abandoned !== true)
+    .filter((entry) => (entry.role === "assistant" || entry.role === "user") && entry.abandoned !== true)
     .flatMap((entry) => entry.parts)
     .flatMap((part) => (part.kind === "text" || part.kind === "thinking" ? [part.text] : []))
     .join("\n\n");
@@ -86,9 +86,10 @@ function fold(text: string): string {
   return out;
 }
 
-/** A row the join may touch: plain text, not a painted surface, a rule, or a clipped frame row. */
+/** A row the join may touch: plain text or a user echo, not a diff surface, a rule, or a clipped
+ *  frame row. A join never crosses a surface's edge (see {@link planJoins}). */
 function plain(line: StyledLine): boolean {
-  return !line.surface && !line.fullWidthRule && !line.fitRule && !line.noWrap;
+  return line.surface?.kind !== "diff" && !line.fullWidthRule && !line.fitRule && !line.noWrap;
 }
 
 /** What the journal says about the break at `boundary` in a probe that matched at `start`. */
@@ -123,6 +124,7 @@ export function planJoins(
   const plan = new Map<number, RowJoin>();
   for (let row = 1; row < lines.length; row++) {
     if (skip(row) || skip(row - 1) || !plain(lines[row]!) || !plain(lines[row - 1]!)) continue;
+    if (lines[row]!.surface?.kind !== lines[row - 1]!.surface?.kind) continue;
     const above = texts[row - 1]!;
     const here = texts[row]!;
     const aboveEnd = above.trimEnd();

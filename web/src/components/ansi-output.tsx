@@ -574,6 +574,19 @@ export const AnsiOutput = memo(function AnsiOutput({
     });
   };
 
+  // An adapter-owned, full-row surface (a user echo, a diff row) painted behind its rows.
+  const surfaceBox = (surface: NonNullable<StyledLine["surface"]>, content: ReactNode) => (
+    <span
+      data-terminal-surface={surface.kind}
+      className={cn(
+        "inline-block min-w-full min-h-[1lh] align-bottom",
+        wrap && "w-full max-w-full",
+        surface.kind === "user" && "font-semibold",
+      )}
+      style={{ backgroundColor: surface.background }}
+    >{content}</span>
+  );
+
   // One mirror line. `lead` says whether this line emits the "\n" that separates it from the one
   // before: the first line of a table run does NOT, because that newline is hoisted out to sit
   // before the run's scroller (inside it, it would open the table with a blank row). The offset is
@@ -590,13 +603,15 @@ export const AnsiOutput = memo(function AnsiOutput({
   //
   // `joins` is the block's rejoin plan (lib/wrap-join.ts). A joined row drops its newline and its
   // hanging indent, and the row above drops its trailing blanks; both still advance the offset, so
-  // the haystack's coordinates hold whether or not a character is drawn.
+  // the haystack's coordinates hold whether or not a character is drawn. `bare` leaves the row's
+  // surface box to the caller, which draws one box around a joined run of surface rows.
   const renderLine = (
     line: StyledLine,
     li: number,
     lead: boolean,
     inRun: boolean,
     joins: JoinPlan = NO_JOINS,
+    bare = false,
   ): ReactNode => {
     if (li > 0) offset += 1; // the "\n" separating this line from the previous
     const join = joins.get(li);
@@ -650,17 +665,7 @@ export const AnsiOutput = memo(function AnsiOutput({
     return (
       <Fragment key={li}>
         {li > 0 && lead ? (join ? (join.space ? " " : null) : "\n") : null}
-        {line.surface ? (
-          <span
-            data-terminal-surface={line.surface.kind}
-            className={cn(
-              "inline-block min-w-full min-h-[1lh] align-bottom",
-              wrap && "w-full max-w-full",
-              line.surface.kind === "user" && "font-semibold",
-            )}
-            style={{ backgroundColor: line.surface.background }}
-          >{content}</span>
-        ) : content}
+        {line.surface && !bare ? surfaceBox(line.surface, content) : content}
       </Fragment>
     );
   };
@@ -700,6 +705,23 @@ export const AnsiOutput = memo(function AnsiOutput({
         continue;
       }
       const run: TableRun | undefined = runs[ri];
+      const surface = block.lines[li]!.surface;
+      if (surface && joins.has(li + 1)) {
+        // Rows the plan joined inside one painted surface share a single box; a box per row would
+        // still start each on a row of its own.
+        let end = li + 1;
+        while (joins.has(end + 1)) end++;
+        const rows: ReactNode[] = [];
+        for (let k = li; k <= end; k++) rows.push(renderLine(block.lines[k]!, k, k > li, false, joins, true));
+        nodes.push(
+          <Fragment key={`surface:${li}`}>
+            {li > 0 ? "\n" : null}
+            {surfaceBox(surface, rows)}
+          </Fragment>,
+        );
+        li = end + 1;
+        continue;
+      }
       if (!run || run.start !== li) {
         nodes.push(renderLine(block.lines[li]!, li, true, false, joins));
         li++;

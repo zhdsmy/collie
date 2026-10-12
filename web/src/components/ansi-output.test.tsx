@@ -1165,6 +1165,25 @@ describe("wrapSource (rejoining the TUI's own wraps)", () => {
     expect(container.querySelector('[data-find-match="current"]')!.textContent).toBe("CHANGELOG");
   });
 
+  it("draws a Codex echo's proven wrap inside one user surface, a path left whole", () => {
+    const bg = `${ESC}[48;2;57;57;71m`;
+    const dir = "/home/me/.local/state/collie/uploads/";
+    const [a, b, c] = ["w6_p16-mv4h4kh8-7886a653.png", "w6_p16-mv4h4tk2-b1ff4a9c.png", "w6_p16-mv4h4xhc-42f948df.jpg"];
+    const echo = [
+      `${bg}${ESC}[1;2m\u203a ${ESC}[22m适配一下新版本的 Hermes，不少地方失效了${ESC}[0m`,
+      `${bg}  ${ESC}[0m`,
+      `${bg}  ${dir}${a} ${dir}w6_p16-mv4h4tk2-   ${ESC}[0m`,
+      `${bg}  b1ff4a9c.png ${dir}${c}${ESC}[0m`,
+      "",
+      "\u2022 Normal answer",
+    ].join("\n");
+    const said = `适配一下新版本的 Hermes，不少地方失效了\n\n${dir}${a} ${dir}${b} ${dir}${c}`;
+    const { container } = render(<AnsiOutput text={echo} agent="codex" wrapSource={said} />);
+    const boxes = container.querySelectorAll('[data-terminal-surface="user"]');
+    expect(boxes).toHaveLength(3);
+    expect(boxes[2]!.textContent).toBe(`  ${dir}${a} ${dir}${b} ${dir}${c}`);
+  });
+
   it("joins nothing while Wrap is off", () => {
     const { container } = render(<AnsiOutput text={screen} wrapSource={source} wrap={false} />);
     expect(container.querySelector("pre")!.textContent).toBe(screen);
