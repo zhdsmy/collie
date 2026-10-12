@@ -1,5 +1,31 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## Python launcher identity and localized history — 2026-10-12
+
+Hermes v0.21.6+4.g5884a65 launches as `python3 -I -c …`. Herdr 0.9.3 did not identify
+that foreground process, so Collie correctly received `agent: shell`; all Hermes cards,
+response rules and statusline adaptation were disabled together. The session-only Herdr
+integration was already current. Its persisted session reference cannot prove a live agent.
+
+Use Herdr's documented `HERDR_AGENT=hermes` hint on the Hermes launch command, scoped to
+that process. On this host the user launcher exports it only when `HERDR_ENV=1`.
+The operator authorized exiting and resuming the same session; both Herdr and Collie's
+live snapshot then reported Hermes, with all 469 stored messages retained. Neither Herdr
+nor Headroom was restarted. If a Hermes update rewrites its launchers, recheck the hint
+and live identity; changing the launcher cannot affect an already-running process.
+
+The fresh resume also exposed translated Rich history labels. The same complete-frame,
+dim-title and role checks now accept English, Simplified Chinese and Traditional Chinese.
+Announcement counts, role indentation and tool summaries follow the installed renderer's
+`cli.resume` translations. Native prefix length determines continuation indentation; source
+row counts and search offsets stay intact. Unknown or incomplete frames remain native.
+Startup and fixed status already parsed the new live ANSI after identity was restored.
+
+The Chinese fixture is a sanitized subset of that live resume; Traditional Chinese is a
+source-derived substitution. Parser checks cover folds, counts, search offsets, preserved
+indentation and refusals; the 320px browser check saves folded/expanded screenshots.
+This validates display adaptation, not every translated dialog or a new model turn.
+
 ## v0.21.3 emblem and startup counts — 2026-09-17
 
 Read-only inspection of the existing General pane (v0.21.3, `140d1254`) confirmed

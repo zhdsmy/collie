@@ -4,7 +4,7 @@ import { displayWidth } from "../../text-width";
 import type { HarnessAdapter } from "../types";
 import { decorateHermesDiff } from "./display";
 import { detectClarify } from "./clarify";
-import { extractHistoryMessages, extractStartupDetails } from "./session-info";
+import { extractHistoryMessages, extractStartupDetails, HISTORY_ROLE_PREFIX, RESUMED_PREFIX, RESTORED_MODEL } from "./session-info";
 
 // Hermes chrome and verified clarify cards. Ordinary text replies retain their existing
 // transport; clarify option digits use the shared fresh-dialog guard.
@@ -215,8 +215,8 @@ function inputChrome(lines: StyledLine[]): StyledLine[] {
   return result;
 }
 
-const SPLIT_HISTORY_HEADER = /^─+ Previous Conversation ─+╮?$/u;
-const HISTORY_HEADER = /^╭─+ Previous Conversation ─+╮$/u;
+const SPLIT_HISTORY_HEADER = /^─+ (?:Previous Conversation|之前的对话|先前的對話) ─+╮?$/u;
+const HISTORY_HEADER = /^╭─+ (Previous Conversation|之前的对话|先前的對話) ─+╮$/u;
 const STARTUP_HEADER = /^╭─+ Hermes Agent (v[\w.+-]+)(?: .*?)? ─+╮$/u;
 
 function styledTitle(lines: StyledLine[], first: number, last: number, title: string, style: "bold" | "dim") {
@@ -272,13 +272,14 @@ function rejoinInfoPanels(lines: StyledLine[]) {
       if (end > row) joins.push([row, end]);
       if (kind === "top") {
         header = joined;
-        panelKind = HISTORY_HEADER.test(header) && styledTitle(lines, row, end, "Previous Conversation", "dim") ? "history"
+        const history = HISTORY_HEADER.exec(header);
+        panelKind = history && styledTitle(lines, row, end, history[1]!, "dim") ? "history"
           : STARTUP_HEADER.test(header) && styledTitle(lines, row, end, "Hermes Agent", "bold") ? "startup" : null;
         if (!panelKind) break;
       } else if (kind === "body") {
         sawBody = true;
         if (complete) bodyWidths.add(displayWidth(joined));
-        hasHistoryMessage ||= /^│\s+(?:● You:|◆ Hermes:|◈ )/u.test(joined);
+        hasHistoryMessage ||= HISTORY_ROLE_PREFIX.test(joined.slice(2));
         hasTools ||= /\bAvailable Tools\s*│$/u.test(joined);
         hasCounts ||= /\b\d+ tools · \d+ skills · (?:\d+ MCP servers? · )?\/help for commands\s*│$/u.test(joined);
       } else {
@@ -333,7 +334,7 @@ function foldResumedHistory(lines: StyledLine[], continuations: WeakSet<StyledLi
           // without the right corner too. The final complete panel and resume announcement below
           // bound the fragment run; unrelated output still stops this walk.
           if (t === "" || t.startsWith("│") || t.endsWith("│") || /^─+╮$/u.test(t)
-            || SPLIT_HISTORY_HEADER.test(t) || t.startsWith("╭─") && t.includes("Previous Conversation")) first--;
+            || SPLIT_HISTORY_HEADER.test(t) || t.startsWith("╭─") && SPLIT_HISTORY_HEADER.test(t.slice(1))) first--;
           else break;
         }
         let probe = first;
@@ -341,9 +342,10 @@ function foldResumedHistory(lines: StyledLine[], continuations: WeakSet<StyledLi
         for (let span = 1; span <= 3 && probe - span >= start; span++) {
           const rows = lines.slice(probe - span, probe);
           const joined = rows.map(lineText).map((s) => s.trim()).join(" ");
-          const restored = / Model restored from session: .+$/u.exec(joined);
-          const match = (restored ? joined.slice(0, restored.index) : joined)
-            .match(/^↻ Resumed session ([\w-]+)(?: "(.*)")? \((\d+) user messages?, (\d+) total messages\)$/u);
+          if (!RESUMED_PREFIX.test(joined)) continue;
+          const restored = RESTORED_MODEL.exec(joined);
+          const match = (restored ? joined.slice(0, restored.index).trimEnd() : joined).replace(RESUMED_PREFIX, "↻ ")
+            .match(/^↻ ([\w-]+)(?: "(.*)")? [（(](\d+) (?:user messages?, |条用户消息，共 |則使用者訊息，共 )(\d+) (?:total messages|条消息|則訊息)[）)]$/u);
           if (!match || !rows.some((row) => row.segments.some((s) => s.bold && s.text.includes(match[1]!)))) continue;
           session = { id: match[1]!, title: match[2], userMessages: Number(match[3]), totalMessages: Number(match[4]) };
           first = probe - span;
@@ -363,7 +365,7 @@ function foldResumedHistory(lines: StyledLine[], continuations: WeakSet<StyledLi
             const value = lineText(line);
             const t = value.trim();
             if (t.startsWith("╭") || /^─+╮$/u.test(t) || SPLIT_HISTORY_HEADER.test(t)
-              || /^│\s+\.\.\. \d+ earlier messages \.\.\.(?:\s+│)?$/u.test(t)) return [Object.assign({}, line, { segments: [] })];
+              || /^│\s+\.\.\. (?:\d+ earlier messages|还有 \d+ 条更早的消息|還有 \d+ 則較早的訊息) \.\.\.(?:\s+│)?$/u.test(t)) return [Object.assign({}, line, { segments: [] })];
             if (!t.startsWith("│")) return [line];
             const end = (value.endsWith("│") ? value.slice(0, -1) : value).trimEnd().length;
             return [Object.assign({}, line, { noWrap: false, segments: sliceSegments(line.segments, 2, end) })];
@@ -381,7 +383,7 @@ function foldResumedHistory(lines: StyledLine[], continuations: WeakSet<StyledLi
       // A repaint can open another panel before the previous one closes. Leave the old fragment raw.
       if (continuations.has(lines[bottom]!)) continue;
       if (!text.startsWith("│ ")) break;
-      hasMessage ||= /^│\s+(?:● You:|◆ Hermes:|◈ )/u.test(text);
+      hasMessage ||= HISTORY_ROLE_PREFIX.test(text.slice(2));
     }
   }
   if (start < lines.length || blocks.length === 0) blocks.push({ kind: "raw", lines: lines.slice(start) });

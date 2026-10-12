@@ -395,9 +395,12 @@
       "origin": "downstream",
       "sources": ["web/src/lib/harness/hermes/index.ts", "web/src/lib/harness/hermes/session-info.ts"],
       "tests": ["web/src/lib/harness/hermes/history.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/hermes--resume-history.txt", "agent": "hermes", "expect": { "sessionInfo": "history" } }],
+      "fixtures": [
+        { "path": "web/src/fixtures/panes/hermes--resume-history.txt", "agent": "hermes", "expect": { "sessionInfo": "history" } },
+        { "path": "web/src/fixtures/panes/hermes--v0216-zh-history.txt", "agent": "hermes", "expect": { "sessionInfo": "history" } }
+      ],
       "live": false,
-      "verified": { "version": "0.21.2", "date": "2026-09-16", "how": "captured live ANSI replay; history folding only", "evidence": "web/src/lib/harness/hermes/NOTES.md#resume-history" }
+      "verified": { "version": "0.21.6+4.g5884a65", "date": "2026-10-12", "how": "authorized same-session resume and captured Chinese ANSI replay; history display only", "evidence": "web/src/lib/harness/hermes/NOTES.md#python-launcher-identity-and-localized-history--2026-10-12" }
     },
     {
       "id": "hermes.startup",

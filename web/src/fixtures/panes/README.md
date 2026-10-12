@@ -1837,3 +1837,12 @@ from an isolated local MCP test on 2026-10-12. Only the dialog rows are retained
 the test question, and no application was accessed. They cover initial/default selection,
 Down then Up, and description wrapping at 50 columns. Native keys and limits are recorded in
 [`ELICITATION_NOTES.md`](../../lib/harness/codex/ELICITATION_NOTES.md).
+
+## Hermes v0.21.6 Chinese resume
+
+`hermes--v0216-zh-history.txt` contains selected rows from the native Chinese resume panel
+captured through Collie's pane endpoint on 2026-10-12 (Hermes v0.21.6+4.g5884a65).
+Session ID, title and message bodies are replaced with harmless examples; ANSI styling,
+terminal-cell widths, localized labels and counts are retained. Omitted exchanges shorten
+the fixture. Traditional Chinese tests substitute the installed renderer's `zh-hant.yaml`
+labels into this sample; they are source-derived, not a separate live capture.

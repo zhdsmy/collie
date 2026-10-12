@@ -5,6 +5,10 @@ import { displayWidth } from "../../text-width";
 type HistoryMessage = NonNullable<Extract<SessionInfo, { kind: "history" }>["messages"]>[number];
 type GroupKind = StartupDetails["groups"][number]["kind"];
 
+export const HISTORY_ROLE_PREFIX = /^ {2}(● (?:You:|你：) |◆ Hermes[:：] |◈ )/u;
+export const RESUMED_PREFIX = /^↻ (?:Resumed session|已恢复会话|已恢復工作階段) /u;
+export const RESTORED_MODEL = /(?:Model restored from session: |已从会话恢复模型：|已從工作階段還原模型：).+$/u;
+
 /** Keep source rows in place, assigning search offsets after selecting their meaningful spans. */
 function sourceText(lines: StyledLine[]) {
   const rows: { sourceStart: number; value: SessionInfoText; segments: AnsiSegment[] }[][] = lines.map(() => []);
@@ -140,6 +144,7 @@ export function extractHistoryMessages(lines: StyledLine[]) {
   const runs: { role: HistoryMessage["role"]; first: SessionInfoText; last: SessionInfoText }[] = [];
   let current: (typeof runs)[number] | undefined;
   let role: HistoryMessage["role"] = "event";
+  let indent = 4;
   let announcement = false;
   const append = (entryRole: HistoryMessage["role"], value: SessionInfoText | undefined) => {
     if (!value) return;
@@ -151,19 +156,19 @@ export function extractHistoryMessages(lines: StyledLine[]) {
 
   for (let row = 0; row < lines.length; row++) {
     const text = lineText(lines[row]!);
-    const prefix = /^ {2}(● You: |◆ Hermes: |◈ )/u.exec(text);
-    if (!prefix && (announcement || /^\s*↻ Resumed session /u.test(text) || /^\s*Model restored from session: /u.test(text))) {
-      announcement = !/\d+ total messages\)\s*$/u.test(text);
+    const prefix = HISTORY_ROLE_PREFIX.exec(text);
+    if (!prefix && (announcement || RESUMED_PREFIX.test(text.trimStart()) || RESTORED_MODEL.exec(text.trimStart())?.index === 0)) {
+      announcement = !/(?:\d+ total messages\)|\d+ (?:条消息|則訊息)）)\s*$/u.test(text);
       continue;
     }
     announcement = false;
     if (prefix) {
-      role = prefix[1] === "● You: " ? "user" : prefix[1] === "◆ Hermes: " ? "assistant" : "event";
+      role = prefix[1]!.startsWith("●") ? "user" : prefix[1]!.startsWith("◆") ? "assistant" : "event";
+      indent = prefix[0].length;
       current = undefined;
     }
-    const indent = role === "user" ? 9 : role === "assistant" ? 12 : 4;
     const start = prefix?.[0].length ?? (text.startsWith(" ".repeat(indent)) ? indent : 0);
-    const tool = role === "assistant" ? /\[\d+ tool calls?:[^\]]*\]\s*$/u.exec(text) : null;
+    const tool = role === "assistant" ? /\[\d+ (?:tool calls?:|次工具(?:调用|呼叫)：)[^\]]*\]\s*$/u.exec(text) : null;
     append(role, source.select(row, start, tool?.index ?? text.length, false));
     if (tool) {
       append("tools", source.select(row, tool.index, text.length));

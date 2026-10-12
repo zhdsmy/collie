@@ -23,6 +23,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hermes resumes Chinese history in the existing compact card.** Recognize localized history headings, session counts, roles and tool summaries while preserving complete-frame checks, indentation and searchable text. Document the Herdr identity hint needed by the new Python launcher.
 
 ## [1.19.2+collie.2] - 2026-10-12
 

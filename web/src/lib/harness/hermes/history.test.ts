@@ -3,6 +3,7 @@ import capture from "@/fixtures/panes/hermes--resume-history.txt?raw";
 import fragments from "@/fixtures/panes/hermes--resume-fragments.txt?raw";
 import fragmentsRestored from "@/fixtures/panes/hermes--resume-fragments-restored.txt?raw";
 import startup from "@/fixtures/panes/hermes--startup-resume.txt?raw";
+import localized from "@/fixtures/panes/hermes--v0216-zh-history.txt?raw";
 import { parseAnsi } from "../../ansi";
 import { dropLeadingLines, lineText, splitLines, type RawBlock, type StyledLine } from "../../blocks";
 import { buildBlocks } from "..";
@@ -25,6 +26,54 @@ const sliceLine = (line: StyledLine, start: number, end: number) => {
 };
 
 describe("Hermes resumed history", () => {
+  it("folds the captured Chinese resume panel with metadata, roles and search offsets", () => {
+    const history = histories(localized)[0]!;
+    expect(histories(localized)).toHaveLength(1);
+    expect(history.sessionInfo).toMatchObject({ kind: "history", session: {
+      id: "20261012_120000_sample", title: "Example", userMessages: 82, totalMessages: 467,
+    } });
+    if (history.sessionInfo?.kind !== "history") throw new Error("Missing history");
+    expect(history.sessionInfo.messages?.map(({ role, content }) => [role, content.text.trim()])).toEqual([
+      ["event", "... 还有 348 条更早的消息 ..."],
+      ["user", "检查示例配置。"],
+      ["assistant", "配置正常。\n下一行说明。"],
+    ]);
+    const text = history.lines.map(lineText).join("\n");
+    expect(text).not.toMatch(/已恢复会话|之前的对话|● 你：|◆ Hermes：/u);
+    for (const { content } of history.sessionInfo.messages ?? []) {
+      expect(text.slice(content.start, content.start + content.text.length)).toBe(content.text);
+    }
+    expect(history.lines).toHaveLength(lines(localized).length);
+    expect(blocks(localized).some(blockOwnsKeyboard)).toBe(false);
+    for (const invalid of [localized.split("\n").slice(0, -2).join("\n"),
+      lines(localized).map(lineText).join("\n"), localized.replace("之前的对话", "普通对话")]) {
+      expect(histories(invalid)).toEqual([]);
+    }
+  });
+
+  it("keeps localized continuation indentation and separates native tool summaries", () => {
+    for (const tools of ["[2 次工具调用：read, search]", "[2 次工具呼叫：read, search]"]) {
+      const result = extractHistoryMessages(lines([
+        "  ● 你： 第一段", "       第二段", "  ◆ Hermes： 完成", "                indented code", `            ${tools}`,
+      ].join("\n")));
+      expect(result.messages.map(({ role, content }) => [role, content.text])).toEqual([
+        ["user", "第一段\n第二段"], ["assistant", "完成\n    indented code"], ["tools", tools],
+      ]);
+    }
+  });
+
+  it("recognizes source-derived Traditional Chinese labels and wrapped restored-model notices", () => {
+    const traditional = localized.replace("已恢复会话", "已恢復工作階段").replace("条用户消息", "則使用者訊息")
+      .replace("条消息", "則訊息").replace("之前的对话", "先前的對話")
+      .replace("还有 348 条更早的消息", "還有 348 則較早的訊息");
+    for (const [text, restored] of [[localized, "已从会话恢复模型：example-model"], [traditional, "已從工作階段還原模型：example-model"]] as const) {
+      const [announcement, ...panel] = text.trimEnd().split("\n");
+      const wrapped = `${announcement!.replace('"Example"', '"Example\ntasks"')}\n${restored}\n${panel.join("\n")}`;
+      expect(histories(wrapped)[0]?.sessionInfo).toMatchObject({ session: { title: "Example tasks", userMessages: 82, totalMessages: 467 } });
+      expect(histories(wrapped)[0]?.lines.map(lineText).join("\n")).not.toContain(restored);
+    }
+  });
+
   it("folds the v0.21.3 startup count with MCP servers and preserves semantic fields", () => {
     const newer = startup.replace("v0.21.2", "v0.21.3")
       .replace("86 skills · /help for commands\x1b[0m" + " ".repeat(16),

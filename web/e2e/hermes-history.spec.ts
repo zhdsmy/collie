@@ -8,8 +8,51 @@ import { de } from "../src/lib/i18n/messages/de";
 
 const capture = readFileSync(new URL("../src/fixtures/panes/hermes--startup-resume.txt", import.meta.url), "utf8");
 const done = readFileSync(new URL("../src/fixtures/panes/hermes--done.txt", import.meta.url), "utf8");
+const localized = readFileSync(new URL("../src/fixtures/panes/hermes--v0216-zh-history.txt", import.meta.url), "utf8");
 const dictionaries = { en, zh, de };
 test.use({ serviceWorkers: "block" });
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" })));
+});
+
+test("localized Hermes history at 320px", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("collie:locale:v1", "zh");
+    localStorage.setItem("collie:display-prefs:v4", JSON.stringify({ fontFamily: "menlo" }));
+  });
+  await installApiStub(page);
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+      ? { ...agent, agent: "hermes", status: "idle", hasSession: true } : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text: `${localized}\n${done}`, truncated: false, revision: 1,
+  } }));
+  const writes: string[] = [];
+  await page.route((url) => /\/api\/pane\/[^/]+\/(keys|reply)$/.test(url.pathname), (route) => {
+    writes.push(route.request().url());
+    return route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/pane/w1:p1");
+  const title = zh["chat.historyPreview.title"];
+  const toggle = page.getByRole("button", { name: title, exact: true });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(toggle).toHaveAccessibleDescription(/Example.*82/u);
+  await expect(page.getByText(/已恢复会话|之前的对话/u)).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("localized-history-folded.png") });
+  await toggle.click();
+  const body = page.getByRole("region", { name: title, exact: true });
+  await expect(body).toContainText("检查示例配置。");
+  await expect(body).toContainText("下一行说明。");
+  await expect(body).not.toContainText("◆ Hermes：");
+  expect(await body.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await expect(page.getByRole("textbox").first()).not.toBeFocused();
+  expect(writes).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath("localized-history-expanded.png") });
+});
 
 for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"], [320, "de", "dark"]] as const) {
   test(`Hermes resumed history: ${width} ${locale} ${theme}`, async ({ page }, testInfo) => {
