@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Changed
+
+- **Follow upstream pi question cards and crew update fixes.** Add guarded pi replies and shape-based pi/OmO questions, prevent quoted-dialog false positives, and verify TLS-only crew updates while retaining downstream adaptations and deployment policy.
+
 ## [1.20.0+collie.1] - 2026-10-12
 ### Changed
 
@@ -240,6 +244,20 @@ Running a crew? Update the lead first; members follow on their own. Details:
 ### Changed
 
 - **Collie follows upstream with reliable paths and Crew connections.** Merge v1.15.3 with Windows path fixes, explicit Crew addresses and omp empty-editor hint recognition, preserving Collie controls and current agent adaptations. ([4e24f2d5](https://github.com/zhdsmy/collie/commit/4e24f2d5))
+## [1.20.1] - 2026-10-12
+
+### Added
+
+- **Questions from pi and OmO show as buttons in Chat.** This works when the question screen prints a key hint at the bottom, such as `↑↓ navigate • Enter to select` or OmO's `1-9 select`. Collie reads that hint, not the extension's name. A tap moves the pointer, reads it back and only then presses Enter, or sends the digit OmO prints. Tested with pi's own `question` and `questionnaire` examples on pi 0.87.1 and 1.1.0, and with OmO's built-in ask. Each page of a multi-question dialog gets buttons, and a complete Submit page gets Submit and Cancel. Pick-many questions, typed answers and screens without such a hint stay in the terminal view, with a card whose Escape button closes them. Thanks @welldoingk and @raffaelenatale (#412, #397). ([95b8e4c2](https://github.com/AltanS/collie/commit/95b8e4c2))
+
+### Changed
+
+- **Messages to a pi pane use the guarded send.** Collie types the message, reads pi's editor back, and presses Enter only when the text matches. When Collie cannot read the editor, it types nothing and Chat says so; a second tap sends anyway, still with the read-back check. ([e55ed47d](https://github.com/AltanS/collie/commit/e55ed47d))
+
+### Fixed
+
+- **A crew peer's update no longer rolls back on a check it cannot pass.** A peer with no standby door serves only mutual TLS, so the plain-HTTP health check failed and every update rolled back. The check now passes when a bridge that booted after the restart is alive and holds the port with this machine's own TLS certificate. It cannot name the build, as the plain-HTTP check does. `collie status` shows that address as the crew link. The update runs the check of the version being replaced, so a peer still on an older version installs this release once with `curl -fsSL https://colliepwa.dev/install.sh | COLLIE_TAG=v1.20.1 sh` and then `collie restart`. Thanks @theluckystrike and @dwm8 (#411, #410). ([eae150d5](https://github.com/AltanS/collie/commit/eae150d5))
+
 ## [1.20.0] - 2026-10-11
 
 ### Added

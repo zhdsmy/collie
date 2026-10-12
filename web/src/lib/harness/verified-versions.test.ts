@@ -18,10 +18,6 @@ const REGISTERED_AGENTS = registeredAgents();
 // drift apart because a vendor can change what it paints without changing what it writes.
 const JOURNAL_AGENTS = [...JOURNAL_AGENT_NAMES];
 
-// pi and hermes have no block grammar at all — raw mirror, one-shot send — but the ledger still owes
-// them an entry: pi is installed and its version drifts too, and hermes has a journal reader.
-const UNADAPTED_AGENTS = ["pi"];
-
 const ALLOWED_HOW = new Set(["canary", "live sweep", "capture", "unverified"]);
 
 /** The three facts a reader's line carries. `adapter` belongs to the screen half only. */
@@ -42,7 +38,7 @@ interface Ledger {
 }
 
 // SAFETY: `verified-versions.json` is a checked-in, hand-authored file; this test IS the shape
-// check (every registered adapter plus pi and hermes, a `journal` block for every journal adapter,
+// check (every registered adapter, a `journal` block for every journal adapter,
 // `how` in the allowed set, plain `x.y.z` versions, ISO dates) — asserting the type here, once, is
 // what the rest of the file verifies.
 const ledger = ledgerJson as Ledger;
@@ -65,14 +61,6 @@ describe("verified-versions ledger", () => {
   it("has an entry for every registered adapter", () => {
     for (const agent of REGISTERED_AGENTS) {
       expect(entryFor(agent), `missing ledger entry for "${agent}"`).toBeDefined();
-    }
-  });
-
-  it("has an entry for pi, with adapter: false", () => {
-    for (const agent of UNADAPTED_AGENTS) {
-      const entry = entryFor(agent);
-      expect(entry, `missing ledger entry for "${agent}"`).toBeDefined();
-      expect(entry?.adapter, agent).toBe(false);
     }
   });
 
