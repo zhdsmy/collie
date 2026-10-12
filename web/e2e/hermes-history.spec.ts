@@ -41,7 +41,7 @@ test("localized Hermes history at 320px", async ({ page }, testInfo) => {
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await expect(toggle).toHaveAccessibleDescription(/Example.*82/u);
   await expect(page.getByText(/已恢复会话|之前的对话/u)).toHaveCount(0);
-  await page.screenshot({ path: testInfo.outputPath("localized-history-folded.png") });
+  await page.screenshot({ path: testInfo.outputPath("localized-history-folded.png"), animations: "disabled" });
   await toggle.click();
   const body = page.getByRole("region", { name: title, exact: true });
   await expect(body).toContainText("检查示例配置。");
@@ -51,7 +51,7 @@ test("localized Hermes history at 320px", async ({ page }, testInfo) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
   await expect(page.getByRole("textbox").first()).not.toBeFocused();
   expect(writes).toEqual([]);
-  await page.screenshot({ path: testInfo.outputPath("localized-history-expanded.png") });
+  await page.screenshot({ path: testInfo.outputPath("localized-history-expanded.png"), animations: "disabled" });
 });
 
 for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"], [320, "de", "dark"]] as const) {
