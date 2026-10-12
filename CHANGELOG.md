@@ -23,9 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.20.0+collie.1] - 2026-10-12
 ### Changed
 
-- **Follow upstream v1.20.0 with local speech and improved recovery.** Add Whistle on phone and host, the Voice settings hub and dictation overlay; adopt upstream sending, history, update and packaging fixes while retaining Collie adaptations and local deployment policy.
+- **Follow upstream v1.20.0 with local speech and improved recovery.** Add Whistle on phone and host, the Voice settings hub and dictation overlay; adopt upstream sending, history, update and packaging fixes while retaining Collie adaptations and local deployment policy. ([b3ad9719](https://github.com/zhdsmy/collie/commit/b3ad9719))
 
 ## [1.19.2+collie.5] - 2026-10-12
 
