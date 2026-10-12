@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.19.2+collie.5] - 2026-10-12
+
 ### Fixed
 
-- **Hermes keeps Chinese operation hints above the phone composer.** Recognize the official Simplified and Traditional Chinese working placeholders, preserving their language through terminal wrapping while leaving typed drafts and unknown hints visible.
+- **Hermes keeps Chinese operation hints above the phone composer.** Recognize the official Simplified and Traditional Chinese working placeholders, preserving their language through terminal wrapping while leaving typed drafts and unknown hints visible. ([196d368d](https://github.com/zhdsmy/collie/commit/196d368d))
 
 ## [1.19.2+collie.4] - 2026-10-12
 
