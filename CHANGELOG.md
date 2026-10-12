@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.20.1+collie.1] - 2026-10-12
+
 ### Changed
 
-- **Follow upstream pi question cards and crew update fixes.** Add guarded pi replies and shape-based pi/OmO questions, prevent quoted-dialog false positives, and verify TLS-only crew updates while retaining downstream adaptations and deployment policy.
+- **Follow upstream pi question cards and crew update fixes.** Add guarded pi replies and shape-based pi/OmO questions, prevent quoted-dialog false positives, and verify TLS-only crew updates while retaining downstream adaptations and deployment policy. ([9b756c56](https://github.com/zhdsmy/collie/commit/9b756c56))
 
 ## [1.20.0+collie.1] - 2026-10-12
 ### Changed
