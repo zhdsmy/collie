@@ -213,6 +213,12 @@ from Hermes v0.21.1's official `cli_tui_mixin.py` and the operator's 2026-09-10 
 display-only footer lifting; derived tests cover minimal chrome, wrapped hints, drafts and torn
 footers. No interactive contract is inferred from it.
 
+`hermes--v0216-zh-working.txt` is also a **reconstruction**, using the same sanitized geometry,
+the current `☤` icon, and `cli.tui.placeholder_busy` from Hermes v0.21.6+4.g5884a65's `locales/zh.yaml`.
+The operator's 2026-10-12 screenshot confirms this Simplified Chinese working hint; the read-only
+live capture had already returned to idle. Tests also derive English and Traditional Chinese
+(`locales/en.yaml`, `locales/zh-hant.yaml`) variants, physical wraps and non-italic typed copies.
+
 `hermes--submitted-input.txt` is a sanitized excerpt from a read-only ANSI capture on 2026-09-10.
 The two 40-character accent rules and the bold bullet/input styles are retained; the message is
 replaced with generic sample text and line endings are normalized. Only this verified pair is

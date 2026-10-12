@@ -10,8 +10,10 @@ const PANES = join(import.meta.dirname, "../../../fixtures/panes");
 const capture = readFileSync(join(PANES, "hermes--done.txt"), "utf8");
 const upgraded = readFileSync(join(PANES, "hermes--v0213-done.txt"), "utf8");
 const working = readFileSync(join(PANES, "hermes--working.txt"), "utf8");
+const chineseWorking = readFileSync(join(PANES, "hermes--v0216-zh-working.txt"), "utf8");
 const submitted = readFileSync(join(PANES, "hermes--submitted-input.txt"), "utf8");
 const hint = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
+const workingHints = [hint, "发消息=中断 · /queue · /bg · /steer · Ctrl+C 取消", "訊息=中斷 · /queue · /bg · /steer · Ctrl+C 取消"];
 const lines = (text: string) => splitLines(parseAnsi(text));
 const mirror = (text: string) => hermesAdapter.buildBlocks(lines(text)).flatMap((b) => b.lines.map(lineText)).join("\n");
 
@@ -99,36 +101,38 @@ describe("Hermes display chrome", () => {
     }
   });
 
-  it("lifts the working metrics and operation hint into consecutive fixed rows", () => {
-    const status = hermesAdapter.extractStatusLines(lines(working));
+  it.each([[working, hint], [chineseWorking, workingHints[1]!]])("lifts the working metrics and operation hint into consecutive fixed rows (%#)", (screen, expectedHint) => {
+    const status = hermesAdapter.extractStatusLines(lines(screen));
     expect(status).toHaveLength(2);
     expect(lineText(status[0]!)).toContain("example-model");
-    expect(lineText(status[1]!)).toBe(hint);
-    expect(mirror(working)).toBe(lines(working).slice(0, 4).map(lineText).join("\n"));
-    expect(hermesAdapter.extractInputDraft(lines(working))).toBeNull();
+    expect(lineText(status[1]!)).toBe(expectedHint);
+    expect(mirror(screen)).toBe(lines(screen).slice(0, 4).map(lineText).join("\n"));
+    expect(hermesAdapter.extractInputDraft(lines(screen))).toBeNull();
     expect(hermesAdapter.extractStatusLines(lines(capture))).toHaveLength(1);
   });
 
-  it.each(["⚕ ❯ ", "⚕ "])("handles the working prompt %s and physically wrapped hints", (prompt) => {
-    for (const at of [0, 7, 28, 43]) {
-      const wrapped = hint.slice(0, at) + "\n    " + hint.slice(at);
+  it.each(["⚕ ❯ ", "⚕ ", "☤ ❯ "])("handles the working prompt %s and physically wrapped localized hints", (prompt) => {
+    for (const localizedHint of workingHints) for (const at of [0, 3, 7, 28, 43]) {
+      const wrapped = localizedHint.slice(0, at) + "\n    " + localizedHint.slice(at);
       const text = working.replace("⚕ ❯ ", prompt).replace(hint, wrapped);
       const status = hermesAdapter.extractStatusLines(lines(text));
       expect(status).toHaveLength(2);
-      expect(lineText(status[1]!)).toBe(hint);
-      expect(mirror(text)).not.toContain("msg=interrupt");
+      expect(lineText(status[1]!)).toBe(localizedHint);
+      expect(mirror(text)).toBe(lines(working).slice(0, 4).map(lineText).join("\n"));
     }
   });
 
   it("retains working drafts, typed hint copies and unknown placeholders", () => {
-    for (const draft of [hint, "Keep this draft\n  and its next line\n\n  [image #1] /tmp/example.png"]) {
+    for (const draft of [...workingHints, "Keep this draft\n  and its next line\n\n  [image #1] /tmp/example.png"]) {
       const text = working.split("\n").map((row) => row.includes("❯") ? `⚕ ❯ ${draft}` : row).join("\n");
       expect(hermesAdapter.extractStatusLines(lines(text))).toHaveLength(1);
       expect(mirror(text)).toContain(draft);
     }
-    const unknown = working.replace(hint, "An unknown italic working hint");
-    expect(mirror(unknown)).toContain("An unknown italic working hint");
-    expect(hermesAdapter.extractStatusLines(lines(unknown))).toHaveLength(1);
+    for (const placeholder of ["An unknown italic working hint", "发消息=中断 · /queue · /bg", "发消息=中断 · /queue · /bg · /steer · Ctrl+C 新操作"]) {
+      const unknown = working.replace(hint, placeholder);
+      expect(mirror(unknown)).toContain(placeholder);
+      expect(hermesAdapter.extractStatusLines(lines(unknown))).toHaveLength(1);
+    }
   });
 
   it("leaves incomplete working footers and unknown special-state prompts in the mirror", () => {

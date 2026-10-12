@@ -13,7 +13,11 @@ const RESPONSE_TOP = /^╭─\s*([⚕☤]\s*Hermes(?:\s+\d{2}:\d{2}(?::\d{2})?)?
 const RESPONSE_BOTTOM = /^╰─{8,}╯$/u;
 const STATUS_HEAD = /^\s*[⚕☤]\s+\S/u;
 const CONTEXT = /(?:ctx\s+--|~?[\d.]+[KMB]?\/[\d.]+[KMB]?|\[[█░]+\]\s*(?:~?\d+(?:\.\d+)?%|--))/u;
-const WORKING_HINT = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
+const WORKING_HINTS = [
+  "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel",
+  "发消息=中断 · /queue · /bg · /steer · Ctrl+C 取消",
+  "訊息=中斷 · /queue · /bg · /steer · Ctrl+C 取消",
+];
 /**
  * The prompt row's LEADING ICON is state-dependent, and the set is closed — `cli_tui_mixin.py`'s
  * `_get_tui_prompt_fragments` paints exactly: ⚕/☤ working · ? clarify · ✎ clarify-freetext · ⚠
@@ -86,9 +90,10 @@ function locateFooter(lines: StyledLine[]): Footer | null {
     const placeholderText = input.map((s) => s.text).join("").trim();
     const isPlaceholder = placeholder !== undefined && input.every((s) => !s.text.trim() || s.italic);
     const instructing = /^(?:\S+ )?(?:[⚠🔐🔑●◉🎤]|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]) /u.test(text);
+    const workingHint = WORKING_HINTS.find((hint) => hint.replace(/\s/gu, "") === placeholderText.replace(/\s/gu, ""));
     const hint = !isPlaceholder ? undefined
-      : placeholderText.replace(/\s/gu, "") === WORKING_HINT.replace(/\s/gu, "")
-        ? { segments: [{ ...placeholder!, text: WORKING_HINT }] }
+      : workingHint
+        ? { segments: [{ ...placeholder!, text: workingHint }] }
         : instructing ? { segments: [{ ...placeholder!, text: placeholderText }] } : undefined;
     if (!hint && texts.slice(prompt + 1, bottom).some((row) => row.trim() && !/^ {2}/u.test(row))) return null;
     for (let statusStart = top - 1; statusStart >= Math.max(0, top - 6); statusStart--) {

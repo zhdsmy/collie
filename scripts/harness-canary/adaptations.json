@@ -427,8 +427,12 @@
       "agent": "hermes",
       "origin": "downstream",
       "sources": ["web/src/lib/harness/hermes/index.ts"],
-      "tests": ["web/src/lib/harness/hermes/display.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/hermes--v0213-done.txt", "agent": "hermes", "expect": { "block": "raw", "statusLinesMin": 1 } }],
+      "tests": ["web/src/lib/harness/hermes/hermes.test.ts", "web/src/lib/harness/hermes/display.test.ts", "web/e2e/hermes-chrome.spec.ts"],
+      "fixtures": [
+        { "path": "web/src/fixtures/panes/hermes--v0213-done.txt", "agent": "hermes", "expect": { "block": "raw", "statusLinesMin": 1 } },
+        { "path": "web/src/fixtures/panes/hermes--working.txt", "agent": "hermes", "expect": { "block": "raw", "statusLinesMin": 2 } },
+        { "path": "web/src/fixtures/panes/hermes--v0216-zh-working.txt", "agent": "hermes", "expect": { "block": "raw", "statusLinesMin": 2 } }
+      ],
       "live": false,
       "verified": null
     },

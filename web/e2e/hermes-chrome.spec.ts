@@ -26,8 +26,10 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await page.addInitScript((preferences) => {
       localStorage.setItem("collie:theme:v1", preferences.theme);
       localStorage.setItem("collie:locale:v1", preferences.locale);
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
     }, { theme, locale });
     await installApiStub(page);
+    const localizedHint = locale === "zh" ? "发消息=中断 · /queue · /bg · /steer · Ctrl+C 取消" : hint;
     let text = working;
     let polls = 0;
     let writes = 0;
@@ -48,7 +50,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
       } });
     });
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
-      paneId: "w1:p1", text: (history + submitted + text.replace("example-model", model.slice(0, 23) + "..."))
+      paneId: "w1:p1", text: (history + submitted + text.replace("example-model", model.slice(0, 23) + "...").replace(hint, localizedHint))
         .replaceAll("⚕", theme === "dark" ? "☤" : "⚕"),
       truncated: false, revision: 1, sessionModel: { model, reasoningEffort: "high" },
     } }));
@@ -58,7 +60,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await expect.poll(() => tabIsVisible(tab)).toBe(true);
 
     const metrics = page.getByText(model, { exact: true });
-    const operations = page.getByText(hint, { exact: true });
+    const operations = page.getByText(localizedHint, { exact: true });
     await expect(metrics).toBeVisible();
     await expect(operations).toHaveCount(1);
     await expect(operations).toBeVisible();
@@ -84,7 +86,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
         Math.round(row.left) === Math.round(document.documentElement.clientWidth - row.right);
     }));
     expect(bordersFit).toBe(true);
-    await page.screenshot({ path: testInfo.outputPath("working.png") });
+    await page.screenshot({ path: testInfo.outputPath("working.png"), animations: "disabled" });
 
     // Scroll the transcript itself. The two lifted rows must retain their position and the last
     // hint remains accessible through its own horizontal pan without widening the document.

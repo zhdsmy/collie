@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hermes keeps Chinese operation hints above the phone composer.** Recognize the official Simplified and Traditional Chinese working placeholders, preserving their language through terminal wrapping while leaving typed drafts and unknown hints visible.
+
 ## [1.19.2+collie.4] - 2026-10-12
 
 ### Fixed

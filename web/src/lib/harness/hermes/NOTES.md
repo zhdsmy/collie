@@ -265,6 +265,22 @@ interaction is claimed.
 
 ## Working footer — 2026-09-10
 
+### Localized working hint — 2026-10-12
+
+Hermes v0.21.6+4.g5884a65 translates `cli.tui.placeholder_busy`: English `msg=interrupt`,
+Simplified Chinese `发消息=中断`, Traditional Chinese `訊息=中斷`, with the shared `/queue · /bg · /steer`
+commands and localized cancel label. The exact English-only comparison left the Chinese input
+frame in the mirror. Accept those three complete official strings and restore the matching
+language's spacing after physical wrapping. Keep the all-italic placeholder, matching rules,
+statusline and tail checks; typed copies, partial translations and unknown hints stay visible.
+
+`hermes--v0216-zh-working.txt` is reconstructed from the existing sanitized working fixture and
+official translation, corroborated by the operator's screenshot. The live session was idle when
+read; no model call or session restart was made to recreate working state. The existing browser
+spec now replays Chinese hints too, explicitly selects Terminal view, and saves settled screenshots.
+
+### Original capture
+
 Hermes v0.21.1's `cli_tui_mixin.py` changes the empty input prompt from `❯` to `⚕ ❯` while
 the agent runs; minimal chrome uses `⚕ ` alone. `_tui_placeholder_text` supplies
 `msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel`, and `_PlaceholderProcessor` paints it
