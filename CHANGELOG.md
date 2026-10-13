@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.20.2+collie.1] - 2026-10-13
+
 ### Changed
 
-- **Follow upstream dialog, composer and status accessibility fixes.** Adopt v1.20.2 harness and journal fixes, distinguish status by shape, and verify TLS-only crew build markers while retaining downstream cards, compact layout and Codex Plan-mode sending.
+- **Follow upstream dialog, composer and status accessibility fixes.** Adopt v1.20.2 harness and journal fixes, distinguish status by shape, and verify TLS-only crew build markers while retaining downstream cards, compact layout and Codex Plan-mode sending. ([55b6fa85](https://github.com/zhdsmy/collie/commit/55b6fa85))
 
 ## [1.20.1+collie.2] - 2026-10-13
 
