@@ -3,8 +3,12 @@
 import { resolve } from "node:path";
 import { DEFAULT_SCENARIOS, DIALOG_SCENARIOS, SCENARIOS, isScenarioId, type ScenarioId } from "./verdict";
 
-export const CANARY_AGENTS = ["claude", "codex", "opencode", "pi"] as const;
+export const CANARY_AGENTS = ["claude", "codex", "opencode", "pi", "grok", "hermes", "agy", "omp", "muse"] as const;
 export type CanaryAgent = (typeof CANARY_AGENTS)[number];
+
+/** What runs without `--agent`. grok, hermes, agy, omp and muse are asked for by name: their sends
+ *  spend each vendor's own quota, which a plain `bun run canary` should not do behind anyone's back. */
+export const DEFAULT_AGENTS: readonly CanaryAgent[] = ["claude", "codex", "opencode", "pi"];
 
 export function isCanaryAgent(value: string): value is CanaryAgent {
   return CANARY_AGENTS.some((a) => a === value);
@@ -28,6 +32,8 @@ export interface CanaryOptions {
   readonly out: string;
   /** The ledger `--record` writes; a test points it at a copy. */
   readonly ledger: string | null;
+  /** A folder of launchers named after the agents; an agent with one there starts through it. */
+  readonly via: string | null;
 }
 
 export const NARROW_COLS = 50;
@@ -38,10 +44,10 @@ export const DEFAULT_OUT = "/tmp/collie-canary";
 
 export const USAGE = `Usage: bun run canary [options]
 
-Drives claude, codex, opencode and pi in a Herdr session of its own (collie-canary) and judges each
+Drives claude, codex, opencode and pi (and grok, hermes, agy, omp, muse when named) in a Herdr session of its own (collie-canary) and judges each
 screen and send with Collie's own readers. See scripts/harness-canary/README.md.
 
-  --agent a,b        agents to run (default: ${CANARY_AGENTS.join(",")})
+  --agent a,b        agents to run (default: ${DEFAULT_AGENTS.join(",")}; known: ${CANARY_AGENTS.join(",")})
   --scenario a,b     scenarios to run (default: ${DEFAULT_SCENARIOS.join(",")}; known: ${SCENARIOS.join(",")})
   --dialogs          also run ${DIALOG_SCENARIOS.join(" and ")}: real dialogs and a send to a busy agent (more model turns)
   --cards            also probe Resume, Agents, model/statusline pickers and Settings (one seed turn per supported agent)
@@ -53,11 +59,13 @@ screen and send with Collie's own readers. See scripts/harness-canary/README.md.
   --ledger PATH      the ledger --record writes (default: web/src/lib/harness/verified-versions.json)
   --readers PATH     judge with the web/src/lib readers of another Collie checkout (a worktree)
   --out DIR          where captures and summary.json go (default: ${DEFAULT_OUT})
+  --via DIR          start an agent through DIR/<agent> when that file is executable (another
+                     provider, a moved home); the default scenarios only, not dialogs or options
   -h, --help         print this`;
 
 /** Parse argv (without the runtime and script). Throws a one-line message on anything unknown. */
 export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOptions | "help" {
-  let agents: CanaryAgent[] = [...CANARY_AGENTS];
+  let agents: CanaryAgent[] = [...DEFAULT_AGENTS];
   let scenarios: ScenarioId[] = [...DEFAULT_SCENARIOS];
   let dialogs = false;
   let cards = false;
@@ -69,6 +77,7 @@ export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOpti
   let readers = repoRoot;
   let out = DEFAULT_OUT;
   let ledger: string | null = null;
+  let via: string | null = null;
   const value = (i: number, flag: string): string => {
     const v = argv[i + 1];
     if (v === undefined || v.startsWith("--")) throw new Error(`${flag} needs a value`);
@@ -131,6 +140,10 @@ export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOpti
         out = resolve(value(i, arg));
         i++;
         break;
+      case "--via":
+        via = resolve(value(i, arg));
+        i++;
+        break;
       default:
         throw new Error(`unknown option "${arg}"`);
     }
@@ -139,5 +152,5 @@ export function parseArgs(argv: readonly string[], repoRoot: string): CanaryOpti
   if (dialogs) for (const s of DIALOG_SCENARIOS) if (!scenarios.includes(s)) scenarios.push(s);
   if (cards && !scenarios.includes("cards")) scenarios.push("cards");
   if (cardDialogs && !scenarios.includes("dialogs")) scenarios.push("dialogs");
-  return { agents, scenarios, cols, keep, screenshots, cardDialogs, record, readers, out, ledger };
+  return { agents, scenarios, cols, keep, screenshots, cardDialogs, record, readers, out, ledger, via };
 }

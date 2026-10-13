@@ -17,7 +17,7 @@ export const CODEX_ARGS = `-c 'model_reasoning_effort="low"' -c check_for_update
 export const codex: AgentProfile = {
   agent: "codex",
   versionCommand: ["codex", "--version"],
-  launch: (cols) => launchLine(cols, `codex ${CODEX_ARGS}`),
+  launch: (cols, bin = "codex") => launchLine(cols, `${bin} ${CODEX_ARGS}`),
   startupAnswer(texts) {
     if (texts.some((t) => /^\s*Update available · \d+\.\d+\.\d+ → \d+\.\d+\.\d+\s*$/.test(t)) &&
         texts.findLast((t) => t.trim())?.trim() === "enter continue · esc skip") return ["Escape"];

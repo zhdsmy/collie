@@ -7,8 +7,8 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Browser, BrowserContext, Page, Route } from "../../web/node_modules/playwright-core";
 import type { ScenarioResult } from "./verdict";
+import { CANARY_AGENTS } from "./args";
 
-const AGENTS = ["claude", "codex", "opencode", "pi"] as const;
 const VIEWPORT = { width: 320, height: 844 };
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -122,7 +122,7 @@ async function discover(runDir: string): Promise<{ agent: string; version: strin
   const captures: { agent: string; version: string; name: string; path: string }[] = [];
   for (const folder of await readdir(runDir, { withFileTypes: true })) {
     if (!folder.isDirectory()) continue;
-    const agent = AGENTS.find((candidate) => folder.name.startsWith(`${candidate}-`));
+    const agent = CANARY_AGENTS.find((candidate) => folder.name.startsWith(`${candidate}-`));
     if (agent === undefined) continue;
     const version = folder.name.slice(agent.length + 1);
     for (const file of await readdir(join(runDir, folder.name), { withFileTypes: true })) {

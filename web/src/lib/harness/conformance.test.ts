@@ -122,6 +122,9 @@ const NEUTRAL = new Set([
   "claude--v21284-settings-status.txt",
   "claude--v21284-settings-usage.txt",
   "claude--v21284-settings-stats.txt",
+  // Claude Code 2.1.296's box table with a `⚠️` cell, cut to the reply's rows: a table that pans
+  // (table-run.test.ts), never a dialog.
+  "claude--box-table-vs16-emoji.txt",
 ]);
 
 const allClaudeFixtures = readdirSync(PANES_DIR)
