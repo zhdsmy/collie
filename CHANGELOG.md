@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.20.1+collie.2] - 2026-10-13
+
 ### Fixed
 
-- **Codex accepts replies while working in Plan mode.** Recognize the native Plan mode field between the queue hint and context percentage, so the guarded send can verify the draft and submit it without a manual Enter. Preserve the existing text and prompt checks.
+- **Codex accepts replies while working in Plan mode.** Recognize the native Plan mode field between the queue hint and context percentage, so the guarded send can verify the draft and submit it without a manual Enter. Preserve the existing text and prompt checks. ([25f36d1c](https://github.com/zhdsmy/collie/commit/25f36d1c))
 
 ## [1.20.1+collie.1] - 2026-10-12
 
