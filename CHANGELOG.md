@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex accepts replies while working in Plan mode.** Recognize the native Plan mode field between the queue hint and context percentage, so the guarded send can verify the draft and submit it without a manual Enter. Preserve the existing text and prompt checks.
+
 ## [1.20.1+collie.1] - 2026-10-12
 
 ### Changed

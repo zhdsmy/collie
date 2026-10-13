@@ -16,6 +16,17 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Codex 0.162.1 Plan-mode queue footer (captured 2026-10-13)
+
+`codex--v0162-plan-queue-draft.txt` is the native working/composer tail of an isolated
+120-column canary. The draft uses the reserved TEST-NET address `198.51.100.88`; it is
+synthetic test text. The ANSI bytes, spacing and `tab to queue message · Plan mode`
+footer are captured unchanged. The pre-fix guard typed the message but refused to
+submit because it could not read this footer. No user conversation or live host address
+is included. The test model was instructed to reply READY and never use tools.
+With the fix, the same isolated Plan-mode send verified the draft and the bridge's
+prompt binding passed before submitting; the test session and its folder trust were removed.
+
 ## Codex 0.160.1 native modals (captured 2026-10-06)
 
 `codex--v0160-warning-idle.txt`, `codex--v0160-warnings-panel.txt`,

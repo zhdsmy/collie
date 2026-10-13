@@ -322,6 +322,20 @@ describe("sendGuardedReply", () => {
     ]);
   });
 
+  it("verifies and binds a Codex draft when working switches to the Plan queue footer", async () => {
+    const text = "我已经将本机 ssh 公钥添加到 root@198.51.100.88:36000 (NAS)";
+    const calls = harness(() => fixtureText(
+      calls.length === 0 ? "codex--fresh-idle.txt" : "codex--v0162-plan-queue-draft.txt",
+    ));
+
+    expect(await sendGuardedReply({ paneId: "w1:p1", text, agent: "codex", ...instant }))
+      .toEqual({ status: "sent" });
+    expect(calls).toEqual([
+      { text, submit: false },
+      { text: "", submit: true, expected_prompt: `› ${text}` },
+    ]);
+  });
+
   // The canary's busy send (M37/03): while Codex streams its first reply, the status row ends in a
   // spinner frame. That row used to hide the composer, so the pre-flight refused the send as
   // `blocked`, where Codex queues it. The pane holds the busy screen until the text is typed, then

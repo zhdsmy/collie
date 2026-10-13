@@ -129,6 +129,7 @@ const PINNED = [
   "codex--draft.txt",
   "codex--fresh-idle.txt",
   "codex--queue-context-inline.txt",
+  "codex--v0162-plan-queue-draft.txt",
   "codex--reporter-294-busy-agents-hint.txt",
   "codex--submitted-fill-labelled-rule.txt",
   "codex--trust-prompt.txt",

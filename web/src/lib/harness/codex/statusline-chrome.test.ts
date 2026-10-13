@@ -45,6 +45,27 @@ function lines(name: string) {
   return splitLines(parseAnsi(source(name)));
 }
 
+describe("Codex Plan-mode working footer", () => {
+  const name = "codex--v0162-plan-queue-draft.txt";
+  const draft = "我已经将本机 ssh 公钥添加到 root@198.51.100.88:36000 (NAS)";
+
+  it("reads the real working draft and binds only the composer", () => {
+    const parsed = lines(name);
+    expect(composerReady(parsed)).toBe(true);
+    expect(extractInputDraft(parsed)).toBe(draft);
+    expect(composerPrompt(parsed)).toBe(`› ${draft}`);
+    expect(verifyExpectedPrompt(source(name), composerPrompt(parsed)!)).toEqual({ ok: true });
+    expect(stripChrome(parsed).map(lineText).join("\n")).not.toContain(draft);
+  });
+
+  it.each(["Approval mode", "Plan mode · Enter approve"])("refuses the unknown footer field %s", (field) => {
+    const parsed = splitLines(parseAnsi(source(name).replace("Plan mode", field)));
+    expect(composerReady(parsed)).toBe(false);
+    expect(extractInputDraft(parsed)).toBeNull();
+    expect(composerPrompt(parsed)).toBeNull();
+  });
+});
+
 describe("Codex disabled-statusline chrome", () => {
   it("anchors the fullscreen status row above its shortcut hint", () => {
     const fill = "\x1b[48;2;57;57;71m";

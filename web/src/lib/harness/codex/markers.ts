@@ -129,7 +129,7 @@ const WORKING_CONTEXT_ROW = /^\s*\d+%\s+context\s+(?:left|used)\b/i;
 // Codex can render the queue hint and context metric on one raw footer row while a turn is active.
 // The key is configurable; the queue wording and context metric are the stable parts.
 const INLINE_QUEUE_CONTEXT_ROW =
-  /^ {2}\S.*\bto queue(?: message)?\s+\d+% context (?:left|used)\b/;
+  /^ {2}\S.*\bto queue(?: message)?(?: · Plan mode)?\s+\d+% context (?:left|used)\b/;
 
 /** The exact separator paint Codex renders between status fields. */
 const STATUS_SEPARATOR = " \u00b7 ";
