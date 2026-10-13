@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.21.0+collie.1] - 2026-10-13
+
 ### Changed
 
-- **Follow upstream durable agents, Chat prompts and harness fixes.** Adopt v1.21.0 durable panes, pinned prompts, OpenClaw history and terminal compatibility while retaining downstream cards, compact layout, Cursor history and economical canary checks. See [the integration report](docs/upstream-v1.21.0.md).
+- **Follow upstream durable agents, Chat prompts and harness fixes.** Adopt v1.21.0 durable panes, pinned prompts, OpenClaw history and terminal compatibility while retaining downstream cards, compact layout, Cursor history and economical canary checks. See [the integration report](docs/upstream-v1.21.0.md). ([8b8f7234](https://github.com/zhdsmy/collie/commit/8b8f7234))
 
 ## [1.20.2+collie.1] - 2026-10-13
 
