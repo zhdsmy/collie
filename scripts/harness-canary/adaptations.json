@@ -7,17 +7,19 @@
       "sources": [
         "web/src/lib/harness/pi/index.ts",
         "web/src/lib/harness/pi/ask.ts",
-        "web/src/lib/harness/pi/footer.ts"
+        "web/src/lib/harness/pi/footer.ts",
+        "web/src/lib/harness/pi/panel.ts"
       ],
       "tests": [
         "web/src/lib/harness/pi.test.ts",
         "web/src/lib/harness/pi/ask.test.ts",
-        "web/src/lib/harness/conformance.test.ts"
+        "web/src/lib/harness/conformance.test.ts",
+        "web/src/lib/harness/pi/panel.test.ts"
       ],
       "live": false,
       "verified": {
-        "version": "1.1.0",
-        "date": "2026-10-12",
+        "version": "1.1.0 / OmO 5.1.30",
+        "date": "2026-10-13",
         "how": "upstream captured ANSI replay; recognition only, no local live probe",
         "evidence": "web/src/lib/harness/pi/ASK_NOTES.md"
       },
@@ -48,6 +50,14 @@
         },
         {
           "path": "web/src/fixtures/panes/pi--v110-tabs-single.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-plain-question.txt",
           "agent": "pi",
           "expect": {
             "block": "prompt-select",
@@ -101,17 +111,19 @@
       "sources": [
         "web/src/lib/harness/pi/index.ts",
         "web/src/lib/harness/pi/ask.ts",
-        "web/src/lib/harness/pi/footer.ts"
+        "web/src/lib/harness/pi/footer.ts",
+        "web/src/lib/harness/pi/panel.ts"
       ],
       "tests": [
         "web/src/lib/harness/pi.test.ts",
         "web/src/lib/harness/pi/ask.test.ts",
-        "web/src/lib/harness/conformance.test.ts"
+        "web/src/lib/harness/conformance.test.ts",
+        "web/src/lib/harness/pi/panel.test.ts"
       ],
       "live": false,
       "verified": {
-        "version": "1.1.0",
-        "date": "2026-10-12",
+        "version": "1.1.0 / OmO 5.1.30",
+        "date": "2026-10-13",
         "how": "upstream captured ANSI replay; recognition only, no local live probe",
         "evidence": "web/src/lib/harness/pi/ASK_NOTES.md"
       },
@@ -136,6 +148,55 @@
           "expect": {
             "block": "unread-dialog"
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-picker-model.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-picker-resume.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-picker-tree.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-panel-picker-tree.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v110-stock-picker-resume.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v110-stock-picker-tree.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-panel-question.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "unread-dialog"
+          }
         }
       ]
     },
@@ -146,17 +207,19 @@
       "sources": [
         "web/src/lib/harness/pi/index.ts",
         "web/src/lib/harness/pi/composer.ts",
-        "web/src/lib/reply-action.ts"
+        "web/src/lib/reply-action.ts",
+        "web/src/lib/harness/pi/panel.ts"
       ],
       "tests": [
         "web/src/lib/harness/pi.test.ts",
         "web/src/lib/harness/pi/composer.test.ts",
-        "web/src/lib/reply-action.test.ts"
+        "web/src/lib/reply-action.test.ts",
+        "web/src/lib/harness/pi/panel.test.ts"
       ],
       "live": false,
       "verified": {
-        "version": "1.1.0",
-        "date": "2026-10-12",
+        "version": "1.1.0 / OmO 5.1.30",
+        "date": "2026-10-13",
         "how": "upstream captured ANSI replay; recognition only, no local live probe",
         "evidence": "web/src/lib/harness/pi/ASK_NOTES.md"
       },
@@ -182,6 +245,38 @@
           "agent": "pi",
           "expect": {
             "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-plain-idle.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-plain-draft.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-panel-idle.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--omo-v5130-panel-draft.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
           }
         }
       ]
@@ -223,12 +318,60 @@
       "id": "codex.statusline-fields",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/chrome.ts", "web/src/components/statusline-row.tsx", "web/src/lib/harness/codex/markers.ts"],
-      "tests": ["web/src/lib/harness/codex/statusline-chrome.test.ts", "web/src/lib/harness/codex.test.ts", "web/src/lib/reply-action.test.ts"],
-      "fixtures": [{"path": "web/src/fixtures/panes/codex--v0162-plan-queue-draft.txt", "agent": "codex", "expect": {"block": "raw", "statusLinesMin": 1}}, {"path": "web/src/fixtures/panes/codex--v0154-statusline-single-idle.txt", "agent": "codex", "expect": {"block": "raw", "statusLinesMin": 1}}, {"path": "web/src/fixtures/panes/codex--v0158-goal-notice.txt", "agent": "codex", "expect": {"block": "raw", "statusLinesMin": 1}}],
+      "sources": [
+        "web/src/lib/harness/codex/chrome.ts",
+        "web/src/components/statusline-row.tsx",
+        "web/src/lib/harness/codex/markers.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/statusline-chrome.test.ts",
+        "web/src/lib/harness/codex.test.ts",
+        "web/src/lib/reply-action.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0162-plan-queue-draft.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0154-statusline-single-idle.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0158-goal-notice.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0159-task-title.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        }
+      ],
       "live": true,
-      "liveChecks": ["observe"],
-      "verified": { "version": "0.154.0", "date": "2026-09-13", "how": "captured ANSI replay; extraction only", "evidence": "web/src/fixtures/panes/README.md#codex-0154-model-and-statusline-pickers" }
+      "liveChecks": [
+        "observe"
+      ],
+      "verified": {
+        "version": "0.159.3",
+        "date": "2026-10-13",
+        "how": "upstream captured ANSI replay; recognition only, no local live probe",
+        "evidence": "web/src/fixtures/panes/codex--v0159-task-title.txt"
+      }
     },
     {
       "id": "codex.statusline-picker",
@@ -374,14 +517,56 @@
       "id": "claude.resume",
       "agent": "claude",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/claude/resume.ts", "web/src/lib/harness/claude/index.ts"],
-      "tests": ["web/src/lib/harness/claude/resume.test.ts"],
+      "sources": [
+        "web/src/lib/harness/claude/resume.ts",
+        "web/src/lib/harness/claude/index.ts",
+        "web/src/lib/harness/claude/closing-rule.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/resume.test.ts",
+        "web/src/lib/harness/claude/closing-rule.test.ts"
+      ],
       "fixtures": [
-        {"path": "web/src/fixtures/panes/claude--menu-resume-picker--w120-first.txt", "agent": "claude", "expect": {"block": "prompt-select", "minOptions": 4}},
-        {"path": "web/src/fixtures/panes/claude-lab--menu-resume-picker-v2291--w83.txt", "agent": "claude", "expect": {"block": "prompt-select", "minOptions": 4}}
+        {
+          "path": "web/src/fixtures/panes/claude--menu-resume-picker--w120-first.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 4
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--menu-resume-picker-v2291--w83.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 4
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--menu-resume-picker-named-v2296--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--menu-resume-picker-named-v2296--w40.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 1
+          }
+        }
       ],
       "live": true,
-      "verified": {"version": "2.1.291", "date": "2026-10-07", "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction", "evidence": "web/src/fixtures/panes/claude-lab--menu-resume-picker-v2291--w83.txt"}
+      "verified": {
+        "version": "2.1.296",
+        "date": "2026-10-13",
+        "how": "upstream captured ANSI replay; recognition only, no local live probe",
+        "evidence": "web/src/fixtures/panes/README.md"
+      }
     },
     {
       "id": "claude.model",
@@ -446,18 +631,57 @@
       "origin": "downstream",
       "sources": [
         "web/src/lib/harness/claude/settings.ts",
-        "web/src/lib/harness/index.ts"
+        "web/src/lib/harness/index.ts",
+        "web/src/lib/harness/claude/closing-rule.ts"
       ],
       "tests": [
         "web/src/lib/harness/claude/menu.test.ts",
-        "web/e2e/claude-settings.spec.ts"
+        "web/e2e/claude-settings.spec.ts",
+        "web/src/lib/harness/claude/closing-rule.test.ts"
       ],
       "fixtures": [
-        {"path": "web/src/fixtures/panes/claude--v21284-settings-config.txt", "agent": "claude", "expect": {"block": "unread-dialog", "viewportTitle": "Config", "viewportNonEmpty": true}},
-        {"path": "web/src/fixtures/panes/claude-lab--menu-config-panel-v2291--w82.txt", "agent": "claude", "expect": {"block": "unread-dialog"}}
+        {
+          "path": "web/src/fixtures/panes/claude--v21284-settings-config.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "unread-dialog",
+            "viewportTitle": "Config",
+            "viewportNonEmpty": true
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--menu-config-panel-v2291--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--menu-config-panel-named-v2296--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "unread-dialog",
+            "viewportTitle": "Config",
+            "viewportNonEmpty": true
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--menu-config-panel-v2296--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "unread-dialog",
+            "viewportTitle": "Config",
+            "viewportNonEmpty": true
+          }
+        }
       ],
       "live": true,
-      "verified": {"version": "2.1.291", "date": "2026-10-07", "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction", "evidence": "web/src/fixtures/panes/claude-lab--menu-config-panel-v2291--w82.txt"}
+      "verified": {
+        "version": "2.1.296",
+        "date": "2026-10-13",
+        "how": "upstream captured ANSI replay; recognition only, no local live probe",
+        "evidence": "web/src/fixtures/panes/README.md"
+      }
     },
     {
       "id": "claude.settings.usage",
@@ -535,18 +759,100 @@
       "id": "claude.ask",
       "agent": "claude",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/claude/prompt-select.ts", "web/src/lib/harness/claude/wizard.ts", "web/src/lib/harness/claude/multi-select.ts", "web/src/lib/harness/claude/preview-select.ts", "web/src/lib/harness/claude/index.ts"],
-      "tests": ["web/src/lib/harness/claude/prompt-select.test.ts", "web/src/lib/harness/claude/wizard.test.ts", "web/src/lib/harness/claude/multi-select.test.ts", "web/src/lib/harness/claude/preview-select.test.ts"],
+      "sources": [
+        "web/src/lib/harness/claude/prompt-select.ts",
+        "web/src/lib/harness/claude/wizard.ts",
+        "web/src/lib/harness/claude/multi-select.ts",
+        "web/src/lib/harness/claude/preview-select.ts",
+        "web/src/lib/harness/claude/index.ts",
+        "web/src/lib/harness/claude/closing-rule.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/prompt-select.test.ts",
+        "web/src/lib/harness/claude/wizard.test.ts",
+        "web/src/lib/harness/claude/multi-select.test.ts",
+        "web/src/lib/harness/claude/preview-select.test.ts",
+        "web/src/lib/harness/claude/closing-rule.test.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/claude--select-menu.txt", "agent": "claude", "expect": { "block": "prompt-select", "minOptions": 2 } },
-        { "path": "web/src/fixtures/panes/claude--wizard-q1.txt", "agent": "claude", "expect": { "block": "wizard" } },
-        { "path": "web/src/fixtures/panes/claude--select-multiselect-single.txt", "agent": "claude", "expect": { "block": "multi-select" } },
-        { "path": "web/src/fixtures/panes/claude--select-preview.txt", "agent": "claude", "expect": { "block": "preview-select" } },
-        { "path": "web/src/fixtures/panes/claude--v21287-select-cjk-question.txt", "agent": "claude", "expect": { "block": "prompt-select", "minOptions": 3 } }
+        {
+          "path": "web/src/fixtures/panes/claude--select-menu.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--wizard-q1.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "wizard"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--select-multiselect-single.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "multi-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--select-preview.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "preview-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v21287-select-cjk-question.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--ask-single-named-v2296--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--ask-multi-named-v2296--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "multi-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--ask-wizard-named-v2296--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "wizard"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--ask-wizard-review-named-v2296--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "wizard"
+          }
+        }
       ],
       "live": true,
-      "liveChecks": ["open", "answer"],
-      "verified": null
+      "liveChecks": [
+        "open",
+        "answer"
+      ],
+      "verified": {
+        "version": "2.1.296",
+        "date": "2026-10-13",
+        "how": "upstream captured ANSI replay; recognition only, no local live probe",
+        "evidence": "web/src/fixtures/panes/README.md"
+      }
     },
     {
       "id": "claude.status-hints",
@@ -784,18 +1090,92 @@
       "id": "omp.composer-hints",
       "agent": "omp",
       "origin": "upstream",
-      "sources": ["web/src/lib/harness/omp/markers.ts", "web/src/lib/harness/omp/chrome.ts", "web/src/lib/harness/omp/rule.ts", "web/src/lib/harness/omp/pi-shape.ts"],
-      "tests": ["web/src/lib/harness/omp.test.ts", "web/src/lib/harness/omp/chrome.test.ts"],
+      "sources": [
+        "web/src/lib/harness/omp/markers.ts",
+        "web/src/lib/harness/omp/chrome.ts",
+        "web/src/lib/harness/omp/rule.ts",
+        "web/src/lib/harness/omp/pi-shape.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/omp.test.ts",
+        "web/src/lib/harness/omp/chrome.test.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/omp--v18-8-slash-palette.txt", "agent": "omp", "expect": { "block": "raw" } },
-        { "path": "web/src/fixtures/panes/omp--v18-8-slash-palette-w48.txt", "agent": "omp", "expect": { "block": "raw" } },
-        { "path": "web/src/fixtures/panes/omp--fresh-effort-hint.txt", "agent": "omp", "expect": { "block": "raw", "statusLinesMin": 1 } },
-        { "path": "web/src/fixtures/panes/omp--v18-rule-effort-hint.txt", "agent": "omp", "expect": { "block": "raw", "statusLinesMin": 1 } },
-        { "path": "web/src/fixtures/panes/omp--v18-pi-effort-hint.txt", "agent": "omp", "expect": { "block": "raw", "statusLinesMin": 1 } },
-        { "path": "web/src/fixtures/panes/omp--fresh-agents-hint.txt", "agent": "omp", "expect": { "block": "raw", "statusLinesMin": 1 } }
+        {
+          "path": "web/src/fixtures/panes/omp--v18-8-slash-palette.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-8-slash-palette-w48.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--fresh-effort-hint.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-rule-effort-hint.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-pi-effort-hint.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--fresh-agents-hint.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-10-draft-two-lines.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-10-draft-blank-line.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-10-draft-indented.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw"
+          }
+        }
       ],
       "live": false,
-      "verified": { "version": "18.4.10", "date": "2026-10-02", "how": "upstream 18.4.4 and 18.4.10 captured ANSI replay; empty-editor hint recognition only", "evidence": "web/src/fixtures/panes/README.md#omp-empty-editor-key-hint-captured-2026-09-30-oh-my-pi-omp-v1844-herdr-092-throwaway-herdr-panes" }
+      "verified": {
+        "version": "18.10.0",
+        "date": "2026-10-13",
+        "how": "upstream captured ANSI replay; recognition only, no local live probe",
+        "evidence": "web/src/fixtures/panes/README.md"
+      }
     },
     {
       "id": "opencode.permission",
