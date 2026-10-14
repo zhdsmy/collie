@@ -110,11 +110,10 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
   })).toBe(true);
   await warning.click();
   await expect(page.getByText(/Warnings · 1 of 1/)).toBeVisible();
-  const type = page.getByRole("button", { name: "Type into terminal" });
-  await type.click();
-  await page.getByTestId("direct-keyboard-accessory").getByRole("button", { name: "Escape" }).click();
+  const card = page.getByRole("group", { name: "Collie did not recognize this interface" });
+  await card.getByRole("button", { name: "Esc", exact: true }).click();
+  await card.getByRole("button", { name: "Tap again to dismiss", exact: true }).click();
   await expect(page.getByText(/Warnings · 1 of 1/)).toHaveCount(0);
-  await type.click();
   expect(keys).toEqual([["f2"], ["Escape"]]);
 
   const input = page.getByRole("textbox").first();

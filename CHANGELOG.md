@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.21.2+collie.1] - 2026-10-14
+
 ### Fixed
 
-- **Follow upstream photo sending and launcher fixes.** Adopt v1.21.2 Claude multi-image paste verification, collision-free attachment markers, faster crew topology refresh, folder-based workspace names and the stationary backed header status mark; retain downstream cards and controls. See [the integration report](docs/upstream-v1.21.2.md).
+- **Follow upstream photo sending and launcher fixes.** Adopt v1.21.2 Claude multi-image paste verification, collision-free attachment markers, faster crew topology refresh, folder-based workspace names and the stationary backed header status mark; retain downstream cards and controls. See [the integration report](docs/upstream-v1.21.2.md). ([c6015f72](https://github.com/zhdsmy/collie/commit/c6015f72))
 
 ## [1.21.1+collie.1] - 2026-10-14
 
