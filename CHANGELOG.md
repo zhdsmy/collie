@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.21.1+collie.1] - 2026-10-14
+
 ### Changed
 
-- **Follow upstream update reliability and release notes fixes.** Adopt v1.21.1 updater guards, dismissible crew failures, in-app release notes and the smaller session alert; retain downstream cards and compact controls. See [the integration report](docs/upstream-v1.21.1.md).
+- **Follow upstream update reliability and release notes fixes.** Adopt v1.21.1 updater guards, dismissible crew failures, in-app release notes and the smaller session alert; retain downstream cards and compact controls. See [the integration report](docs/upstream-v1.21.1.md). ([6c32a073](https://github.com/zhdsmy/collie/commit/6c32a073))
 
 ## [1.21.0+collie.1] - 2026-10-13
 
