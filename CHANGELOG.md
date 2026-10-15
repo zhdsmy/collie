@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.21.3+collie.1] - 2026-10-15
+
 ### Fixed
 
-- **Follow upstream Claude task-list dialogs and pi input guards.** Adopt v1.21.3 task-list-aware question cards and prompt binding, padded pi editors and picker send guards, loopback peer diagnostics and the Bun 1.4.0 advisory; retain downstream cards and controls. See [the integration report](docs/upstream-v1.21.3.md).
+- **Follow upstream Claude task-list dialogs and pi input guards.** Adopt v1.21.3 task-list-aware question cards and prompt binding, padded pi editors and picker send guards, loopback peer diagnostics and the Bun 1.4.0 advisory; retain downstream cards and controls. See [the integration report](docs/upstream-v1.21.3.md). ([04c287cd](https://github.com/zhdsmy/collie/commit/04c287cd))
 
 ## [1.21.2+collie.1] - 2026-10-14
 
