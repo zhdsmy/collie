@@ -131,10 +131,10 @@
       ],
       "live": false,
       "verified": {
-        "version": "1.1.0 / OmO 5.1.30",
-        "date": "2026-10-13",
-        "how": "upstream captured ANSI replay; recognition only, no local live probe",
-        "evidence": "web/src/lib/harness/pi/ASK_NOTES.md"
+        "version": "1.2.0 / OmO 5.1.30",
+        "date": "2026-10-15",
+        "how": "upstream captured ANSI replay; recognition only, pi not installed locally",
+        "evidence": "web/src/fixtures/panes/README.md"
       },
       "fixtures": [
         {
@@ -199,6 +199,20 @@
           "expect": {
             "block": "unread-dialog"
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v120-settings-padded2.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v120-scoped-models-padded2.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "unread-dialog"
+          }
         }
       ]
     },
@@ -220,10 +234,10 @@
       ],
       "live": false,
       "verified": {
-        "version": "1.1.0 / OmO 5.1.30",
-        "date": "2026-10-13",
-        "how": "upstream captured ANSI replay; recognition only, no local live probe",
-        "evidence": "web/src/lib/harness/pi/ASK_NOTES.md"
+        "version": "1.2.0 / OmO 5.1.30",
+        "date": "2026-10-15",
+        "how": "upstream captured ANSI replay; draft extraction checked by composer tests, pi not installed locally",
+        "evidence": "web/src/fixtures/panes/README.md"
       },
       "fixtures": [
         {
@@ -275,6 +289,46 @@
         },
         {
           "path": "web/src/fixtures/panes/pi--omo-v5130-panel-draft.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v120-idle-padded.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v120-draft-padded.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v120-draft-padded-multiline.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v120-draft-unpadded.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v120-slash-palette-padded.txt",
           "agent": "pi",
           "expect": {
             "block": "raw",
@@ -768,7 +822,10 @@
         "web/src/lib/harness/claude/preview-select.ts",
         "web/src/lib/harness/claude/index.ts",
         "web/src/lib/harness/claude/closing-rule.ts",
-        "web/src/lib/harness/claude/markers.ts"
+        "web/src/lib/harness/claude/markers.ts",
+        "web/src/lib/harness/claude/task-checklist.ts",
+        "web/src/lib/task-checklist.ts",
+        "bridge/prompt-binding.ts"
       ],
       "tests": [
         "web/src/lib/harness/claude/prompt-select.test.ts",
@@ -776,7 +833,10 @@
         "web/src/lib/harness/claude/multi-select.test.ts",
         "web/src/lib/harness/claude/preview-select.test.ts",
         "web/src/lib/harness/claude/closing-rule.test.ts",
-        "web/src/lib/harness/claude/markers.test.ts"
+        "web/src/lib/harness/claude/markers.test.ts",
+        "web/src/lib/harness/claude/task-checklist.test.ts",
+        "web/src/lib/task-checklist.test.ts",
+        "bridge/prompt-binding.test.ts"
       ],
       "fixtures": [
         {
@@ -888,6 +948,27 @@
           "expect": {
             "block": "wizard"
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2299-ask-under-task-list.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2299-ask-under-long-task-list.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2299-wizard-under-task-list.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "wizard"
+          }
         }
       ],
       "live": true,
@@ -896,9 +977,9 @@
         "answer"
       ],
       "verified": {
-        "version": "2.1.296",
-        "date": "2026-10-13",
-        "how": "upstream captured ANSI replay; recognition only, no local live probe",
+        "version": "2.1.299",
+        "date": "2026-10-15",
+        "how": "upstream captured ANSI replay; recognition and binding only, no local task-list live probe",
         "evidence": "web/src/fixtures/panes/README.md"
       }
     },
