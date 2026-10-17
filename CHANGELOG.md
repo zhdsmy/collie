@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.3+collie.3] - 2026-10-18
+
 ### Changed
 
-- **Type restores the compact keyboard above the input.** One control opens live typing and the single-row keys; the phone draft and attachments return when typing stops. Keep offline, permission and pane-change protections.
+- **Type restores the compact keyboard above the input.** One control opens live typing and the single-row keys; the phone draft and attachments return when typing stops. Keep offline, permission and pane-change protections. ([11fc4da7](https://github.com/zhdsmy/collie/commit/11fc4da7))
 
 ## [1.22.3+collie.2] - 2026-10-18
 
