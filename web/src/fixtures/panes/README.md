@@ -2077,6 +2077,7 @@ AGY renders a framed input box bounded by horizontal rules (`─`), with status 
 | `agy--ask-two-q1.txt` | agy 1.3.5, a two-question call: `Question 1/2: Which animal do you like?`, numbered options, `4. Write-in...`, footer `↑/↓ Navigate · → Next · enter Select · esc Skip`. Lifts with each option as its digit ALONE | `blocked` |
 | `agy--ask-two-q2.txt` | The same call after `2`: `Question 2/2: Which drink do you want?`, footer `↑/↓ Navigate · ← Back · enter Submit All · esc Skip`. Lifts the same way | `blocked` |
 | `agy--ask-multi.txt` | A checkbox question: `Question 1/1`, rows `1. [ ] apple` …, footer `↑/↓ Navigate · space Toggle · enter Submit · esc Skip`. Stays raw (no recipe here ticks with Space); the unread-dialog card offers Escape | `blocked` |
+| `agy--plan-approval-135.txt` | agy 1.3.5, plan approval (`Question 1/1: Approve plan execution?`) with `1 artifact · /artifact to review` above the question, options 1..3 (`Execute plan` / `Request changes` / `Cancel`) + `4. Write-in...`, footer `↑/↓ Navigate · enter Select · esc Skip · ctrl+r Review`. Lifts with each option as its digit ALONE | `blocked` |
 
 The three `agy--slash-*` captures of 2026-10-15 are visible-screen reads of agy 1.3.5 in a throwaway
 Herdr session (`herdr pane read --source visible --format ansi`). The account email became
@@ -2093,12 +2094,14 @@ thought, which quoted a local instruction file, was deleted. Measured at the tim
 a first Escape cleared a typed search and a second closed the picker, and Enter resumed the
 highlighted conversation (a canary run).
 
-The three `agy--ask-*` captures of 2026-10-15 are reads of agy 1.3.5 in a throwaway Herdr session, with the
-same email and path swaps; the earlier canary turns above the last question were cut, so each keeps the
-header and its own turn. Measured at the time: a digit alone answers. On a one-question call it
-submitted; on `1/2` it answered and moved to `2/2`; on `2/2` it submitted the set. The digit-then-Enter
-recipe the reader used before answered `2/2` with its highlighted row, so `1/2` lifts with the digit
-alone now. The plan-approval dialog was not re-measured on 1.3.5; the code sends the digit alone for every family, so a build where a digit only moves the pointer would not submit it (measured on 1.3.5 only).
+The three `agy--ask-*` captures and `agy--plan-approval-135.txt` of 2026-10-15 are reads of agy 1.3.5 in a
+throwaway Herdr session, with the same email and path swaps; in the `agy--ask-*` files the earlier canary
+turns above the last question were cut, so each keeps the header and its own turn (`agy--plan-approval-135.txt`
+was the session's first turn, so only the shell launch line above the header was cut). Measured at the time:
+a digit alone answers. On a one-question call it submitted; on `1/2` it answered and moved to `2/2`; on `2/2`
+it submitted the set; and on `agy--plan-approval-135.txt` pressing `3` alone submitted `Cancel`. The
+digit-then-Enter recipe the reader used before answered `2/2` with its highlighted row, including when a
+two-question call carried the plan's `ctrl+r Review` footer, so every family lifts with the digit alone now.
 
 
 - **A free-text row's LABEL is not a stable marker**: it is the placeholder only while the box is
@@ -2521,3 +2524,17 @@ and uses `⌃` control-key labels. Session titles are replaced with `Saved sessi
 cell widths and ANSI runs; layout, dates, pointer and footer are unchanged. No session was resumed.
 The canary was removed. These captures certify only Resume recognition and navigation;
 see `web/src/lib/harness/codex/RESUME_NOTES.md` for the restored card and test boundaries.
+
+## A list in the turn's answer, and the agents panel (captured 2026-10-17, Claude Code 2.1.302, Herdr, lane 8788)
+
+Read through `GET /api/pane/:id` (the visible screen, 119 columns by 40 rows) from a throwaway pane in
+`/tmp/collie-queue-test`, byte for byte. The statusline is the operator's own (usage gauges, then model,
+folder and branch). The captures belong to the 2026-10-17 field case: a send during a turn whose answer
+holds a numbered list, a menu and a `(y/n)` line was refused `not_free`, or typed and left in the box.
+
+| Fixture | State / what's in it |
+|---|---|
+| `claude--v2302-working-list-echo--w119.txt` | The answer streams: the prompt echo, then a numbered list growing row by row above an empty box, and the last turn's `Confirm (y/n)` at the top. Claude Code 2.1.302 draws no spinner while the answer streams, so the screen alone reads `idle`. Labelled `running` |
+| `claude--v2302-turn-ending-stop-hooks--w119.txt` | The last read of a turn: the whole answer drawn, a numbered list, the menu `41. Apple`, `42. Pear`, `43. Quit` and `Confirm (y/n)` above `✢ Simmering… (running Stop hooks… 0/2 · 5s · ↓ 621 tokens)`. Labelled `running`; the screen alone reads free, since the words before the timer keep the running sign off (listed in `knownMismatches`) |
+| `claude--v2302-turn-ended-yn--w119.txt` | The next read, 112 ms later: the same rows with `✻ Churned for 5s · done 12:17 PM` in the spinner's place. The turn is over and the `(y/n)` line is the agent's text, not a dialog: the box is free. Reads `idle`. The pair is the round-3 field case: a send typed between the two reads must still be sent |
+| `claude--v2302-working-agents-panel--w119.txt` | A running turn (`✶ Noodling… (7s · ↓ 592 tokens)`) after two background agents started, with the last turns' list, menu and `Confirm (y/n)` above, and the agents panel (`● main`, two `◯ general-purpose` rows with timers) under the box. Reads `running` |
