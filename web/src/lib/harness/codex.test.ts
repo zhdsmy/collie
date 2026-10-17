@@ -119,6 +119,7 @@ const ASYNC_QUESTIONS = [
 ];
 const ASYNC_PREVIEWS = ["codex--async-qa-collapsed.txt", "codex--async-qa-collapsed-single.txt"];
 const PINNED = [
+  "codex--v0163-resume-shell.txt", "codex--v0163-resume-shell-moved.txt",
   "codex--v0158-resume.txt",
   ...ASYNC_QUESTIONS, ...ASYNC_PREVIEWS, "codex--async-qa-completed.txt",
   "codex--approval-exec.txt",
@@ -197,6 +198,7 @@ const PINNED = [
 
 // Dialog captures include both option focus and the native notes composer.
 const DIALOG = [
+  "codex--v0163-resume-shell.txt", "codex--v0163-resume-shell-moved.txt",
   ...REVIEWS,
   ...ASYNC_QUESTIONS,
   ...PICKERS,
@@ -219,6 +221,7 @@ const DIALOG = [
 ];
 
 const ownFixtures = [
+  "codex--v0163-resume-shell.txt", "codex--v0163-resume-shell-moved.txt",
   "codex--v0158-resume.txt",
   "codex--resume-picker.txt", "codex--resume-picker-moved.txt", "codex--v0162-resume-search.txt", "codex--v0162-picker-model.txt",
   ...PICKERS,
@@ -1944,30 +1947,21 @@ describe("Codex mobile display cleanup", () => {
   });
 });
 
-describe("codex: the /resume session picker lifts as a menu (0.159)", () => {
-  const menuOf = (name: string) => {
-    const block = codexAdapter.buildBlocks(fixtureLines(name)).find((b) => b.kind === "menu");
-    return block?.kind === "menu" ? block.menu : null;
+describe("codex: Resume uses the searchable session card", () => {
+  const pickerOf = (name: string) => {
+    const block = codexAdapter.buildBlocks(fixtureLines(name)).find((b) => b.kind === "picker");
+    return block?.kind === "picker" ? block.picker : null;
   };
 
-  it("offers Up/Down, Resume and Exit, and nothing that archives or quits", () => {
-    const menu = menuOf("codex--resume-picker.txt");
-    expect(menu?.title).toBe("Resume a previous session");
-    expect(menu?.actions.map((a) => [a.label, a.keys.join("+")])).toEqual([
-      ["Resume", "Enter"],
-      ["Exit", "Escape"],
-    ]);
-    expect(menu?.nav.upDown).toBe(true);
-    expect(codexAdapter.composerReady!(fixtureLines("codex--resume-picker.txt"))).toBe(false);
-  });
-
-  it("lifts the same picker on 0.162.1 with the search field open", () => {
-    const menu = menuOf("codex--v0162-resume-search.txt");
-    expect(menu?.title).toBe("Resume a previous session");
-    expect(menu?.actions.map((a) => a.label)).toEqual(["Resume", "Exit"]);
+  it.each(["codex--resume-picker.txt", "codex--v0162-resume-search.txt", "codex--v0163-resume-shell.txt"])("offers tappable sessions and blocks ordinary replies for %s", (name) => {
+    const picker = pickerOf(name);
+    expect(picker?.sessionAction).toBe("resume");
+    expect(picker?.options.length).toBeGreaterThan(0);
+    expect(picker?.query).not.toBeNull();
+    expect(codexAdapter.composerReady!(fixtureLines(name))).toBe(false);
   });
 
   it("changes its signature when the highlight moves, so a stale tap is refused", () => {
-    expect(menuOf("codex--resume-picker-moved.txt")?.signature).not.toBe(menuOf("codex--resume-picker.txt")?.signature);
+    expect(pickerOf("codex--resume-picker-moved.txt")?.signature).not.toBe(pickerOf("codex--resume-picker.txt")?.signature);
   });
 });

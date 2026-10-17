@@ -2503,3 +2503,12 @@ here, not in `panes/`, so the harness readers' corpus lists stay as they are.
 | `agy--statusline-four-rows.txt` | `agy--done.txt` | The `? for shortcuts` row became the four rows of a custom `statusLine` command (`host-1 [Flash] user@example.com`, `C 91%`, `~/project`, `main`), the screen of issue 374. 1.22.0 searched three rows under the box for its bottom rule and found no box. Reads idle and free |
 | `pi--v0871-idle-windows-drive.txt` | `pi--v0871-idle.txt` | The folder row became `C:\work\pi-cap-cwd`, as pi prints a folder outside the home folder on Windows. 1.22.0 did not take a row that starts with a drive letter as pi's status row and found no box. Reads idle and free |
 | `omp--done-yn-question.txt` | `omp--done.txt` | The last transcript row became `Shall I push the branch now? (y/n)`, flush on the open box. The `(y/n)` reads as a single-key prompt and hides the box, so the screen is never free. 1.22.0 also called the whole box `torn` and refused every send; it now takes the confirm path, as pi and Muse do |
+
+## Codex 0.163.0 shell Resume (captured 2026-10-17)
+
+`codex--v0163-resume-shell.txt` and `codex--v0163-resume-shell-moved.txt` are before/after
+one native Down in an isolated `codex resume` selector. Its footer advertises `esc start new`
+and uses `⌃` control-key labels. Session titles are replaced with `Saved session NN`, preserving
+cell widths and ANSI runs; layout, dates, pointer and footer are unchanged. No session was resumed.
+The canary was removed. These captures certify only Resume recognition and navigation;
+see `web/src/lib/harness/codex/RESUME_NOTES.md` for the restored card and test boundaries.

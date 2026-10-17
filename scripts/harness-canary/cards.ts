@@ -28,7 +28,7 @@ interface CardSpec {
 const CODEX: readonly CardSpec[] = [
   { id: "codex.model", command: "/model", native: /^\s*Select Model\b/m, kind: "picker" },
   { id: "codex.statusline", command: "/statusline", native: /^\s*Configure Status Line\s*$/m, kind: "picker", title: "Configure Status Line" },
-  { id: "codex.resume", command: "/resume", native: /^\s*Resume a previous session\s*$/m, kind: "menu", title: "Resume a previous session", navigateKeys: ["Down"], nav: "upDown", seeded: true },
+  { id: "codex.resume", command: "/resume", native: /^\s*Resume a previous session\s*$/m, kind: "picker", sessionAction: "resume", seeded: true },
   { id: "codex.agents", command: "/agents", native: /^\s*Agent command center\s+Group:/m, kind: "picker", identity: "agents:command-center", seeded: true },
 ];
 const CLAUDE: readonly CardSpec[] = [

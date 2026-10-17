@@ -353,33 +353,41 @@
     {
       "id": "codex.resume",
       "agent": "codex",
-      "origin": "upstream",
+      "origin": "downstream",
       "sources": [
-        "web/src/lib/harness/session-picker.ts",
+        "web/src/lib/harness/codex/resume.ts",
         "web/src/lib/harness/codex/index.ts"
       ],
       "tests": [
-        "web/src/lib/harness/codex.test.ts",
+        "web/src/lib/harness/codex/resume.test.ts",
+        "web/src/lib/picker-action.test.ts",
         "web/e2e/codex-resume.spec.ts"
       ],
       "fixtures": [
         {
-          "path": "web/src/fixtures/panes/codex--resume-picker.txt",
+          "path": "web/src/fixtures/panes/codex--v0163-resume-shell.txt",
           "agent": "codex",
           "expect": {
-            "block": "menu",
-            "title": "Resume a previous session"
+            "block": "picker",
+            "title": "Resume a previous session",
+            "minOptions": 2
           }
         }
       ],
-      "live": true
+      "live": true,
+      "verified": {
+        "version": "0.163.0",
+        "date": "2026-10-17",
+        "how": "isolated shell Resume capture and native Down readback; no session resumed",
+        "evidence": "web/src/lib/harness/codex/RESUME_NOTES.md"
+      }
     },
     {
       "id": "codex.fork",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/fork.ts", "web/src/lib/harness/codex/index.ts"],
-      "tests": ["web/src/lib/harness/codex/fork.test.ts"],
+      "sources": ["web/src/lib/harness/codex/resume.ts", "web/src/lib/harness/codex/index.ts"],
+      "tests": ["web/src/lib/harness/codex/resume.test.ts"],
       "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0158-fork.txt", "agent": "codex", "expect": { "block": "picker", "title": "Fork a previous session", "minOptions": 1 } }],
       "live": true,
       "verified": { "version": "0.158.0", "date": "2026-09-30", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/codex--v0158-fork.txt" }

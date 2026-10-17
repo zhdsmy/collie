@@ -298,7 +298,7 @@ function searchFooter(model: PickerModel): string {
   const escape = model.query ? /\besc (?:clear search|clear)(?=\s|$)/ : /\besc (?:start new|new|exit)(?=\s|$)/;
   const footer = model.footer.replace(escape, "esc");
   // Codex hides archive when the search has no results.
-  return (model.options.length ? footer.replace(/\s+ctrl\+a archive(?=\s|$)/, "") : footer)
+  return (model.options.length ? footer.replace(/\s+(?:ctrl\+|⌃)a archive(?=\s|$)/, "") : footer)
     .replace(/\s+/g, " ").trim();
 }
 

@@ -4395,6 +4395,16 @@
       "harness": "omp",
       "version": "unversioned",
       "state": "idle"
+    },
+    "codex--v0163-resume-shell.txt": {
+      "harness": "codex",
+      "version": "0.163.0",
+      "state": "dialog"
+    },
+    "codex--v0163-resume-shell-moved.txt": {
+      "harness": "codex",
+      "version": "0.163.0",
+      "state": "dialog"
     }
   },
   "knownMismatches": {

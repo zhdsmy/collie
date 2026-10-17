@@ -461,9 +461,9 @@ describe("submitPickerIntent", () => {
     expect(mockFetchPane).not.toHaveBeenCalled();
   });
 
-  it("accepts only the session search hint changes, including an empty result", async () => {
+  it.each(["ctrl+", "⌃"])("accepts only session search hint changes with %s keys, including an empty result", async (ctrl) => {
     const resume = (source: string) => {
-      const block = codexAdapter.buildBlocks(splitLines(parseAnsi(source)))
+      const block = codexAdapter.buildBlocks(splitLines(parseAnsi(source.replaceAll("ctrl+", ctrl))))
         .find((candidate) => candidate.kind === "picker");
       if (!block || block.kind !== "picker") throw new Error("missing resume picker");
       return block.picker;

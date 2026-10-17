@@ -1,10 +1,20 @@
-// Codex full-screen Fork picker. Resume uses the upstream shared session menu.
+// Codex's SAVED-SESSION picker — `/resume` inside a session, `codex resume`/`codex fork` from
+// a shell. Unlike the bottom-pane model picker (picker.ts), this one is a FULL-SCREEN view with its
+// own search field, a filter/status/sort toolbar, two row densities and a footer progress rule.
+// RESUME_NOTES.md records the captures and the verified key recipes; parsing here stays I/O-free.
+//
+// Nothing here synthesises a key: the card offers the Up/Down browse, Enter (resume/fork/restore) and
+// the search field the screen itself prints. `ctrl+a` (archive), `ctrl+t` (transcript), `ctrl+e`
+// (expand), `ctrl+o` (density) and the `tab` toolbar are deliberately not driven — an EXPANDED row
+// (the `⌄` marker) refuses the whole screen instead, so a half-understood detail block can never be
+// read as a row.
+
 import { lineText, type StyledLine } from "../../blocks";
 import type { PickerModel, PickerOption } from "../picker-model";
 import { lastNonBlankIndex, painted, rstrip } from "./markers";
 
 /** `SessionPickerAction::title()` — the two actions that draw this screen. */
-const TITLE = /^Fork a previous session$/;
+const TITLE = /^(?:Resume|Fork) a previous session$/;
 /** The search row, left-chromed by one column. Codex's own search keeps its text free of spaces. */
 const SEARCH = /^ (?:Type to search|Search: (\S*))/;
 const TOOLBAR = /^ Filter:\s+Cwd\s+All\s+Status:\s+Active\s+Archived\s+Sort:\s+Updated\s+Created$/;
@@ -20,7 +30,7 @@ const MORE = /^(?:↑ more|↓ more|↓ loading more)$/;
 const STATUS_LINE =
   /^(?:No sessions yet|No results for your search|Searching…|Loading sessions…|Loading older sessions…|Search scanned first \d+ sessions; more may exist)$/;
 /** `ctrl+o`'s label names the density you are NOT in — a cross-check on the geometry below. */
-const DENSITY_HINT = /ctrl\+o +(comfortable view|dense view|comfy|dense)\b/;
+const DENSITY_HINT = /(?:ctrl\+|⌃)o +(comfortable view|dense view|comfy|dense)\b/;
 
 /** `SESSION_META_DATE_WIDTH` — the fixed date cell both densities share. */
 const DATE_WIDTH = 12;
@@ -31,7 +41,7 @@ const MAX_REGION_LINES = 200;
 /** The footer is a rule plus its hints; anything else between them is not this view. */
 const MAX_FOOTER_LINES = 3;
 
-export interface ForkRegion {
+export interface ResumeRegion {
   startLine: number;
   model: PickerModel;
 }
@@ -126,7 +136,7 @@ function readRows(
 }
 
 /** The full-screen session picker, or null when this buffer is not that screen. */
-export function detectForkRegion(lines: StyledLine[]): ForkRegion | null {
+export function detectResumeRegion(lines: StyledLine[]): ResumeRegion | null {
   const texts = lines.map((line) => rstrip(lineText(line)));
   const tail = lastNonBlankIndex(texts);
   if (tail < 0) return null;
@@ -144,9 +154,10 @@ export function detectForkRegion(lines: StyledLine[]): ForkRegion | null {
 
   const searchIndex = start + 4;
   const toolbar = texts[start + 2] ?? "";
+  const fork = texts[start]!.trim().startsWith("Fork");
   if (
     searchIndex + 1 > tail || texts[start + 1]?.trim() !== "" ||
-    !(TOOLBAR.test(toolbar) || FORK_TOOLBAR.test(toolbar)) || texts[start + 3]?.trim() !== "" ||
+    !(TOOLBAR.test(toolbar) || (fork && FORK_TOOLBAR.test(toolbar))) || texts[start + 3]?.trim() !== "" ||
     texts[searchIndex + 1]?.trim() !== ""
   ) {
     return null;
@@ -206,8 +217,8 @@ export function detectForkRegion(lines: StyledLine[]): ForkRegion | null {
     startLine: start,
     model: {
       kind: "single",
-      identity: `fork:${title}`,
-      sessionAction: "fork",
+      identity: `${fork ? "fork" : "resume"}:${title}`,
+      sessionAction: title.startsWith("Fork") ? "fork" : "resume",
       title,
       description: [],
       options: rows.options,

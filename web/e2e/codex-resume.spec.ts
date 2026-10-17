@@ -6,12 +6,12 @@ import { en } from "../src/lib/i18n/messages/en";
 import { zh } from "../src/lib/i18n/messages/zh";
 
 const frame = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}.txt`, import.meta.url), "utf8");
-const initial = frame("codex--resume-picker");
-const moved = frame("codex--resume-picker-moved");
+const initial = frame("codex--v0163-resume-shell");
+const moved = frame("codex--v0163-resume-shell-moved");
 test.use({ serviceWorkers: "block" });
 
 for (const [locale, theme, action, finalKey] of [["zh", "light", "Resume", "Enter"], ["en", "dark", "Exit", "Escape"]] as const) {
-  test(`Shared Resume menu: 320px ${locale} ${theme} ${action}`, async ({ page }, testInfo) => {
+  test(`Codex Resume list: 320px ${locale} ${theme} ${action}`, async ({ page }, testInfo) => {
     const messages = locale === "zh" ? zh : en;
     let text = initial;
     const keys: string[][] = [];
@@ -39,14 +39,19 @@ for (const [locale, theme, action, finalKey] of [["zh", "light", "Resume", "Ente
     });
 
     await page.goto("/pane/w1:p1");
-    const panel = page.getByRole("group", { name: "Resume a previous session", exact: true });
+    const panel = page.getByRole("group", { name: messages["dialog.sessions.title"], exact: true });
     await expect(panel).toBeVisible();
-    await expect(panel.getByRole("button", { name: messages["dialog.menu.moveUp"], exact: true })).toBeVisible();
+    await expect(panel.getByRole("searchbox", { name: messages["dialog.sessions.search"], exact: true })).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Saved session 01", exact: true })).toHaveAttribute("aria-current", "true");
     expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath(`resume-${locale}-${theme}.png`), fullPage: true });
-    await panel.getByRole("button", { name: messages["dialog.menu.moveDown"], exact: true }).click();
-    await expect.poll(() => keys.length).toBe(1);
-    await panel.getByRole("button", { name: action, exact: true }).click();
+    if (action === "Resume") {
+      await panel.getByRole("button", { name: "Saved session 02", exact: true }).click();
+    } else {
+      await panel.getByRole("button", { name: messages["dialog.picker.browseDown"], exact: true }).click();
+      await expect.poll(() => keys.length).toBe(1);
+      await panel.getByRole("button", { name: messages["dialog.cancel"], exact: true }).click();
+    }
     await expect(panel).toHaveCount(0);
     expect(keys).toEqual([["Down"], [finalKey]]);
   });
