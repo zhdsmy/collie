@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.3+collie.1] - 2026-10-17
+
 ### Fixed
 
-- **Follow upstream send queue and Crew reliability fixes.** Merge v1.22.2–v1.22.3 guarded sending, refusal receipts, background-agent stability and member capability refresh; retain Codex Resume cards, slash-command scroll guards, Hermes input recognition and compact controls. See [the integration report](docs/upstream-v1.22.3.md).
+- **Follow upstream send queue and Crew reliability fixes.** Merge v1.22.2–v1.22.3 guarded sending, refusal receipts, background-agent stability and member capability refresh; retain Codex Resume cards, slash-command scroll guards, Hermes input recognition and compact controls. See [the integration report](docs/upstream-v1.22.3.md). ([5e0b3d9c](https://github.com/zhdsmy/collie/commit/5e0b3d9c))
 
 ## [1.22.1+collie.4] - 2026-10-17
 
