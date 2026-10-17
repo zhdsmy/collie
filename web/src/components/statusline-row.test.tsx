@@ -449,7 +449,7 @@ it("renders the claude mode field as a tappable control and replaces the hint wi
   ))[0]!;
   const onClick = vi.fn();
   const { container } = render(<StatuslineRow agent="claude" row={row} claudeMode={{ busy: false, onClick }} />);
-  const button = within(container).getByRole("button", { name: "Claude mode: \u23f5\u23f5 bypass permissions on \u2014 tap to cycle" });
+  const button = within(container).getByRole("button", { name: "Claude mode: \u23f5\u23f5 bypass permissions on, tap to cycle" });
   expect(button).toBeEnabled();
   expect(container.textContent).not.toContain("shift+tab");
   expect(container.textContent).toContain("\u2190 1 agent");

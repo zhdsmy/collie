@@ -31,7 +31,7 @@ function caption(text: string): string {
 
 /** Image tokens carry no file identity: count every image and retain ordered textual evidence.
  * An image-only send additionally needs the trusted empty input state immediately before typing. */
-export function imageDraftCarriesSend(sent: string, draft: string, beforeDraft?: string | null): boolean {
+export function imageDraftCarriesSend(sent: string, draft: string, beforeDraft?: string | null, entire = false): boolean {
   const paths = [...sent.matchAll(UPLOAD_IMAGE)].map((match) => match[1]!);
   if (paths.length === 0) return false;
   if (beforeDraft?.trim()) return false;
@@ -52,5 +52,6 @@ export function imageDraftCarriesSend(sent: string, draft: string, beforeDraft?:
   if (!sentCaption) {
     return beforeDraft !== undefined && !beforeDraft?.trim() && !draftCaption;
   }
-  return draftCarriesSend(sentCaption, draftCaption, { requireTail: true });
+  return draftCarriesSend(sentCaption, draftCaption, { requireTail: true })
+    && (!entire || draftCarriesSend(draftCaption, sentCaption, { requireTail: true }));
 }

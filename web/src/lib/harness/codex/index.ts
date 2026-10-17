@@ -17,16 +17,20 @@ import {
   extractStatusLines,
   stripChrome,
 } from "./chrome";
+import { normalizeComposerParticles } from "./particles";
+import { imageDraftCarriesSend } from "./images";
 import { detectApprovalRegion } from "./approval";
 import { detectAskRegion } from "./ask";
 import { detectElicitationRegion } from "./elicitation";
 import { detectTrustRegion } from "./trust";
 import { detectPickerRegion } from "./picker";
-import { detectResumeRegion } from "./resume";
+import { detectForkRegion } from "./fork";
 import { detectAgentsRegion } from "./agents";
 import { detectPlanRegion } from "./plan";
 import { detectReviewRegion } from "./review";
 import { decorateCodexDisplay } from "./display";
+import { regionSignature, rstrip } from "./markers";
+import { detectSessionPicker } from "../session-picker";
 import { codexDraftCarriesSend } from "./paste";
 import { draftCarriesSend } from "../../draft-match";
 
@@ -35,7 +39,7 @@ function raw(lines: StyledLine[]): Block {
 }
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
-  const picker = detectPlanRegion(lines) ?? detectReviewRegion(lines) ?? detectResumeRegion(lines) ??
+  const picker = detectPlanRegion(lines) ?? detectReviewRegion(lines) ?? detectForkRegion(lines) ??
     detectAgentsRegion(lines) ?? detectPickerRegion(lines) ?? detectAskRegion(lines) ?? detectElicitationRegion(lines);
   if (picker) {
     const before = trimTrailingBlank(lines.slice(0, picker.startLine));
@@ -54,6 +58,17 @@ export function codexBuildBlocks(lines: StyledLine[]): Block[] {
       prompt: prompt.model,
       lines: lines.slice(prompt.startLine),
     });
+    return blocks;
+  }
+
+  // The highlighted session row is indented two columns: `  › 2d ago      Reply with OK`.
+  const texts = lines.map((l) => rstrip(lineText(l)));
+  const resume = detectSessionPicker(texts, /^\s*› \S/, (from, to) => regionSignature(lines, from, to + 1));
+  if (resume) {
+    const before = trimTrailingBlank(lines.slice(0, resume.startLine));
+    const blocks: Block[] = [];
+    if (before.length > 0) blocks.push(raw(before));
+    blocks.push({ kind: "menu", menu: resume.model, lines: lines.slice(resume.startLine) });
     return blocks;
   }
 
@@ -86,6 +101,8 @@ function escGoesBack(lines: StyledLine[]): boolean {
 }
 
 export const codexAdapter: HarnessAdapter = {
+  normalizeScreenRows: normalizeComposerParticles,
+  matchesCollapsedDraft: (sent, draft, before) => imageDraftCarriesSend(sent, draft, before, true),
   agent: "codex",
   buildBlocks: codexBuildBlocks,
   extractStatusLines,

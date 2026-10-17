@@ -175,7 +175,7 @@ describe("Codex native picker parsing", () => {
   });
 
   it("leaves every pre-existing agent fixture outside the picker grammar", () => {
-    const others = readdirSync(PANES).filter((name) => name.endsWith(".txt") && !/^codex--v015[48]-picker-/.test(name) && !/^codex--v0158-agents-overview-delete(?:-pointed)?\.txt$/.test(name));
+    const others = readdirSync(PANES).filter((name) => name.endsWith(".txt") && name !== "codex--v0162-picker-model.txt" && !/^codex--v015[48]-picker-/.test(name) && !/^codex--v0158-agents-overview-delete(?:-pointed)?\.txt$/.test(name));
     for (const file of others) expect(detectPickerRegion(parse(readFileSync(join(PANES, file), "utf8"))), file).toBeNull();
   });
 });

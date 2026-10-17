@@ -113,8 +113,10 @@ export const DEFAULT_UI_FONT_URL = "/fonts/ui-aldrich-1.002-latin.woff2";
  */
 export const UI_FONT_URLS = [
   "/fonts/ui-space-grotesk-2.000-latin.woff2",
-  DEFAULT_UI_FONT_URL,
+  "/fonts/ui-ibm-plex-sans-3.201-latin.woff2",
   "/fonts/ui-geist-1.800-latin.woff2",
+  "/fonts/ui-atkinson-hyperlegible-next-2.001-latin.woff2",
+  DEFAULT_UI_FONT_URL,
 ] as const;
 
 /**

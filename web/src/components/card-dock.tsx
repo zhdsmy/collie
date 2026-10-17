@@ -1,4 +1,4 @@
-import type { CSSProperties, MouseEvent, ReactNode } from "react";
+import type { CSSProperties, MouseEvent, ReactNode, Ref } from "react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -66,6 +66,9 @@ type PickerCardBlock = Extract<Block, { kind: "picker" }>;
 const SCREEN_ROWS = 40;
 
 export interface CardDockProps {
+  /** The dock's own box, so the composer's "Answer the dialog" word can scroll to it and focus its
+   *  first button (lib/dialog-focus.ts). */
+  ref?: Ref<HTMLDivElement>;
   /** The pane's blocks, as AgentChat built them for the mirror. Only the non-raw one is drawn here. */
   blocks: readonly Block[];
   /** Injected handler for a prompt-select tap (the race guard lives in AgentChat). Absent (or with a
@@ -124,6 +127,15 @@ function LivePickerBlock({ paneId, scope, stale, disabled, ...props }: PickerBlo
   const live = useLive(paneId ?? "", scope);
   const offline = stale === true || (paneId !== undefined && !live);
   return <PickerBlock {...props} disabled={disabled || offline} />;
+}
+
+/** The block kinds that dock a dialog card: each answers a dialog on the pane. The completion popup
+ *  docks a card too, but it answers nothing. */
+const DIALOG_CARD_KINDS: ReadonlySet<Block["kind"]> = new Set<Block["kind"]>(["prompt-select", "wizard", "preview-select", "multi-select", "menu", "unread-dialog", "picker"]);
+
+/** Whether the dock shows a dialog card for these blocks: the place "Answer the dialog" goes to. */
+export function hasDialogCard(blocks: CardDockProps["blocks"]): boolean {
+  return blocks.some((block) => DIALOG_CARD_KINDS.has(block.kind));
 }
 
 /** The one card on screen, as a React element, or null when every block is raw. */
@@ -264,6 +276,7 @@ export function CardDock(props: CardDockProps) {
     // `role="presentation"`, the mirror wrapper's own reading: a layout box whose click adds nothing
     // a keyboard user lacks (the textarea is the next tabbable thing).
     <div
+      ref={props.ref}
       role="presentation"
       data-slot="card-dock"
       className={cn(

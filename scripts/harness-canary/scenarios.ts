@@ -495,7 +495,7 @@ export class Driver {
   }
 
   /**
-   * Scenario 3: one real send through the client's `sendGuardedReply` and the bridge's `replyPane`.
+   * Scenario 3: one real send through the client's `sendText` and the bridge's Send Protocol.
    * `sent` is the client's verdict; the message must then show in the transcript (out of the input
    * box) and the agent must answer. `idleAfter` says whether the next send may go.
    *
@@ -506,8 +506,8 @@ export class Driver {
    */
   async send(m: CanaryMessage): Promise<{ result: CaseResult; idleAfter: boolean; submitted: boolean; answered: boolean }> {
     const outcome = await Promise.race([
-      this.ctx.readers.sendGuardedReply(this.paneId, m.text, this.agent),
-      Bun.sleep(SEND_TIMEOUT_MS).then(() => ({ status: "error" as const, error: "sendGuardedReply did not return in 60 s" })),
+      this.ctx.readers.sendText(this.paneId, m.text),
+      Bun.sleep(SEND_TIMEOUT_MS).then(() => ({ status: "error" as const, error: "sendText did not return in 60 s" })),
     ]);
     if (outcome.status !== "sent") {
       const s = await this.screen();

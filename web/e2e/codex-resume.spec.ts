@@ -1,20 +1,21 @@
+import { readFileSync } from "node:fs";
 import { test, expect } from "@playwright/test";
 import { installApiStub } from "./fixtures/api";
 import { fixtureSnapshot, paneTextWithDraft } from "../src/test/handlers";
 import { en } from "../src/lib/i18n/messages/en";
 import { zh } from "../src/lib/i18n/messages/zh";
-import { de } from "../src/lib/i18n/messages/de";
-import { codexResumeFrame } from "../src/test/codex-resume-frame";
 
-const dictionaries = { en, zh, de };
+const frame = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}.txt`, import.meta.url), "utf8");
+const initial = frame("codex--resume-picker");
+const moved = frame("codex--resume-picker-moved");
 test.use({ serviceWorkers: "block" });
 
-for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"], [320, "de", "dark"]] as const) {
-  test(`Saved sessions: ${width} ${locale} ${theme}`, async ({ page }, testInfo) => {
-    const messages = dictionaries[locale];
-    let state = "list";
+for (const [locale, theme, action, finalKey] of [["zh", "light", "Resume", "Enter"], ["en", "dark", "Exit", "Escape"]] as const) {
+  test(`Shared Resume menu: 320px ${locale} ${theme} ${action}`, async ({ page }, testInfo) => {
+    const messages = locale === "zh" ? zh : en;
+    let text = initial;
     const keys: string[][] = [];
-    await page.setViewportSize({ width, height: 844 });
+    await page.setViewportSize({ width: 320, height: 844 });
     await page.addInitScript((preferences) => {
       localStorage.setItem("collie:theme:v1", preferences.theme);
       localStorage.setItem("collie:locale:v1", preferences.locale);
@@ -26,96 +27,27 @@ for (const [width, locale, theme] of [[320, "zh", "light"], [390, "en", "dark"],
         ? Object.assign({}, agent, { agent: "codex", status: "idle", hasSession: true }) : agent),
     } }));
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
-      (route) => route.fulfill({ json: { paneId: "w1:p1", text: state === "done" ? paneTextWithDraft() : state === "list"
-        ? codexResumeFrame("exit").replace("Explain the fixture grammar", "Refactor the picker row formatter")
-        : codexResumeFrame("exit", "picker", true), truncated: false, revision: 1 } }));
-    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/reply", (route) => {
-      // SAFETY: this is the app's search payload; assert the native text and binding before advancing.
-      const body = route.request().postDataJSON() as { text: string; submit: boolean; expected_prompt?: string };
-      expect(body).toMatchObject({ text: "picker", submit: false });
-      expect(body.expected_prompt).toContain("Resume a previous session");
-      state = "search";
-      return route.fulfill({ json: { ok: true } });
-    });
+      (route) => route.fulfill({ json: { paneId: "w1:p1", text, truncated: false, revision: keys.length + 1 } }));
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
-      // SAFETY: resume only the pointed search result; no inferred digits or unbound keys are accepted.
+      // SAFETY: the app's own key request is checked before advancing this native-screen stub.
       const body = route.request().postDataJSON() as { keys: string[]; expected_prompt?: string };
-      expect(state).toBe("search");
-      expect(body.keys).toEqual(["Enter"]);
-      expect(body.expected_prompt).toContain("Search: picker");
+      expect(body.expected_prompt).toContain("Resume a previous session");
+      expect(body.keys).toEqual(keys.length === 0 ? ["Down"] : [finalKey]);
       keys.push(body.keys);
-      state = "done";
+      text = keys.length === 1 ? moved : paneTextWithDraft();
       return route.fulfill({ json: { ok: true } });
     });
 
     await page.goto("/pane/w1:p1");
-    const panel = page.getByRole("group", { name: messages["dialog.sessions.title"], exact: true });
+    const panel = page.getByRole("group", { name: "Resume a previous session", exact: true });
     await expect(panel).toBeVisible();
-    const search = panel.getByRole("searchbox", { name: messages["dialog.sessions.search"] });
-    await expect(search).not.toBeFocused();
-    await expect(panel.locator('[data-slot="session-options"] button')).toHaveCount(2);
-    await expect(panel.getByRole("button", {
-      name: "Refactor the picker row formatter", exact: true,
-    })).toHaveCount(2);
-    await expect(panel.locator("details")).not.toHaveAttribute("open", "");
-    await expect(panel.locator('[data-slot="picker-footer"]')).not.toBeVisible();
+    await expect(panel.getByRole("button", { name: messages["dialog.menu.moveUp"], exact: true })).toBeVisible();
     expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-    expect(await panel.locator('[data-slot="session-options"]').evaluate((element) =>
-      element.getBoundingClientRect().right - element.firstElementChild!.getBoundingClientRect().right)).toBeGreaterThanOrEqual(8);
-    const actions = await panel.locator('[data-slot="prompt-actions"]').boundingBox();
-    const list = await panel.locator('[data-slot="session-options"]').boundingBox();
-    expect(actions!.y).toBeGreaterThanOrEqual(list!.y + list!.height);
-    expect(await panel.locator('[data-slot="session-title"]').evaluateAll((elements) => elements.every((element) => {
-      const style = getComputedStyle(element);
-      return element.getBoundingClientRect().height <= parseFloat(style.lineHeight) * 2 + 1;
-    }))).toBe(true);
     await page.screenshot({ path: testInfo.outputPath(`resume-${locale}-${theme}.png`), fullPage: true });
-    await panel.locator("summary").click();
-    await expect(panel.locator('[data-slot="picker-footer"]')).toBeVisible();
-    await panel.locator("summary").click();
-    await search.fill("picker");
-    await panel.getByRole("button", { name: messages["dialog.sessions.searchAction"], exact: true }).click();
-    await expect(panel.locator('[data-slot="session-options"] button')).toHaveCount(1);
-    expect(keys).toEqual([]);
-    await panel.getByRole("button", { name: "Refactor the picker row formatter", exact: true }).click();
+    await panel.getByRole("button", { name: messages["dialog.menu.moveDown"], exact: true }).click();
+    await expect.poll(() => keys.length).toBe(1);
+    await panel.getByRole("button", { name: action, exact: true }).click();
     await expect(panel).toHaveCount(0);
-    expect(keys).toEqual([["Enter"]]);
-  });
-}
-
-for (const [entry, exit] of [["codex resume", "start new"], ["/resume", "exit"]] as const) {
-  test(`Codex 0.156.1 ${entry} opens a compact session card`, async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 844 });
-    await page.addInitScript(() => localStorage.setItem("collie:locale:v1", "en"));
-    await installApiStub(page);
-    let chosen = false;
-    const keys: string[][] = [];
-    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
-      ...fixtureSnapshot,
-      agents: fixtureSnapshot.agents.map((agent, index) => index === 0
-        ? Object.assign({}, agent, { agent: "codex", status: "idle", hasSession: true }) : agent),
-    } }));
-    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
-      (route) => route.fulfill({ json: {
-        paneId: "w1:p1", text: chosen ? paneTextWithDraft() : codexResumeFrame(exit), truncated: false, revision: 1,
-      } }));
-    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
-      // SAFETY: this route receives the app's own sendKeys request body.
-      const body = route.request().postDataJSON() as { keys: string[]; expected_prompt?: string };
-      expect(body.keys).toEqual(["Enter"]);
-      expect(body.expected_prompt).toContain("Resume a previous session");
-      keys.push(body.keys);
-      chosen = true;
-      return route.fulfill({ json: { ok: true } });
-    });
-
-    await page.goto("/pane/w1:p1");
-    const panel = page.getByRole("group", { name: en["dialog.sessions.title"], exact: true });
-    await expect(panel).toBeVisible();
-    await expect(panel.locator('[data-slot="session-options"] button')).toHaveCount(2);
-    expect(await panel.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-    await panel.getByRole("button", { name: "Refactor the picker row formatter" }).click();
-    await expect(panel).toHaveCount(0);
-    expect(keys).toEqual([["Enter"]]);
+    expect(keys).toEqual([["Down"], [finalKey]]);
   });
 }

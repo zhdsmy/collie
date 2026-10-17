@@ -1,19 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { http, HttpResponse } from "msw";
-import { server } from "@/test/setup";
-import { sendGuardedReply } from "./reply-action";
 import { codexAdapter } from "./harness/codex";
 import { parseAnsi } from "./ansi";
 import { splitLines } from "./blocks";
-
-// M46 spec 11 refuses a send to a pane the bridge has not answered lately (lib/liveness.ts). These
-// cases drive sends against a mocked network and never poll first, so they pin the pane live; the
-// gating itself is covered by liveness.test.ts and the *-offline suites.
-vi.mock("@/lib/liveness", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/liveness")>()),
-  isLive: () => true,
-}));
 
 const capture = readFileSync(join(import.meta.dirname, "../fixtures/panes/codex--v0154-particles-working.txt"), "utf8");
 const paint = "\u001b[0m\u001b[48;2;57;57;71m";
@@ -33,23 +22,7 @@ it.each([
   ["two images", "/test-state/uploads/a.jpg\n/test-state/uploads/b.png", "[Image #1] [Image #2]"],
   ["interleaved", "第一张 /test-state/uploads/a.jpg\n\n第二张 /test-state/uploads/b.png", "第一张 [Image #1]\n\n第二张 [Image #2]"],
   ["absolute path", "查看 /private/tmp/sample.png", "查看 /private/tmp/sample.png"],
-])("verifies %s through the animated composer and submits once", async (_label, text, rendered) => {
-  let typed = false;
-  const calls: { text: string; submit: boolean; expected_prompt?: string }[] = [];
+])("extracts %s from the animated composer", (_label, _text, rendered) => {
   const after = typedFrame(rendered);
   expect(codexAdapter.extractInputDraft(splitLines(parseAnsi(after)))).toBe(rendered.replace(/\n+/g, " "));
-  server.use(
-    http.get("/api/pane/:id", () => HttpResponse.json({ paneId: "w1:p1", text: typed ? after : capture, revision: 1, truncated: false })),
-    http.post<never, { text: string; submit: boolean; expected_prompt?: string }>("/api/pane/:id/reply", async ({ request }) => {
-      const body = await request.json();
-      calls.push(body);
-      if (!body.submit) typed = true;
-      return HttpResponse.json({ ok: true });
-    }),
-  );
-  const result = await sendGuardedReply({ paneId: "w1:p1", agent: "codex", text, sleep: async () => {} });
-  expect(result).toEqual({ status: "sent" });
-  expect(calls).toHaveLength(2);
-  expect(calls[0]).toEqual({ text, submit: false });
-  expect(calls[1]).toEqual({ text: "", submit: true, expected_prompt: codexAdapter.composerPrompt!(splitLines(parseAnsi(after))) });
 });

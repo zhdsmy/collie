@@ -1,3 +1,5 @@
+import { sendAnswer } from "@/test/handlers";
+import { readSendReply } from "./send-protocol";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -6,7 +8,7 @@ vi.mock("./api", () => ({
   fetchPane: vi.fn(),
   fetchSnapshot: vi.fn(),
   sendKeys: vi.fn(),
-  sendReply: vi.fn(),
+  postSend: vi.fn(),
 }));
 
 vi.mock("./picker-action", () => {
@@ -19,7 +21,7 @@ vi.mock("./picker-action", () => {
   };
 });
 
-import { fetchPane, fetchSnapshot, sendReply } from "./api";
+import { fetchPane, fetchSnapshot, postSend } from "./api";
 import { codexAdapter } from "./harness/codex";
 import { parseAnsi } from "./ansi";
 import { splitLines } from "./blocks";
@@ -38,7 +40,7 @@ import type { PaneReadResponse, SnapshotResponse } from "./types";
 
 const mockFetchPane = vi.mocked(fetchPane);
 const mockFetchSnapshot = vi.mocked(fetchSnapshot);
-const mockSendReply = vi.mocked(sendReply);
+const mockPostSend = vi.mocked(postSend);
 const mockAcquirePaneAction = vi.mocked(acquirePaneAction);
 const mockSubmitPickerIntent = vi.mocked(submitPickerIntent);
 const PANES = join(import.meta.dirname, "../fixtures/panes");
@@ -122,7 +124,7 @@ function intentKinds(): string[] {
 beforeEach(() => {
   mockFetchPane.mockReset();
   mockFetchSnapshot.mockReset().mockResolvedValue(snapshot);
-  mockSendReply.mockReset().mockResolvedValue({ ok: true });
+  mockPostSend.mockReset().mockResolvedValue(readSendReply(sendAnswer("model-switch", "sent"))!);
   mockAcquirePaneAction.mockReset().mockReturnValue({ key: "w1:p1", token: Symbol("test") });
   mockSubmitPickerIntent.mockReset().mockResolvedValue({ status: "sent" });
 });
@@ -133,10 +135,7 @@ describe("runCodexModelSwitch", () => {
     script(idle, idle, idle, commandPicker(), fixture("codex--v0154-picker-model.txt"));
 
     await expect(runCodexModelSwitch(args())).resolves.toEqual({ status: "opened" });
-    expect(mockSendReply.mock.calls.map((call) => call.slice(0, 3))).toEqual([
-      ["w1:p1", "/model", false],
-      ["w1:p1", "", true],
-    ]);
+    expect(mockPostSend).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ pane: "w1:p1", text: "/model", mode: "command" }), undefined);
     expect(intentKinds()).toEqual([]);
   });
 
@@ -274,7 +273,7 @@ describe("runCodexModelSwitch", () => {
       ...args({ model: "gpt-6-astra", effort: "xhigh" }),
       codexSessionKey: "session-a",
     })).resolves.toEqual({ status: "changed" });
-    expect(mockSendReply).not.toHaveBeenCalled();
+    expect(mockPostSend).not.toHaveBeenCalled();
   });
 
   it("fails closed when the expected Codex session changes between picker stages", async () => {
@@ -441,7 +440,7 @@ describe("runCodexModelSwitch", () => {
     await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toEqual({
       status: "blocked",
     });
-    expect(mockSendReply).not.toHaveBeenCalled();
+    expect(mockPostSend).not.toHaveBeenCalled();
   });
 
   it("honours cancellation and per-pane serialization before any write", async () => {
@@ -475,12 +474,12 @@ describe("runCodexModelSwitch", () => {
   it("rechecks the composer after the preflight read before opening /model", async () => {
     const idle = fixture("codex--v0154-statusline-single-idle.txt");
     const draft = fixture("codex--draft.txt");
-    script(idle, idle, draft);
+    script(idle, draft);
 
     await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toMatchObject({
-      status: "error",
+      status: "blocked",
     });
-    expect(mockSendReply).not.toHaveBeenCalled();
+    expect(mockPostSend).not.toHaveBeenCalled();
   });
 
   it("fails closed when the required preflight read throws", async () => {
@@ -493,9 +492,9 @@ describe("runCodexModelSwitch", () => {
     });
 
     await expect(runCodexModelSwitch(args({ model: "gpt-6-astra", effort: "xhigh" }))).resolves.toMatchObject({
-      status: "blocked",
+      status: "error",
     });
-    expect(mockSendReply).not.toHaveBeenCalled();
+    expect(mockPostSend).not.toHaveBeenCalled();
   });
 
   it("refuses when the initially idle agent starts working before /model is typed", async () => {
@@ -505,8 +504,8 @@ describe("runCodexModelSwitch", () => {
       ...snapshot,
       agents: [{ ...snapshot.agents[0]!, status: "working" }],
     });
-    await expect(runCodexModelSwitch(args())).resolves.toMatchObject({ status: "error" });
-    expect(mockSendReply).not.toHaveBeenCalled();
+    await expect(runCodexModelSwitch(args())).resolves.toMatchObject({ status: "blocked" });
+    expect(mockPostSend).not.toHaveBeenCalled();
   });
 });
 

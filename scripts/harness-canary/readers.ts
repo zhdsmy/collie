@@ -2,9 +2,9 @@
 //
 // The canary judges a screen with exactly the code the phone runs: `parseAnsi` + `splitLines`, the
 // agent's adapter (`composerReady`, `extractInputDraft`, `draftCarriesSend`), `buildBlocks`, and the
-// client's `sendGuardedReply`. They are imported by path from `<root>/web/src/lib/`, so `--readers`
-// can point the same canary at an older checkout (a git worktree at v1.13.1) and show that it would
-// have caught what that release missed.
+// client's `sendText`. They are imported by path from `<root>/web/src/lib/`, so `--readers`
+// can compare checkouts that expose the current Send Protocol API. Historical pre-protocol
+// checkouts need their own canary revision.
 //
 // The imports are dynamic on purpose. The root tsconfig does not type-check web/, and a static import
 // would pull the whole client into it; the few shapes used here are restated below instead.
@@ -41,7 +41,7 @@ export interface Readers {
   buildBlocks(lines: Line[], agent: string): Block[];
   adapterFor(agent: string): Adapter | undefined;
   draftCarriesSend(sent: string, draft: string | null): boolean;
-  sendGuardedReply(paneId: string, text: string, agent: string): Promise<ReplyOutcome>;
+  sendText(paneId: string, text: string): Promise<ReplyOutcome>;
 }
 
 interface AnsiModule {
@@ -59,8 +59,10 @@ interface ApiModule {
   fetchPane(paneId: string): Promise<{ text: string }>;
 }
 interface ReplyModule {
-  draftCarriesSend(sent: string, draft: string | null): boolean;
-  sendGuardedReply(args: { paneId: string; text: string; agent: string }): Promise<ReplyOutcome>;
+  sendText(args: { paneId: string; text: string; held: null }): Promise<
+    | { status: "answered"; reading: { clear: boolean }; reply: { outcome: string | null; reason?: string } }
+    | { status: "noAnswer" | "refused"; error: string }
+  >;
 }
 
 /**
@@ -74,6 +76,7 @@ export async function loadReaders(root: string): Promise<Readers> {
   const blocks: BlocksModule = await import(join(lib, "blocks.ts"));
   const harness: HarnessModule = await import(join(lib, "harness", "index.ts"));
   const reply: ReplyModule = await import(join(lib, "reply-action.ts"));
+  const draft: Pick<Readers, "draftCarriesSend"> = await import(join(lib, "draft-match.ts"));
   const api: ApiModule = await import(join(lib, "api.ts"));
   return {
     root,
@@ -81,11 +84,15 @@ export async function loadReaders(root: string): Promise<Readers> {
     lineText: (line) => blocks.lineText(line),
     buildBlocks: (lines, agent) => harness.buildBlocks(lines, { agent }),
     adapterFor: (agent) => harness.adapterFor(agent),
-    draftCarriesSend: (sent, draft) => reply.draftCarriesSend(sent, draft),
-    sendGuardedReply: async (paneId, text, agent) => {
+    draftCarriesSend: draft.draftCarriesSend,
+    sendText: async (paneId, text) => {
       // Use the phone's read path to establish liveness before its offline send guard runs.
       await api.fetchPane(paneId);
-      return reply.sendGuardedReply({ paneId, text, agent });
+      const outcome = await reply.sendText({ paneId, text, held: null });
+      if (outcome.status !== "answered") return { status: "error", error: outcome.error };
+      return outcome.reading.clear ? { status: "sent" } : {
+        status: "blocked", error: `${outcome.reply.outcome ?? "pending"}: ${outcome.reply.reason ?? "no confirmed send"}`,
+      };
     },
   };
 }

@@ -1,8 +1,10 @@
+import { sendAnswer } from "@/test/handlers";
+import { readSendReply } from "./send-protocol";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { fetchPane, fetchSnapshot, sendKeys, sendReply } from "./api";
+import { fetchPane, fetchSnapshot, sendKeys, postSend } from "./api";
 import { acquirePaneAction, releasePaneAction } from "./picker-action";
 import {
   readCodexModeState,
@@ -24,7 +26,7 @@ vi.mock("./api", async (importOriginal) => ({
   fetchPane: vi.fn(),
   fetchSnapshot: vi.fn(),
   sendKeys: vi.fn(),
-  sendReply: vi.fn(),
+  postSend: vi.fn(),
 }));
 
 const fixture = (name: string): string =>
@@ -39,8 +41,8 @@ function withFast(text: string, value: "on" | "off"): string {
   return lines.join("\n");
 }
 const fastOff = withFast(fixture("codex--v0154-statusline-single-color-default.txt"), "off");
-const fastOn = fastOff.replace("Fast off", "Fast on");
 const fastDraft = fastOff.replace("Ask Codex to do anything", "/fast");
+const fastOn = fastOff.replace("Fast off", "Fast on");
 const adjacentPlan = fastOff.replace(
   "Fast off",
   "Fast off\u001b[38;5;5mPlan mode (shift+tab to cycle)\u001b[0m",
@@ -70,7 +72,7 @@ beforeEach(() => {
   });
   vi.mocked(fetchPane).mockReset();
   vi.mocked(sendKeys).mockReset().mockResolvedValue({ ok: true });
-  vi.mocked(sendReply).mockReset().mockResolvedValue({ ok: true });
+  vi.mocked(postSend).mockReset().mockResolvedValue(readSendReply(sendAnswer("mode-switch", "sent"))!);
 });
 
 describe("live Codex mode state", () => {
@@ -112,12 +114,11 @@ describe("guarded Codex mode switch", () => {
       .mockResolvedValueOnce(unbound(fastOff))
       .mockResolvedValueOnce(unbound(fastOff))
       .mockResolvedValueOnce(unbound(fastOff))
-      .mockResolvedValueOnce(unbound(fastDraft))
+
       .mockResolvedValue(unbound(fastOn));
     expect((await runCodexModeSwitch({ ...args("fast"), codexSessionKey: undefined })).status).toBe("switched");
-    expect(sendReply).toHaveBeenCalledTimes(2);
-    expect(sendReply).toHaveBeenNthCalledWith(1, "w1:p1", "/fast", false, undefined, readCodexModeState(fastOff)!.prompt);
-    expect(sendReply).toHaveBeenNthCalledWith(2, "w1:p1", "", true, undefined, expect.any(String));
+    expect(postSend).toHaveBeenCalledOnce();
+    expect(postSend).toHaveBeenCalledWith(expect.objectContaining({ pane: "w1:p1", text: "/fast", mode: "command" }), undefined);
   });
 
   it("stops when an unreported identity appears before or during a switch", async () => {
@@ -129,10 +130,9 @@ describe("guarded Codex mode switch", () => {
     expect(sendKeys).toHaveBeenCalledOnce();
     vi.mocked(fetchPane)
       .mockResolvedValueOnce({ ...pane(fastOff), codexSessionKey: undefined })
-      .mockResolvedValueOnce({ ...pane(fastOff), codexSessionKey: undefined })
       .mockResolvedValue(pane(fastOff));
     expect((await runCodexModeSwitch({ ...args("fast"), codexSessionKey: undefined })).status).toBe("changed");
-    expect(sendReply).not.toHaveBeenCalled();
+    expect(postSend).not.toHaveBeenCalled();
   });
 
   it.each([true, false])("switches Plan %s with one bound key and verifies native result", async (enabled) => {
@@ -154,37 +154,28 @@ describe("guarded Codex mode switch", () => {
       .mockResolvedValueOnce(pane(enabled ? fastOff : fastOn))
       .mockResolvedValueOnce(pane(enabled ? fastOff : fastOn))
       .mockResolvedValueOnce(pane(enabled ? fastOff : fastOn))
-      .mockResolvedValueOnce(pane(fastDraft))
+
       .mockResolvedValue(pane(enabled ? fastOn : fastOff));
 
     expect((await runCodexModeSwitch(args("fast", enabled))).status).toBe("switched");
     expect(sendKeys).not.toHaveBeenCalled();
-    expect(sendReply).toHaveBeenNthCalledWith(
-      1,
-      "w1:p1",
-      "/fast",
-      false,
-      undefined,
-      readCodexModeState(enabled ? fastOff : fastOn)!.prompt,
-    );
-    expect(sendReply).toHaveBeenNthCalledWith(2, "w1:p1", "", true, undefined, expect.any(String));
+    expect(postSend).toHaveBeenCalledWith(expect.objectContaining({ pane: "w1:p1", text: "/fast", mode: "command" }), undefined);
   });
 
   it("does not send when the requested state is already active", async () => {
     vi.mocked(fetchPane).mockResolvedValue(pane(fastOn));
     expect((await runCodexModeSwitch(args("fast", true))).status).toBe("switched");
-    expect(sendReply).not.toHaveBeenCalled();
+    expect(postSend).not.toHaveBeenCalled();
     expect(sendKeys).not.toHaveBeenCalled();
   });
 
   it("stops if another client changes Fast before the guarded command", async () => {
     vi.mocked(fetchPane)
       .mockResolvedValueOnce(pane(fastOff))
-      .mockResolvedValueOnce(pane(fastOff))
       .mockResolvedValueOnce(pane(fastOn));
 
     expect((await runCodexModeSwitch(args("fast", true))).status).toBe("changed");
-    expect(sendReply).not.toHaveBeenCalled();
+    expect(postSend).not.toHaveBeenCalled();
   });
 
   it("refuses the first bound /fast write without sending Enter", async () => {
@@ -192,17 +183,11 @@ describe("guarded Codex mode switch", () => {
       .mockResolvedValueOnce(pane(fastOff))
       .mockResolvedValueOnce(pane(fastOff))
       .mockResolvedValueOnce(pane(fastOff));
-    vi.mocked(sendReply).mockResolvedValueOnce({ ok: false, code: "prompt_changed", error: "stale prompt" });
+    vi.mocked(postSend).mockResolvedValueOnce(readSendReply(sendAnswer("mode-switch", "refused", "bound"))!);
 
-    expect((await runCodexModeSwitch(args("fast", true))).status).toBe("error");
-    expect(sendReply).toHaveBeenCalledOnce();
-    expect(sendReply).toHaveBeenCalledWith(
-      "w1:p1",
-      "/fast",
-      false,
-      undefined,
-      readCodexModeState(fastOff)!.prompt,
-    );
+    expect((await runCodexModeSwitch(args("fast", true))).status).toBe("blocked");
+    expect(postSend).toHaveBeenCalledOnce();
+    expect(postSend).toHaveBeenCalledWith(expect.objectContaining({ pane: "w1:p1", text: "/fast", mode: "command" }), undefined);
   });
 
   it("blocks unsupported Fast, dialogs, and a non-empty composer draft", async () => {
@@ -212,7 +197,7 @@ describe("guarded Codex mode switch", () => {
     expect((await runCodexModeSwitch(args("plan"))).status).toBe("blocked");
     vi.mocked(fetchPane).mockResolvedValue(pane(fastDraft));
     expect((await runCodexModeSwitch(args("fast"))).status).toBe("blocked");
-    expect(sendReply).not.toHaveBeenCalled();
+    expect(postSend).not.toHaveBeenCalled();
   });
 
   it("does not retry after a Fast command whose native state stays unchanged", async () => {
@@ -220,26 +205,26 @@ describe("guarded Codex mode switch", () => {
       .mockResolvedValueOnce(pane(fastOff))
       .mockResolvedValueOnce(pane(fastOff))
       .mockResolvedValueOnce(pane(fastOff))
-      .mockResolvedValueOnce(pane(fastDraft))
+
       .mockResolvedValue(pane(fastOff));
 
     expect((await runCodexModeSwitch(args("fast"))).status).toBe("unconfirmed");
-    expect(sendReply).toHaveBeenCalledTimes(2);
+    expect(postSend).toHaveBeenCalledOnce();
   });
 
   it("stops when the session changes before or after sending", async () => {
     vi.mocked(fetchPane).mockResolvedValue(pane(fastOff, "different-session"));
     expect((await runCodexModeSwitch(args("fast"))).status).toBe("changed");
-    expect(sendReply).not.toHaveBeenCalled();
+    expect(postSend).not.toHaveBeenCalled();
 
     vi.mocked(fetchPane)
       .mockResolvedValueOnce(pane(fastOff))
       .mockResolvedValueOnce(pane(fastOff))
       .mockResolvedValueOnce(pane(fastOff))
-      .mockResolvedValueOnce(pane(fastDraft))
+
       .mockResolvedValue(pane(fastOn, "different-session"));
     expect((await runCodexModeSwitch(args("fast"))).status).toBe("changed");
-    expect(sendReply).toHaveBeenCalledTimes(2);
+    expect(postSend).toHaveBeenCalledOnce();
   });
 
   it("releases its lease on cancellation and transport failure", async () => {
@@ -259,7 +244,7 @@ describe("guarded Codex mode switch", () => {
     try {
       expect((await runCodexModeSwitch(args("plan"))).status).toBe("blocked");
       expect(sendKeys).not.toHaveBeenCalled();
-      expect(sendReply).not.toHaveBeenCalled();
+      expect(postSend).not.toHaveBeenCalled();
     } finally {
       releasePaneAction(owner);
     }

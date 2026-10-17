@@ -1,16 +1,14 @@
-# Codex saved-session picker (`codex resume`, `/resume`, `codex fork`)
+# Codex Resume and Fork
 
-The Codex 0.156.1 screen puts the filter/status/sort toolbar above its search row and paints
-the selected row with `›`. The shell command advertises `esc start new`; in a conversation it
-advertises `esc exit`. The sanitized screen in `web/src/test/codex-resume-frame.ts` covers both.
+Since v1.22.0+collie.1, Resume uses the upstream shared session menu, by operator choice.
+The native list stays inside the card; the footer's Up/Down, Resume and Exit controls send
+bound keys through `menu-action.ts`. The local searchable, synthesized Resume list is removed.
+The captured `codex--resume-picker*.txt` and `codex--v0162-resume-search.txt` cover the reader;
+`web/e2e/codex-resume.spec.ts` checks navigation, confirmation, exit and 320px rendering.
 
-The captured Codex 0.158.0 Fork screen omits Resume's Active/Archived filter and prints
-`ctrl+o comfortable view` over dense rows. That shorter toolbar is accepted only with the
-Fork title. In a shell picker, Escape starts a new conversation; the isolated canary uses
-the advertised `ctrl+c quit` to return to its shell instead.
-
-The card offers native Up/Down browsing, Enter, and unsubmitted search text. It binds every
-action to the current full screen. Numeric progress gives each visible row a stable positional
-ID, including rows with identical or truncated titles. Expanded rows, incomplete frames,
-unpainted pointers, and unknown layouts remain in the terminal mirror. The toolbar, archive,
-preview, and density shortcuts stay native.
+Fork remains a separate local card in `fork.ts`, using the captured 0.158.0 Fork screen.
+It accepts the shorter toolbar only with the Fork title. The card offers native Up/Down,
+Enter and unsubmitted search, with full-screen binding. In a shell picker, Escape starts a
+new conversation; the isolated canary uses the advertised Ctrl+C to quit instead.
+Expanded rows, incomplete frames, unpainted pointers and unknown layouts stay native.
+Saved captures are replay evidence, not certification of an installed CLI version.

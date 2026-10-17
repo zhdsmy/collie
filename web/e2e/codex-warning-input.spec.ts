@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { fixtureSnapshot } from "@/test/handlers";
+import { fixtureSnapshot, sendAnswer } from "@/test/handlers";
+import { modeFor } from "../src/lib/reply-action";
 import { installApiStub } from "./fixtures/api";
 
 test.use({ serviceWorkers: "block" });
@@ -50,7 +51,7 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
   let caseIndex = 0;
   let uploads = 0;
   const keys: string[][] = [];
-  const replies: Array<{ text: string; submit: boolean; expected_prompt?: string }> = [];
+  const replies: Array<{ id: string; pane: string; text: string; mode: string }> = [];
   const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a2ioAAAAASUVORK5CYII=", "base64");
 
   await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
@@ -85,16 +86,14 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
     expect(body!.toString("latin1")).toContain('filename="photo-');
     return route.fulfill({ json: { ok: true, path: uploadPaths[uploads++] } });
   });
-  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/reply", (route) => {
-    // SAFETY: this route receives the app's own sendReply request body.
+  await page.route("**/api/send", (route) => {
+    // SAFETY: check the app's serialized text before acknowledging this protocol request.
     const body = route.request().postDataJSON() as typeof replies[number];
+    expect(body).toMatchObject({ pane: "w1:p1", text: cases[caseIndex]!.sent, mode: modeFor(cases[caseIndex]!.sent) });
     replies.push(body);
-    if (body.submit) {
-      expect(body.expected_prompt).toContain(cases[caseIndex]!.shown.split("\n").at(-1)!);
-      screen = "ready";
-      caseIndex++;
-    } else screen = "draft";
-    return route.fulfill({ json: { ok: true } });
+    screen = "ready";
+    caseIndex++;
+    return route.fulfill({ json: sendAnswer(body.id, "sent") });
   });
 
   await page.goto("/pane/w1:p1");
@@ -130,13 +129,10 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
       await expect(page.getByRole("button", { name: "Send", exact: true })).toBeInViewport();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.getByRole("button", { name: "Send", exact: true }).click();
-      await expect.poll(() => replies.length).toBe(2 * (index + 1));
+      await expect.poll(() => replies.length).toBe(index + 1);
       expect(caseIndex).toBe(index + 1);
       await expect(input).toHaveValue("");
-      expect(replies.slice(-2)).toEqual([
-        { text: sample.sent, submit: false },
-        { text: "", submit: true, expected_prompt: expect.stringContaining(sample.shown.split("\n").at(-1)!) },
-      ]);
+      expect(replies.at(-1)?.text).toBe(sample.sent);
     });
   }
   expect(caseIndex).toBe(cases.length);

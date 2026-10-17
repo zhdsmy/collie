@@ -1,17 +1,19 @@
 // The send path: the bridge's own pane handlers, in this process, behind the client's own fetch.
 //
-// `sendGuardedReply` (web/src/lib/reply-action.ts) talks to the bridge with `fetch("/api/pane/…")`.
-// Here that fetch is answered by `readPane` and `replyPane` from bridge/server.ts, called directly,
-// with a Herdr adapter built on the canary session's socket. So a canary send runs the same client
-// guard and the same bridge reply code as a phone, and never touches a port, a paired device or a
-// running Collie. Anything else the client asks for is refused, loudly: a route the shim does not
-// know means the send path changed, and the canary must say so rather than guess.
+// The client sends through the same SendProtocol as the bridge, against only the isolated
+// canary's panes. No live Collie port or paired device is involved; unknown routes are refused.
 
+import { join } from "node:path";
+import { gateFor } from "../../bridge/surface/key-gate";
+import { SendProtocol, SessionLocks, RowRing } from "../../bridge/surface/protocol";
+import { RequestStore } from "../../bridge/surface/requests";
+import { VersionCache } from "../../bridge/surface/binary-version";
+import { findProfile, loadProfiles, profileFor } from "../../web/src/lib/surface/profile";
 import { AuditLog } from "../../bridge/audit";
 import { loadConfig, type Config } from "../../bridge/config";
 import { herdrMuxFactory } from "../../bridge/mux/herdr/adapter";
 import type { MuxAdapter } from "../../bridge/mux/types";
-import { readPane, replyPane } from "../../bridge/server";
+import { readPane, replyPane, parseSendRequest } from "../../bridge/server";
 import type { StateEngine } from "../../bridge/state-engine";
 import { asJsonObject, asJsonString, parseJson } from "../../web/src/lib/json";
 import { CANARY_SESSION, type CanarySession } from "./herdr";
@@ -33,7 +35,7 @@ export interface Transport {
  * Install the browser stand-ins the client modules need (a memory `localStorage`, an inert
  * `document`) and the fetch shim. Call once, before `loadReaders`.
  */
-export function installTransport(session: CanarySession, home: string): Transport {
+export function installTransport(session: Pick<CanarySession, "socket" | "isOwnedPane" | "paneInfo">, home: string): Transport {
   const cfg: Config = loadConfig({ HOME: home, HERDR_SOCKET_PATH: session.socket, COLLIE_MUX: "herdr" });
   const mux: MuxAdapter = herdrMuxFactory.create({ endpoint: session.socket, timeoutMs: 5000, options: {} });
   const audit: string[] = [];
@@ -45,6 +47,19 @@ export function installTransport(session: CanarySession, home: string): Transpor
   };
   // SAFETY: readPane only calls current() to look up optional journal metadata.
   const engine = engineStub as StateEngine;
+
+  const versions = new VersionCache();
+  const protocol = new SendProtocol({
+    mux, gate: gateFor(mux), store: new RequestStore(join(home, "sends")), locks: new SessionLocks(), ring: new RowRing(),
+    profile: async (harness) => {
+      const profile = findProfile(loadProfiles(), harness);
+      return profile === undefined ? null : profileFor(harness, await versions.versionOf(profile));
+    },
+    generation: (paneId) => {
+      if (!session.isOwnedPane(paneId)) return null;
+      return `${CANARY_SESSION}:${paneId}`;
+    },
+  });
 
   const store = new Map<string, string>();
   Object.defineProperty(globalThis, "localStorage", {
@@ -73,6 +88,16 @@ export function installTransport(session: CanarySession, home: string): Transpor
 
   const canaryFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const url = new URL(input instanceof Request ? input.url : String(input), ORIGIN);
+    if (url.pathname === "/api/send" && init?.method === "POST") {
+      const request = parseSendRequest(parseJson(await new Request(url, init).text()));
+      if (request === null) return new Response("bad send request", { status: 400 });
+      if (!session.isOwnedPane(request.pane)) throw new Error(`canary transport: refusing pane ${request.pane}, not the canary's`);
+      const { pane: paneId, ...asked } = request;
+      const harness = session.paneInfo(paneId).agent ?? "shell";
+      const answer = await protocol.handle(asked, { session: CANARY_SESSION, paneId, harness });
+      audit.push(`send ${paneId}: ${answer.receipt?.outcome ?? "pending"}`);
+      return Response.json(answer);
+    }
     const match = PANE_PATH.exec(url.pathname);
     if (match === null) throw new Error(`canary transport: ${url.pathname} is not a pane route`);
     const paneId = decodeURIComponent(match[1]!);

@@ -18,7 +18,7 @@ import { splitLines, type StyledLine } from "./blocks";
 import { adapterFor } from "./harness/registry";
 import { codexAdapter } from "./harness/codex";
 import { claudeAdapter } from "./harness/claude";
-import { codexResumeFrame } from "../test/codex-resume-frame";
+import { codexResumeFrame as savedSessionFrame } from "../test/codex-resume-frame";
 import type { HarnessAdapter } from "./harness/types";
 import {
   PICKER_SEARCH_MAX_LENGTH,
@@ -602,3 +602,5 @@ describe("submitPickerIntent", () => {
     expect(mockSendKeys).toHaveBeenCalledTimes(1);
   });
 });
+
+const codexResumeFrame = (...frameArgs: Parameters<typeof savedSessionFrame>) => savedSessionFrame(...frameArgs).replace("Resume a previous session", "Fork a previous session").replace("enter to resume", "enter to fork");

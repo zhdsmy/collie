@@ -8,11 +8,12 @@ import { splitLines, lineText } from "./blocks";
 import { parseCodexStatuslineField } from "./harness/codex/model-field";
 import {
   acquirePaneAction,
+  ownsPaneAction,
   releasePaneAction,
   submitPickerIntent,
   type PaneActionOwner,
 } from "./picker-action";
-import { sendGuardedReply, type ReplyOutcome } from "./reply-action";
+import { sendText, type ReplyOutcome } from "./reply-action";
 import type { CodexModelTarget, CodexReasoningEffort } from "./harness/codex/model-field";
 import type { PickerModel } from "./harness/picker-model";
 import type { Scope } from "./scope";
@@ -72,7 +73,6 @@ interface FreshPane {
 
 type PickerReadResult = PickerRead | CodexModelSwitchResult | null;
 
-const SESSION_CHANGED_ERROR = "codex session changed";
 
 const MODEL_TITLE = /^Select Model(?: and Effort)?$/;
 const EFFORT_TITLE = /^Select Reasoning Level for (.+)$/;
@@ -240,11 +240,11 @@ function detectPicker(text: string): PickerModel | null {
 
 function mapReply(outcome: ReplyOutcome, signal: AbortSignal): CodexModelSwitchResult | null {
   if (isCancelled(signal)) return result("cancelled");
-  if (outcome.status === "sent") return null;
-  if (outcome.status === "blocked") return result("blocked", outcome.error);
-  if (outcome.status === "error" && outcome.error === SESSION_CHANGED_ERROR) return result("changed");
-  if (outcome.status === "error") return result("error", outcome.error);
-  return result("unconfirmed", outcome.error);
+  if (outcome.status === "answered") {
+    if (outcome.reading.clear) return null;
+    return result(outcome.reply.outcome === "refused" ? "blocked" : "unconfirmed", outcome.reading.detail ?? undefined);
+  }
+  return result(outcome.status === "refused" ? "blocked" : "error", outcome.error);
 }
 
 function mapPickerAction(action: ActionResult, signal: AbortSignal): CodexModelSwitchResult | null {
@@ -462,22 +462,10 @@ async function drive(
     if (!args.preset) return;
     for (const line of confirmationLines(text, args.preset)) alreadySeen.add(line);
   };
-  const opened = await sendGuardedReply({
-    paneId: args.paneId,
-    text: "/model",
-    agent: "codex",
-    scope: args.scope,
-    requestedLines: args.requestedLines,
-    signal: args.signal,
-    owner,
-    requireComposer: true,
-    onComposerSeen: async () => {
-      const read = await readFreshPane(args);
-      return "status" in read
-        ? { ok: false, error: read.status === "changed" ? SESSION_CHANGED_ERROR : read.error ?? "Codex composer changed before the model picker opened." }
-        : { ok: true, keysSent: false };
-    },
-  });
+  const ready = await readFreshPane(args);
+  if ("status" in ready) return ready;
+  if (!ownsPaneAction(owner, owner.key)) return result("cancelled");
+  const opened = await sendText({ paneId: args.paneId, text: "/model", scope: args.scope, held: null });
   const openResult = mapReply(opened, args.signal);
   if (openResult) return openResult;
   const modelPicker = await waitForPicker(args, isModelPicker, (read) => rememberConfirmation(read.text));

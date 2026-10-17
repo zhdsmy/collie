@@ -8,8 +8,8 @@ import { locateComposer } from "./harness/codex/chrome";
 import { normalizeComposerParticles } from "./harness/codex/particles";
 import { blockOwnsKeyboard } from "./harness/dialog-contract";
 import { defaultSleep, POLL_ATTEMPTS, POLL_DELAY_MS, type Sleep } from "./harness/guard";
-import { acquirePaneAction, releasePaneAction, type PaneActionOwner } from "./picker-action";
-import { sendGuardedReply, type ReplyOutcome } from "./reply-action";
+import { acquirePaneAction, ownsPaneAction, releasePaneAction, type PaneActionOwner } from "./picker-action";
+import { sendText, type ReplyOutcome } from "./reply-action";
 import type { Scope } from "./scope";
 
 export type CodexMode = "plan" | "fast";
@@ -77,10 +77,6 @@ export type CodexModeSwitchResult =
   | { status: "blocked" | "changed" | "cancelled" | "unconfirmed" }
   | { status: "error"; error: string };
 
-const SESSION_CHANGED_ERROR = "codex session changed";
-const MODE_CHANGED_ERROR = "codex mode changed";
-const COMPOSER_BLOCKED_ERROR = "codex composer blocked";
-
 function modeValue(state: ReturnType<typeof readCodexModeState>, mode: CodexMode): boolean | null {
   if (state === null) return null;
   return mode === "plan" ? state.plan : state.fast;
@@ -88,10 +84,11 @@ function modeValue(state: ReturnType<typeof readCodexModeState>, mode: CodexMode
 
 function mapFastReply(outcome: ReplyOutcome, signal: AbortSignal): CodexModeSwitchResult | null {
   if (signal.aborted) return { status: "cancelled" };
-  if (outcome.status === "sent") return null;
-  if (outcome.status === "blocked") return { status: "blocked" };
-  if (outcome.status === "stalled") return { status: "unconfirmed" };
-  return { status: "error", error: outcome.error };
+  if (outcome.status === "answered") {
+    if (outcome.reading.clear) return null;
+    return { status: outcome.reply.outcome === "refused" ? "blocked" : "unconfirmed" };
+  }
+  return { status: outcome.status === "refused" ? "blocked" : "error", error: outcome.error };
 }
 
 async function verifyComposer(
@@ -117,30 +114,12 @@ async function sendFast(
   args: CodexModeSwitchArgs,
   owner: PaneActionOwner,
   expected: boolean,
-  initialPrompt: string,
 ): Promise<CodexModeSwitchResult | null> {
-  const outcome = await sendGuardedReply({
-    paneId: args.paneId,
-    text: "/fast",
-    agent: "codex",
-    scope: args.scope,
-    requestedLines: args.requestedLines,
-    initialPrompt,
-    signal: args.signal,
-    sleep: args.sleep,
-    owner,
-    requireComposer: true,
-    onComposerSeen: async () => {
-      const fresh = await verifyComposer(args, args.codexSessionKey);
-      if (fresh.ok) {
-        return modeValue(fresh.state, args.mode) === expected
-          ? { ok: true, keysSent: false }
-          : { ok: false, error: MODE_CHANGED_ERROR };
-      }
-      if (fresh.status === "changed") return { ok: false, error: SESSION_CHANGED_ERROR };
-      return { ok: false, error: COMPOSER_BLOCKED_ERROR };
-    },
-  });
+  const fresh = await verifyComposer(args, args.codexSessionKey);
+  if (args.signal.aborted || !ownsPaneAction(owner, owner.key)) return { status: "cancelled" };
+  if (!fresh.ok) return { status: fresh.status };
+  if (modeValue(fresh.state, args.mode) !== expected) return { status: "changed" };
+  const outcome = await sendText({ paneId: args.paneId, text: "/fast", scope: args.scope, held: null });
   return mapFastReply(outcome, args.signal);
 }
 
@@ -176,15 +155,8 @@ export async function runCodexModeSwitch(args: CodexModeSwitchArgs): Promise<Cod
       if (args.signal.aborted) return { status: "cancelled" };
       if (sent.status !== "sent") return sent;
     } else {
-      const sent = await sendFast(args, owner, current, state.prompt);
-      if (sent !== null) {
-        if (
-          sent.status === "error" &&
-          (sent.error === SESSION_CHANGED_ERROR || sent.error === MODE_CHANGED_ERROR)
-        ) return { status: "changed" };
-        if (sent.status === "error" && sent.error === COMPOSER_BLOCKED_ERROR) return { status: "blocked" };
-        return sent;
-      }
+      const sent = await sendFast(args, owner, current);
+      if (sent !== null) return sent;
       if (args.signal.aborted) return { status: "cancelled" };
     }
 
