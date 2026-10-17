@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.1+collie.2] - 2026-10-17
+
 ### Fixed
 
-- **Codex Resume restores searchable, tappable session cards.** Reuse the saved-session reader for Resume and Fork, recognize current shell and search footers, and retain guarded row selection and the upstream Send Protocol.
+- **Codex Resume restores searchable, tappable session cards.** Reuse the saved-session reader for Resume and Fork, recognize current shell and search footers, and retain guarded row selection and the upstream Send Protocol. ([f5b9b609](https://github.com/zhdsmy/collie/commit/f5b9b609))
 
 ## [1.22.1+collie.1] - 2026-10-17
 
