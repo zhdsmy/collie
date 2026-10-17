@@ -845,10 +845,13 @@ function aboveUnchanged(before: Snap, after: Snap): boolean {
   if (before.frame === null || after.frame === null) return false;
   const a = transcriptAbove(before, before.frame);
   const b = transcriptAbove(after, after.frame);
+  const oldRows = before.texts.slice(0, before.frame.top).map((row) => row.trimEnd());
   const grew = after.frame.bottom - after.frame.top - (before.frame.bottom - before.frame.top);
   for (let shift = 0; shift <= Math.max(0, grew) + 1; shift++) {
     const tail = a.slice(shift);
     if (tail.length === b.length && tail.every((row, i) => row === b[i])) return true;
+    // Scrolling can move an old volatile row into the checked band; it must already exist in S0.
+    if (shift > 0 && b.length === a.length && b.every((row, i) => row === oldRows[i + shift])) return true;
   }
   return false;
 }

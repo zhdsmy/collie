@@ -1210,6 +1210,29 @@ describe("codex: Tab sends every text, Enter steers a running turn (M56 spec 13)
     expect(pane.keysSeen).not.toContain("Tab");
   });
 
+  test.each(["unchanged", "new output", "replaced body", "changed boundary"])(
+    "a slash popup scrolls an existing row out of the volatile band: %s", async (change) => {
+      const { pane, send } = codex({ version: "0.163.0" });
+      pane.height = 40;
+      pane.codexHint = "  ← for agents · ? for shortcuts";
+      pane.transcript = Array.from({ length: 55 }, (_, i) => `  CANARY row ${String(i + 1)}`);
+      pane.afterInput = (p, what) => {
+        if (!what.startsWith("paste:")) return;
+        // Live 0.163.0: slash completion scrolls one row up, bringing old volatile text into the checked band.
+        p.over = ["› /resume  resume a saved chat"];
+        if (change === "new output") p.transcript.push("An answer just started");
+        if (change === "replaced body") p.transcript = p.transcript.map((row) => `other ${row}`);
+        if (change === "changed boundary") p.transcript[p.transcript.length - 4] = "New text at the checked boundary";
+      };
+      const answer = await send("/resume", { mode: "command" });
+      if (change === "unchanged") {
+        expect(answer.receipt).toMatchObject({ outcome: "sent", keys: ["Enter"] });
+      } else {
+        expect(answer.receipt).toMatchObject({ outcome: "typed_not_submitted", reason: "changed", keys: [] });
+      }
+    },
+  );
+
   test("`!ls` is a shell command on Codex: Enter on an idle box; in a turn it is refused, never queued (keys.neverHeld)", async () => {
     // Lab, 2026-10-16: on an idle box Tab does nothing with `!ls` (Shell mode) and Enter runs it; in a
     // turn Tab would queue it, but a shell line acts on the machine as it is then, so the profile lists

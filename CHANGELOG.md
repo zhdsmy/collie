@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex slash commands submit when their completion popup scrolls.** Recognize unchanged rows moving from the previously visible volatile band into the checked transcript, so `/resume` opens with one send after a long reply. Keep the scroll bound, exact draft matching, modal checks and rejection of new or replaced transcript rows.
+
 ## [1.22.1+collie.2] - 2026-10-17
 
 ### Fixed

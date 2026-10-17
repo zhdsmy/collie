@@ -356,11 +356,13 @@
       "origin": "downstream",
       "sources": [
         "web/src/lib/harness/codex/resume.ts",
-        "web/src/lib/harness/codex/index.ts"
+        "web/src/lib/harness/codex/index.ts",
+        "bridge/surface/protocol.ts"
       ],
       "tests": [
         "web/src/lib/harness/codex/resume.test.ts",
         "web/src/lib/picker-action.test.ts",
+        "bridge/surface/protocol.test.ts",
         "web/e2e/codex-resume.spec.ts"
       ],
       "fixtures": [
@@ -378,7 +380,7 @@
       "verified": {
         "version": "0.163.0",
         "date": "2026-10-17",
-        "how": "isolated shell Resume capture and native Down readback; no session resumed",
+        "how": "isolated shell Resume and Down; in-session /resume sends one Enter after a long synthetic reply and opens the card; no user session resumed",
         "evidence": "web/src/lib/harness/codex/RESUME_NOTES.md"
       }
     },

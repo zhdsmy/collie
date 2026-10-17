@@ -46,3 +46,28 @@ release rollback remains, and staging plus the older owned backup were removed.
 External OAuth verification was omitted by operator instruction. The isolated live probe did
 not resume a session; final selection is covered by the stubbed browser tests. The version tag
 continues to disclose that the complete current Claude, Codex and Hermes CLIs were not certified.
+
+## Sending `/resume` after a long reply (2026-10-17)
+
+The completion popup scrolls a full viewport up by one row. The send protocol excludes the
+six rows immediately above the composer from transcript comparison; a formerly excluded
+reply row then enters the checked band. Comparing only the two shortened bands mistakes
+that existing row for new output and returns `typed_not_submitted` / `changed`, without Enter.
+The card restoration did not cause this: the production receipts show it before that release.
+
+`aboveUnchanged` now also compares the bounded scroll against all previously visible rows
+above the composer, when the checked band keeps its length. Every checked row must match
+the old screen exactly. The original scroll allowance, draft and modal guards remain;
+new output, a replaced body, and altered text entering at the boundary still fail.
+The shared protocol has four regression cases derived from the native 40-row viewport.
+
+One isolated Codex 0.163.0 turn printed 55 synthetic lines without tools. Before the fix,
+`/resume` reproduced `typed_not_submitted` / `changed` with no keys. Reopening only that
+owned synthetic session after the fix made the same command return `sent`, keys `[Enter]`,
+and a ten-row Resume card. No user session was resumed and no second model call was needed.
+The isolated Herdr session was removed after each probe.
+
+Local evidence: `/private/tmp/collie-resume-send-N5YsmA/` holds the failure ANSI and receipt;
+`/private/tmp/collie-resume-send-F5qiDW/` holds the successful readback and receipt;
+`/private/tmp/collie-resume-send-evidence/screenshots/index.md` links the 320px card screenshot.
+The screenshot replays the saved frame; the receipt supplies the native interaction evidence.
