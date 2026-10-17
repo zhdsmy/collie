@@ -100,4 +100,8 @@
 - 本机为 Codex 0.163.0、Claude 2.1.302。此次使用保存的 ANSI 和模拟协议／浏览器回归，没有重新调用模型完成两款 CLI 的全套现场认证。沿用上游 profile 的验证记录，标签明确记录 `Not verified: claude 2.1.302, codex 0.163.0`，不抬高本地 verified-versions 台账。
 - Windows 运行、未安装 Agent 及完整跨主机 Crew 不作为本机通过项；不启用定时 canary，不新增 durable 服务。
 
-部署验收记录随交付补充。
+2026-10-17 已推送 `main` 和 annotated tag `v1.22.0+collie.1`，部署提交 `c3dd51be788640cd8e779829e89b9b40b5fa4a82`。运行构建为 `1.22.0+collie.1+c3dd51be.1792198845`。
+
+- 只重启 Collie；本地 8788 的新监听进程、构建 ID、健康、配置、12 个会话快照、Files 和发布说明均已回读。12 个会话均启用了新发送协议。Herdr、Headroom 和其 guard 的原进程保持运行。
+- 外部 `https://collie.michaelzhang.top` 当前先跳转到 `https://auth.michaelzhang.top/oauth2/sign_in`。没有可用的已登录浏览器，因此**公网登录后的构建及 API 回读待验证**；302 登录网关响应不等同于 Collie 验收通过。最初脚本跟随登录跳转得到 406，被“应返回 403”的撤销断言误报为令牌仍有效；已核对注册表并通过本地撤销回读，临时验证设备均已移除，原设备保持。
+- 保留完整 `v1.21.3+collie.1` 回滚包；清理本轮暂存目录及此前自建的 `v1.21.2+collie.1` 回滚包。
