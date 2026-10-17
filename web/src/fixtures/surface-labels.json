@@ -4344,12 +4344,12 @@
     "hermes--resume-fragments-restored.txt": {
       "harness": "hermes",
       "version": "unversioned",
-      "state": "screen"
+      "state": "idle"
     },
     "hermes--resume-fragments.txt": {
       "harness": "hermes",
       "version": "unversioned",
-      "state": "screen"
+      "state": "idle"
     },
     "hermes--resume-history.txt": {
       "harness": "hermes",
@@ -4380,6 +4380,11 @@
       "harness": "hermes",
       "version": "unversioned",
       "state": "running"
+    },
+    "hermes--v0221-zh-idle.txt": {
+      "harness": "hermes",
+      "version": "0.22.1",
+      "state": "idle"
     },
     "hermes--working.txt": {
       "harness": "hermes",

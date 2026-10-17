@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hermes idle messages use the guarded Send Protocol again.** Register its bordered input frame and locale-independent italic suggestions, restoring ordinary Chinese and multiline sends without the manual “Type here” detour. Keep per-send probing, existing-draft checks and exclusion of busy, permission, password, voice and question prompts.
+
 ## [1.22.1+collie.3] - 2026-10-17
 
 ### Fixed

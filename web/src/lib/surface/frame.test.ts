@@ -82,6 +82,27 @@ if (process.env.COLLIE_REGEN_INPUT_FRAMES === "1") {
 // cases below read is compared against a fresh frame, so a drifted shape fails here.
 const PINNED = JSON.parse(readFileSync(GOLDEN, "utf8")) as GoldenRow[];
 
+describe("Hermes bordered composer", () => {
+  const idle = requireProfile("hermes").idle;
+
+  it("reads the current Chinese italic suggestion as empty, and the same plain text as a draft", () => {
+    const rows = fixtureRows("hermes--v0221-zh-idle.txt");
+    const frame = findInputFrame(rows, idle)!;
+    expect(frame).toMatchObject({ top: 1, bottom: 3, placeholder: true });
+    const plain = rows.map((row) => Object.assign({}, row, { segments: row.segments.map((segment) => Object.assign({}, segment, { italic: false })) }));
+    expect(findInputFrame(plain, idle)).toMatchObject({ placeholder: false, interior: { text: "随便问点什么，或输入 / 查看命令…" } });
+  });
+
+  it.each(["☤", "⚕", "⚠", "?", "✎", "🔐", "🔑", "⚙", "●", "◉", "🎤", "⠋"])("never treats the %s state prompt as idle", (icon) => {
+    const text = readFileSync(join(PANES_DIR, "hermes--v0221-zh-idle.txt"), "utf8");
+    expect(findInputFrame(splitLines(parseAnsi(text.replace("❯ ", `${icon} ❯ `))), idle)).toBeNull();
+  });
+
+  it.each(["hermes--working.txt", "hermes--v0216-zh-working.txt", "hermes--clarify-single.txt", "hermes--clarify-other.txt"])("refuses the saved non-idle screen %s", (name) => {
+    expect(findInputFrame(fixtureRows(name), idle)).toBeNull();
+  });
+});
+
 describe("pinned input frames", () => {
   it("pins a row for every Claude fixture and for nothing else", () => {
     expect(PINNED.map((row) => row.fixture)).toEqual(fixtureNames.filter(isClaudeFixture));

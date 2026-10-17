@@ -1,0 +1,34 @@
+{
+  "id": "hermes",
+  "identity": { "binary": "hermes", "versionCommand": ["hermes", "--version"], "versionRegex": "\\d+\\.\\d+\\.\\d+" },
+  "versions": [{ "range": "0.22.1 - 0.22.1", "status": "provisional", "verifiedThrough": null, "verifiedOn": null }],
+  "idle": {
+    "frame": {
+      "top": { "pattern": "^─+$", "minCells": 8, "column": 0 },
+      "prompt": { "pattern": "^(?:[\\p{L}\\p{N}_-]+ )?❯(?: (?<draft>.*))?$", "column": 0 },
+      "bottom": { "pattern": "^─+$", "minCells": 8, "column": 0 },
+      "continuationIndent": 2,
+      "maxDraftRows": 100,
+      "maxTailRows": 3
+    },
+    "placeholders": { "texts": [], "sgr": 3 },
+    "volatile": { "above": { "maxRows": 6 }, "below": { "maxRows": 2, "footerMaxRows": 2 } },
+    "dialogsInBox": true
+  },
+  "keys": {
+    "submit": ["Enter"],
+    "newline": ["ctrl+j"],
+    "interrupt": ["ctrl+c"],
+    "clear": { "key": "Backspace", "slack": 16 },
+    "navigation": { "up": "Up", "down": "Down", "confirm": "Enter", "cancel": "Escape" }
+  },
+  "collapse": { "pattern": "\\[Pasted text #\\d+: (?<lines>\\d+) lines → [^\\]\\r\\n]+\\]" },
+  "reservedLeads": ["/", "!"],
+  "probe": {
+    "char": "⌁",
+    "status": "provisional",
+    "note": "Hermes 0.22.1 default bordered composer, captured 2026-10-17. Idle ❯ only: approval, clarify, password, voice and busy state prefixes are excluded. Italic suggestions are placeholders in every locale. Keep probing each send; see hermes/NOTES.md for live evidence and limits."
+  },
+  "paste": { "bracketed": true },
+  "hooks": {}
+}

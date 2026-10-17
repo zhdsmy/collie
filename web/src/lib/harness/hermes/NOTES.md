@@ -1,5 +1,35 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## Send Protocol input profile — 2026-10-17
+
+The new Send Protocol was enabled for Hermes but had no Hermes input profile. A normal idle
+pane therefore read `unknown/no-match`, and the reported 30-character send was refused as
+`unconfirmed` before writing any text or key. This is independent of the Codex slash-popup
+scrolling repair. The old display adapter can hide chrome but cannot supply a Surface frame.
+
+`surface/profiles/hermes.json` registers the native bordered `❯` composer, optionally prefixed
+by a profile name. Suggestions are all italic (SGR 3), including localized and randomly chosen
+text; plain copies remain drafts. Native `☤`, permission, clarify, password, connection,
+voice and command-spinner prompts are excluded. Existing Surface and Send Protocol guards
+handle draft preservation, exact readback and submission; no second sending path was added.
+The two `resume-fragments` fixtures contain replayed history above a live empty composer;
+their former `screen` labels are corrected to `idle`, since history does not own the keyboard.
+
+The profile stays provisional and probes every send. Its current range is 0.22.1 only;
+this is not a whole-CLI certification. Source inspection of `_get_tui_prompt_fragments`,
+`_tui_handle_enter`, `_tui_handle_paste` and the default multiline bindings confirmed the
+state markers, Enter, Ctrl+J and native paste marker. Other themes, customized newline keys,
+busy-turn interruption, attachments and interactive permission responses were not live-tested.
+
+On Hermes 0.22.1+7.g279aafb, one isolated Herdr session sent Chinese text, an empty line and
+an English second paragraph through the real protocol. The receipt was `sent` with
+`probe, Backspace, ctrl+j, ctrl+j, Enter`; Hermes returned `CANARY_READY` and the empty
+composer returned. No tools were requested. The owned canary was removed, and the user's
+existing Hermes session received no input and was not restarted.
+Local ANSI, row reads and receipt are in `/private/tmp/collie-hermes-send-KjNLD4/`.
+The saved-frame phone screenshot is indexed at
+`/private/tmp/collie-hermes-send-evidence/screenshots/index.md`; it proves rendering only.
+
 ## Python launcher identity and localized history — 2026-10-12
 
 Hermes v0.21.6+4.g5884a65 launches as `python3 -I -c …`. Herdr 0.9.3 did not identify

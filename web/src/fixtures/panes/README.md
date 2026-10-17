@@ -16,6 +16,15 @@ scripts/capture-fixture.sh <paneId> <name> [lines]   # paneIds: /api/snapshot
 (`less -R <file>`) for private content before `git add` — prefer generating states in a sandbox
 pane over capturing real work sessions.
 
+## Hermes 0.22.1 Chinese idle composer (captured 2026-10-17)
+
+`hermes--v0221-zh-idle.txt` contains only the last four native rows of the reported
+Hermes 0.22.1+7.g279aafb pane: its status, two rules and italic Chinese suggestion.
+No conversation body is included. The frame test checks the suggestion's style, preserves
+plain typed copies as drafts, and rejects the native non-idle prompt symbols.
+An isolated session separately verified a probed Chinese send with a blank line and an
+English second paragraph, receiving `CANARY_READY` without tools; see Hermes `NOTES.md`.
+
 ## Codex 0.162.1 Plan-mode queue footer (captured 2026-10-13)
 
 `codex--v0162-plan-queue-draft.txt` is the native working/composer tail of an isolated

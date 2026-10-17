@@ -971,6 +971,35 @@ describe("a command (M56 spec 06)", () => {
 
 // ── a send into a running turn ──
 
+describe("Hermes idle sends", () => {
+  test.each(["目前内置记忆和 memory-tencentdb 是什么关系", "中文第一行\n\nsecond line"])("probes and submits %s", async (text) => {
+    const { pane, send } = rig({ harness: "hermes", version: "0.22.1" });
+    pane.placeholder = "";
+    pane.status = [];
+    const answer = await send(text);
+    expect(answer.receipt).toMatchObject({ outcome: "sent", profileId: "hermes", profileStatus: "provisional" });
+    expect(answer.receipt?.keys[0]).toBe("probe");
+    expect(pane.keysSeen[0]).toBe("Backspace");
+    expect(pane.keysSeen.at(-1)).toBe("Enter");
+    expect(pane.transcript.at(-1)).toBe(`> ${text.replace(/\n/gu, " ")}`);
+  });
+
+  test.each(["☤", "⚠", "?", "✎", "🔐", "🔑", "⚙", "🎤"])("never writes a reply into the %s state", async (icon) => {
+    const { pane, send } = rig({ harness: "hermes", version: "0.22.1" });
+    pane.fixed = `${RULE}\n${icon} ❯ \n${RULE}`;
+    expect((await send("do not submit here")).receipt).toMatchObject({ outcome: "refused", keys: [] });
+    expect(pane.calls).toEqual([]);
+  });
+
+  test("preserves an existing Hermes draft", async () => {
+    const { pane, send } = rig({ harness: "hermes", version: "0.22.1" });
+    pane.box = "unsubmitted text";
+    expect((await send("new message")).receipt).toMatchObject({ outcome: "refused", reason: "draft_present", keys: [] });
+    expect(pane.box).toBe("unsubmitted text");
+    expect(pane.calls).toEqual([]);
+  });
+});
+
 /** The live running row of Claude Code 2.1.301 (claude--v2301-working-quiet--w100.txt): no interrupt hint. */
 const LIVE_ROW = "* Wibbling… (4s · ↓ 304 tokens)";
 
