@@ -24,7 +24,7 @@ for (const theme of ["light", "dark"]) for (const locale of ["en", "de", "zh"] a
     });
     await page.goto("/pane/w1:p1");
     const controls = page.getByRole("group", { name: messages["composer.controls.label"] });
-    await expect(controls.getByRole("button")).toHaveCount(4);
+    await expect(controls.getByRole("button")).toHaveCount(5);
     await expect(controls.getByRole("button", { name: messages["composer.controls.keys"], exact: true })).toHaveCount(0);
     const input = controls.getByRole("button", { name: messages["composer.controls.typeAria"] });
     await input.tap();

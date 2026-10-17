@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Changed
+
+- **Type restores the compact keyboard above the input.** One control opens live typing and the single-row keys; the phone draft and attachments return when typing stops. Keep offline, permission and pane-change protections.
+
 ## [1.22.3+collie.2] - 2026-10-18
 
 ### Added

@@ -59,17 +59,17 @@ function mount(state: WayOutState, over: Partial<ComponentProps<typeof Composer>
   return { props, onToggle, container: view.container };
 }
 
-const keysButton = () => screen.getByRole("button", { name: "Keys" });
+const keysButton = () => screen.getByRole("button", { name: "Type into terminal" });
 const screenButton = () => screen.getByRole("button", { name: "Show the screen rows, without cards" });
 const statusLine = () => document.querySelector('[data-slot="status-area"]')?.textContent ?? "";
 
-/** The Screen pill answers in one tap, and the Keys dock opens in one tap with its pad enabled or not. */
+/** The Screen pill answers in one tap, and the key accessory opens in one tap with its pad enabled or not. */
 async function wayOutIs(user: ReturnType<typeof userEvent.setup>, onToggle: () => void, pad: "sends" | "waits") {
   await user.click(screenButton());
   expect(onToggle).toHaveBeenCalledTimes(1);
   expect(keysButton()).toBeEnabled();
   await user.click(keysButton());
-  const esc = screen.getByRole("button", { name: "Esc" });
+  const esc = screen.getByRole("button", { name: "Escape" });
   if (pad === "sends") expect(esc).toBeEnabled();
   else expect(esc).toBeDisabled();
 }
@@ -164,7 +164,7 @@ describe("the way out", () => {
     await wayOutIs(user, onToggle, "sends");
   });
 
-  it("modal unreadable: the placeholder names it, Send takes two taps (prepare, then commit with the rows seen), and the Keys dock is enabled", async () => {
+  it("modal unreadable: the placeholder names it, Send takes two taps (prepare, then commit with the rows seen), and the key accessory is enabled", async () => {
     server.use(
       ...sendHandler((request) =>
         request.rowsHash === undefined
@@ -196,13 +196,16 @@ describe("the way out", () => {
     await screen.findByText(/the agent was working/i);
     expect(statusLine()).toBe("");
     await user.click(screen.getByRole("button", { name: "Open Keys" }));
-    expect(screen.getByRole("button", { name: "Esc" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Escape" })).toBeEnabled();
+    expect(screen.getByRole("textbox")).toHaveValue("");
+    expect(screen.getByText(/draft kept/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Stop" }));
     expect(screen.getByRole("textbox")).toHaveValue("hurry up");
     await user.click(screenButton());
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it("unknown no-match: the placeholder says the box was not found, Send takes two taps, a refused probe names the Surface and points to the Keys dock", async () => {
+  it("unknown no-match: the placeholder says the box was not found, Send takes two taps, a refused probe names the Surface and points to the key accessory", async () => {
     server.use(...sendHandler((request) => sendAnswer(request.id, "refused", "probe_failed", { surface: wayOutCase("no-match").surface, offers: ["keys"] })));
     const user = userEvent.setup();
     const { onToggle } = mount("no-match");
@@ -247,7 +250,7 @@ describe("the way out", () => {
     await wayOutIs(user, onToggle, "sends");
   });
 
-  it("composer unreachable: the field is locked and names why, and the Keys dock still opens and sends", async () => {
+  it("composer unreachable: the field is locked and names why, and the key accessory still opens and sends", async () => {
     const user = userEvent.setup();
     const { onToggle } = mount("unreachable");
     expect(screen.getByPlaceholderText("workshop is not answering")).toBeDisabled();
@@ -262,7 +265,7 @@ describe("the way out", () => {
     expect(screen.queryByRole("button", { name: "Show the screen rows, without cards" })).toBeNull();
   });
 
-  it("read-only device: the board says so and Keys is withdrawn, while the Screen can still be read", async () => {
+  it("read-only device: the board says so and Type is disabled, while the Screen can still be read", async () => {
     const user = userEvent.setup();
     const { onToggle } = mount("readOnly");
     expect(screen.getByPlaceholderText(/read-only/i)).toBeDisabled();
