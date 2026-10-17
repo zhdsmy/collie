@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.1+collie.3] - 2026-10-17
+
 ### Fixed
 
-- **Codex slash commands submit when their completion popup scrolls.** Recognize unchanged rows moving from the previously visible volatile band into the checked transcript, so `/resume` opens with one send after a long reply. Keep the scroll bound, exact draft matching, modal checks and rejection of new or replaced transcript rows.
+- **Codex slash commands submit when their completion popup scrolls.** Recognize unchanged rows moving from the previously visible volatile band into the checked transcript, so `/resume` opens with one send after a long reply. Keep the scroll bound, exact draft matching, modal checks and rejection of new or replaced transcript rows. ([16505da9](https://github.com/zhdsmy/collie/commit/16505da9))
 
 ## [1.22.1+collie.2] - 2026-10-17
 
