@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Claude command lists allow the selected command to submit.** Merge v1.22.4 recognition above and below the input, retain mismatched-selection guards and downstream input controls. See [the integration report](docs/upstream-v1.22.4.md).
+
 ## [1.22.3+collie.3] - 2026-10-18
 
 ### Changed
@@ -334,6 +338,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 ### Changed
 
 - **Collie follows upstream with reliable paths and Crew connections.** Merge v1.15.3 with Windows path fixes, explicit Crew addresses and omp empty-editor hint recognition, preserving Collie controls and current agent adaptations. ([4e24f2d5](https://github.com/zhdsmy/collie/commit/4e24f2d5))
+
+## [1.22.4] - 2026-10-17
+
+### Fixed
+
+- **A command from the belt or the Agent sheet, such as Model, goes through again when Claude Code opens its command list at the box.** Claude Code 2.1.302 draws that list with the command on the left and its description on the right, under the box on a short pane and over it on a tall one. On a wide pane the highlighted entry's description fits on one row, so the next entry sits right beside it, and Collie read the list as something open over the box and withheld Enter. The text stayed in the box, and later taps on that pane were refused while the list stayed open. Now a list whose highlighted entry is the typed command reads as that command's own list, on either side of the box, and Enter goes out, in a turn or not. A list whose descriptions wrap onto the next row matches too. A list that highlights another command still keeps Enter back and leaves the text in the box, and its notice says the list pointed at another command.
 
 ## [1.22.3] - 2026-10-17
 

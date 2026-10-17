@@ -4445,6 +4445,16 @@
       "harness": "codex",
       "version": "0.163.0",
       "state": "running"
+    },
+    "claude--v2302-slash-model-list--w119.txt": {
+      "harness": "claude",
+      "version": "2.1.302",
+      "state": "popup"
+    },
+    "claude--v2302-slash-model-list-above--w119.txt": {
+      "harness": "claude",
+      "version": "2.1.302",
+      "state": "popup"
     }
   },
   "knownMismatches": {
