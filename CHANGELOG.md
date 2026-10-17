@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.1+collie.4] - 2026-10-17
+
 ### Fixed
 
-- **Hermes idle messages use the guarded Send Protocol again.** Register its bordered input frame and locale-independent italic suggestions, restoring ordinary Chinese and multiline sends without the manual “Type here” detour. Keep per-send probing, existing-draft checks and exclusion of busy, permission, password, voice and question prompts.
+- **Hermes idle messages use the guarded Send Protocol again.** Register its bordered input frame and locale-independent italic suggestions, restoring ordinary Chinese and multiline sends without the manual “Type here” detour. Keep per-send probing, existing-draft checks and exclusion of busy, permission, password, voice and question prompts. ([f94a36f7](https://github.com/zhdsmy/collie/commit/f94a36f7))
 
 ## [1.22.1+collie.3] - 2026-10-17
 
