@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Follow upstream input guards and shell keyboard fixes.** Merge v1.22.1 fixes for OMP extension widgets and confirmation prompts, tall Antigravity status lines, Windows pi folders and Android shell correction; retain downstream controls and the approved Send Protocol and Resume menu. See [the integration report](docs/upstream-v1.22.1.md).
+
 ## [1.22.0+collie.1] - 2026-10-17
 
 ### Added
@@ -288,6 +292,16 @@ Running a crew? Update the lead first; members follow on their own. Details:
 ### Changed
 
 - **Collie follows upstream with reliable paths and Crew connections.** Merge v1.15.3 with Windows path fixes, explicit Crew addresses and omp empty-editor hint recognition, preserving Collie controls and current agent adaptations. ([4e24f2d5](https://github.com/zhdsmy/collie/commit/4e24f2d5))
+## [1.22.1] - 2026-10-17
+
+### Fixed
+
+- **An OMP widget under the input box no longer blocks every send.** OMP extensions can draw rows under the box with `placement: "belowEditor"`. Collie read that idle box as cut off and refused each message with "The screen changed while Collie read it". Up to three rows under the box now count as content under it, and a read that ends inside the box is still refused. Thanks @christensenjames (#468)
+- **The shell composer no longer capitalizes the first letter on Android.** A shell pane's input field now also turns auto-correction and spell check off, next to `autoCapitalize="none"`, so Gboard, SwiftKey and the Samsung keyboard leave a typed command as it is. Thanks to @viniciosrab for the report and the fix idea. (#465)
+- **An Antigravity pane with a tall status line takes a send again.** A custom `statusLine` of four to eight rows under the input box hid the box from the send check, so each message needed a second tap, Type here. The check looks up to eight rows under the box again, as 1.21.3 did.
+- **A pi pane on Windows takes a send in a folder outside your home folder.** pi prints the folder in the first row under its box. A folder that starts with a drive letter, such as `C:\work`, did not count as that row, so Collie found no box and each message needed Type here.
+- **An OMP pane whose last line asks "(y/n)" no longer refuses every send.** A `(y/n)` or a key hint in the row right over OMP's input box reads as a possible dialog. Collie called the whole box cut off there and refused each send with "The screen changed while Collie read it". Now the send takes the second tap, Type here, as on pi and Muse.
+
 ## [1.22.0] - 2026-10-17
 
 ### Added
