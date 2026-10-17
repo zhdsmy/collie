@@ -23,13 +23,15 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.3+collie.2] - 2026-10-18
+
 ### Added
 
-- **Codex sends can queue or steer by device preference.** Settings → Device chooses the default; a one-off Steer now and a guarded promotion of the last native queued message preserve drafts and avoid duplicate submissions. Commands and other harnesses retain their own behavior.
+- **Codex sends can queue or steer by device preference.** Settings → Device chooses the default; a one-off Steer now and a guarded promotion of the last native queued message preserve drafts and avoid duplicate submissions. Commands and other harnesses retain their own behavior. ([3703e87d](https://github.com/zhdsmy/collie/commit/3703e87d))
 
 ### Fixed
 
-- **Hermes accepts busy composer frames as evidence of successful submission.** Recognize the native running prompt separately from idle so an accepted message no longer produces a false no-evidence warning; retain dialog and draft guards.
+- **Hermes accepts busy composer frames as evidence of successful submission.** Recognize the native running prompt separately from idle so an accepted message no longer produces a false no-evidence warning; retain dialog and draft guards. ([3703e87d](https://github.com/zhdsmy/collie/commit/3703e87d))
 
 ## [1.22.3+collie.1] - 2026-10-17
 
