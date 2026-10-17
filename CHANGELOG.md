@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.4+collie.1] - 2026-10-18
+
 ### Fixed
 
-- **Claude command lists allow the selected command to submit.** Merge v1.22.4 recognition above and below the input, retain mismatched-selection guards and downstream input controls. See [the integration report](docs/upstream-v1.22.4.md).
+- **Claude command lists allow the selected command to submit.** Merge v1.22.4 recognition above and below the input, retain mismatched-selection guards and downstream input controls. See [the integration report](docs/upstream-v1.22.4.md). ([4bd40519](https://github.com/zhdsmy/collie/commit/4bd40519))
 
 ## [1.22.3+collie.3] - 2026-10-18
 
