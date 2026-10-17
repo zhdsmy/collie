@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.1+collie.1] - 2026-10-17
+
 ### Fixed
 
-- **Follow upstream input guards and shell keyboard fixes.** Merge v1.22.1 fixes for OMP extension widgets and confirmation prompts, tall Antigravity status lines, Windows pi folders and Android shell correction; retain downstream controls and the approved Send Protocol and Resume menu. See [the integration report](docs/upstream-v1.22.1.md).
+- **Follow upstream input guards and shell keyboard fixes.** Merge v1.22.1 fixes for OMP extension widgets and confirmation prompts, tall Antigravity status lines, Windows pi folders and Android shell correction; retain downstream controls and the approved Send Protocol and Resume menu. See [the integration report](docs/upstream-v1.22.1.md). ([921235fd](https://github.com/zhdsmy/collie/commit/921235fd))
 
 ## [1.22.0+collie.1] - 2026-10-17
 
