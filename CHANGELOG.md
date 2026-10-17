@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.0+collie.1] - 2026-10-17
+
 ### Added
 
-- **Follow upstream sending, themes and durable agent sessions.** Merge v1.22.0, adopt its Send Protocol and shared Codex Resume menu, retain guarded model/mode switches and other custom cards, and preserve compact controls, device typography and Codex image sends.
+- **Follow upstream sending, themes and durable agent sessions.** Merge v1.22.0, adopt its Send Protocol and shared Codex Resume menu, retain guarded model/mode switches and other custom cards, and preserve compact controls, device typography and Codex image sends. See [the integration report](docs/upstream-v1.22.0.md). ([cc94c6b0](https://github.com/zhdsmy/collie/commit/cc94c6b0))
 
 ## [1.21.3+collie.1] - 2026-10-15
 
