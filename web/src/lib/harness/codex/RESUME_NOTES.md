@@ -33,7 +33,16 @@ new conversation; the isolated probe uses Ctrl+C to quit instead. Expanded rows,
 frames, unpainted pointers and unknown layouts stay native. The Send Protocol remains unchanged.
 
 Validation for this restoration: affected Codex/Muse parsers, picker actions, components and
-Surface folding pass (6,206 tests, with 11 existing todo cases); a temporary
-test-edit typo was fixed and the 38 picker actions rerun successfully. The adaptation catalog's
-64 replays and four 320px Chromium/WebKit interactions pass. Root and web typechecks and lint pass.
-Screenshots are local evidence at `/private/tmp/collie-resume-e2e/`; no model request was made.
+Surface folding pass (6,206 tests, with 11 existing todo cases); 823 binding/frame/profile tests,
+64 adaptation replays and four 320px Chromium/WebKit interactions also pass. Root and web
+typechecks, lint and the release build pass. Screenshots are local evidence at
+`/private/tmp/collie-resume-e2e/`; no model request was made.
+
+Delivered as `v1.22.1+collie.2`, build `1.22.1+collie.2+e9bf1905.1792228209`, on 2026-10-17.
+Only Collie was restarted. Localhost build/config identities, health, 12 session snapshots,
+Files and release notes agree; anonymous and revoked-device reads remain denied. The temporary
+device was revoked. Herdr and Headroom retain their original processes. One complete previous
+release rollback remains, and staging plus the older owned backup were removed.
+External OAuth verification was omitted by operator instruction. The isolated live probe did
+not resume a session; final selection is covered by the stubbed browser tests. The version tag
+continues to disclose that the complete current Claude, Codex and Hermes CLIs were not certified.
