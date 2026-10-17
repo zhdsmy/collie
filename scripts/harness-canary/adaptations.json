@@ -1,5 +1,70 @@
 {
   "features": [
+{
+  "id": "codex.send",
+  "agent": "codex",
+  "origin": "downstream",
+  "sources": [
+    "web/src/lib/surface/profiles/codex.json",
+    "web/src/lib/surface/queued.ts",
+    "bridge/surface/protocol.ts",
+    "web/src/components/composer.tsx",
+    "web/src/components/codex-send-control.tsx"
+  ],
+  "tests": [
+    "bridge/surface/protocol.test.ts",
+    "web/src/components/composer.test.tsx",
+    "web/src/hooks/use-display-prefs.test.ts",
+    "web/e2e/codex-send-mode.spec.ts"
+  ],
+  "fixtures": [
+    {
+      "path": "web/src/fixtures/panes/codex--v0163-queued-steer.txt",
+      "agent": "codex",
+      "expect": {
+        "block": "raw"
+      }
+    }
+  ],
+  "live": false,
+  "verified": {
+    "version": "0.163.0",
+    "date": "2026-10-17",
+    "how": "owned Herdr canary: Tab queued, Shift+Left removed last item, Enter steered once; default and one-off choice covered in DOM tests",
+    "evidence": "web/src/lib/harness/codex/SEND_NOTES.md"
+  }
+},
+{
+  "id": "hermes.send",
+  "agent": "hermes",
+  "origin": "downstream",
+  "sources": [
+    "web/src/lib/surface/profiles/hermes.json",
+    "web/src/lib/surface/cues.ts",
+    "bridge/surface/protocol.ts"
+  ],
+  "tests": [
+    "web/src/lib/surface/frame.test.ts",
+    "web/src/lib/surface/fold.test.ts",
+    "bridge/surface/protocol.test.ts"
+  ],
+  "fixtures": [
+    {
+      "path": "web/src/fixtures/panes/hermes--v0221-zh-send-running.txt",
+      "agent": "hermes",
+      "expect": {
+        "block": "raw"
+      }
+    }
+  ],
+  "live": false,
+  "verified": {
+    "version": "0.22.1",
+    "date": "2026-10-17",
+    "how": "authorized existing General session reproduced unknown/no_evidence; repaired protocol returned sent on busy prompt and received fixed marker",
+    "evidence": "web/src/lib/harness/hermes/NOTES.md#busy-composer-receipt-repair--2026-10-17"
+  }
+},
     {
       "id": "pi.question",
       "agent": "pi",

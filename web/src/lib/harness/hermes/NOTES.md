@@ -9,8 +9,8 @@ scrolling repair. The old display adapter can hide chrome but cannot supply a Su
 
 `surface/profiles/hermes.json` registers the native bordered `❯` composer, optionally prefixed
 by a profile name. Suggestions are all italic (SGR 3), including localized and randomly chosen
-text; plain copies remain drafts. Native `☤`, permission, clarify, password, connection,
-voice and command-spinner prompts are excluded. Existing Surface and Send Protocol guards
+text; plain copies remain drafts. Native `☤` / `⚕` frames are recognized as running, not idle. Permission, clarify, password,
+connection, voice and command-spinner prompts are excluded. Existing Surface and Send Protocol guards
 handle draft preservation, exact readback and submission; no second sending path was added.
 The two `resume-fragments` fixtures contain replayed history above a live empty composer;
 their former `screen` labels are corrected to `idle`, since history does not own the keyboard.
@@ -29,6 +29,23 @@ existing Hermes session received no input and was not restarted.
 Local ANSI, row reads and receipt are in `/private/tmp/collie-hermes-send-KjNLD4/`.
 The saved-frame phone screenshot is indexed at
 `/private/tmp/collie-hermes-send-evidence/screenshots/index.md`; it proves rendering only.
+
+## Busy composer receipt repair — 2026-10-17
+
+The existing General Hermes session reproduced `unknown/no_evidence` after a successful send:
+S2 saw `☤ ❯` while the model ran, but the idle-only frame reader returned null. The earlier
+isolated canary replied before the evidence window closed, which concealed this case.
+The profile now names the busy prompt explicitly (`idle.runningPrompt`); Surface remains
+`running`, ordinary sends into that state still hold/refuse, and S2 confirms the accepted send.
+The fixture `hermes--v0221-zh-send-running.txt` keeps only the captured three composer rows.
+
+The repaired protocol sent one diagnostic in the same user-authorized General session with
+`probe, Backspace, Enter`, returned `sent` in under one second and received `COLLIE_HERMES_FIXED`.
+No session restart or provider configuration change was needed. The native `Model fallback`
+warning belongs to Hermes' provider retry and remains visible. Local evidence:
+`/private/tmp/collie-live-send-1792252464445/`; failed reproduction:
+`/private/tmp/collie-hermes-current-232826/`. This proves idle sending and the busy receipt,
+not busy interruption, every slash command, or the whole CLI.
 
 ## Python launcher identity and localized history — 2026-10-12
 

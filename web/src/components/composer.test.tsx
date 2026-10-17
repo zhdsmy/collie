@@ -178,6 +178,52 @@ describe("Composer: keyboard hints on the field (issue 465)", () => {
   });
 });
 
+describe("Composer: Codex queue and steer", () => {
+  const running: Surface = { ...FREE, turn: "running" };
+  it.each(["queue", "steer"] as const)("uses the selected Codex default: %s", async (mode) => {
+    const user = userEvent.setup();
+    const prefs = { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system" as const, rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, codexSendMode: mode };
+    renderComposer({ agent: "codex", surface: running, prefs });
+    await user.type(screen.getByRole("textbox"), "guide this task");
+    const primary = document.querySelector('[data-slot="composer-primary"]')!;
+    await user.click(primary);
+    await waitFor(() => expect(recordedSends()).toHaveLength(1));
+    expect(recordedSends()[0]!.mode).toBe(mode === "steer" ? "steer" : "send");
+  });
+
+  it("offers a one-off steer while the default is queue", async () => {
+    const user = userEvent.setup();
+    renderComposer({ agent: "codex", surface: running });
+    await user.type(screen.getByRole("textbox"), "guide now");
+    await user.click(screen.getByRole("button", { name: "Steer now" }));
+    await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "steer", text: "guide now" }));
+  });
+
+  it("promotes the last native queued message and preserves the phone draft", async () => {
+    const user = userEvent.setup();
+    const text = "• Working (4s • esc to interrupt)\n\n• Queued follow-up inputs\n  ↳ first queued\n  ↳ last queued\n    ⇧← edit last queued message\n\n› \n\n  GPT-6-Luna low · ~/project\n  tab to queue message";
+    renderComposer({ agent: "codex", surface: running, text });
+    await user.type(screen.getByRole("textbox"), "keep my draft");
+    await user.click(screen.getAllByRole("button", { name: "Steer now" })[0]!);
+    await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "steer-queued", text: "last queued" }));
+    expect(screen.getByRole("textbox")).toHaveValue("keep my draft");
+  });
+
+  it("keeps slash commands on the command path and hides steering on other harnesses", async () => {
+    const user = userEvent.setup();
+    renderComposer({ agent: "claude", surface: running });
+    await user.type(screen.getByRole("textbox"), "hello");
+    expect(screen.queryByRole("button", { name: "Steer now" })).not.toBeInTheDocument();
+    cleanup();
+    renderComposer({ agent: "codex", surface: running });
+    await user.clear(screen.getByRole("textbox"));
+    await user.type(screen.getByRole("textbox"), "/status");
+    expect(screen.queryByRole("button", { name: "Steer now" })).not.toBeInTheDocument();
+    await user.click(document.querySelector('[data-slot="composer-primary"]')!);
+    await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "command" }));
+  });
+});
+
 describe("Composer — send", () => {
   it("sends non-destructive input on the first tap and clears the draft", async () => {
     const user = userEvent.setup();

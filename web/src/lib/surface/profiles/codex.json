@@ -57,7 +57,7 @@
     "runningRows": [
       "\\s·\\s[⠀-⣿]$",
       "^\\s*[Tt]ab to queue message\\b",
-      "^\\s*(?:shift\\+←|alt \\+ ↑) edit last queued message$",
+      "^\\s*(?:shift\\+←|⇧←|alt \\+ ↑) edit last queued message$",
       "^\\s*• Working \\("
     ]
   },
@@ -89,9 +89,11 @@
     "commandWhileRunningNote": "Lab 2026-10-16: measured on Codex 0.163.0 with /status only (queued under Queued follow-up inputs, ran after the turn).",
     "neverHeld": ["/quit", "/exit", "/new", "/resume", "/logout", "!"],
     "queueKey": "Tab",
+    "steerKey": "Enter",
+    "editQueuedKey": "shift+Left",
     "queuedRow": {
       "pattern": "^\\s*↳ (?<text>\\S.*?)\\s*$",
-      "hint": "^\\s*(?:shift\\+←|alt \\+ ↑) edit last queued message\\s*$",
+      "hint": "^\\s*(?:shift\\+←|⇧←|alt \\+ ↑) edit last queued message\\s*$",
       "hintGap": 0
     }
   },

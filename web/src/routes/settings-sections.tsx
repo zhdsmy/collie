@@ -14,6 +14,7 @@ import { KeepChatControl } from "@/components/keep-chat-control";
 import { FontSettingsControl } from "@/components/font-settings";
 import { HandControl } from "@/components/hand-control";
 import { SpeechControl } from "@/components/speech-control";
+import { CodexSendControl } from "@/components/codex-send-control";
 import { HapticsControl } from "@/components/haptics-control";
 import { HarnessBarControl } from "@/components/harness-bar-control";
 import { LanguageControl } from "@/components/language-control";
@@ -113,6 +114,7 @@ export function SettingsDeviceRoute() {
     <SettingsPage title="settings.section.device.title">
       {/* Renders nothing where vibrate is unsupported. */}
       <HapticsControl />
+      <CodexSendControl />
       {/* AVAILABILITY ONLY. This row does not turn zen on — it decides whether the pane's actions
           sheet offers the "Zen mode" row at all. Off by default, because zen takes away every way
           back except one floating button. */}

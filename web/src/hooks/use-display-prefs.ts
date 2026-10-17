@@ -108,6 +108,8 @@ export interface DisplayPrefs {
    * a payload written before the setting existed reads the right hand.
    */
   hand?: Hand;
+  /** Default for ordinary Codex messages during a turn; other harnesses keep native behavior. */
+  codexSendMode?: "queue" | "steer";
 }
 
 /** The two hands the pane screen can be laid out for. */
@@ -379,6 +381,7 @@ function loadPrefs(): DisplayPrefs {
       // Absent until the operator picks one, so a payload written before the setting existed (and
       // one that picked the default) reads the right hand through {@link handOf}.
       hand: readHand(asJsonString(p.hand)),
+      codexSendMode: p.codexSendMode === "steer" ? "steer" : undefined,
     };
   } catch {
     return DEFAULTS;
@@ -421,6 +424,7 @@ export interface UseDisplayPrefsReturn {
   setKeepChat: (keepChat: KeepChat) => void;
   /** Which thumb the pane screen is laid out for. */
   setHand: (hand: Hand) => void;
+  setCodexSendMode: (mode: "queue" | "steer") => void;
 }
 
 export function useDisplayPrefs(): UseDisplayPrefsReturn {
@@ -525,8 +529,17 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     });
   }, []);
 
+  const setCodexSendMode = useCallback((codexSendMode: "queue" | "steer") => {
+    setPrefs((p) => {
+      const next: DisplayPrefs = { ...p, codexSendMode };
+      savePrefs(next);
+      return next;
+    });
+  }, []);
+
   return {
     prefs,
+    setCodexSendMode,
     setWrap,
     setFontSize,
     setFontFamily,

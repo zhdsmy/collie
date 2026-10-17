@@ -219,6 +219,7 @@ describe("the codex profile (M56 spec 13)", () => {
   it("codex: the running rows take the queued-message hint Codex 0.163.0 draws in a turn", () => {
     const signs = parseProfile(rawCodex()).idle.runningRows!.map((source) => new RegExp(source, "u"));
     expect(signs.some((sign) => sign.test("  shift+← edit last queued message"))).toBe(true);
+    expect(signs.some((sign) => sign.test("  ⇧← edit last queued message"))).toBe(true);
   });
 
   it("codex: matches the long-paste form", () => {
@@ -227,6 +228,10 @@ describe("the codex profile (M56 spec 13)", () => {
   });
 
   const cases: [string, (string | number)[], JsonValue | undefined, string][] = [
+    ["codex: invalid steering key", ["keys", "steerKey"], "Escape", "keys.steerKey"],
+    ["codex: unsafe queue recall key", ["keys", "editQueuedKey"], "Enter", "keys.editQueuedKey"],
+    ["codex: unanchored running prompt", ["idle", "runningPrompt"], "☤", "idle.runningPrompt"],
+    ["codex: empty running prompt", ["idle", "runningPrompt"], "^", "idle.runningPrompt"],
     ["codex: Escape as the queue key", ["keys", "queueKey"], "Escape", "keys.queueKey"],
     ["codex: Enter as the queue key", ["keys", "queueKey"], "Enter", "keys.queueKey"],
     ["codex: Escape as a command key", ["keys", "commandSubmit"], ["Escape"], "keys.commandSubmit"],

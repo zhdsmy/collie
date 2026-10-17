@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ChangeEvent, ClipboardEvent, CSSProperties, ReactNode } from "react";
 import { useRevalidator } from "react-router";
@@ -35,8 +35,11 @@ import { modeFor, sendText } from "@/lib/reply-action";
 import { fieldLocked, sendSlot, UNREAD_SURFACE, unreachable } from "@/lib/send-slot";
 import { wayOut } from "@/lib/way-out";
 import type { Surface } from "@/lib/surface/surface";
+import { findInputFrame } from "@/lib/surface/frame";
+import { requireProfile } from "@/lib/surface/profile";
+import { queuedTexts } from "@/lib/surface/queued";
 import { parseAnsi } from "@/lib/ansi";
-import { splitLines } from "@/lib/blocks";
+import { lineText, splitLines } from "@/lib/blocks";
 import { detectNoEchoPrompt } from "@/lib/no-echo";
 import type { HeldRow, SendMode, SendOffer } from "@/lib/surface/send";
 import type { IntentId } from "@/lib/durable-control";
@@ -851,6 +854,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // draft helpers below stay harness-free: they take the capability, never the grammar. Undefined for
   // any agent without an adapter, which is exactly the "no idea" case those helpers already handle.
   const adapter = adapterFor(agent ?? undefined);
+  const codexRunning = agent === "codex" && shownSurface.turn === "running" && shownSurface.modal === "none";
+  const lastQueued = useMemo(() => {
+    if (!codexRunning) return undefined;
+    const rows = splitLines(parseAnsi(text));
+    const profile = requireProfile("codex");
+    const last = queuedTexts(rows.map(lineText), findInputFrame(rows, profile.idle), profile.keys.queuedRow).at(-1);
+    return last !== undefined && modeFor(last) === "send" && !holdsMask(last) ? last : undefined;
+  }, [codexRunning, text]);
 
   // Guard against a false stranded-draft: if the detected draft is what we JUST sent, it's our own
   // reply still echoing on the "❯" line before the bridge's Enter, so suppress the preview. Applied
@@ -1139,7 +1150,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // no key of its own: no pre-flight, no type-then-verify, no sweep of a stranded draft (a draft in
   // the box is refused `draft_present` and offered Add, Replace or Cancel). A text that starts with a
   // reserved lead (`/`, `!`, `@`) goes as a `command`, whose popup under the box is expected.
-  async function send(value: string, isDraft: boolean): Promise<boolean> {
+  async function send(value: string, isDraft: boolean, immediate = false): Promise<boolean> {
     const t = value.trim();
     if (!t || locked || sending) return false;
     if (offlineRef.current) {
@@ -1153,7 +1164,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       setSendRefusal(phoneRefusal(translate("composer.status.dialogWaiting"), true));
       return false;
     }
-    return sendThroughProtocol(t, isDraft, modeFor(t), null);
+    const mode = modeFor(t);
+    return sendThroughProtocol(t, isDraft, agent === "codex" && mode === "send" && (immediate || prefs.codexSendMode === "steer") ? "steer" : mode, null);
   }
 
   // One Send Protocol request (lib/reply-action.ts). The id is kept for a retry of the same intent
@@ -1239,7 +1251,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // Gate the composer's Send through the destructive-input confirm: a matching command arms the
   // "Really send?" state instead of sending; the confirming second tap goes through. Non-destructive
   // input sends immediately (and any stray armed state is cleared).
-  function onSendClick() {
+  function onSendClick(immediate = false) {
     // The line the terminal gets: every chip's marker swapped for its path (ADR 0060). Both the
     // destructive check and the send read THIS, never the draft with its markers in it.
     const line = composeLine(input, attachments);
@@ -1257,7 +1269,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     }
     sendConfirm.reset();
     setDestructiveNote(null);
-    send(line, true);
+    send(line, true, immediate);
   }
   const confirmingSend = sendConfirm.pending === "send";
   // A modal ask owns the agent's keyboard: the Send slot and the placeholder say so (spec 10).
@@ -2042,6 +2054,12 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             out of the widest part of the composer. It answers the same question from the belt
             above, which is equally at the write surface and costs the draft nothing. */}
         {/* The sends the bridge holds for this pane (M56 spec 15), directly above the box so they move with it. */}
+        {!direct.active && codexRunning && lastQueued !== undefined && shownSurface.composer === "empty" && (
+          <div className="flex min-w-0 items-center gap-2 px-3 text-xs">
+            <span className="min-w-0 flex-1 truncate text-muted-foreground" title={lastQueued}>{translate("composer.codex.lastQueued")}: {lastQueued}</span>
+            <Button variant="ghost" size="sm" className="min-h-11 shrink-0" disabled={locked || sending || offline} onClick={() => void sendThroughProtocol(lastQueued, false, "steer-queued", null)}>{translate("settings.codexSend.steer")}</Button>
+          </div>
+        )}
         <HeldRows paneId={paneId} scope={scope} rows={heldRows ?? []} canAct={isLead(scope) && !locked} sending={sending} onSend={resendHeld} onChanged={onSent} />
         <div
           data-slot="composer-box"
@@ -2242,6 +2260,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               }}
             />
           </AnchoredMenu>
+          {!direct.active && codexRunning && prefs.codexSendMode !== "steer" && hasDraft && modeFor(composeLine(input, attachments)) === "send" && (
+            <Button variant="ghost" size="icon" className={cn(TOOLBAR_TAP_TARGET, "size-9 shrink-0 rounded-full")} disabled={locked || sending || offline} onClick={() => onSendClick(true)} aria-label={translate("settings.codexSend.steer")} title={translate("settings.codexSend.steer")}>
+              <Zap className="size-4" aria-hidden="true" />
+            </Button>
+          )}
           {askOwnsKeys && hasDraft ? (
             // A modal ask owns the agent's keyboard, so the refusal is shown HERE, in the Send slot,
             // and never in the header: on a phone that line is scrolled off or under
@@ -2262,7 +2285,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             <Button
               variant="destructive"
               className={cn(TOOLBAR_TAP_TARGET, "h-9 shrink-0 rounded-md px-3 text-sm font-semibold")}
-              onClick={onSendClick}
+              onClick={() => onSendClick()}
               disabled={locked || offline || !hasDraft || sending}
               title={offline ? translate("composer.send.reconnect") : undefined}
               aria-label={offline ? translate("composer.send.reconnect") : translate("composer.send.reallySend")}
@@ -2316,7 +2339,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               data-slot="composer-primary"
               size="icon"
               className={cn(TOOLBAR_TAP_TARGET, "size-9 shrink-0 rounded-full")}
-              onClick={direct.active ? () => direct.deactivate() : onSendClick}
+              onClick={direct.active ? () => direct.deactivate() : () => onSendClick()}
               disabled={locked || sending || (offline && !direct.active)}
               title={offline && !direct.active ? translate("composer.send.reconnect") : undefined}
               aria-label={
@@ -2324,7 +2347,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   ? translate("composer.send.stopTypingAria")
                   : offline
                     ? translate("composer.send.reconnect")
-                    : translate("composer.send.sendAria")
+                    : codexRunning && modeFor(composeLine(input, attachments)) === "send" ? translate(prefs.codexSendMode === "steer" ? "settings.codexSend.steer" : "settings.codexSend.queue") : translate("composer.send.sendAria")
               }
               aria-pressed={direct.active}
             >

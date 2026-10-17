@@ -4,6 +4,12 @@ import type { Dictionary } from "./en";
 // `.other` carry the same sentence — the pair still exists because `tn()` asks for it by suffix.
 
 export const ko: Dictionary = {
+  "settings.codexSend.title": "Codex 전송 방식",
+  "settings.codexSend.description": "Codex 실행 중 전송 버튼의 기본 동작입니다. 이 기기에만 적용되며 명령 동작은 유지됩니다.",
+  "settings.codexSend.queue": "대기열에 추가",
+  "settings.codexSend.steer": "즉시 지시",
+  "composer.codex.lastQueued": "대기열의 마지막 메시지",
+
   "statusline.claude.hint": "Claude 도움말",
   "statusline.claude.cache.warm": "웜",
   "statusline.claude.cache.cold": "콜드",

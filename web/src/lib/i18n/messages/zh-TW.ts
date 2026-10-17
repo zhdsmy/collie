@@ -4,6 +4,12 @@ import type { Dictionary } from "./en";
 // suffixes match.
 
 export const zhTW: Dictionary = {
+  "settings.codexSend.title": "Codex 傳送方式",
+  "settings.codexSend.description": "Codex 執行時，選擇傳送按鈕的預設行為。僅此裝置生效；命令維持原有行為。",
+  "settings.codexSend.queue": "排隊",
+  "settings.codexSend.steer": "立即引導",
+  "composer.codex.lastQueued": "佇列最後一則",
+
   "statusline.claude.hint": "Claude 提示",
   "statusline.claude.cache.warm": "暖",
   "statusline.claude.cache.cold": "冷",

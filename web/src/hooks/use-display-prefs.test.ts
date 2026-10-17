@@ -18,6 +18,17 @@ const STORAGE_KEY = "collie:display-prefs:v4";
 describe("useDisplayPrefs", () => {
   beforeEach(() => localStorage.clear());
 
+  it("keeps Codex queue as the default and persists the steering choice", () => {
+    const { result, unmount } = renderHook(() => useDisplayPrefs());
+    expect(result.current.prefs.codexSendMode ?? "queue").toBe("queue");
+    act(() => result.current.setCodexSendMode("steer"));
+    unmount();
+    const reloaded = renderHook(() => useDisplayPrefs());
+    expect(reloaded.result.current.prefs.codexSendMode).toBe("steer");
+    act(() => reloaded.result.current.setCodexSendMode("queue"));
+    expect(reloaded.result.current.prefs.codexSendMode).toBe("queue");
+  });
+
   it("returns defaults when localStorage is empty", () => {
     const { result } = renderHook(() => useDisplayPrefs());
     expect(result.current.prefs).toEqual({ wrap: true, fontSize: 10, draftFontSize: 14, chatFontSize: 14, fontFamily: "system", rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: true, keepChat: "1d" });

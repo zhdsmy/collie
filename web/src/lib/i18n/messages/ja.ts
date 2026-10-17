@@ -3,6 +3,12 @@ import type { Dictionary } from "./en";
 // Japanese. See de.ts for the typing contract. One plural category, so both suffixes match.
 
 export const ja: Dictionary = {
+  "settings.codexSend.title": "Codex の送信方法",
+  "settings.codexSend.description": "Codex の実行中に送信ボタンが行う動作。この端末のみ。コマンドの動作は変わりません。",
+  "settings.codexSend.queue": "キューに追加",
+  "settings.codexSend.steer": "今すぐ指示",
+  "composer.codex.lastQueued": "キューの最後のメッセージ",
+
   "statusline.claude.hint": "Claude のヒント",
   "statusline.claude.cache.warm": "ウォーム",
   "statusline.claude.cache.cold": "コールド",

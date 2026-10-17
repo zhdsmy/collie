@@ -62,6 +62,8 @@ export const SEND_REASONS = [
 export type SendReason = (typeof SEND_REASONS)[number];
 
 /**
+ * `steer` submits ordinary text immediately on a capable harness; `steer-queued` retrieves and
+ * submits the last visible native queued message, after checking its text and removal.
  * What a request asks for. `send` is a new message into an empty box. `command` is a text that starts
  * with a reserved lead (`/`, `!`, `@`): the harness opens its own popup under the box as it is typed,
  * so the S1 check reads the box and the transcript above it and lets the rows under it move, and S2
@@ -69,7 +71,7 @@ export type SendReason = (typeof SEND_REASONS)[number];
  * `draft_present` refusal; `submit` and `discard` answer a `typed_not_submitted`. `prepare` only reads
  * and hands back the hash of the rows, for the two-tap send on a screen Collie cannot read.
  */
-export const SEND_MODES = ["send", "command", "append", "replace", "submit", "discard", "prepare"] as const;
+export const SEND_MODES = ["send", "steer", "steer-queued", "command", "append", "replace", "submit", "discard", "prepare"] as const;
 export type SendMode = (typeof SEND_MODES)[number];
 
 /**

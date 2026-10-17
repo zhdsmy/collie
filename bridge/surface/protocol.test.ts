@@ -224,6 +224,8 @@ class FakePane {
         }
       } else if (key === "ctrl+j") {
         this.box += "\n";
+      } else if (key === "shift+Left" && this.mode === "codex") {
+        this.box = this.queued.pop() ?? this.box;
       } else if (key === "Tab" && this.mode === "codex") {
         // Codex 0.150.0, 0.159.2 and 0.163.0 (lab, 2026-10-16): Tab queues a draft during a turn, sends it when idle, and does nothing on an empty box.
         if (this.box.length > 0 && this.running()) this.queued.push(this.box.replace(/\n/gu, " "));
@@ -972,6 +974,15 @@ describe("a command (M56 spec 06)", () => {
 // ── a send into a running turn ──
 
 describe("Hermes idle sends", () => {
+  test("a real busy prompt after Enter proves the message was taken", async () => {
+    const { pane, send } = rig({ harness: "hermes", version: "0.22.1" });
+    pane.placeholder = "";
+    pane.status = [];
+    const busy = readFileSync(join(import.meta.dir, "../../web/src/fixtures/panes/hermes--v0221-zh-send-running.txt"), "utf8");
+    pane.afterInput = (p, what) => { if (what === "keys:Enter") p.fixed = busy; };
+    expect((await send("已经发送，不要误报警告")).receipt).toMatchObject({ outcome: "sent" });
+    expect(pane.keysSeen.filter((key) => key === "Enter")).toHaveLength(1);
+  });
   test.each(["目前内置记忆和 memory-tencentdb 是什么关系", "中文第一行\n\nsecond line"])("probes and submits %s", async (text) => {
     const { pane, send } = rig({ harness: "hermes", version: "0.22.1" });
     pane.placeholder = "";
@@ -1006,6 +1017,65 @@ const LIVE_ROW = "* Wibbling… (4s · ↓ 304 tokens)";
 describe("codex: Tab sends every text, Enter steers a running turn (M56 spec 13)", () => {
   const CODEX_RUNNING = "• Working (4s • esc to interrupt)";
   const codex = (options: Parameters<typeof rig>[0] = {}): Rig => rig({ pane: new FakePane("codex"), harness: "codex", version: "0.159.2", ...options });
+
+  test("explicit steering sends Enter while the ordinary default still queues", async () => {
+    const { pane, send } = codex();
+    pane.turn = true;
+    expect((await send("queued first")).receipt).toMatchObject({ outcome: "sent", queued: true });
+    const steered = await send("guide immediately", { id: "steer-0000001", mode: "steer" });
+    expect(steered.receipt).toMatchObject({ outcome: "sent" });
+    expect(steered.receipt?.queued).not.toBe(true);
+    expect(pane.keysSeen.at(-1)).toBe("Enter");
+    expect(pane.queued).toEqual(["queued first"]);
+  });
+
+  test("recalls only the last queued message and submits it once without another paste", async () => {
+    const { pane, send } = codex();
+    pane.turn = true;
+    pane.queued = ["keep first", "steer last"];
+    pane.queuedHint = "    ⇧← edit last queued message";
+    const args = { id: "steer-queued-0001", mode: "steer-queued" as const };
+    const answer = await send("steer last", args);
+    expect(answer.receipt).toMatchObject({ outcome: "sent", keys: ["shift+Left", "Enter"] });
+    expect(answer.receipt?.queued).not.toBe(true);
+    expect(pane.queued).toEqual(["keep first"]);
+    expect(pane.box).toBe("");
+    expect(pane.calls.filter((call) => call.startsWith("paste:") || call.startsWith("type:"))).toEqual([]);
+    expect((await send("steer last", args)).replayed).toBe(true);
+    expect(pane.keysSeen).toEqual(["shift+Left", "Enter"]);
+  });
+
+  test.each(["queue changed", "draft", "dialog", "idle", "command"])("never recalls an unsafe queued message: %s", async (scenario) => {
+    const { pane, send } = codex();
+    pane.turn = scenario !== "idle";
+    pane.queued = [scenario === "queue changed" ? "different" : scenario === "command" ? "/resume" : "steer last"];
+    if (scenario === "idle") pane.queued = [];
+    if (scenario === "draft") pane.box = "my native draft";
+    if (scenario === "dialog") pane.dialog = ["Allow this command?", "› 1. Yes", "  2. No", "Enter to confirm · Esc to cancel"];
+    const answer = await send(scenario === "command" ? "/resume" : "steer last", { mode: "steer-queued" });
+    expect(answer.receipt?.outcome).toBe("refused");
+    expect(pane.keysSeen).toEqual([]);
+  });
+
+  test.each(["wrong draft", "queue unchanged", "dialog"])("never submits after an unverified recall: %s", async (scenario) => {
+    const { pane, send } = codex();
+    pane.turn = true;
+    pane.queued = ["steer last"];
+    pane.afterInput = (p, what) => {
+      if (what !== "keys:shift+Left") return;
+      if (scenario === "wrong draft") p.box = "changed";
+      if (scenario === "queue unchanged") p.queued = ["steer last"];
+      if (scenario === "dialog") p.dialog = ["Allow this command?", "› 1. Yes", "  2. No", "Enter to confirm · Esc to cancel"];
+    };
+    expect((await send("steer last", { mode: "steer-queued" })).receipt?.outcome).toBe("typed_not_submitted");
+    expect(pane.keysSeen).toEqual(["shift+Left"]);
+  });
+
+  test("steering is refused on a harness without that capability", async () => {
+    const { pane, send } = rig();
+    expect((await send("guide now", { mode: "steer" })).receipt?.outcome).toBe("refused");
+    expect(pane.keysSeen).toEqual([]);
+  });
 
   test.each([
     ["/state/uploads/a.png", "[Image #1]", "command"],

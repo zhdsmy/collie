@@ -8,6 +8,7 @@ import { cropRawColumns, type ColumnRange } from "../column-range";
 import { MAX_AUTOCOMPLETE_LINES } from "../harness/claude/autocomplete";
 import { displayWidth } from "../text-width";
 import { findInputFrame, frameAt, plainRows, type Frame } from "./frame";
+import { runningSign } from "./cues";
 import { requireProfile } from "./profile";
 
 // M56 spec 03: one module finds the input frame from a profile's `idle` anchors, and the phone's
@@ -93,12 +94,19 @@ describe("Hermes bordered composer", () => {
     expect(findInputFrame(plain, idle)).toMatchObject({ placeholder: false, interior: { text: "随便问点什么，或输入 / 查看命令…" } });
   });
 
-  it.each(["☤", "⚕", "⚠", "?", "✎", "🔐", "🔑", "⚙", "●", "◉", "🎤", "⠋"])("never treats the %s state prompt as idle", (icon) => {
+  it.each(["hermes--working.txt", "hermes--v0216-zh-working.txt", "hermes--v0221-zh-send-running.txt"])("recognizes the running composer without treating it as idle: %s", (name) => {
+    const rows = fixtureRows(name);
+    const frame = findInputFrame(rows, idle);
+    expect(frame).not.toBeNull();
+    expect(runningSign(rows, frame!, idle.runningRows, idle.runningPrompt)).toBe(true);
+  });
+
+  it.each(["⚠", "?", "✎", "🔐", "🔑", "⚙", "●", "◉", "🎤", "⠋"])("never treats the %s state prompt as idle", (icon) => {
     const text = readFileSync(join(PANES_DIR, "hermes--v0221-zh-idle.txt"), "utf8");
     expect(findInputFrame(splitLines(parseAnsi(text.replace("❯ ", `${icon} ❯ `))), idle)).toBeNull();
   });
 
-  it.each(["hermes--working.txt", "hermes--v0216-zh-working.txt", "hermes--clarify-single.txt", "hermes--clarify-other.txt"])("refuses the saved non-idle screen %s", (name) => {
+  it.each(["hermes--clarify-single.txt", "hermes--clarify-other.txt"])("refuses the saved non-idle screen %s", (name) => {
     expect(findInputFrame(fixtureRows(name), idle)).toBeNull();
   });
 });

@@ -5,7 +5,7 @@
   "idle": {
     "frame": {
       "top": { "pattern": "^─+$", "minCells": 8, "column": 0 },
-      "prompt": { "pattern": "^(?:[\\p{L}\\p{N}_-]+ )?❯(?: (?<draft>.*))?$", "column": 0 },
+      "prompt": { "pattern": "^(?:[\\p{L}\\p{N}_-]+ )?(?:[⚕☤] )?❯(?: (?<draft>.*))?$", "column": 0 },
       "bottom": { "pattern": "^─+$", "minCells": 8, "column": 0 },
       "continuationIndent": 2,
       "maxDraftRows": 100,
@@ -13,7 +13,8 @@
     },
     "placeholders": { "texts": [], "sgr": 3 },
     "volatile": { "above": { "maxRows": 6 }, "below": { "maxRows": 2, "footerMaxRows": 2 } },
-    "dialogsInBox": true
+    "dialogsInBox": true,
+    "runningPrompt": "^(?:[\\p{L}\\p{N}_-]+ )?[⚕☤] ❯(?: |$)"
   },
   "keys": {
     "submit": ["Enter"],
@@ -27,7 +28,7 @@
   "probe": {
     "char": "⌁",
     "status": "provisional",
-    "note": "Hermes 0.22.1 default bordered composer, captured 2026-10-17. Idle ❯ only: approval, clarify, password, voice and busy state prefixes are excluded. Italic suggestions are placeholders in every locale. Keep probing each send; see hermes/NOTES.md for live evidence and limits."
+    "note": "Hermes 0.22.1 default bordered composer, captured 2026-10-17. Idle ❯ and running ☤ ❯ / ⚕ ❯ frames are recognized separately; approval, clarify, password, voice and command-spinner prompts remain excluded. Italic suggestions are placeholders in every locale. Keep probing each send; see hermes/NOTES.md for live evidence and limits."
   },
   "paste": { "bracketed": true },
   "hooks": {}

@@ -32,7 +32,7 @@
 // A harness whose Enter steers the running turn (`keys.enterWhileRunning: "steers"`) takes the same
 // queued path only when its profile names a queue key (`keys.queueKey`). The commit then presses that
 // key instead of the submit keys. Enter never goes into such a turn: any send on the queued path
-// (S0 read a turn, or the rows above moved) presses the queue key, never Enter (commitKeys). Without a
+// (S0 read a turn, or the rows above moved) presses the queue key unless steering was explicitly requested (commitKeys). Without a
 // queue key the send is refused `turn_running`. Such a profile may name the queue key as its submit
 // key too (Codex: Tab sends on an idle box and queues in a turn), and a command then takes
 // `keys.commandSubmit`. On such a harness the receipt says `queued` only when S2 or the late read
@@ -73,6 +73,7 @@
 // Rows live only in the short memory ring below; the receipt and the request file hold hashes.
 // No harness name lives here (no-harness-names.test.ts scans this folder).
 
+import { queuedTexts } from "../../web/src/lib/surface/queued.ts";
 import type { MuxAck, MuxGrid, MuxGridRequest, MuxOutcome } from "../mux/types.ts";
 import { parseAnsi } from "../../web/src/lib/ansi.ts";
 import { splitLines } from "../../web/src/lib/blocks.ts";
@@ -467,40 +468,9 @@ function commandPopup(snap: Snap): boolean {
  */
 const LATE_WITNESS_MS = 300;
 
-/** How many rows above a queued hint are read for the queued texts. */
-const QUEUED_SCAN_ROWS = 24;
-
-/**
- * Whether a read shows a text as a message the harness queued, by the profile's own drawing of one
- * (`keys.queuedRow`): a hint row above the box, and over it, past at most `hintGap` blank rows, the
- * queued texts. Each starts on a row the pattern matches, its wrapped rows indented under it. One of
- * them, joined and whitespace-free, must equal the text. Rows inside the box are never read.
- */
-function showsQueued(snap: Snap, queuedRow: QueuedRow | undefined, text: string): boolean {
-  if (queuedRow === undefined || snap.frame === null || wsFree(text).length === 0) return false;
-  const start = new RegExp(queuedRow.pattern, "u");
-  const hint = new RegExp(queuedRow.hint, "u");
-  const want = wsFree(text);
-  const above = snap.texts.slice(0, snap.frame.top);
-  for (let at = above.length - 1; at >= 0; at--) {
-    if (!hint.test(above[at]!)) continue;
-    let i = at - 1;
-    for (let gap = 0; i >= 0 && gap < queuedRow.hintGap && above[i]!.trim().length === 0; gap++) i--;
-    // Upward through the queued texts: an indented row waits for the row that starts its text.
-    let wrapped: string[] = [];
-    for (const floor = Math.max(0, i - QUEUED_SCAN_ROWS); i >= floor; i--) {
-      const row = above[i]!;
-      const head = start.exec(row);
-      if (head !== null) {
-        if (wsFree([head.groups?.["text"] ?? "", ...wrapped].join("")) === want) return true;
-        wrapped = [];
-        continue;
-      }
-      if (!/^\s+\S/u.test(row)) break;
-      wrapped = [row.trim(), ...wrapped];
-    }
-  }
-  return false;
+/** A native queue witness, shared with the phone's queue action. */
+function showsQueued(snap: Snap, drawing: QueuedRow | undefined, text: string): boolean {
+  return wsFree(text).length > 0 && queuedTexts(snap.texts, snap.frame, drawing).some((message) => wsFree(message) === wsFree(text));
 }
 
 /**
@@ -803,13 +773,14 @@ function commandQueues(match: ProfileMatch | null): boolean {
 
 /**
  * The keys that commit a send: the profile's submit keys, or its queue key for a send that goes into
- * a running turn on a harness whose Enter does not queue. Enter never goes into such a turn.
+ * a running turn on a harness whose Enter does not queue. An explicit steerKey opts ordinary messages into steering.
  */
 function commitKeys(state: RunState): readonly string[] {
   const keys = state.match?.profile.keys;
   if (keys === undefined) return GENERIC_SUBMIT;
+  if (state.request.mode === "steer" || state.request.mode === "steer-queued") return [keys.steerKey!];
   // The queued path on a harness whose Enter does not queue: S0 read a turn, or the rows above moved
-  // while Collie typed. Only the queue key goes in; no rule can route the submit keys there.
+  // while Collie typed. Commands keep queuing; ordinary messages may explicitly opt into steering.
   if ((state.queued || state.streamed) && keys.enterWhileRunning !== "queues") {
     if (keys.queueKey === undefined) throw new Ended("typed_not_submitted", "changed", { detail: TURN_RUNNING });
     return [keys.queueKey];
@@ -2157,8 +2128,11 @@ export class SendProtocol {
     const profile = match?.profile ?? null;
     const lines = sendLines(request.text);
     const leads = profile?.reservedLeads ?? GENERIC_LEADS;
-    const writes = request.mode === "send" || request.mode === "command" || request.mode === "append" || request.mode === "replace";
+    const writes = request.mode === "steer" || request.mode === "steer-queued" || request.mode === "send" || request.mode === "command" || request.mode === "append" || request.mode === "replace";
 
+    if ((request.mode === "steer" || request.mode === "steer-queued") && profile?.keys.steerKey === undefined) {
+      throw new Ended("refused", "not_free", { detail: "This harness does not support immediate steering." });
+    }
     if (writes) {
       const refusal = textRefusal(request, match);
       if (refusal !== null) throw refusal;
@@ -2175,6 +2149,34 @@ export class SendProtocol {
     this.checkGeneration(state, "refused");
 
     switch (request.mode) {
+      case "steer-queued": {
+        this.gateSend(state, s0);
+        const queued = queuedTexts(s0.texts, s0.frame, profile?.keys.queuedRow);
+        const editKey = profile?.keys.editQueuedKey;
+        if (editKey === undefined || s0.frame === null || s0.surface.turn !== "running" || queued.at(-1) !== request.text) {
+          throw new Ended("refused", "not_free", { detail: "The last queued message changed. Refresh before steering." });
+        }
+        this.lap(state, "s0");
+        await this.keysThroughGate(state, [editKey], "refused", s0.gateRevision);
+        const recalled = await this.poll(state, "s1", BOUNDS.s1, (snap) => {
+          if (snap.frame === null || modalAtBox(snap)) return "wait";
+          const remaining = queuedTexts(snap.texts, snap.frame, profile?.keys.queuedRow);
+          if (JSON.stringify(remaining) !== JSON.stringify(queued.slice(0, -1))) return "wait";
+          return holds(boxText(snap.frame)) ? "pass" : "wait";
+        });
+        const s1 = recalled.snap;
+        state.marks.s1 = s1;
+        if (recalled.verdict !== "pass" || s1 === null) {
+          throw new Ended("typed_not_submitted", "changed", sawNote(s1, { detail: "The queued message could not be verified in the input box. Check it before submitting.", framed: s1 !== null && s1.frame !== null }));
+        }
+        this.checkGeneration(state, "typed_not_submitted");
+        this.lap(state, "s1");
+        await this.commit(state, s1);
+        this.lap(state, "commit");
+        await this.awaitSent(state, s1, null, lines);
+        this.lap(state, "s2");
+        return;
+      }
       case "submit": {
         const located = this.typedBox(state, s0, holds, lines);
         this.lap(state, "s0");
@@ -2211,6 +2213,7 @@ export class SendProtocol {
         this.draftFrame(state, s0);
         break;
       case "send":
+      case "steer":
       case "command":
         this.gateSend(state, s0);
         break;
@@ -2407,7 +2410,7 @@ export class SendProtocol {
     // (The rows above may only scroll and grow from read to read: bandScrolled.)
     if (state.queued || state.manual || state.command || !queuesInTurn(state.match)) return false;
     const { mode } = state.request;
-    if (mode !== "send" && mode !== "append" && mode !== "replace") return false;
+    if (mode !== "send" && mode !== "steer" && mode !== "append" && mode !== "replace") return false;
     if (s0.frame === null || snap.frame === null || aboveUnchanged(s0, snap)) return false;
     if (snap.cueStrength !== s0.cueStrength || framedCueGrew(s0, snap) || rowsBelow(s0, s0.frame) !== rowsBelow(snap, snap.frame) || modalAtBox(snap)) return false;
     if (!this.bandScrolled(state, snap)) return false;
@@ -2613,10 +2616,10 @@ export class SendProtocol {
   }
 
   /** Keys through the gate on the newest revision. `outcome` is what a refusal turns into. */
-  private async keysThroughGate(state: RunState, keys: readonly string[], outcome: "typed_not_submitted" | "refused" | "unknown"): Promise<void> {
+  private async keysThroughGate(state: RunState, keys: readonly string[], outcome: "typed_not_submitted" | "refused" | "unknown", revision?: number): Promise<void> {
     this.guard(state);
     const { gate } = this.deps;
-    const token = gate.mint(state.target.paneId, keys, gate.revision(state.target.paneId));
+    const token = gate.mint(state.target.paneId, keys, revision ?? gate.revision(state.target.paneId));
     const result = await this.within(state, gate.commit(token));
     if (result.ok) {
       state.keys.push(...keys);
@@ -2893,7 +2896,7 @@ export class SendProtocol {
     const sentText = s1Frame === null ? lines.join("") : boxText(s1Frame);
     let witnessed = false;
     const result = await this.poll(state, "s2", BOUNDS.s2, (snap) => {
-      if (!command && !witnessed && (labelFromWitness(state.match) || (!state.queued && enterQueues(state.match)))) witnessed = showsQueued(snap, state.match?.profile.keys.queuedRow, sentText);
+      if (state.request.mode !== "steer" && state.request.mode !== "steer-queued" && !command && !witnessed && (labelFromWitness(state.match) || (!state.queued && enterQueues(state.match)))) witnessed = showsQueued(snap, state.match?.profile.keys.queuedRow, sentText);
       if (s0.frame !== null) {
         // Queued behind a running turn: a dialog that opened as the Enter went out may have taken it.
         // The Surface claiming a modal, or two reads in a row with no box, end the request on their
@@ -2908,7 +2911,7 @@ export class SendProtocol {
         // evidence that the harness took it.
         if (queued) return boxText(snap.frame).length === 0 ? "pass" : "wait";
         if (command && !wsFree(boxText(snap.frame)).includes(wsFree(withoutLead(lines).join("")))) return "pass";
-        return boxText(snap.frame).length === 0 || runningSign(snap.rows, snap.frame, state.match?.profile.idle.runningRows) ? "pass" : "wait";
+        return boxText(snap.frame).length === 0 || runningSign(snap.rows, snap.frame, state.match?.profile.idle.runningRows, state.match?.profile.idle.runningPrompt) ? "pass" : "wait";
       }
       if (landing === null) return "wait";
       if (command) return flat(snap.plain).includes(flat([landing.probed.slice(0, landing.index) + lines.join("") + afterProbe(landing)])) ? "wait" : "pass";
@@ -2948,6 +2951,7 @@ export class SendProtocol {
    * label stays off. A command, a pane with no box at S2 and a receipt that says `queued` already skip it.
    */
   private async lateWitness(state: RunState, lines: readonly string[]): Promise<void> {
+    if (state.request.mode === "steer" || state.request.mode === "steer-queued") return;
     const queuedRow = state.match?.profile.keys.queuedRow;
     const fromWitness = labelFromWitness(state.match);
     if (queuedRow === undefined || state.command || state.witnessed || !queuesInTurn(state.match) || (!fromWitness && state.queued)) return;

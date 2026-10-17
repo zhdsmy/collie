@@ -4435,6 +4435,16 @@
       "harness": "claude",
       "version": "2.1.302",
       "state": "running"
+    },
+    "hermes--v0221-zh-send-running.txt": {
+      "harness": "hermes",
+      "version": "0.22.1",
+      "state": "running"
+    },
+    "codex--v0163-queued-steer.txt": {
+      "harness": "codex",
+      "version": "0.163.0",
+      "state": "running"
     }
   },
   "knownMismatches": {

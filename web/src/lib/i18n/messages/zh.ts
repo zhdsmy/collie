@@ -4,6 +4,12 @@ import type { Dictionary } from "./en";
 // match.
 
 export const zh: Dictionary = {
+  "settings.codexSend.title": "Codex 发送方式",
+  "settings.codexSend.description": "Codex 运行时，选择发送按钮的默认行为。仅此设备生效；命令保持原有行为。",
+  "settings.codexSend.queue": "排队",
+  "settings.codexSend.steer": "立即引导",
+  "composer.codex.lastQueued": "队列最后一条",
+
   "statusline.claude.hint": "Claude 提示",
   "statusline.claude.cache.warm": "暖",
   "statusline.claude.cache.cold": "冷",

@@ -4,6 +4,12 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const tr: Dictionary = {
+  "settings.codexSend.title": "Codex gönderimi",
+  "settings.codexSend.description": "Codex çalışırken Gönder düğmesinin varsayılan eylemi. Yalnızca bu cihazda; komutların davranışı değişmez.",
+  "settings.codexSend.queue": "Sıraya al",
+  "settings.codexSend.steer": "Şimdi yönlendir",
+  "composer.codex.lastQueued": "Sıradaki son mesaj",
+
   "statusline.claude.hint": "Claude ipucu",
   "statusline.claude.cache.warm": "Etkin",
   "statusline.claude.cache.cold": "Soğuk",

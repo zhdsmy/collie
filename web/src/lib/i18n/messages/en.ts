@@ -14,6 +14,12 @@
 // Seeded with the language-selector copy only — the full string sweep lands separately.
 
 export const en = {
+  "settings.codexSend.title": "Codex sending",
+  "settings.codexSend.description": "While Codex is working, choose what Send does. This device only; commands keep their native behavior.",
+  "settings.codexSend.queue": "Queue",
+  "settings.codexSend.steer": "Steer now",
+  "composer.codex.lastQueued": "Last queued message",
+
   "statusline.claude.hint": "Claude hint",
   "statusline.claude.cache.warm": "Warm",
   "statusline.claude.cache.cold": "Cold",

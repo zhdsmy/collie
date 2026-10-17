@@ -23,7 +23,7 @@ export type HookKind = "edge" | "ask";
  * goes into the running turn), `submits` or `ignored`. The Send Protocol presses Enter into a turn
  * only on `queues`; on any other mode it presses `keys.queueKey` when the profile names one. A
  * harness whose Enter steers may name a submit key that is not Enter at all (Codex: Tab sends on an
- * idle box and queues in a turn), so no send of text ever presses Enter there.
+ * idle box and queues in a turn), ordinary sends queue unless the request explicitly selects the profile's `steerKey`.
  */
 export type EnterWhileRunning = "queues" | "steers" | "submits" | "ignored";
 /**
@@ -235,6 +235,8 @@ export interface Profile {
      * always count. For a harness that marks a turn on its own status rows.
      */
     readonly runningRows?: readonly string[];
+    /** A running-state prefix on the prompt row itself; never inferred from the draft's words. */
+    readonly runningPrompt?: string;
     /**
      * Rows that mean a dialog is drawn over the screen above a live box, as regular expression
      * sources, read on every row above the box. A harness that draws its pickers and notices over
@@ -290,6 +292,10 @@ export interface Profile {
      * submit key itself, on a harness whose submit key sends on an idle box and queues in a turn.
      */
     readonly queueKey?: string;
+    /** Explicitly steer ordinary messages during a turn instead of queuing them. Commands still use queueKey. */
+    readonly steerKey?: string;
+    /** Retrieve the last native queued message into an empty composer. */
+    readonly editQueuedKey?: string;
     /** The queue keys for the platforms that differ from `queueKey`, by `process.platform`. Optional. */
     readonly queueKeyByPlatform?: Readonly<Record<string, string>>;
     /**
@@ -649,7 +655,10 @@ export function parseProfile(raw: JsonValue): Profile {
     idleNode.runningRows === undefined
       ? undefined
       : list(idleNode.runningRows, "idle.runningRows").map((item, i) => pattern(item, `idle.runningRows[${String(i)}]`).source);
-  const withRunning: Profile["idle"] = runningRows === undefined ? idle : { ...idle, runningRows };
+  const runningPrompt = idleNode.runningPrompt === undefined ? undefined : pattern(idleNode.runningPrompt, "idle.runningPrompt").source;
+  if (runningPrompt !== undefined && (!runningPrompt.startsWith("^") || new RegExp(runningPrompt, "u").test(""))) fail("idle.runningPrompt", "must anchor a nonempty prompt prefix");
+  const withRows: Profile["idle"] = runningRows === undefined ? idle : { ...idle, runningRows };
+  const withRunning: Profile["idle"] = runningPrompt === undefined ? withRows : { ...withRows, runningPrompt };
   const overlayRows =
     idleNode.overlayRows === undefined
       ? undefined
@@ -728,6 +737,16 @@ export function parseProfile(raw: JsonValue): Profile {
     const queueByPlatform = Object.fromEntries(Object.entries(queueNode.byPlatform).map(([platform, names]) => [platform, names[0] ?? ""]));
     for (const key of Object.values(queueByPlatform)) checkQueueKey(key);
     keys = Object.keys(queueByPlatform).length === 0 ? { ...keys, queueKey } : { ...keys, queueKey, queueKeyByPlatform: queueByPlatform };
+  }
+  if (keysNode.steerKey !== undefined) {
+    const steerKey = text(keysNode.steerKey, "keys.steerKey");
+    if (steerKey !== "Enter" || keys.enterWhileRunning !== "steers" || keys.queueKey === undefined) fail("keys.steerKey", "requires Enter that steers and a separate queueKey for commands");
+    keys = { ...keys, steerKey };
+  }
+  if (keysNode.editQueuedKey !== undefined) {
+    const editQueuedKey = text(keysNode.editQueuedKey, "keys.editQueuedKey");
+    if (editQueuedKey !== "shift+Left" || keys.steerKey === undefined || keys.queuedRow === undefined) fail("keys.editQueuedKey", "requires a queue drawing and steering key");
+    keys = { ...keys, editQueuedKey };
   }
   if (keysNode.commandWhileRunning !== undefined) {
     const commandWhileRunning = oneOf(keysNode.commandWhileRunning, "keys.commandWhileRunning", COMMAND_MODES);

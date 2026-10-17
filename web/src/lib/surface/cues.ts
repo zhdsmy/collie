@@ -271,10 +271,11 @@ function signPatterns(sources: readonly string[]): readonly RegExp[] {
  * Whether a found frame's volatile rows show a running sign. `profileSigns` are the profile's own
  * running rows (`idle.runningRows`): patterns read on the volatile rows, the bottom edge and the top
  * edge included, for a harness that marks a turn there (a spinner frame on its status row, a hint only
- * a turn shows, a label in the top rule).
+ * a turn shows, a label in the top rule). `promptSign` explicitly checks a state prefix on the prompt.
  */
-export function runningSign(rows: readonly FrameRow[], frame: Frame, profileSigns: readonly string[] = []): boolean {
+export function runningSign(rows: readonly FrameRow[], frame: Frame, profileSigns: readonly string[] = [], promptSign?: string): boolean {
   const texts = rows.map(rowText);
+  if (promptSign !== undefined && new RegExp(promptSign, "u").test(texts[frame.interior.prompt]!)) return true;
   if (volatileRows(texts, frame).some((i) => isRunningRow(texts[i]!))) return true;
   if (profileSigns.length === 0) return false;
   const patterns = signPatterns(profileSigns);
