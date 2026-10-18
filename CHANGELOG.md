@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.5+collie.2] - 2026-10-18
+
 ### Fixed
 
-- **User messages fill the phone width without early line breaks.** Use ordinary wrapping inside terminal user surfaces so inherited pretty line balancing does not shorten rows; preserve authored newlines and journal-proven wrap joins.
+- **User messages fill the phone width without early line breaks.** Use ordinary wrapping inside terminal user surfaces so inherited pretty line balancing does not shorten rows; preserve authored newlines and journal-proven wrap joins. ([164ca353](https://github.com/zhdsmy/collie/commit/164ca353))
 
 ## [1.22.5+collie.1] - 2026-10-18
 
