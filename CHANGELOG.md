@@ -23,10 +23,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.5+collie.1] - 2026-10-18
+
 ### Fixed
 
-- **Command sends and native cards follow upstream v1.22.5.** Preserve downstream input controls and guarded Codex behavior; see [the integration report](docs/upstream-v1.22.5.md).
-- **Codex commands recognize their own completion list before submitting.** Reuse the upstream command-list scroll guard for `/model` and other exact selections; preserve refusal when another command is selected or the checked transcript changes.
+- **Command sends and native cards follow upstream v1.22.5.** Preserve downstream input controls and guarded Codex behavior; see [the integration report](docs/upstream-v1.22.5.md). ([ac0b8110](https://github.com/zhdsmy/collie/commit/ac0b8110))
+- **Codex commands recognize their own completion list before submitting.** Reuse the upstream command-list scroll guard for `/model` and other exact selections; preserve refusal when another command is selected or the checked transcript changes. ([ac0b8110](https://github.com/zhdsmy/collie/commit/ac0b8110))
 
 ## [1.22.4+collie.1] - 2026-10-18
 
