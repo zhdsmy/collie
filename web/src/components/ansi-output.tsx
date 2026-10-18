@@ -29,8 +29,7 @@ import {
   segmentStyle,
   styleFor,
 } from "@/components/mirror-space";
-import { renderCells } from "@/components/painted-cells";
-import { widePieces } from "@/lib/text-width";
+import { renderCells, renderWideCells } from "@/components/painted-cells";
 import { AuthedImageCard } from "@/components/authed-image-card";
 import { findMatches, splitSegment, type FindMatch } from "@/lib/find";
 import { findLinks, type LinkMatch } from "@/lib/links";
@@ -281,27 +280,6 @@ function preClass(
 const TABLE_RUN_CLASS =
   "inline-block w-full max-w-full align-bottom whitespace-pre break-normal overflow-x-auto overflow-y-hidden overscroll-x-contain [touch-action:pan-x_pan-y] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
-// The mirror's monospace stack carries no CJK face, so a double-width character falls back to a
-// font whose advance is not two ASCII cells, and every wall to its right drifts off the column the
-// terminal put it in. Inside a table run each one is held to exactly `2ch`, which is two cells of the
-// monospace face, so a CJK table's walls line up again. Only inside a run: in prose an inline-block
-// per ideograph would change how the line wraps, and nothing there needs the column back.
-const WIDE_CELL_CLASS = "inline-block w-[2ch] text-center";
-
-function renderWideCells(run: string): ReactNode {
-  const pieces = widePieces(run);
-  if (!pieces.some((p) => p.wide)) return renderCells(run);
-  return pieces.map((p, k) =>
-    p.wide ? (
-      <span key={k} className={WIDE_CELL_CLASS}>
-        {p.text}
-      </span>
-    ) : (
-      <Fragment key={k}>{renderCells(p.text)}</Fragment>
-    ),
-  );
-}
-
 // Faithful, colored mirror of a pane's recent terminal output. Rendering flows through the Block AST
 // (blocks.ts): parseAnsi → styled lines → typed blocks → React. Text is always rendered as React
 // text nodes (escaped); only color/weight come from the ANSI parse — no XSS surface.
@@ -512,7 +490,7 @@ export const AnsiOutput = memo(function AnsiOutput({
   // span per painted run, with no style object (components/painted-cells.tsx).
   let offset = 0;
   let currentAssigned = false;
-  // Set per line by renderLine: a table run's rows hold their wide characters to two columns.
+  // Fixed-column rows use two-cell glyphs; wrapping prose keeps its natural advances.
   let paintCells = renderCells;
 
   // A run of plain text at global offset `start` → nodes, with find matches split out and
@@ -644,7 +622,7 @@ export const AnsiOutput = memo(function AnsiOutput({
     const trail = joins.get(li + 1)?.trail ?? 0;
     // Infinity keeps the common row on the fast path: no lineText walk unless a blank is hidden.
     const shownEnd = trail === 0 ? Infinity : lineText(line).length - trail;
-    paintCells = inRun ? renderWideCells : renderCells;
+    paintCells = inRun || !wrap ? renderWideCells : renderCells;
     const segNodes = line.segments.map((s, si) => {
       const segStart = offset;
       offset += s.text.length;

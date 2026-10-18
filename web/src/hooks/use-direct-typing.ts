@@ -61,6 +61,11 @@ function isComposableKey(key: string): boolean {
   return normalizeBaseChar(key) !== null || COMPOSABLE_SPECIAL_KEYS.has(key);
 }
 
+// Safari fires the keydown that confirms an IME candidate (keyCode 229, isComposing false) right
+// AFTER compositionend. Only a 229 keydown inside this window is that echo; ProseMirror uses the
+// same 500 ms. Outside it, 229 is just what some engines report for any key, so it must not decide.
+const IME_CONFIRM_WINDOW_MS = 500;
+
 function keyForInputType(inputType: string): string | null {
   if (inputType === "deleteContentBackward") return "Backspace";
   if (inputType === "insertLineBreak" || inputType === "insertParagraph") return "Enter";
@@ -144,6 +149,8 @@ export function useDirectTyping({
   const activeRef = useRef(false);
   const backgrounded = useRef(false);
   const composing = useRef(false);
+  // When the last composition ended, for the Safari confirm window. -Infinity means none yet.
+  const compositionEndedAt = useRef(Number.NEGATIVE_INFINITY);
   const committedComposition = useRef<string | null>(null);
   const pendingBlur = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Idle watchdog: one 60s one-shot, re-armed on every keystroke (commits,
@@ -263,11 +270,17 @@ export function useDirectTyping({
 
   /** Disarm and forget the transient state. Leaves the field alone — callers decide about focus. */
   function resetMode() {
+    // Disarming revokes the entire armed session, including keys waiting behind a slow batch.
+    // That holds for the person's own Stop too: Stop means halt, and a dropped suffix never runs
+    // as a truncated command. The batch already on the wire cannot be recalled; its late failure
+    // must not disarm a re-arm.
+    sender.reset();
     cancelIdleTimer();
     activeRef.current = false;
     setActive(false);
     setValue("");
     composing.current = false;
+    compositionEndedAt.current = Number.NEGATIVE_INFINITY;
     committedComposition.current = null;
     resetAccessory();
   }
@@ -335,9 +348,6 @@ export function useDirectTyping({
   const lifecycle = useRef({ dropKeyboard, resetMode, enqueueWithModifiers });
   lifecycle.current = { dropKeyboard, resetMode, enqueueWithModifiers };
 
-  // Depend on the stable reset callback, not the sender object that changes with each busy state.
-  const { reset: resetSender } = sender;
-
   // Arming dies with the view it belongs to. A backgrounded tab, an idle pause and a lost bridge
   // all mean the same thing: the mirror on screen has stopped tracking the pane, and the next
   // keystroke would go into a terminal the user is no longer actually looking at. Disarm rather
@@ -394,8 +404,7 @@ export function useDirectTyping({
     // was backgrounded" over a pane the mode was never armed on.
     cancelPendingBlur();
     backgrounded.current = false;
-    resetSender();
-  }, [paneKey, resetSender]);
+  }, [paneKey]);
 
   // The agent under the pane changed: the arming belonged to the old session
   // (the agent exited and the pane fell back to a shell), so the mode disarms
@@ -423,23 +432,35 @@ export function useDirectTyping({
 
   // Android virtual Backspace/Enter can arrive as beforeinput without a useful keydown. A native
   // listener is intentional: React's synthetic beforeinput omits these events on some engines.
+  // Blur rides on the same listener scope: losing focus ends any composition for good, and
+  // `composing` gates Backspace, the arrows, Escape and Tab, so one lost compositionend must not
+  // leave them swallowed. (The idle watchdog and every disarm clear it too.)
   useEffect(() => {
     const inputEl = inputRef.current;
     if (!active || inputEl === null) return;
+    const onBlur = () => {
+      composing.current = false;
+    };
     const onBeforeInput = (event: InputEvent) => {
+      if (!activeRef.current) return;
       const key = keyForInputType(event.inputType);
       if (key === null) return;
       // Backspace inside an active IME edits the candidate; Enter commits/submits and must still reach
       // the terminal. Gboard commonly marks that insertParagraph event as composing.
-      if (event.isComposing && key === "Backspace") return;
+      if ((event.isComposing || composing.current) && key === "Backspace") return;
       event.preventDefault();
       lifecycle.current.enqueueWithModifiers([key]);
     };
     inputEl.addEventListener("beforeinput", onBeforeInput);
-    return () => inputEl.removeEventListener("beforeinput", onBeforeInput);
+    inputEl.addEventListener("blur", onBlur);
+    return () => {
+      inputEl.removeEventListener("beforeinput", onBeforeInput);
+      inputEl.removeEventListener("blur", onBlur);
+    };
   }, [active, inputRef]);
 
   function onChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    if (!activeRef.current) return;
     const next = event.target.value;
     setValue(next);
     // SAFETY: a React `change` on a <textarea> is backed by the DOM `input` event, whose interface
@@ -466,12 +487,15 @@ export function useDirectTyping({
   }
 
   function onCompositionStart() {
+    if (!activeRef.current) return;
     composing.current = true;
     committedComposition.current = null;
   }
 
   function onCompositionEnd(event: ReactCompositionEvent<HTMLTextAreaElement>) {
+    if (!activeRef.current) return;
     composing.current = false;
+    compositionEndedAt.current = Date.now();
     const committed = event.currentTarget.value || event.data;
     if (committed.length === 0) return;
     committedComposition.current = committed;
@@ -480,6 +504,17 @@ export function useDirectTyping({
   }
 
   function onKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
+    if (!activeRef.current) return;
+    // Candidate editing/confirmation belongs to the IME, not the terminal. Safari reports the
+    // confirming key AFTER compositionend with isComposing false, but still as keyCode 229; only
+    // that echo is skipped, so a 229 arrow, Escape or Tab outside the window still reaches the pane.
+    if (composing.current || event.nativeEvent.isComposing) return;
+    if (
+      event.nativeEvent.keyCode === 229 &&
+      Date.now() - compositionEndedAt.current < IME_CONFIRM_WINDOW_MS
+    ) {
+      return;
+    }
     const key = keyForKeyDown(event.key);
     if (key === undefined) return;
     event.preventDefault();

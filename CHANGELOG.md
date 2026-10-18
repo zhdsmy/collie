@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Changed
+
+- **Sending, input composition and terminal columns follow upstream v1.22.6.** Preserve downstream Codex queue/steer controls, draft caching and normal user-message wrapping; see [the integration report](docs/upstream-v1.22.6.md).
+
 ## [1.22.5+collie.2] - 2026-10-18
 
 ### Fixed
@@ -353,6 +357,21 @@ Running a crew? Update the lead first; members follow on their own. Details:
 ### Changed
 
 - **Collie follows upstream with reliable paths and Crew connections.** Merge v1.15.3 with Windows path fixes, explicit Crew addresses and omp empty-editor hint recognition, preserving Collie controls and current agent adaptations. ([4e24f2d5](https://github.com/zhdsmy/collie/commit/4e24f2d5))
+
+## [1.22.6] - 2026-10-18
+
+### Changed
+
+- **A queued send no longer moves the layout.** The sends Collie holds until a turn ends now float over the bottom of the terminal view as one card, in the place of the terminal draft notice, so the box and the mirror stay where they are. Two or more collapse to a count and the next message, with Show all. ([3a4e4c4](https://github.com/AltanS/collie/commit/3a4e4c4))
+
+### Fixed
+
+- **Korean reads more naturally across the app.** Settings, pane actions, alerts, uploads and refusal messages have better wording, and instructions name the buttons as the screen shows them. Thanks @mud-the-developer (#498). ([dba7062](https://github.com/AltanS/collie/commit/dba7062))
+- **Direct typing leaves composition keys to the keyboard.** While a Korean, Japanese or Chinese keyboard composes a word, Enter, Backspace, the arrows, Escape and Tab stay with it, and a blur ends a composition that never finished. Keys still waiting on a slow link when you stop typing are dropped. Thanks @mud-the-developer (#500). ([5c93d9f](https://github.com/AltanS/collie/commit/5c93d9f))
+- **Korean, Chinese and Japanese text keeps its columns in the terminal view.** With wrap off, the pane mirror and a dialog card's raw view hold each wide character to two cells, so dividers and tables line up, and a link keeps its underline. Thanks @mud-the-developer (#499). ([1bf9088](https://github.com/AltanS/collie/commit/1bf9088))
+- **The Heads up card shows while background agents are listed.** With three or more agents in Claude Code's panel under the box, the card was withheld and its tap refused. Only the panel's own named rows are skipped, so plain output under a box still counts. Thanks @leftos (#493). ([cb5cbf5](https://github.com/AltanS/collie/commit/cb5cbf5))
+- **A command that must never wait for a turn is no longer held and typed after it.** When the bridge could not read the agent's version, a `/clear`, `/new`, `/exit` or `!` shell line sent during a turn was kept and typed when the turn ended. It is refused again. Thanks @mikebenner (#491). ([18eb3e2](https://github.com/AltanS/collie/commit/18eb3e2))
+- **omp's box composer sends again with Nerd Font symbols and its own word hint.** A wrapped or two-line draft, an image chip, a slash or skill command, omp's grey word guess after the cursor and a send during a tool turn no longer end as typed but not sent. Thanks @christensenjames (#497). ([a66c570](https://github.com/AltanS/collie/commit/a66c570))
 
 ## [1.22.5] - 2026-10-17
 
