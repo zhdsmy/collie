@@ -316,6 +316,8 @@ describe("pi 1.2.0 composer with editorPaddingX (issue 442)", () => {
       "pi--omo-v5130-picker-model.txt",
       "pi--omo-v5130-picker-resume.txt",
       "pi--omo-v5130-question-banner.txt",
+      // pi 0.87.1's model selector, its rows at column zero between the box's rules (lab, 2026-10-17).
+      "pi--v0871-model-selector-empty--w120.txt",
       "pi--v0871-question-answered.txt",
       "pi--v110-core-selector.txt",
       "pi--v110-question-answered.txt",
@@ -417,7 +419,7 @@ describe("the status rule across the whole corpus", () => {
   it("finds a pi editor in no other harness's capture but agy's prompt rows", () => {
     expect(foreign.length).toBeGreaterThan(400);
     const found = foreign.filter((name) => locateComposer(fixture(name.slice(0, -4))) !== null);
-    expect(found).toEqual(["agy--after-plan-idle.txt", "agy--done.txt", "agy--fresh-idle.txt", "hermes--clarify-other.txt", "hermes--clarify-q0.txt", "hermes--clarify-q1.txt", "hermes--clarify-single.txt", "hermes--submitted-input.txt", "hermes--v0216-zh-working.txt", "hermes--working.txt"]);
+    expect(found).toEqual(["agy--after-plan-idle.txt", "agy--done.txt", "agy--fresh-idle.txt", "hermes--clarify-other.txt", "hermes--clarify-q0.txt", "hermes--clarify-q1.txt", "hermes--clarify-single.txt", "hermes--submitted-input.txt", "hermes--v0216-zh-working.txt", "hermes--v0221-zh-send-running.txt", "hermes--working.txt"]);
   });
 
   it("keeps prose under a markdown rule out: a plain row straight under the rule is not a status row", () => {

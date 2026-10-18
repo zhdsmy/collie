@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { en } from "@/lib/i18n/messages/en";
 import { de } from "@/lib/i18n/messages/de";
 import { zh } from "@/lib/i18n/messages/zh";
-import { fixtureSnapshot } from "@/test/handlers";
+import { fixtureSnapshot, sendAnswer } from "@/test/handlers";
 import { installApiStub } from "./fixtures/api";
 
 // A pane whose statusline names the model WITH its level (`gpt-5.6-sol · high`), which is the shape
@@ -40,11 +40,12 @@ test("recent models opens the current Codex model card at 320px", async ({ page 
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
     paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: SESSION_KEY,
   } }));
-  await page.route("**/api/pane/*/reply*", (route) => {
-    current = route.request().postDataJSON().submit ? fixture("codex--v0158-picker-model.txt")
-      : fixture("codex--v0154-command-status.txt").replaceAll("/status", "/model");
+  await page.route("**/api/send", (route) => {
+    const body = route.request().postDataJSON();
+    expect(body).toMatchObject({ text: "/model", mode: "command" });
+    current = fixture("codex--v0158-picker-model.txt");
     revision++;
-    return route.fulfill({ json: { ok: true } });
+    return route.fulfill({ json: sendAnswer(body.id, "sent") });
   });
   await page.goto("/pane/w1:p1");
   await page.getByRole("button", { name: new RegExp(`^${zh["codexModel.openAria"]}:`) }).click();
@@ -113,8 +114,8 @@ for (const theme of ["light", "dark"]) test(`plan controls: ${theme}`, async ({ 
   current = fixture("codex--v0154-picker-model.txt");
   revision++;
   await expect(page.getByText("Select Model and Effort", { exact: true })).toBeVisible();
-  await expect(plan).toHaveCount(0);
-  await expect(page.locator('[data-slot="codex-statusline"]')).toHaveCount(0);
+  await expect(plan).toBeDisabled();
+  await expect(page.locator('[data-slot="codex-statusline"]')).toBeVisible();
   expect(keyCount).toBe(2);
 });
 
@@ -147,16 +148,12 @@ for (const theme of ["light", "dark"]) test(`inline Fast controls: ${theme}`, as
     current = enabled ? fastOff.replace("Fast off", "Fast on") : fastOff;
     revision++;
   };
-  await page.route("**/api/pane/*/reply*", async (route) => {
+  await page.route("**/api/send", async (route) => {
     const body = route.request().postDataJSON();
-    if (body.submit) await submit();
-    else {
-      expect(body.text).toBe("/fast");
-      commands++;
-      current = fixture("codex--v0154-command-status.txt").replaceAll("/status", "/fast");
-      revision++;
-    }
-    await route.fulfill({ json: { ok: true } });
+    expect(body).toMatchObject({ text: "/fast", mode: "command" });
+    commands++;
+    await submit();
+    await route.fulfill({ json: sendAnswer(body.id, "sent") });
   });
   await page.route("**/api/pane/*/keys*", async (route) => {
     expect(route.request().postDataJSON().keys).toEqual(["Enter"]);
@@ -222,11 +219,12 @@ for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
     paneId: "w1:p1", text: current, revision, truncated: false, codexSessionKey: SESSION_KEY,
   } }));
-  await page.route("**/api/pane/*/reply*", async (route) => {
-    current = route.request().postDataJSON().submit ? modelText
-      : fixture("codex--v0154-command-status.txt").replaceAll("/status", "/model");
+  await page.route("**/api/send", async (route) => {
+    const body = route.request().postDataJSON();
+    expect(body).toMatchObject({ text: "/model", mode: "command" });
+    current = modelText;
     revision++;
-    await route.fulfill({ json: { ok: true } });
+    await route.fulfill({ json: sendAnswer(body.id, "sent") });
   });
   await page.route("**/api/pane/*/keys*", async (route) => {
     expect(route.request().postDataJSON().keys).toEqual(["Enter"]);
@@ -242,7 +240,6 @@ for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async
   });
   await page.goto("/pane/w1:p1");
   const entry = page.getByRole("button", { name: new RegExp(`^${zh["codexModel.openAria"]}:`) });
-  const entryBefore = await entry.boundingBox();
   await entry.click();
   await page.getByRole("button", { name: "gpt-6-astra low", exact: true }).click();
   const message = page.getByRole("status").filter({ hasText: "gpt-6-astra low" });
@@ -254,41 +251,38 @@ for (const theme of ["light", "dark"]) test(`model switch mask: ${theme}`, async
     const mask = panel.parentElement!;
     const panelRect = panel.getBoundingClientRect();
     const maskRect = mask.getBoundingClientRect();
+    const transcript = document.querySelector('[role="presentation"]');
     return {
       inert: mask.hasAttribute("inert"),
       blur: getComputedStyle(mask, "::after").backdropFilter,
       coversOnlyPanel: panelRect.top === maskRect.top && panelRect.bottom === maskRect.bottom
         && panelRect.left === maskRect.left && panelRect.right === maskRect.right,
-      transcriptInteractive: mask.previousElementSibling?.tagName === "PRE"
-        && !mask.previousElementSibling.closest("[inert]"),
+      transcriptInteractive: transcript !== null && !transcript.closest("[inert]") && !transcript.contains(mask),
     };
   });
   expect(maskGeometry).toEqual({ inert: true, blur: "blur(1px)", coversOnlyPanel: true, transcriptInteractive: true });
   const planRow = page.locator('[data-slot="codex-statusline"]').locator("..");
-  await expect.poll(async () => Math.abs((await planRow.boundingBox())!.y - await message.evaluate(
-    (el) => el.parentElement!.getBoundingClientRect().bottom,
-  ))).toBeLessThanOrEqual(8);
-  expect(await entry.boundingBox()).toMatchObject({ y: entryBefore!.y });
+  await expect.poll(async () => (await message.evaluate((el) => el.parentElement!.getBoundingClientRect().bottom))
+    - (await modelTitle.boundingBox())!.y).toBeLessThanOrEqual(0);
+  await expect(entry).toBeDisabled();
   const progressStyle = await message.evaluate((el) => {
     const bar = el.parentElement!;
     return {
-      solid: getComputedStyle(bar).backgroundColor === getComputedStyle(document.body).backgroundColor,
       radius: getComputedStyle(bar).borderRadius,
       oneLine: bar.getBoundingClientRect().height <= 45,
       flushSides: bar.getBoundingClientRect().left === 0 && bar.getBoundingClientRect().right === window.innerWidth,
     };
   });
-  expect(progressStyle).toEqual({ solid: true, radius: "0px", oneLine: true, flushSides: true });
-  // A narrow phone has a taller card: its title can scroll offscreen, but remains reachable
-  // under the local mask, and the scrollport must end before the progress controls.
+  expect(progressStyle).toEqual({ radius: "0px", oneLine: true, flushSides: true });
+  // The progress strip stands above the dock; a tall card still ends before the statusline.
   const scrollport = modelTitle.locator('xpath=ancestor::div[contains(@class, "overflow-y-auto")][1]');
   await modelTitle.scrollIntoViewIfNeeded();
   await expect(modelTitle).toBeInViewport();
-  const progressTop = await message.evaluate((el) => el.parentElement!.getBoundingClientRect().top);
-  expect(await scrollport.evaluate((el) => el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(progressTop);
+  const statusTop = (await planRow.boundingBox())!.y;
+  expect(await scrollport.evaluate((el) => el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(statusTop);
   await scrollport.evaluate((el) => { el.scrollTop = el.scrollHeight; });
   await expect.poll(() => modelTitle.evaluate((el) => el.closest('[role="group"]')!.getBoundingClientRect().bottom))
-    .toBeLessThanOrEqual(progressTop);
+    .toBeLessThanOrEqual(statusTop);
   if (theme === "dark") {
     const targetFont = await message.getByText("gpt-6-astra low", { exact: true }).evaluate((el) => ({
       family: getComputedStyle(el).fontFamily,

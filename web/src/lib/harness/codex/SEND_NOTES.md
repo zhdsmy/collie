@@ -1,5 +1,25 @@
 # Codex queue and steering — 2026-10-17
 
+## Own command list — 2026-10-18
+
+The operator's Codex 0.163.0 `/model` receipt stopped at S1 with `changed`, before any
+Enter. The v1.22.4 Claude list fix did not configure Codex's completion list. The Codex
+profile now names its native list above the composer and reuses upstream's exact-selection
+and bounded-scroll checks. No new protocol branch or automatic retry was added.
+
+An isolated Herdr canary opened the native model picker with `keys: ["Enter"]` and a
+`sent` receipt. The committed `codex--v0163-slash-model-list.txt` retains the native
+completion after a harmless integers-only turn. Normal native scenarios also passed on
+the previous release: the original failure was not reproduced exactly. A separate synthetic
+four-row wrap regression fails with the list configuration removed and passes with it;
+different selections and new checked transcript text remain unsubmitted. This establishes
+the missing scroll coverage, not a full certification of every native pane geometry.
+
+The canary and its temporary sibling pane were closed; no input was sent to the operator's
+active Codex conversation. Queue/steer defaults and command keys are unchanged.
+
+## Queue and steering
+
 Settings → Device → Codex sending stores a per-device default (Queue initially). Ordinary
 messages use the Send Protocol's `send` (Tab) or explicit `steer` (Enter) mode. Commands keep
 the existing command route, including the queue/never-held protections during a turn.

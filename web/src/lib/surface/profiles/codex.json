@@ -47,6 +47,12 @@
       "below": {
         "maxRows": 2,
         "footerMaxRows": 2,
+        "commandList": {
+          "pointer": "^› (?<command>/\\S+)[ \\t]+\\S",
+          "entry": "^ {2}(?<command>/\\S+)[ \\t]+\\S",
+          "wrapped": "^ {2,}\\S",
+          "sides": ["above"]
+        },
         "hints": [
           "^\\s*← for agents · \\? for shortcuts$",
           "^\\s*\\? for shortcuts$",

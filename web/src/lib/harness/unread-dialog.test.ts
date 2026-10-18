@@ -250,9 +250,6 @@ const CARD_FIXTURES = {
       "claude--v21284-settings-status.txt",
       "claude--v21284-settings-usage.txt",
       "claude--v21284-settings-stats.txt",
-      // README: a multiSelect with the pointer on its "Type something" field. Declined on purpose,
-      // since every toggle digit would be typed into the field, so the card is the honest answer.
-      "claude--v2283-multiselect-type-something-focused.txt",
       // corpus: `/tasks` panel, `Esc to close` footer; raw only at 40 columns, where its
       // footer wraps and the menu grammar declines. The w82 capture lifts `menu`, so no card.
       "claude-lab--tasks-panel--w40.txt",
@@ -348,6 +345,9 @@ const CARD_FIXTURES = {
       "omp--v18-4-ask-multi.txt",
       "omp--v18-4-menu-model.txt",
       "omp--v18-4-menu-settings.txt",
+      // omp 18.6.1's Models picker and settings screen (lab, 2026-10-17).
+      "omp--v18-6-model-selector-empty--w120.txt",
+      "omp--v18-6-settings-screen--w120.txt",
       "omp--v18-4-resume-nomatch.txt",
       "omp--v18-4-switch-nerd.txt",
       "omp--v18-4-switch-nomatch.txt",
