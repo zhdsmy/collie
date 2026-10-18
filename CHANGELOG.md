@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.22.6+collie.1] - 2026-10-18
+
 ### Changed
 
-- **Sending, input composition and terminal columns follow upstream v1.22.6.** Preserve downstream Codex queue/steer controls, draft caching and normal user-message wrapping; see [the integration report](docs/upstream-v1.22.6.md).
+- **Sending, input composition and terminal columns follow upstream v1.22.6.** Preserve downstream Codex queue/steer controls, draft caching and normal user-message wrapping; see [the integration report](docs/upstream-v1.22.6.md). ([b7a5ef7d](https://github.com/zhdsmy/collie/commit/b7a5ef7d))
 
 ## [1.22.5+collie.2] - 2026-10-18
 
