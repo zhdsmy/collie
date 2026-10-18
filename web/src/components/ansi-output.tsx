@@ -605,7 +605,7 @@ export const AnsiOutput = memo(function AnsiOutput({
       className={cn(
         "inline-block min-w-full min-h-[1lh] align-bottom",
         wrap && "w-full max-w-full",
-        surface.kind === "user" && "font-semibold",
+        surface.kind === "user" && "font-semibold text-wrap",
       )}
       style={{ backgroundColor: surface.background }}
     >{content}</span>
