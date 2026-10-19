@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.0+collie.1] - 2026-10-20
+
 ### Changed
 
-- **Agent messaging, session tools and compatibility follow upstream v1.23.0.** Preserve downstream input controls, Codex queue/steer and display customizations; see [the integration report](docs/upstream-v1.23.0.md).
+- **Agent messaging, session tools and compatibility follow upstream v1.23.0.** Preserve downstream input controls, Codex queue/steer and display customizations; see [the integration report](docs/upstream-v1.23.0.md). ([782af08f](https://github.com/zhdsmy/collie/commit/782af08f))
 
 ## [1.22.6+collie.1] - 2026-10-18
 
