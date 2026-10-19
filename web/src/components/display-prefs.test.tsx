@@ -16,7 +16,7 @@ const PREFS: DisplayPrefs = {
   rawTerminal: false,
   tapToFocus: true,
   expandClippedReply: true,
-  rejoinWraps: true,
+  stretchText: false, rejoinWraps: true,
 };
 
 function draw(paneView?: Partial<PaneViewControl>, rejoin?: { on: boolean; set: (on: boolean) => void }) {
@@ -27,6 +27,7 @@ function draw(paneView?: Partial<PaneViewControl>, rejoin?: { on: boolean; set: 
   render(
     <DisplayPrefsContent
       prefs={PREFS}
+      setStretchText={vi.fn()}
       setWrap={vi.fn()}
       stepFontSize={stepFontSize}
       setRawTerminal={vi.fn()}
@@ -101,6 +102,16 @@ describe("DisplayPrefsContent", () => {
     expect(screen.getByLabelText("Tool calls")).toBeInTheDocument();
     expect(screen.queryByLabelText("Wrap lines")).toBeNull();
     expect(screen.queryByLabelText("Raw terminal")).toBeNull();
+  });
+
+  it("offers the stretchtext switch over both bodies, since Chat draws replies too", () => {
+    draw({ chosen: "chat", showing: "chat" });
+    expect(screen.getByLabelText("Stretchtext replies")).toBeInTheDocument();
+  });
+
+  it("offers the stretchtext switch over the mirror, where the Full reply card draws a reply", () => {
+    draw({ chosen: "terminal", showing: "terminal" });
+    expect(screen.getByLabelText("Stretchtext replies")).toBeInTheDocument();
   });
 
   it("the stream's text size is its own number, not the mirror's", async () => {

@@ -182,7 +182,6 @@ describe("Hermes resumed history", () => {
     expect(histories(capture)).toHaveLength(1);
     expect(output.flatMap((b) => b.lines)).toHaveLength(lines(capture).length);
     expect(output.some(blockOwnsKeyboard)).toBe(false);
-    expect(hermesAdapter.displayOnly).toBe(true);
     const body = output.flatMap((b) => b.lines.map(lineText)).join("\n");
     const info = histories(capture)[0]!.sessionInfo;
     if (info?.kind !== "history") throw new Error("Missing history");

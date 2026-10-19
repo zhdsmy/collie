@@ -4,7 +4,7 @@ import type { TranscriptEntry } from "./types";
 import { parseMarkdown, type MdSpan } from "./markdown";
 
 function spanText(spans: MdSpan[]): string {
-  return spans.map((span) => "text" in span ? span.text : "spans" in span ? spanText(span.spans) : span.alt).join("");
+  return spans.map((span) => "text" in span ? span.text : "spans" in span ? spanText(span.spans) : "alt" in span ? span.alt : "").join("");
 }
 
 /** Markdown syntax (notably a fenced code block's language) is absent from Codex's display. */

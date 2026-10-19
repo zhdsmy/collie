@@ -381,6 +381,7 @@ describe("tableRuns — the whole pane corpus", () => {
       "omp--v18-4-switch-wrapped.txt 2..14",
       "omp--v18-4-switch.txt 2..14",
       "omp--v18-4-tree.txt 2..20",
+      "omp--v18-6-model-selector-empty--w120.txt 0..37",
       "omp--v18-rule-draft.txt 2..20",
       "omp--v18-rule-idle.txt 2..20",
       "omp--v18-rule-wrapped.txt 2..20",

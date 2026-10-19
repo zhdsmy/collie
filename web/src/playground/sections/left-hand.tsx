@@ -42,7 +42,7 @@ const PREFS = {
   rawTerminal: false,
   tapToFocus: true,
   expandClippedReply: true,
-  rejoinWraps: true,
+  stretchText: false, rejoinWraps: true,
 } as const;
 
 interface VariantDef {

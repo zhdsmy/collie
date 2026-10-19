@@ -29,16 +29,16 @@ for (const width of [320, 390]) {
         const toggle = page.getByRole("button", { name: messages["composer.controls.agent"], exact: true });
         await toggle.click();
         await expect(toggle).toHaveAttribute("aria-expanded", "true");
-        await expect(page.getByRole("dialog")).toHaveCount(0);
-        const title = page.getByRole("heading", { name: messages["composer.controls.agent"], exact: true });
+        await expect(page.getByRole("dialog")).toHaveCount(1);
+        const title = page.getByRole("dialog", { name: messages["composer.controls.agent"], exact: true });
         await expect(title).toBeVisible();
         const list = page.getByRole("list", { name: messages["commands.title"] });
         const commands = list.getByRole("button");
         const search = page.getByRole("textbox", { name: messages["commands.search.placeholder"].replace("{count}", String(commandsFor("codex").length)) });
         await expect(search).not.toBeFocused();
         await expect(commands.nth(0)).toBeInViewport();
-        await expect(commands.nth(2)).toBeInViewport();
-        await expect(commands.nth(3)).not.toBeInViewport();
+        await expect(commands.nth(4)).toBeInViewport();
+        await expect(commands.nth(5)).not.toBeInViewport();
         await commands.last().scrollIntoViewIfNeeded();
         await expect(search).toBeInViewport();
         await expect(title).toBeInViewport();
@@ -62,11 +62,14 @@ for (const width of [320, 390]) {
           }
         }
 
+        await page.getByRole("dialog").getByRole("button", { name: messages["common.closeAria"], exact: true }).click();
         await page.getByRole("button", { name: messages["composer.controls.quick"], exact: true }).click();
         await expect(list).toHaveCount(0);
-        await expect(page.getByRole("heading", { name: messages["composer.controls.quick"], exact: true })).toBeVisible();
+        await expect(page.getByRole("dialog", { name: messages["composer.controls.quick"], exact: true })).toBeVisible();
+        await page.getByRole("dialog").getByRole("button", { name: messages["common.closeAria"], exact: true }).click();
         await page.getByRole("button", { name: messages["composer.controls.displayAria"], exact: true }).click();
-        await expect(page.getByRole("heading", { name: messages["composer.controls.display"], exact: true })).toBeVisible();
+        await expect(page.getByRole("dialog", { name: messages["composer.controls.display"], exact: true })).toBeVisible();
+        await page.getByRole("dialog").getByRole("button", { name: messages["common.closeAria"], exact: true }).click();
         await toggle.click();
         await expect(search).toHaveValue("");
         await search.fill("mention");

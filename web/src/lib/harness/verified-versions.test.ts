@@ -38,7 +38,7 @@ interface Ledger {
 }
 
 // SAFETY: `verified-versions.json` is a checked-in, hand-authored file; this test IS the shape
-// check (every registered adapter, a `journal` block for every journal adapter,
+// check (every registered adapter plus openclaw, a `journal` block for every journal adapter,
 // `how` in the allowed set, plain `x.y.z` versions, ISO dates) — asserting the type here, once, is
 // what the rest of the file verifies.
 const ledger = ledgerJson as Ledger;

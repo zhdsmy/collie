@@ -908,5 +908,40 @@
     "fixture": "claude--v2302-notice-over-agents-panel--w69.txt",
     "detector": "menu",
     "region": "✦ You should know · One of the notes says the payroll export\n  runs on an unencrypted laptop that goes home every night and\n  holds every employee's bank account number.\n  1: Learn more   2: Knew this already   0: Dismiss\n  \n─────────────────────────────────────────────────────────────────────\n❯ \n─────────────────────────────────────────────────────────────────────"
+  },
+  {
+    "fixture": "claude--working.txt",
+    "detector": "menu",
+    "region": "● How is Claude doing this session? (optional)\n  1: Bad    2: Fine   3: Good   0: Dismiss\n\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── collie upgrades ──\n❯ \n─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+  },
+  {
+    "fixture": "claude--v2303-titled-edge-survey--w160.txt",
+    "detector": "menu",
+    "region": "● How is Claude doing this session? (optional)\n  1: Bad    2: Fine   3: Good   0: Dismiss\n                                                                                                                        ✔ Update installed · Restart to update\n─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 1.23.0 ─\n❯ \n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+  },
+  {
+    "fixture": "claude-lab--survey-rating-above-box--w82.txt",
+    "detector": "menu",
+    "region": "● How is Claude doing this session? (optional)\n  1: Bad    2: Fine   3: Good   0: Dismiss\n\n──────────────────────────────────────────────────────────────────────────────────\n❯ git add docs/lab-notes.md and commit\n──────────────────────────────────────────────────────────────────────────────────"
+  },
+  {
+    "fixture": "hermes--v0221-native-clarify.txt",
+    "detector": "prompt-select",
+    "agent": "hermes",
+    "region": "╭─ Hermes Agent needs your input ────────────────╮\n│ 1 question                                     │\n│ ▸ 请选择测试结果展示方式？                                 │\n│   ❯ 1. Summary (Recommended)                   │\n│     2. Details                                 │\n│     3. Other (type your answer)                │\n╰────────────────────────────────────────────────╯",
+    "bindTail": 8
+  },
+  {
+    "fixture": "hermes--v0221-native-approval.txt",
+    "detector": "prompt-select",
+    "agent": "hermes",
+    "region": "╭─────────────────────────────────────────────────╮\n│ ⚠️  Dangerous Command                           │\n│                                                 │\n│ rm -rf /private/tmp/collie-hermes-deny-only     │\n│                                                 │\n│ ❯ 1. Allow once                                 │\n│   2. Allow for this session                     │\n│   3. Add to permanent allowlist                 │\n│   4. Deny                                       │\n│                                                 │\n│ delete in root path                             │\n╰─────────────────────────────────────────────────╯",
+    "bindTail": 8
+  },
+  {
+    "fixture": "hermes--v0221-native-clarify-w50.txt",
+    "detector": "prompt-select",
+    "agent": "hermes",
+    "region": "╭─ Hermes Agent needs your input ──────────────╮\n│ 1 question                                   │\n│ ▸ 请选择测试结果展示方式？\n         │\n│   ❯ 1. Summary (Recommended)                 │\n│     2. Details                               │\n│     3. Other (type your answer)              │\n╰──────────────────────────────────────────────╯"
   }
 ]

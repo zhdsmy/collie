@@ -3,10 +3,9 @@ import { test, expect, type Locator } from "@playwright/test";
 import { installApiStub } from "./fixtures/api";
 import { fixtureSnapshot } from "@/test/handlers";
 
-const working = readFileSync(new URL("../src/fixtures/panes/hermes--working.txt", import.meta.url), "utf8");
+const working = readFileSync(new URL("../src/fixtures/panes/hermes--running.txt", import.meta.url), "utf8");
 const done = readFileSync(new URL("../src/fixtures/panes/hermes--done.txt", import.meta.url), "utf8");
 const submitted = readFileSync(new URL("../src/fixtures/panes/hermes--submitted-input.txt", import.meta.url), "utf8");
-const hint = "msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel";
 const model = "example-model-with-a-very-long-name";
 const history = Array.from({ length: 80 }, (_, i) => `Earlier response ${i}.`).join("\n") + "\n";
 
@@ -29,7 +28,6 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
       localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
     }, { theme, locale });
     await installApiStub(page);
-    const localizedHint = locale === "zh" ? "发消息=中断 · /queue · /bg · /steer · Ctrl+C 取消" : hint;
     let text = working;
     let polls = 0;
     let writes = 0;
@@ -50,8 +48,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
       } });
     });
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
-      paneId: "w1:p1", text: (history + submitted + text.replace("example-model", model.slice(0, 23) + "...").replace(hint, localizedHint))
-        .replaceAll("⚕", theme === "dark" ? "☤" : "⚕"),
+      paneId: "w1:p1", text: history + submitted + text.replaceAll("lab-model", model),
       truncated: false, revision: 1, sessionModel: { model, reasoningEffort: "high" },
     } }));
     await page.goto("/pane/w1:p1");
@@ -60,25 +57,12 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await expect.poll(() => tabIsVisible(tab)).toBe(true);
 
     const metrics = page.getByText(model, { exact: true });
-    const operations = page.getByText(localizedHint, { exact: true });
     await expect(metrics).toBeVisible();
-    await expect(operations).toHaveCount(1);
-    await expect(operations).toBeVisible();
     const statusBox = await metrics.boundingBox();
-    const hintBox = await operations.boundingBox();
     const composerBox = await page.getByRole("textbox").first().boundingBox();
-    expect(hintBox!.y).toBeGreaterThanOrEqual(statusBox!.y + statusBox!.height);
-    expect(hintBox!.y + hintBox!.height).toBeLessThan(composerBox!.y);
-    const hintFits = await operations.evaluate((el) => {
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      const glyphs = range.getBoundingClientRect();
-      const clip = el.parentElement!.parentElement!.getBoundingClientRect();
-      return glyphs.top >= clip.top && glyphs.bottom <= clip.bottom;
-    });
-    expect(hintFits).toBe(true);
+    expect(statusBox!.y + statusBox!.height).toBeLessThan(composerBox!.y);
     const separators = page.getByText("─".repeat(40), { exact: true });
-    await expect(separators).toHaveCount(2);
+    await expect(separators).toHaveCount(8);
     const bordersFit = await separators.evaluateAll((glyphs) => glyphs.every((el) => {
       const row = el.parentElement!.parentElement!.getBoundingClientRect();
       const mirror = el.closest("pre")!.getBoundingClientRect();
@@ -88,9 +72,8 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     expect(bordersFit).toBe(true);
     await page.screenshot({ path: testInfo.outputPath("working.png"), animations: "disabled" });
 
-    // Scroll the transcript itself. The two lifted rows must retain their position and the last
-    // hint remains accessible through its own horizontal pan without widening the document.
-    const scrolled = await page.getByText("A response is still streaming.", { exact: true }).evaluate((el) => {
+    // The upstream status bar stays fixed while the transcript scrolls.
+    const scrolled = await page.locator("pre").first().evaluate((el) => {
       let parent = el.parentElement;
       while (parent && !["auto", "scroll"].includes(getComputedStyle(parent).overflowY)) parent = parent.parentElement;
       if (!parent || parent.scrollHeight <= parent.clientHeight) return false;
@@ -98,14 +81,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
       return true;
     });
     expect(scrolled).toBe(true);
-    await expect.poll(async () => (await operations.boundingBox())!.y).toBe(hintBox!.y);
     await expect.poll(async () => (await metrics.boundingBox())!.y).toBe(statusBox!.y);
-    await operations.evaluate((el) => { el.parentElement!.parentElement!.scrollLeft = 10000; });
-    const hintOverflow = await operations.evaluate((el) =>
-      el.getBoundingClientRect().right - el.parentElement!.parentElement!.getBoundingClientRect().right);
-    // WebKit rounds scroll extents to whole pixels while element bounds stay fractional.
-    expect(hintOverflow).toBeLessThanOrEqual(1);
-    if (width === 320) expect(await operations.evaluate((el) => el.parentElement!.parentElement!.scrollLeft)).toBeGreaterThan(0);
 
     // A deliberate pan to other tabs survives an ordinary snapshot refresh.
     await tab.evaluate((el) => { el.parentElement!.scrollLeft = 0; });
@@ -131,7 +107,6 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     expect(geometry).toEqual({ x: 0, y: 0, viewport: width + 30, document: width + 30 });
 
     text = done;
-    await expect(operations).toHaveCount(0);
     await expect(metrics).toBeVisible();
     expect(writes).toBe(0);
   });

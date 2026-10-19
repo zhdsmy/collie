@@ -50,6 +50,7 @@ interface RegionRow {
   region: string;
   agent?: string;
   bindColumns?: ColumnRange;
+  bindTail?: number;
 }
 
 // SAFETY: `prompt-binding-regions.json` is this repo's own committed golden, and every field the
@@ -105,6 +106,7 @@ interface FoundRegion {
   detector: string;
   region: string;
   bindColumns?: ColumnRange;
+  bindTail?: number;
 }
 
 /** The region and column range a harness's adapter binds a prompt-select to, through the public
@@ -114,6 +116,7 @@ function adapterRegion(lines: StyledLine[], agent: string): FoundRegion | null {
   if (card?.kind !== "prompt-select") return null;
   const found: FoundRegion = { detector: "prompt-select", region: card.prompt.signature };
   if (card.prompt.bindColumns !== undefined) found.bindColumns = card.prompt.bindColumns;
+  if (card.prompt.bindTail !== undefined) found.bindTail = card.prompt.bindTail;
   return found;
 }
 
@@ -128,7 +131,7 @@ describe("client/bridge binding contract", () => {
     ]);
   });
 
-  for (const { fixture, detector, region, agent, bindColumns } of REGIONS) {
+  for (const { fixture, detector, region, agent, bindColumns, bindTail } of REGIONS) {
     it(`${detector}: ${fixture} still derives byte-identically`, () => {
       const found = agent === undefined ? detectRegion(fixtureLines(fixture)) : adapterRegion(fixtureLines(fixture), agent);
       expect(found).not.toBeNull();
@@ -137,6 +140,7 @@ describe("client/bridge binding contract", () => {
       // The column range is half of the binding: the bridge cuts its read to it before it compares,
       // so a range that drifted would refuse every tap as surely as a drifted region.
       expect(found!.bindColumns).toEqual(bindColumns);
+      if (bindTail !== undefined) expect(found!.bindTail).toBe(bindTail);
     });
   }
 

@@ -621,8 +621,12 @@ function interiorFrameAt(rows: readonly FrameRow[], bottom: number, idle: IdlePr
       // A row that is the top edge and cannot be a prompt row ends the box: a draft's indented rows
       // above it are the transcript's.
       if (anchored(texts[top]!, c.top) !== null && (isBlank(texts[top]!) ? !c.prompt.pattern.test("") : anchored(texts[top]!, c.prompt) === null)) {
-        stop = top;
-        break;
+        // A literal rule inside the draft is not the box's top: the prompt must follow it.
+        const next = texts.slice(top + 1, last + 1).find((text) => !isBlank(text)) ?? "";
+        if (anchored(next, c.prompt) !== null) {
+          stop = top;
+          break;
+        }
       }
       top--;
     }

@@ -4,7 +4,10 @@ import { installApiStub } from "./fixtures/api";
 import { fixtureSnapshot } from "@/test/handlers";
 
 const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/hermes--${name}.txt`, import.meta.url), "utf8");
-const q0 = fixture("clarify-q0"), q1 = fixture("clarify-q1"), other = fixture("clarify-other");
+const q0 = fixture("v0221-native-clarify"), other = fixture("v0221-native-other");
+const ask = { id: "ask-0a0a0a0a0a0a0a", kind: "question", channel: "keys", hash: "0c4e11", options: [
+  { id: "1", label: "Summary (Recommended)" }, { id: "2", label: "Details" }, { id: "3", label: "Other (type your answer)" },
+] };
 const done = fixture("done"), diff = fixture("diff");
 test.use({ serviceWorkers: "block" });
 
@@ -14,31 +17,32 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) {
     await page.addInitScript((selectedTheme) => {
       localStorage.setItem("collie:theme:v1", selectedTheme);
       localStorage.setItem("collie:locale:v1", "zh");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
     }, theme);
     await installApiStub(page);
     let current = q0;
-    const writes: { keys: string[]; expected_prompt: string }[] = [];
+    const writes: { optionId: string; hash: string }[] = [];
     await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
       ...fixtureSnapshot,
       agents: fixtureSnapshot.agents.map((agent, i) => i === 0
-        ? Object.assign({}, agent, { agent: "hermes", status: current === done ? "done" : "blocked", hasSession: true })
+        ? Object.assign({}, agent, { agent: "hermes", status: current === done ? "done" : "blocked", hasSession: true, surface: { revision: 1, turn: "idle", modal: current === q0 ? { ask } : "none", composer: current === q0 ? "unknown" : "empty" } })
         : agent),
     } }));
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
       paneId: "w1:p1", text: diff + current, truncated: false, revision: 1,
     } }));
-    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
-      // SAFETY: this is the app's typed API request, driven only by the mocked native choice buttons.
-      const body = route.request().postDataJSON() as { keys: string[]; expected_prompt: string };
+    await page.route("**/api/ask/ask-0a0a0a0a0a0a0a", (route) => {
+      // SAFETY: the app posts this typed answer to the fixture's single-use ask.
+      const body = route.request().postDataJSON() as { optionId: string; hash: string };
       writes.push(body);
-      current = current === q0 ? q1 : other;
-      return route.fulfill({ json: { ok: true } });
+      current = other;
+      return route.fulfill({ json: { receipt: { askId: ask.id, outcome: "sent", keys: ["3"] } } });
     });
     await page.goto("/pane/w1:p1");
-    const choice = page.getByRole("button", { name: /显示摘要/ });
+    const choice = page.getByRole("button", { name: /Other \(type your answer\)/ });
     await expect(choice).toBeVisible();
-    await expect(page.getByText("example-model", { exact: true })).toBeVisible();
-    const optionsFit = await page.getByRole("button", { name: /检查示例|显示摘要|验证红绿背景|Other \(type your answer\)/ }).evaluateAll((els) => els.every((el) => {
+    await expect(page.getByText("collie-lab", { exact: true })).toBeVisible();
+    const optionsFit = await page.getByRole("button", { name: /Summary|Details|Other \(type your answer\)/ }).evaluateAll((els) => els.every((el) => {
       const box = el.getBoundingClientRect();
       return box.left >= 0 && box.right <= document.documentElement.clientWidth && box.height > 0
         && el.scrollWidth <= el.clientWidth;
@@ -46,12 +50,8 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) {
     expect(optionsFit).toBe(true);
     await page.screenshot({ path: testInfo.outputPath("choices.png") });
     await choice.click();
-    await expect(page.getByRole("button", { name: /Markdown/ })).toBeVisible();
-    expect(writes[0]!.keys).toEqual(["2"]);
-    expect(writes[0]!.expected_prompt).toContain("选择测试方案？");
-    await page.getByRole("button", { name: /Other \(type your answer\)/ }).click();
-    await expect(page.getByRole("button", { name: /Markdown/ })).toHaveCount(0);
-    expect(writes[1]!.keys).toEqual(["3"]);
+    await expect(choice).toHaveCount(0);
+    expect(writes).toEqual([{ pane: "w1:p1", optionId: "3", hash: ask.hash, origin: "person_tap" }]);
     await expect(page.getByRole("textbox").first()).toBeEnabled();
 
     current = done;

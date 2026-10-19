@@ -2,10 +2,8 @@
 // Herdr snapshot `agent` string to its HarnessAdapter; anything absent from the map has no adapter,
 // so it keeps the universal raw mirror (the T1 fallback). Both gates route through here — the render
 // pipeline (harness/index buildBlocks) and agent-chat's status strip — so the policy can't drift, and
-// adding a further verified agent is a one-line change to ADAPTERS. Full adapters may lift native
-// dialogs and verify composer sends; display-only adapters such as Cursor and Hermes restrict
-// themselves to transcript presentation and status extraction. OpenCode now has its own live
-// adapter. Adapters register by their EXACT agent string only —
+// Adding an adapter registers its exact agent name; display and interactive adapters share this registry.
+// Adapters register by EXACT agent string only —
 // prefix-matching here was the AltanS/collie#99 reject: it would hand a harness's live keystroke
 // recipes to any agent string sharing the prefix. `hasBlockGrammar` replaces the old
 // grammar/agents predicate:
@@ -16,10 +14,10 @@ import type { HarnessAdapter } from "./types";
 import { claudeAdapter } from "./claude";
 import { codexAdapter } from "./codex";
 import { grokAdapter } from "./grok";
+import { hermesAdapter } from "./hermes";
 import { ompAdapter } from "./omp";
 import { opencodeAdapter } from "./opencode";
 import { agyAdapter, antigravityAdapter } from "./agy";
-import { hermesAdapter } from "./hermes";
 import { cursorAdapter } from "./cursor";
 import { museAdapter } from "./muse";
 import { piAdapter } from "./pi";
@@ -30,11 +28,11 @@ const ADAPTERS: Record<string, HarnessAdapter> = Object.fromEntries(
     claudeAdapter,
     codexAdapter,
     grokAdapter,
+    hermesAdapter,
     ompAdapter,
     opencodeAdapter,
     agyAdapter,
     antigravityAdapter,
-    hermesAdapter,
     cursorAdapter,
     museAdapter,
     piAdapter,

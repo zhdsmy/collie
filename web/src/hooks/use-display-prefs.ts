@@ -89,6 +89,11 @@ export interface DisplayPrefs {
    */
   rejoinWraps: boolean;
   /**
+   * Whether agent replies draw cc-stretch `{{short|long}}` stretches as tappable phrases (default:
+   * false). Off, the markup reads as written, exactly as every surface drew it before this existed.
+   */
+  stretchText: boolean;
+  /**
    * How long this phone keeps the Chat tail of each pane, to read with the bridge out of reach:
    * `off`, `1d` (the default) or `7d` (M46 spec 09, lib/chat-tail.ts). Read at each write, so a change
    * applies from the next write on. Choosing `off` also deletes every tail already kept.
@@ -110,6 +115,13 @@ export interface DisplayPrefs {
   hand?: Hand;
   /** Default for ordinary Codex messages during a turn; other harnesses keep native behavior. */
   codexSendMode?: "queue" | "steer";
+  /**
+   * Whether a shell pane offers lines from Sent above its box while the box has focus (M61). On by
+   * default. Optional in the TYPE only, for the same reason as {@link hand}: every read goes through
+   * {@link sentSuggestionsOf}, which answers on for an absent value, so a stored payload from before
+   * the setting and the literal prefs in the component tests stay valid. Per device, in this one key.
+   */
+  sentSuggestions?: boolean;
 }
 
 /** The two hands the pane screen can be laid out for. */
@@ -120,6 +132,11 @@ export const HAND_DEFAULT: Hand = "right";
 /** Narrow a string of unknown provenance (a stored pref, a segmented value) to a Hand. */
 export function isHand(value: string | undefined): value is Hand {
   return HANDS.some((hand) => hand === value);
+}
+
+/** Whether the suggestion strip is on, with the default (on) where a literal left it out. */
+export function sentSuggestionsOf(prefs: DisplayPrefs): boolean {
+  return prefs.sentSuggestions ?? true;
 }
 
 /** The hand of a prefs value, with the default where a literal left it out. */
@@ -255,6 +272,7 @@ const DEFAULTS: DisplayPrefs = {
   tapToFocus: true,
   expandClippedReply: true,
   rejoinWraps: true,
+  stretchText: false,
   keepChat: KEEP_CHAT_DEFAULT,
 };
 
@@ -376,12 +394,15 @@ function loadPrefs(): DisplayPrefs {
       tapToFocus: asJsonBoolean(p.tapToFocus) ?? DEFAULTS.tapToFocus,
       expandClippedReply: asJsonBoolean(p.expandClippedReply) ?? DEFAULTS.expandClippedReply,
       rejoinWraps: asJsonBoolean(p.rejoinWraps) ?? DEFAULTS.rejoinWraps,
+      stretchText: asJsonBoolean(p.stretchText) ?? DEFAULTS.stretchText,
       // The same independent default: a payload written before the setting existed reads 1 day.
       keepChat: readKeepChat(asJsonString(p.keepChat)),
       // Absent until the operator picks one, so a payload written before the setting existed (and
       // one that picked the default) reads the right hand through {@link handOf}.
       hand: readHand(asJsonString(p.hand)),
       codexSendMode: p.codexSendMode === "steer" ? "steer" : undefined,
+      // Absent until the operator chooses, and read as on through {@link sentSuggestionsOf}.
+      sentSuggestions: asJsonBoolean(p.sentSuggestions),
     };
   } catch {
     return DEFAULTS;
@@ -420,11 +441,15 @@ export interface UseDisplayPrefsReturn {
   setExpandClippedReply: (expandClippedReply: boolean) => void;
   /** Toggle or explicitly set whether the mirror rejoins wrapped rows. */
   setRejoinWraps: (rejoinWraps: boolean) => void;
+  /** Toggle or explicitly set whether agent replies draw their stretches as tappable phrases. */
+  setStretchText: (stretchText: boolean) => void;
   /** How long this phone keeps the Chat tail. `off` also deletes every tail already kept. */
   setKeepChat: (keepChat: KeepChat) => void;
   /** Which thumb the pane screen is laid out for. */
   setHand: (hand: Hand) => void;
   setCodexSendMode: (mode: "queue" | "steer") => void;
+  /** Whether a shell pane offers lines from Sent above its box. */
+  setSentSuggestions: (on: boolean) => void;
 }
 
 export function useDisplayPrefs(): UseDisplayPrefsReturn {
@@ -510,6 +535,14 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     });
   }, []);
 
+  const setStretchText = useCallback((stretchText: boolean) => {
+    setPrefs((p) => {
+      const next: DisplayPrefs = { ...p, stretchText };
+      savePrefs(next);
+      return next;
+    });
+  }, []);
+
   const setKeepChat = useCallback((keepChat: KeepChat) => {
     setPrefs((p) => {
       const next: DisplayPrefs = { ...p, keepChat };
@@ -537,6 +570,14 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     });
   }, []);
 
+  const setSentSuggestions = useCallback((sentSuggestions: boolean) => {
+    setPrefs((p) => {
+      const next: DisplayPrefs = { ...p, sentSuggestions };
+      savePrefs(next);
+      return next;
+    });
+  }, []);
+
   return {
     prefs,
     setCodexSendMode,
@@ -550,7 +591,9 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     setTapToFocus,
     setExpandClippedReply,
     setRejoinWraps,
+    setStretchText,
     setKeepChat,
     setHand,
+    setSentSuggestions,
   };
 }

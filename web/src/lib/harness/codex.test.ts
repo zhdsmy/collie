@@ -191,6 +191,8 @@ const PINNED = [
   "codex--v0162-picker-permissions.txt",
   "codex--v0162-resume-search.txt",
   "codex--v0163-agents-hint-warnings.txt",
+  "codex--v0163-queued-steer.txt",
+  "codex--v0163-slash-model-list.txt",
   "codex--v0163-working-draft--w120.txt",
   "codex--v0163-working-steered--w120.txt",
   "codex--working.txt",

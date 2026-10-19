@@ -7,8 +7,8 @@ import { splitLines } from "./blocks";
 import { hermesAdapter } from "./harness/hermes";
 import { submitPromptOption } from "./prompt-action";
 
-const capture = readFileSync(join(import.meta.dirname, "../fixtures/panes/hermes--clarify-q0.txt"), "utf8");
-const next = readFileSync(join(import.meta.dirname, "../fixtures/panes/hermes--clarify-q1.txt"), "utf8");
+const capture = readFileSync(join(import.meta.dirname, "../fixtures/panes/hermes--clarify-two.txt"), "utf8");
+const next = readFileSync(join(import.meta.dirname, "../fixtures/panes/hermes--clarify-two-second.txt"), "utf8");
 const other = readFileSync(join(import.meta.dirname, "../fixtures/panes/hermes--clarify-other.txt"), "utf8");
 function model(text: string) {
   const block = hermesAdapter.buildBlocks(splitLines(parseAnsi(text))).find((b) => b.kind === "prompt-select");
@@ -17,7 +17,7 @@ function model(text: string) {
 }
 
 it("sends only the tapped digit with the freshly read Hermes frame bound to the write", async () => {
-  const current = capture.replace("Tab next question", "Tab next question (87s)");
+  const current = capture.replace(/\(\d+s\)/u, "(87s)");
   const writes: unknown[] = [];
   server.use(
     http.get("/api/pane/:id", () => HttpResponse.json({ paneId: "w1:p1", text: current, revision: 1, truncated: false })),
@@ -29,10 +29,10 @@ it("sends only the tapped digit with the freshly read Hermes frame bound to the 
   const prompt = model(capture);
   const result = await submitPromptOption({ paneId: "w1:p1", requestedLines: 200, detectedRevision: 1, agent: "hermes", prompt, option: prompt.options[1]! });
   expect(result.status).toBe("sent");
-  expect(writes).toEqual([{ keys: ["2"], expected_prompt: model(current).regionSignature }]);
+  expect(writes).toEqual([{ keys: ["2"], expected_prompt: model(current).signature, expected_tail_lines: 8 }]);
 });
 
-it.each([next, other, capture.replace("显示摘要", "Different choice"), "Hermes finished the question."])(
+it.each([next, other, capture.replace("Green", "Different choice"), "Hermes finished the question."])(
   "refuses a stale choice without writing any keys", async (current) => {
     let writes = 0;
     server.use(

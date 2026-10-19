@@ -1,76 +1,78 @@
 {
   "features": [
-{
-  "id": "codex.send",
-  "agent": "codex",
-  "origin": "downstream",
-  "sources": [
-    "web/src/lib/surface/profiles/codex.json",
-    "web/src/lib/surface/queued.ts",
-    "bridge/surface/protocol.ts",
-    "web/src/components/composer.tsx",
-    "web/src/components/codex-send-control.tsx"
-  ],
-  "tests": [
-    "bridge/surface/protocol.test.ts",
-    "web/src/components/composer.test.tsx",
-    "web/src/lib/surface/cues.test.ts",
-    "web/src/hooks/use-display-prefs.test.ts",
-    "web/e2e/codex-send-mode.spec.ts"
-  ],
-  "fixtures": [
     {
-      "path": "web/src/fixtures/panes/codex--v0163-slash-model-list.txt",
+      "id": "codex.send",
       "agent": "codex",
-      "expect": {"block": "raw"}
+      "origin": "downstream",
+      "sources": [
+        "web/src/lib/surface/profiles/codex.json",
+        "web/src/lib/surface/queued.ts",
+        "bridge/surface/protocol.ts",
+        "web/src/components/composer.tsx",
+        "web/src/components/codex-send-control.tsx"
+      ],
+      "tests": [
+        "bridge/surface/protocol.test.ts",
+        "web/src/components/composer.test.tsx",
+        "web/src/lib/surface/cues.test.ts",
+        "web/src/hooks/use-display-prefs.test.ts",
+        "web/e2e/codex-send-mode.spec.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0163-slash-model-list.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0163-queued-steer.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw"
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "0.163.0",
+        "date": "2026-10-17",
+        "how": "owned Herdr canary: Tab queued, Shift+Left removed last item, Enter steered once; default and one-off choice covered in DOM tests",
+        "evidence": "web/src/lib/harness/codex/SEND_NOTES.md"
+      }
     },
     {
-      "path": "web/src/fixtures/panes/codex--v0163-queued-steer.txt",
-      "agent": "codex",
-      "expect": {
-        "block": "raw"
-      }
-    }
-  ],
-  "live": false,
-  "verified": {
-    "version": "0.163.0",
-    "date": "2026-10-17",
-    "how": "owned Herdr canary: Tab queued, Shift+Left removed last item, Enter steered once; default and one-off choice covered in DOM tests",
-    "evidence": "web/src/lib/harness/codex/SEND_NOTES.md"
-  }
-},
-{
-  "id": "hermes.send",
-  "agent": "hermes",
-  "origin": "downstream",
-  "sources": [
-    "web/src/lib/surface/profiles/hermes.json",
-    "web/src/lib/surface/cues.ts",
-    "bridge/surface/protocol.ts"
-  ],
-  "tests": [
-    "web/src/lib/surface/frame.test.ts",
-    "web/src/lib/surface/fold.corpus.test.ts",
-    "bridge/surface/protocol.test.ts"
-  ],
-  "fixtures": [
-    {
-      "path": "web/src/fixtures/panes/hermes--v0221-zh-send-running.txt",
+      "id": "hermes.send",
       "agent": "hermes",
-      "expect": {
-        "block": "raw"
+      "origin": "upstream-patched",
+      "sources": [
+        "web/src/lib/surface/profiles/hermes.json",
+        "web/src/lib/surface/cues.ts",
+        "bridge/surface/protocol.ts"
+      ],
+      "tests": [
+        "web/src/lib/surface/frame.test.ts",
+        "web/src/lib/surface/fold.corpus.test.ts",
+        "bridge/surface/protocol.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/hermes--v0221-zh-send-running.txt",
+          "agent": "hermes",
+          "expect": {
+            "block": "raw"
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "0.22.1+7.g279aafb.dirty",
+        "date": "2026-10-19",
+        "how": "owned native Herdr pane; scripted local endpoint, SendProtocol and AskAnswerer; no provider inference",
+        "evidence": "web/src/lib/harness/hermes/LOCAL_VERIFICATION.md"
       }
-    }
-  ],
-  "live": false,
-  "verified": {
-    "version": "0.22.1",
-    "date": "2026-10-17",
-    "how": "authorized existing General session reproduced unknown/no_evidence; repaired protocol returned sent on busy prompt and received fixed marker",
-    "evidence": "web/src/lib/harness/hermes/NOTES.md#busy-composer-receipt-repair--2026-10-17"
-  }
-},
+    },
     {
       "id": "pi.question",
       "agent": "pi",
@@ -412,14 +414,45 @@
       "id": "codex.model",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/picker.ts", "web/src/lib/harness/codex/index.ts", "web/src/lib/codex-model-switch.ts", "web/src/components/codex-model-recents.tsx", "web/src/components/picker-block.tsx"],
-      "tests": ["web/src/lib/harness/codex/picker.test.ts", "web/src/lib/codex-model-switch.test.ts", "web/e2e/codex-model-recents.spec.ts"],
+      "sources": [
+        "web/src/lib/harness/codex/picker.ts",
+        "web/src/lib/harness/codex/index.ts",
+        "web/src/lib/codex-model-switch.ts",
+        "web/src/components/codex-model-recents.tsx",
+        "web/src/components/picker-block.tsx"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/picker.test.ts",
+        "web/src/lib/codex-model-switch.test.ts",
+        "web/e2e/codex-model-recents.spec.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/codex--v0158-picker-model.txt", "agent": "codex", "expect": { "block": "picker", "title": "Select Model and Effort", "minOptions": 2 } },
-        { "path": "web/src/fixtures/panes/codex--v0158-picker-effort.txt", "agent": "codex", "expect": { "block": "picker", "title": "Select Reasoning Level for GPT-6-Astra", "minOptions": 4 } }
+        {
+          "path": "web/src/fixtures/panes/codex--v0158-picker-model.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Select Model and Effort",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0158-picker-effort.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Select Reasoning Level for GPT-6-Astra",
+            "minOptions": 4
+          }
+        }
       ],
       "live": true,
-      "verified": { "version": "0.158.0", "date": "2026-09-30", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/codex--v0158-picker-model.txt" }
+      "verified": {
+        "version": "0.158.0",
+        "date": "2026-09-30",
+        "how": "captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/codex--v0158-picker-model.txt"
+      }
     },
     {
       "id": "codex.resume",
@@ -459,11 +492,31 @@
       "id": "codex.fork",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/resume.ts", "web/src/lib/harness/codex/index.ts"],
-      "tests": ["web/src/lib/harness/codex/resume.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0158-fork.txt", "agent": "codex", "expect": { "block": "picker", "title": "Fork a previous session", "minOptions": 1 } }],
+      "sources": [
+        "web/src/lib/harness/codex/resume.ts",
+        "web/src/lib/harness/codex/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/resume.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0158-fork.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Fork a previous session",
+            "minOptions": 1
+          }
+        }
+      ],
       "live": true,
-      "verified": { "version": "0.158.0", "date": "2026-09-30", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/codex--v0158-fork.txt" }
+      "verified": {
+        "version": "0.158.0",
+        "date": "2026-09-30",
+        "how": "captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/codex--v0158-fork.txt"
+      }
     },
     {
       "id": "codex.statusline-fields",
@@ -528,141 +581,465 @@
       "id": "codex.statusline-picker",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/picker.ts", "web/src/lib/harness/codex/index.ts"],
-      "tests": ["web/src/lib/harness/codex/picker.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0158-picker-statusline.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 3 } }],
+      "sources": [
+        "web/src/lib/harness/codex/picker.ts",
+        "web/src/lib/harness/codex/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/picker.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0158-picker-statusline.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "minOptions": 3
+          }
+        }
+      ],
       "live": true,
       "liveCase": "codex.statusline",
-      "verified": { "version": "0.158.0", "date": "2026-09-30", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/codex--v0158-picker-statusline.txt" }
+      "verified": {
+        "version": "0.158.0",
+        "date": "2026-09-30",
+        "how": "captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/codex--v0158-picker-statusline.txt"
+      }
     },
     {
       "id": "codex.agents",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/agents.ts", "web/src/lib/harness/codex/index.ts"],
-      "tests": ["web/src/lib/harness/codex/agents.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0158-agents-overview.txt", "agent": "codex", "expect": { "block": "picker", "identity": "agents:command-center", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/codex/agents.ts",
+        "web/src/lib/harness/codex/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/agents.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0158-agents-overview.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "identity": "agents:command-center",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": true,
-      "verified": { "version": "0.158.0", "date": "2026-09-28", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#codex-0158-agent-chooser" }
+      "verified": {
+        "version": "0.158.0",
+        "date": "2026-09-28",
+        "how": "captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/README.md#codex-0158-agent-chooser"
+      }
     },
     {
       "id": "codex.trust",
       "agent": "codex",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/codex/trust.ts", "web/src/lib/harness/codex/index.ts"],
-      "tests": ["web/src/lib/harness/codex.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0156-trust.txt", "agent": "codex", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/codex/trust.ts",
+        "web/src/lib/harness/codex/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0156-trust.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": true,
-      "verified": { "version": "0.156.1", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus" }
+      "verified": {
+        "version": "0.156.1",
+        "date": "2026-09-26",
+        "how": "captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus"
+      }
     },
     {
       "id": "codex.approval",
       "agent": "codex",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/codex/approval.ts", "web/src/lib/harness/codex/index.ts"],
-      "tests": ["web/src/lib/harness/codex.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0156-approval-exec-2opt.txt", "agent": "codex", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/codex/approval.ts",
+        "web/src/lib/harness/codex/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0156-approval-exec-2opt.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": true,
-      "liveChecks": ["open", "decline"],
-      "verified": { "version": "0.156.1", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus" }
+      "liveChecks": [
+        "open",
+        "decline"
+      ],
+      "verified": {
+        "version": "0.156.1",
+        "date": "2026-09-26",
+        "how": "captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/README.md#codex-01561-corpus"
+      }
     },
     {
       "id": "codex.tool-approval",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/elicitation.ts", "web/src/lib/harness/codex/index.ts"],
-      "tests": ["web/src/lib/harness/codex/elicitation.test.ts", "web/src/lib/harness/codex.test.ts", "web/src/lib/picker-action.test.ts", "web/e2e/codex-dialog-cards.spec.ts"],
+      "sources": [
+        "web/src/lib/harness/codex/elicitation.ts",
+        "web/src/lib/harness/codex/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/elicitation.test.ts",
+        "web/src/lib/harness/codex.test.ts",
+        "web/src/lib/picker-action.test.ts",
+        "web/e2e/codex-dialog-cards.spec.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/codex--v0162-tool-approval-open.txt", "agent": "codex", "expect": { "block": "picker", "title": "Allow Computer Use to use \"TextEdit\"?", "minOptions": 4 } },
-        { "path": "web/src/fixtures/panes/codex--v0162-tool-approval-session.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 4 } },
-        { "path": "web/src/fixtures/panes/codex--v0162-tool-approval-narrow.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 4 } }
+        {
+          "path": "web/src/fixtures/panes/codex--v0162-tool-approval-open.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Allow Computer Use to use \"TextEdit\"?",
+            "minOptions": 4
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0162-tool-approval-session.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "minOptions": 4
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0162-tool-approval-narrow.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "minOptions": 4
+          }
+        }
       ],
       "live": false,
-      "verified": { "version": "0.162.1", "date": "2026-10-12", "how": "isolated inert MCP form: Up/Down/Esc and guarded picker plus bridge Enter; session and cancel responses verified at 100/50 columns; no model call", "evidence": "web/src/lib/harness/codex/ELICITATION_NOTES.md" }
+      "verified": {
+        "version": "0.162.1",
+        "date": "2026-10-12",
+        "how": "isolated inert MCP form: Up/Down/Esc and guarded picker plus bridge Enter; session and cancel responses verified at 100/50 columns; no model call",
+        "evidence": "web/src/lib/harness/codex/ELICITATION_NOTES.md"
+      }
     },
     {
       "id": "codex.ask",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/ask.ts", "web/src/lib/harness/codex/index.ts", "web/src/lib/picker-action.ts", "web/src/components/picker-block.tsx"],
-      "tests": ["web/src/lib/harness/codex/ask.test.ts", "web/src/lib/harness/codex.test.ts", "web/src/lib/question-action.test.ts", "web/src/components/picker-block.test.tsx", "web/e2e/codex-questions.spec.ts"],
+      "sources": [
+        "web/src/lib/harness/codex/ask.ts",
+        "web/src/lib/harness/codex/index.ts",
+        "web/src/lib/picker-action.ts",
+        "web/src/components/picker-block.tsx"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/ask.test.ts",
+        "web/src/lib/harness/codex.test.ts",
+        "web/src/lib/question-action.test.ts",
+        "web/src/components/picker-block.test.tsx",
+        "web/e2e/codex-questions.spec.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/codex--v0160-question.txt", "agent": "codex", "expect": { "block": "picker", "title": "Pick a fruit?", "minOptions": 3 } },
-        { "path": "web/src/fixtures/panes/codex--v0160-question-q2-nav.txt", "agent": "codex", "expect": { "block": "picker", "title": "Pick a color?", "minOptions": 3 } },
-        { "path": "web/src/fixtures/panes/codex--v0160-question-notes-text.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 3 } },
-        { "path": "web/src/fixtures/panes/codex--v0160-question-all-answered.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 3 } }
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-question.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Pick a fruit?",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-question-q2-nav.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Pick a color?",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-question-notes-text.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-question-all-answered.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "minOptions": 3
+          }
+        }
       ],
       "live": true,
-      "liveChecks": ["open", "answer"],
-      "verified": { "version": "0.160.1", "date": "2026-10-08", "how": "isolated live pane: ←/→, digit, unanswered confirmation, Tab notes, Esc clearing notes and Enter pressed by hand; captured ANSI replay", "evidence": "web/src/lib/harness/codex/ASK_NOTES.md" }
+      "liveChecks": [
+        "open",
+        "answer"
+      ],
+      "verified": {
+        "version": "0.160.1",
+        "date": "2026-10-08",
+        "how": "isolated live pane: ←/→, digit, unanswered confirmation, Tab notes, Esc clearing notes and Enter pressed by hand; captured ANSI replay",
+        "evidence": "web/src/lib/harness/codex/ASK_NOTES.md"
+      }
     },
     {
       "id": "codex.plan",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/plan.ts", "web/src/lib/plan-content.ts", "web/src/components/plan-content.tsx", "web/src/lib/harness/codex/index.ts"],
-      "tests": ["web/src/lib/harness/codex/plan.test.ts", "web/src/lib/plan-content.test.ts", "web/src/components/plan-content.test.tsx", "web/e2e/codex-plan.spec.ts"],
+      "sources": [
+        "web/src/lib/harness/codex/plan.ts",
+        "web/src/lib/plan-content.ts",
+        "web/src/components/plan-content.tsx",
+        "web/src/lib/harness/codex/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/plan.test.ts",
+        "web/src/lib/plan-content.test.ts",
+        "web/src/components/plan-content.test.tsx",
+        "web/e2e/codex-plan.spec.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/codex--v0160-plan-prompt.txt", "agent": "codex", "expect": { "block": "picker", "title": "Implement this plan?", "minOptions": 3 } },
-        { "path": "web/src/fixtures/panes/codex--v0160-plan-pointer-third.txt", "agent": "codex", "expect": { "block": "picker", "title": "Implement this plan?", "minOptions": 3 } }
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-plan-prompt.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Implement this plan?",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-plan-pointer-third.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Implement this plan?",
+            "minOptions": 3
+          }
+        }
       ],
       "live": false,
-      "verified": { "version": "0.160.1", "date": "2026-10-08", "how": "isolated live pane: pointer walked across all three choices, Enter on the first implemented the plan; captured ANSI replay", "evidence": "web/src/lib/harness/codex/PLAN_NOTES.md" }
+      "verified": {
+        "version": "0.160.1",
+        "date": "2026-10-08",
+        "how": "isolated live pane: pointer walked across all three choices, Enter on the first implemented the plan; captured ANSI replay",
+        "evidence": "web/src/lib/harness/codex/PLAN_NOTES.md"
+      }
     },
     {
       "id": "codex.review",
       "agent": "codex",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/codex/review.ts", "web/src/lib/harness/codex/index.ts"],
-      "tests": ["web/src/lib/harness/codex/review.test.ts", "web/e2e/codex-dialog-cards.spec.ts"],
+      "sources": [
+        "web/src/lib/harness/codex/review.ts",
+        "web/src/lib/harness/codex/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/review.test.ts",
+        "web/e2e/codex-dialog-cards.spec.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/codex--v0160-review-preset.txt", "agent": "codex", "expect": { "block": "picker", "title": "Select a review preset", "minOptions": 4 } },
-        { "path": "web/src/fixtures/panes/codex--v0160-review-base-branch.txt", "agent": "codex", "expect": { "block": "picker", "title": "Select a base branch", "minOptions": 2 } },
-        { "path": "web/src/fixtures/panes/codex--v0160-review-commit.txt", "agent": "codex", "expect": { "block": "picker", "title": "Select a commit to review", "minOptions": 3 } }
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-review-preset.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Select a review preset",
+            "minOptions": 4
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-review-base-branch.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Select a base branch",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-review-commit.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "title": "Select a commit to review",
+            "minOptions": 3
+          }
+        }
       ],
       "live": false,
-      "verified": { "version": "0.160.1", "date": "2026-10-08", "how": "isolated live pane: presets, base branch and commit pickers opened, walked and escaped by hand; captured ANSI replay", "evidence": "web/src/lib/harness/codex/REVIEW_NOTES.md" }
+      "verified": {
+        "version": "0.160.1",
+        "date": "2026-10-08",
+        "how": "isolated live pane: presets, base branch and commit pickers opened, walked and escaped by hand; captured ANSI replay",
+        "evidence": "web/src/lib/harness/codex/REVIEW_NOTES.md"
+      }
     },
     {
       "id": "codex.unread-dialog",
       "agent": "codex",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/codex/index.ts", "web/src/lib/harness/index.ts", "web/src/components/unread-dialog-block.tsx"],
-      "tests": ["web/src/lib/harness/unread-dialog.test.ts", "web/src/components/unread-dialog-block.test.tsx", "web/e2e/codex-warning-input.spec.ts"],
+      "sources": [
+        "web/src/lib/harness/codex/index.ts",
+        "web/src/lib/harness/index.ts",
+        "web/src/components/unread-dialog-block.tsx"
+      ],
+      "tests": [
+        "web/src/lib/harness/unread-dialog.test.ts",
+        "web/src/components/unread-dialog-block.test.tsx",
+        "web/e2e/codex-warning-input.spec.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/codex--v0160-warnings-panel.txt", "agent": "codex", "expect": { "block": "unread-dialog" } },
-        { "path": "web/src/fixtures/panes/codex--v0160-question-unanswered-confirm.txt", "agent": "codex", "expect": { "block": "unread-dialog" } }
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-warnings-panel.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0160-question-unanswered-confirm.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        }
       ],
       "live": false,
-      "verified": { "version": "0.160.1", "date": "2026-10-06", "how": "isolated live pane: each screen opened and Esc pressed by hand; captured ANSI replay", "evidence": "web/src/lib/harness/codex/MODAL_NOTES.md" }
+      "verified": {
+        "version": "0.160.1",
+        "date": "2026-10-06",
+        "how": "isolated live pane: each screen opened and Esc pressed by hand; captured ANSI replay",
+        "evidence": "web/src/lib/harness/codex/MODAL_NOTES.md"
+      }
     },
     {
       "id": "claude.switch-model",
       "agent": "claude",
       "origin": "upstream",
-      "sources": ["web/src/lib/harness/claude/switch-model.ts", "web/src/lib/harness/claude/index.ts"],
-      "tests": ["web/src/lib/harness/claude/switch-model.test.ts", "web/src/lib/prompt-action.test.ts"],
+      "sources": [
+        "web/src/lib/harness/claude/switch-model.ts",
+        "web/src/lib/harness/claude/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/switch-model.test.ts",
+        "web/src/lib/prompt-action.test.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/claude--v2289-switch-model-yes.txt", "agent": "claude", "expect": { "block": "prompt-select", "title": "Switch model?", "minOptions": 2 } },
-        { "path": "web/src/fixtures/panes/claude--v2289-switch-model-no--w50.txt", "agent": "claude", "expect": { "block": "prompt-select", "title": "Switch model?", "minOptions": 2 } }
+        {
+          "path": "web/src/fixtures/panes/claude--v2289-switch-model-yes.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "title": "Switch model?",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2289-switch-model-no--w50.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "title": "Switch model?",
+            "minOptions": 2
+          }
+        }
       ],
       "live": false,
-      "verified": { "version": "2.1.289", "date": "2026-10-04", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/claude--v2289-switch-model-yes.txt" }
+      "verified": {
+        "version": "2.1.289",
+        "date": "2026-10-04",
+        "how": "upstream captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/claude--v2289-switch-model-yes.txt"
+      }
     },
     {
       "id": "claude.agents",
       "agent": "claude",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/claude/agents.ts", "web/src/lib/harness/claude/index.ts"],
-      "tests": ["web/src/lib/harness/claude/agents.test.ts"],
+      "sources": [
+        "web/src/lib/harness/claude/agents.ts",
+        "web/src/lib/harness/claude/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/agents.test.ts"
+      ],
       "fixtures": [
-        {"path": "web/src/fixtures/panes/claude-lab--agents-screen--w40.txt", "agent": "claude", "expect": {"block": "picker", "title": "Agents", "minOptions": 2}},
-        {"path": "web/src/fixtures/panes/claude--v21284-agents-list.txt", "agent": "claude", "expect": {"block": "picker", "title": "Agents", "minOptions": 1}},
-        {"path": "web/src/fixtures/panes/claude--v21284-agents-canary-open.txt", "agent": "claude", "expect": {"block": "picker", "title": "Agents", "minOptions": 3}},
-        {"path": "web/src/fixtures/panes/claude--v21284-agents-canary-navigate.txt", "agent": "claude", "expect": {"block": "picker", "title": "Agents", "minOptions": 3}}
+        {
+          "path": "web/src/fixtures/panes/claude-lab--agents-screen--w40.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "picker",
+            "title": "Agents",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v21284-agents-list.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "picker",
+            "title": "Agents",
+            "minOptions": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v21284-agents-canary-open.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "picker",
+            "title": "Agents",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v21284-agents-canary-navigate.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "picker",
+            "title": "Agents",
+            "minOptions": 3
+          }
+        }
       ],
       "live": true,
-      "verified": {"version": "2.1.291", "date": "2026-10-07", "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction", "evidence": "web/src/fixtures/panes/claude-lab--agents-screen--w40.txt"}
+      "verified": {
+        "version": "2.1.291",
+        "date": "2026-10-07",
+        "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction",
+        "evidence": "web/src/fixtures/panes/claude-lab--agents-screen--w40.txt"
+      }
     },
     {
       "id": "claude.resume",
@@ -723,27 +1100,75 @@
       "id": "claude.model",
       "agent": "claude",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/claude/menu.ts", "web/src/lib/harness/claude/index.ts"],
-      "tests": ["web/src/lib/harness/claude/menu.test.ts"],
+      "sources": [
+        "web/src/lib/harness/claude/menu.ts",
+        "web/src/lib/harness/claude/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/menu.test.ts"
+      ],
       "fixtures": [
-        {"path": "web/src/fixtures/panes/claude--menu-model-picker.txt", "agent": "claude", "expect": {"block": "menu", "minOptions": 1}},
-        {"path": "web/src/fixtures/panes/claude-lab--menu-model-picker-v2291--w82.txt", "agent": "claude", "expect": {"block": "menu", "minOptions": 1}}
+        {
+          "path": "web/src/fixtures/panes/claude--menu-model-picker.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu",
+            "minOptions": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--menu-model-picker-v2291--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu",
+            "minOptions": 1
+          }
+        }
       ],
       "live": true,
-      "verified": {"version": "2.1.291", "date": "2026-10-07", "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction", "evidence": "web/src/fixtures/panes/claude-lab--menu-model-picker-v2291--w82.txt"}
+      "verified": {
+        "version": "2.1.291",
+        "date": "2026-10-07",
+        "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction",
+        "evidence": "web/src/fixtures/panes/claude-lab--menu-model-picker-v2291--w82.txt"
+      }
     },
     {
       "id": "claude.effort",
       "agent": "claude",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/claude/effort.ts", "web/src/lib/harness/claude/index.ts"],
-      "tests": ["web/src/lib/harness/claude/effort.test.ts"],
+      "sources": [
+        "web/src/lib/harness/claude/effort.ts",
+        "web/src/lib/harness/claude/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/effort.test.ts"
+      ],
       "fixtures": [
-        {"path": "web/src/fixtures/panes/claude--menu-effort-slider--w120.txt", "agent": "claude", "expect": {"block": "menu", "scaleMin": 6}},
-        {"path": "web/src/fixtures/panes/claude-lab--menu-effort-slider-v2291--w82.txt", "agent": "claude", "expect": {"block": "menu", "scaleMin": 5}}
+        {
+          "path": "web/src/fixtures/panes/claude--menu-effort-slider--w120.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu",
+            "scaleMin": 6
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--menu-effort-slider-v2291--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu",
+            "scaleMin": 5
+          }
+        }
       ],
       "live": true,
-      "verified": {"version": "2.1.291", "date": "2026-10-07", "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction", "evidence": "web/src/fixtures/panes/claude-lab--menu-effort-slider-v2291--w82.txt"}
+      "verified": {
+        "version": "2.1.291",
+        "date": "2026-10-07",
+        "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction",
+        "evidence": "web/src/fixtures/panes/claude-lab--menu-effort-slider-v2291--w82.txt"
+      }
     },
     {
       "id": "claude.settings.status",
@@ -900,11 +1325,29 @@
       "id": "claude.marketplaces",
       "agent": "claude",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/claude/marketplaces.ts", "web/src/lib/harness/claude/index.ts"],
-      "tests": ["web/src/lib/harness/claude/marketplaces.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/claude--v2283-plugin-marketplaces-pending--w82.txt", "agent": "claude", "expect": { "block": "menu" } }],
+      "sources": [
+        "web/src/lib/harness/claude/marketplaces.ts",
+        "web/src/lib/harness/claude/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/marketplaces.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/claude--v2283-plugin-marketplaces-pending--w82.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu"
+          }
+        }
+      ],
       "live": true,
-      "verified": { "version": "2.1.283", "date": "2026-09-27", "how": "captured live ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#plugin-marketplaces-corpus" }
+      "verified": {
+        "version": "2.1.283",
+        "date": "2026-09-27",
+        "how": "captured live ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/README.md#plugin-marketplaces-corpus"
+      }
     },
     {
       "id": "claude.ask",
@@ -1082,12 +1525,39 @@
       "id": "claude.status-hints",
       "agent": "claude",
       "origin": "upstream",
-      "sources": ["web/src/lib/harness/claude/chrome.ts", "web/src/lib/harness/claude/index.ts"],
-      "tests": ["web/src/lib/harness/claude/status-hints.test.ts", "web/src/lib/harness/claude/input-box-frame.test.ts"],
+      "sources": [
+        "web/src/lib/harness/claude/chrome.ts",
+        "web/src/lib/harness/claude/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/status-hints.test.ts",
+        "web/src/lib/harness/claude/input-box-frame.test.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/claude--working-esc-to-interrupt.txt", "agent": "claude", "expect": { "block": "raw", "statusLinesMin": 1 } },
-        { "path": "web/src/fixtures/panes/claude--idle-background-shell.txt", "agent": "claude", "expect": { "block": "raw", "statusLinesMin": 1 } },
-        { "path": "web/src/fixtures/panes/claude--footer-pointed-agent.txt", "agent": "claude", "expect": { "block": "raw", "statusLinesMin": 1 } }
+        {
+          "path": "web/src/fixtures/panes/claude--working-esc-to-interrupt.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--idle-background-shell.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--footer-pointed-agent.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        }
       ],
       "live": false,
       "verified": null
@@ -1096,82 +1566,225 @@
       "id": "claude.notice",
       "agent": "claude",
       "origin": "upstream",
-      "sources": ["web/src/lib/harness/claude/above-prompt-notice.ts", "bridge/prompt-binding.ts"],
-      "tests": ["web/src/lib/harness/claude/above-prompt-notice.test.ts", "bridge/prompt-binding.test.ts"],
+      "sources": [
+        "web/src/lib/harness/claude/above-prompt-notice.ts",
+        "bridge/prompt-binding.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/above-prompt-notice.test.ts",
+        "bridge/prompt-binding.test.ts"
+      ],
       "fixtures": [
-        {"path": "web/src/fixtures/panes/claude--v2302-heads-up-above-box--w142.txt", "agent": "claude", "expect": {"block": "menu", "minOptions": 3}},
-        {"path": "web/src/fixtures/panes/claude--v2302-notice-over-agents-panel--w69.txt", "agent": "claude", "expect": {"block": "menu", "minOptions": 3}}
+        {
+          "path": "web/src/fixtures/panes/claude--v2302-heads-up-above-box--w142.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2302-notice-over-agents-panel--w69.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu",
+            "minOptions": 3
+          }
+        }
       ],
       "live": false,
-      "verified": {"version": "2.1.302", "date": "2026-10-18", "how": "upstream PR 493 captured ANSI replay and binding tests; no fresh native interaction", "evidence": "web/src/fixtures/panes/claude--v2302-notice-over-agents-panel--w69.txt"}
+      "verified": {
+        "version": "2.1.302",
+        "date": "2026-10-18",
+        "how": "upstream PR 493 captured ANSI replay and binding tests; no fresh native interaction",
+        "evidence": "web/src/fixtures/panes/claude--v2302-notice-over-agents-panel--w69.txt"
+      }
     },
     {
       "id": "claude.autocomplete",
       "agent": "claude",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/claude/autocomplete.ts", "web/src/lib/harness/claude/index.ts"],
-      "tests": ["web/src/lib/harness/claude/autocomplete.test.ts"],
+      "sources": [
+        "web/src/lib/harness/claude/autocomplete.ts",
+        "web/src/lib/harness/claude/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/autocomplete.test.ts"
+      ],
       "fixtures": [
-        {"path": "web/src/fixtures/panes/claude--autocomplete-slash-long.txt", "agent": "claude", "expect": {"block": "autocomplete"}},
-        {"path": "web/src/fixtures/panes/claude-lab--popup-slash-all--w40.txt", "agent": "claude", "expect": {"block": "autocomplete"}}
+        {
+          "path": "web/src/fixtures/panes/claude--autocomplete-slash-long.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "autocomplete"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude-lab--popup-slash-all--w40.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "autocomplete"
+          }
+        }
       ],
       "live": true,
-      "verified": {"version": "2.1.291", "date": "2026-10-07", "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction", "evidence": "web/src/fixtures/panes/claude-lab--popup-slash-all--w40.txt"}
+      "verified": {
+        "version": "2.1.291",
+        "date": "2026-10-07",
+        "how": "upstream 2026-10-06 captured ANSI replay; recognition only, no fresh live interaction",
+        "evidence": "web/src/fixtures/panes/claude-lab--popup-slash-all--w40.txt"
+      }
     },
     {
       "id": "hermes.history",
       "agent": "hermes",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/hermes/index.ts", "web/src/lib/harness/hermes/session-info.ts"],
-      "tests": ["web/src/lib/harness/hermes/history.test.ts"],
+      "sources": [
+        "web/src/lib/harness/hermes/index.ts",
+        "web/src/lib/harness/hermes/session-info.ts",
+        "web/src/lib/harness/hermes/display.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/hermes/history.test.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/hermes--resume-history.txt", "agent": "hermes", "expect": { "sessionInfo": "history" } },
-        { "path": "web/src/fixtures/panes/hermes--v0216-zh-history.txt", "agent": "hermes", "expect": { "sessionInfo": "history" } }
+        {
+          "path": "web/src/fixtures/panes/hermes--resume-history.txt",
+          "agent": "hermes",
+          "expect": {
+            "sessionInfo": "history"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/hermes--v0216-zh-history.txt",
+          "agent": "hermes",
+          "expect": {
+            "sessionInfo": "history"
+          }
+        }
       ],
       "live": false,
-      "verified": { "version": "0.21.6+4.g5884a65", "date": "2026-10-12", "how": "authorized same-session resume and captured Chinese ANSI replay; history display only", "evidence": "web/src/lib/harness/hermes/NOTES.md#python-launcher-identity-and-localized-history--2026-10-12" }
+      "verified": {
+        "version": "0.21.6+4.g5884a65",
+        "date": "2026-10-12",
+        "how": "authorized same-session resume and captured Chinese ANSI replay; history display only",
+        "evidence": "web/src/lib/harness/hermes/NOTES.md#python-launcher-identity-and-localized-history--2026-10-12"
+      }
     },
     {
       "id": "hermes.startup",
       "agent": "hermes",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/hermes/index.ts", "web/src/lib/harness/hermes/session-info.ts"],
-      "tests": ["web/src/lib/harness/hermes/history.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/hermes--startup-resume.txt", "agent": "hermes", "expect": { "sessionInfo": "startup" } }],
+      "sources": [
+        "web/src/lib/harness/hermes/index.ts",
+        "web/src/lib/harness/hermes/session-info.ts",
+        "web/src/lib/harness/hermes/display.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/hermes/history.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/hermes--startup-resume.txt",
+          "agent": "hermes",
+          "expect": {
+            "sessionInfo": "startup"
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
     {
       "id": "hermes.clarify",
       "agent": "hermes",
-      "origin": "downstream",
-      "sources": ["web/src/lib/harness/hermes/clarify.ts", "web/src/lib/harness/hermes/index.ts"],
-      "tests": ["web/src/lib/harness/hermes/clarify.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/hermes--clarify-single.txt", "agent": "hermes", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "origin": "upstream-patched",
+      "sources": [
+        "web/src/lib/harness/hermes/clarify.ts",
+        "web/src/lib/harness/hermes/chrome.ts",
+        "web/src/lib/harness/hermes/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/hermes.test.ts",
+        "bridge/surface/ask.test.ts",
+        "web/e2e/hermes-dialog-diff.spec.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/hermes--v0221-native-clarify.txt",
+          "agent": "hermes",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/hermes--v0221-native-clarify-w50.txt",
+          "agent": "hermes",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 3
+          }
+        }
+      ],
       "live": false,
-      "verified": null
+      "verified": {
+        "version": "0.22.1+7.g279aafb.dirty",
+        "date": "2026-10-19",
+        "how": "owned native Herdr pane; scripted local endpoint, SendProtocol and AskAnswerer; no provider inference",
+        "evidence": "web/src/lib/harness/hermes/LOCAL_VERIFICATION.md"
+      }
     },
     {
       "id": "hermes.statusline",
       "agent": "hermes",
-      "origin": "downstream",
-      "sources": ["web/src/lib/harness/hermes/index.ts"],
-      "tests": ["web/src/lib/harness/hermes/hermes.test.ts", "web/src/lib/harness/hermes/display.test.ts", "web/e2e/hermes-chrome.spec.ts"],
+      "origin": "upstream-patched",
+      "sources": [
+        "web/src/lib/harness/hermes/chrome.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/hermes.test.ts",
+        "web/src/components/agent-chat.test.tsx",
+        "web/e2e/hermes-chrome.spec.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/hermes--v0213-done.txt", "agent": "hermes", "expect": { "block": "raw", "statusLinesMin": 1 } },
-        { "path": "web/src/fixtures/panes/hermes--working.txt", "agent": "hermes", "expect": { "block": "raw", "statusLinesMin": 2 } },
-        { "path": "web/src/fixtures/panes/hermes--v0216-zh-working.txt", "agent": "hermes", "expect": { "block": "raw", "statusLinesMin": 2 } }
+        {
+          "path": "web/src/fixtures/panes/hermes--running.txt",
+          "agent": "hermes",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        }
       ],
       "live": false,
-      "verified": null
+      "verified": {
+        "version": "0.22.1+7.g279aafb.dirty",
+        "date": "2026-10-19",
+        "how": "owned native Herdr pane; scripted local endpoint, SendProtocol and AskAnswerer; no provider inference",
+        "evidence": "web/src/lib/harness/hermes/LOCAL_VERIFICATION.md"
+      }
     },
     {
       "id": "hermes.diff",
       "agent": "hermes",
       "origin": "downstream",
-      "sources": ["web/src/lib/harness/hermes/display.ts", "web/src/lib/harness/hermes/index.ts"],
-      "tests": ["web/src/lib/harness/hermes/display.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/hermes--diff.txt", "agent": "hermes", "expect": { "surface": "diff" } }],
+      "sources": [
+        "web/src/lib/harness/hermes/display.ts",
+        "web/src/lib/harness/hermes/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/hermes/display.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/hermes--diff.txt",
+          "agent": "hermes",
+          "expect": {
+            "surface": "diff"
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1179,29 +1792,81 @@
       "id": "agy.select",
       "agent": "agy",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/agy/prompt-select.ts", "web/src/lib/harness/agy/index.ts"],
-      "tests": ["web/src/lib/harness/agy/agy.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/agy--select-menu.txt", "agent": "agy", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/agy/prompt-select.ts",
+        "web/src/lib/harness/agy/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/agy/agy.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/agy--select-menu.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
-      "verified": { "version": "1.1.17", "date": "2026-08-26", "how": "captured live ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#agy-corpus" }
+      "verified": {
+        "version": "1.1.17",
+        "date": "2026-08-26",
+        "how": "captured live ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/README.md#agy-corpus"
+      }
     },
     {
       "id": "agy.permission",
       "agent": "agy",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/agy/prompt-select.ts", "web/src/lib/harness/agy/index.ts"],
-      "tests": ["web/src/lib/harness/agy/agy.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/agy--permission-bash.txt", "agent": "agy", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/agy/prompt-select.ts",
+        "web/src/lib/harness/agy/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/agy/agy.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/agy--permission-bash.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
-      "verified": { "version": "1.1.17", "date": "2026-08-26", "how": "captured live ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#agy-corpus" }
+      "verified": {
+        "version": "1.1.17",
+        "date": "2026-08-26",
+        "how": "captured live ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/README.md#agy-corpus"
+      }
     },
     {
       "id": "grok.permission",
       "agent": "grok",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/grok/permission.ts", "web/src/lib/harness/grok/index.ts"],
-      "tests": ["web/src/lib/harness/grok.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/grok--permission-edit.txt", "agent": "grok", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/grok/permission.ts",
+        "web/src/lib/harness/grok/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/grok.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/grok--permission-edit.txt",
+          "agent": "grok",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1209,9 +1874,23 @@
       "id": "grok.ask",
       "agent": "grok",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/grok/ask.ts", "web/src/lib/harness/grok/index.ts"],
-      "tests": ["web/src/lib/harness/grok.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/grok--ask-color.txt", "agent": "grok", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/grok/ask.ts",
+        "web/src/lib/harness/grok/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/grok.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/grok--ask-color.txt",
+          "agent": "grok",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1219,9 +1898,22 @@
       "id": "grok.plan",
       "agent": "grok",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/grok/plan-menu.ts", "web/src/lib/harness/grok/index.ts"],
-      "tests": ["web/src/lib/harness/grok.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/grok--plan-approval.txt", "agent": "grok", "expect": { "block": "menu" } }],
+      "sources": [
+        "web/src/lib/harness/grok/plan-menu.ts",
+        "web/src/lib/harness/grok/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/grok.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/grok--plan-approval.txt",
+          "agent": "grok",
+          "expect": {
+            "block": "menu"
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1229,25 +1921,76 @@
       "id": "grok.model-picker",
       "agent": "grok",
       "origin": "upstream",
-      "sources": ["web/src/lib/harness/grok/model-picker.ts", "web/src/lib/harness/grok/index.ts"],
-      "tests": ["web/src/lib/harness/grok/model-picker.test.ts", "web/src/lib/harness/grok.test.ts"],
+      "sources": [
+        "web/src/lib/harness/grok/model-picker.ts",
+        "web/src/lib/harness/grok/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/grok/model-picker.test.ts",
+        "web/src/lib/harness/grok.test.ts"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/grok--model-picker.txt", "agent": "grok", "expect": { "block": "prompt-select", "minOptions": 2 } },
-        { "path": "web/src/fixtures/panes/grok--model-window.txt", "agent": "grok", "expect": { "block": "prompt-select", "minOptions": 2 } },
-        { "path": "web/src/fixtures/panes/grok--model-effort.txt", "agent": "grok", "expect": { "block": "prompt-select", "minOptions": 2 } }
+        {
+          "path": "web/src/fixtures/panes/grok--model-picker.txt",
+          "agent": "grok",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/grok--model-window.txt",
+          "agent": "grok",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/grok--model-effort.txt",
+          "agent": "grok",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
       ],
       "live": false,
-      "verified": { "version": "1.0.46", "date": "2026-10-08", "how": "upstream captured ANSI replay; recognition only, upstream's live key walk not repeated here", "evidence": "web/src/lib/harness/grok/MODEL_PICKER_NOTES.md" }
+      "verified": {
+        "version": "1.0.46",
+        "date": "2026-10-08",
+        "how": "upstream captured ANSI replay; recognition only, upstream's live key walk not repeated here",
+        "evidence": "web/src/lib/harness/grok/MODEL_PICKER_NOTES.md"
+      }
     },
     {
       "id": "agy.trust",
       "agent": "agy",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/agy/prompt-select.ts", "web/src/lib/harness/agy/index.ts"],
-      "tests": ["web/src/lib/harness/agy/agy.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/agy--trust-prompt.txt", "agent": "agy", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/agy/prompt-select.ts",
+        "web/src/lib/harness/agy/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/agy/agy.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/agy--trust-prompt.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
-      "verified": { "version": "1.1.17", "date": "2026-08-26", "how": "captured live ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/README.md#agy-corpus" }
+      "verified": {
+        "version": "1.1.17",
+        "date": "2026-08-26",
+        "how": "captured live ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/README.md#agy-corpus"
+      }
     },
     {
       "id": "muse.approval",
@@ -1413,21 +2156,61 @@
       "id": "omp.resume",
       "agent": "omp",
       "origin": "upstream",
-      "sources": ["web/src/lib/harness/omp/resume.ts", "web/src/lib/harness/omp/index.ts"],
-      "tests": ["web/src/lib/harness/omp/resume.test.ts", "web/src/lib/prompt-action.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/omp--v18-4-resume.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/omp/resume.ts",
+        "web/src/lib/harness/omp/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/omp/resume.test.ts",
+        "web/src/lib/prompt-action.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/omp--v18-4-resume.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
-      "verified": { "version": "18.4.10", "date": "2026-10-03", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/omp--v18-4-resume.txt" }
+      "verified": {
+        "version": "18.4.10",
+        "date": "2026-10-03",
+        "how": "upstream captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/omp--v18-4-resume.txt"
+      }
     },
     {
       "id": "omp.model",
       "agent": "omp",
       "origin": "upstream",
-      "sources": ["web/src/lib/harness/omp/switch.ts", "web/src/lib/harness/omp/index.ts"],
-      "tests": ["web/src/lib/harness/omp/switch.test.ts", "web/src/lib/prompt-action.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/omp--v18-4-switch.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/omp/switch.ts",
+        "web/src/lib/harness/omp/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/omp/switch.test.ts",
+        "web/src/lib/prompt-action.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/omp--v18-4-switch.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
-      "verified": { "version": "18.4.10", "date": "2026-10-03", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/omp--v18-4-switch.txt" }
+      "verified": {
+        "version": "18.4.10",
+        "date": "2026-10-03",
+        "how": "upstream captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/omp--v18-4-switch.txt"
+      }
     },
     {
       "id": "omp.ask",
@@ -1546,11 +2329,31 @@
       "id": "omp.approval",
       "agent": "omp",
       "origin": "upstream",
-      "sources": ["web/src/lib/harness/omp/approval.ts", "web/src/lib/harness/omp/index.ts"],
-      "tests": ["web/src/lib/harness/omp/approval.test.ts", "web/src/lib/prompt-action.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/omp--v18-4-approval-bash.txt", "agent": "omp", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/omp/approval.ts",
+        "web/src/lib/harness/omp/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/omp/approval.test.ts",
+        "web/src/lib/prompt-action.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/omp--v18-4-approval-bash.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
-      "verified": { "version": "18.4.10", "date": "2026-10-03", "how": "upstream captured ANSI replay; recognition only", "evidence": "web/src/fixtures/panes/omp--v18-4-approval-bash.txt" }
+      "verified": {
+        "version": "18.4.10",
+        "date": "2026-10-03",
+        "how": "upstream captured ANSI replay; recognition only",
+        "evidence": "web/src/fixtures/panes/omp--v18-4-approval-bash.txt"
+      }
     },
     {
       "id": "omp.composer-hints",
@@ -1572,9 +2375,27 @@
         "bridge/surface/protocol.test.ts"
       ],
       "fixtures": [
-        {"path": "web/src/fixtures/panes/omp--v18-11-nerd-box-two-lines--w80.txt", "agent": "omp", "expect": {"block": "raw"}},
-        {"path": "web/src/fixtures/panes/omp--v18-11-nerd-ghost-word--w80.txt", "agent": "omp", "expect": {"block": "raw"}},
-        {"path": "web/src/fixtures/panes/omp--v18-11-nerd-running-tool--w80.txt", "agent": "omp", "expect": {"block": "raw"}},
+        {
+          "path": "web/src/fixtures/panes/omp--v18-11-nerd-box-two-lines--w80.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-11-nerd-ghost-word--w80.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-11-nerd-running-tool--w80.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "raw"
+          }
+        },
         {
           "path": "web/src/fixtures/panes/omp--v18-8-slash-palette.txt",
           "agent": "omp",
@@ -1644,42 +2465,130 @@
         }
       ],
       "live": false,
-      "verified": {"version": "18.11", "date": "2026-10-18", "how": "upstream PR 497 captured ANSI replay and Send Protocol simulation; no fresh native interaction", "evidence": "web/src/fixtures/panes/omp--v18-11-nerd-box-two-lines--w80.txt"}
+      "verified": {
+        "version": "18.11",
+        "date": "2026-10-18",
+        "how": "upstream PR 497 captured ANSI replay and Send Protocol simulation; no fresh native interaction",
+        "evidence": "web/src/fixtures/panes/omp--v18-11-nerd-box-two-lines--w80.txt"
+      }
     },
     {
       "id": "opencode.permission",
       "agent": "opencode",
       "origin": "upstream-patched",
-      "sources": ["web/src/lib/harness/opencode/dialog.ts", "web/src/lib/harness/opencode/index.ts"],
-      "tests": ["web/src/lib/harness/opencode.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/oc--permission-bash.txt", "agent": "opencode", "expect": { "block": "prompt-select", "minOptions": 2 } }],
+      "sources": [
+        "web/src/lib/harness/opencode/dialog.ts",
+        "web/src/lib/harness/opencode/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/opencode.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/oc--permission-bash.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": true,
-      "liveChecks": ["open", "decline"],
-      "verified": { "version": "1.18.32", "date": "2026-09-26", "how": "captured ANSI replay; recognition only", "evidence": "web/src/lib/harness/opencode/PERMISSION_NOTES.md" }
+      "liveChecks": [
+        "open",
+        "decline"
+      ],
+      "verified": {
+        "version": "1.18.32",
+        "date": "2026-09-26",
+        "how": "captured ANSI replay; recognition only",
+        "evidence": "web/src/lib/harness/opencode/PERMISSION_NOTES.md"
+      }
     },
     {
       "id": "opencode.question",
       "agent": "opencode",
       "origin": "upstream",
-      "sources": ["web/src/lib/harness/opencode/question.ts", "web/src/lib/harness/opencode/question-tabs.ts", "web/src/lib/harness/opencode/index.ts"],
-      "tests": ["web/src/lib/harness/opencode.test.ts", "web/src/lib/multi-select-action.test.ts", "web/src/components/wizard-block.test.tsx"],
+      "sources": [
+        "web/src/lib/harness/opencode/question.ts",
+        "web/src/lib/harness/opencode/question-tabs.ts",
+        "web/src/lib/harness/opencode/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/opencode.test.ts",
+        "web/src/lib/multi-select-action.test.ts",
+        "web/src/components/wizard-block.test.tsx"
+      ],
       "fixtures": [
-        { "path": "web/src/fixtures/panes/oc--question--single.txt", "agent": "opencode", "expect": { "block": "prompt-select", "minOptions": 3 } },
-        { "path": "web/src/fixtures/panes/oc--question--single--overlay.txt", "agent": "opencode", "expect": { "block": "prompt-select", "minOptions": 2 } },
-        { "path": "web/src/fixtures/panes/oc--question--multi.txt", "agent": "opencode", "expect": { "block": "multi-select", "minOptions": 3 } },
-        { "path": "web/src/fixtures/panes/oc--question--two--q1.txt", "agent": "opencode", "expect": { "block": "wizard", "minOptions": 3 } },
-        { "path": "web/src/fixtures/panes/oc--question--tall14.txt", "agent": "opencode", "expect": { "block": "unread-dialog" } }
+        {
+          "path": "web/src/fixtures/panes/oc--question--single.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--question--single--overlay.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--question--multi.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "multi-select",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--question--two--q1.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "wizard",
+            "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--question--tall14.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "unread-dialog"
+          }
+        }
       ],
       "live": false,
-      "verified": { "version": "1.18.33", "date": "2026-10-06", "how": "upstream captured ANSI and sidebar-tail regression replay; recognition only", "evidence": "web/src/lib/harness/opencode/QUESTION_NOTES.md" }
+      "verified": {
+        "version": "1.18.33",
+        "date": "2026-10-06",
+        "how": "upstream captured ANSI and sidebar-tail regression replay; recognition only",
+        "evidence": "web/src/lib/harness/opencode/QUESTION_NOTES.md"
+      }
     },
     {
       "id": "shared.option-rows",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/picker-block.tsx", "web/src/lib/harness/picker-model.ts"],
-      "tests": ["web/src/components/picker-block.test.tsx"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0154-picker-model.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 2 } }],
+      "sources": [
+        "web/src/components/picker-block.tsx",
+        "web/src/lib/harness/picker-model.ts"
+      ],
+      "tests": [
+        "web/src/components/picker-block.test.tsx"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0154-picker-model.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1687,9 +2596,26 @@
       "id": "shared.picker",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/picker-block.tsx", "web/src/lib/harness/picker-model.ts", "web/src/components/card-dock.tsx", "web/src/lib/liveness.ts"],
-      "tests": ["web/src/components/picker-block.test.tsx", "web/src/components/card-dock.test.tsx"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0154-picker-model.txt", "agent": "codex", "expect": { "block": "picker", "minOptions": 2 } }],
+      "sources": [
+        "web/src/components/picker-block.tsx",
+        "web/src/lib/harness/picker-model.ts",
+        "web/src/components/card-dock.tsx",
+        "web/src/lib/liveness.ts"
+      ],
+      "tests": [
+        "web/src/components/picker-block.test.tsx",
+        "web/src/components/card-dock.test.tsx"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0154-picker-model.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "picker",
+            "minOptions": 2
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1697,11 +2623,32 @@
       "id": "shared.prompt-select",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/prompt-select-block.tsx", "web/src/lib/harness/prompt-model.ts", "web/src/components/raw-mirror.tsx"],
-      "tests": ["web/src/components/prompt-select-block.test.tsx", "web/e2e/prompt-subject.spec.ts"],
+      "sources": [
+        "web/src/components/prompt-select-block.tsx",
+        "web/src/lib/harness/prompt-model.ts",
+        "web/src/components/raw-mirror.tsx"
+      ],
+      "tests": [
+        "web/src/components/prompt-select-block.test.tsx",
+        "web/e2e/prompt-subject.spec.ts"
+      ],
       "fixtures": [
-        {"path": "web/src/fixtures/panes/agy--select-menu.txt", "agent": "agy", "expect": {"block": "prompt-select", "minOptions": 2}},
-        {"path": "web/src/fixtures/panes/claude--v2291-permission-bash-subagent.txt", "agent": "claude", "expect": {"block": "prompt-select", "minOptions": 2}}
+        {
+          "path": "web/src/fixtures/panes/agy--select-menu.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2291-permission-bash-subagent.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
       ],
       "live": false,
       "verified": null
@@ -1710,9 +2657,22 @@
       "id": "shared.menu",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/menu-block.tsx", "web/src/lib/harness/menu-model.ts"],
-      "tests": ["web/src/components/menu-block.test.tsx"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/claude--menu-model-picker.txt", "agent": "claude", "expect": { "block": "menu" } }],
+      "sources": [
+        "web/src/components/menu-block.tsx",
+        "web/src/lib/harness/menu-model.ts"
+      ],
+      "tests": [
+        "web/src/components/menu-block.test.tsx"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/claude--menu-model-picker.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu"
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1720,9 +2680,22 @@
       "id": "shared.wizard",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/wizard-block.tsx", "web/src/lib/harness/wizard-model.ts"],
-      "tests": ["web/src/components/wizard-block.test.tsx"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/claude--wizard-q1.txt", "agent": "claude", "expect": { "block": "wizard" } }],
+      "sources": [
+        "web/src/components/wizard-block.tsx",
+        "web/src/lib/harness/wizard-model.ts"
+      ],
+      "tests": [
+        "web/src/components/wizard-block.test.tsx"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/claude--wizard-q1.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "wizard"
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1730,9 +2703,22 @@
       "id": "shared.multi-select",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/multi-select-block.tsx", "web/src/lib/harness/multi-select-model.ts"],
-      "tests": ["web/src/components/multi-select-block.test.tsx"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/claude--select-multiselect-single.txt", "agent": "claude", "expect": { "block": "multi-select" } }],
+      "sources": [
+        "web/src/components/multi-select-block.tsx",
+        "web/src/lib/harness/multi-select-model.ts"
+      ],
+      "tests": [
+        "web/src/components/multi-select-block.test.tsx"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/claude--select-multiselect-single.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "multi-select"
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1740,9 +2726,22 @@
       "id": "shared.preview-select",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/preview-select-block.tsx", "web/src/lib/harness/preview-model.ts"],
-      "tests": ["web/src/components/preview-select-block.test.tsx"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/claude--select-preview.txt", "agent": "claude", "expect": { "block": "preview-select" } }],
+      "sources": [
+        "web/src/components/preview-select-block.tsx",
+        "web/src/lib/harness/preview-model.ts"
+      ],
+      "tests": [
+        "web/src/components/preview-select-block.test.tsx"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/claude--select-preview.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "preview-select"
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1750,9 +2749,22 @@
       "id": "shared.autocomplete",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/autocomplete-block.tsx", "web/src/lib/harness/autocomplete-model.ts"],
-      "tests": ["web/src/lib/harness/claude/autocomplete.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/claude--autocomplete-slash-long.txt", "agent": "claude", "expect": { "block": "autocomplete" } }],
+      "sources": [
+        "web/src/components/autocomplete-block.tsx",
+        "web/src/lib/harness/autocomplete-model.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/autocomplete.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/claude--autocomplete-slash-long.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "autocomplete"
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1760,9 +2772,26 @@
       "id": "shared.unread-dialog",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/lib/harness/index.ts", "web/src/lib/harness/unread-dialog-model.ts", "web/src/components/unread-dialog-block.tsx"],
-      "tests": ["web/src/lib/harness/unread-dialog.test.ts", "web/src/components/unread-dialog-block.test.tsx", "web/e2e/claude-settings.spec.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/claude--v2283-slash-usage.txt", "agent": "claude", "expect": { "block": "unread-dialog", "viewportNonEmpty": true } }],
+      "sources": [
+        "web/src/lib/harness/index.ts",
+        "web/src/lib/harness/unread-dialog-model.ts",
+        "web/src/components/unread-dialog-block.tsx"
+      ],
+      "tests": [
+        "web/src/lib/harness/unread-dialog.test.ts",
+        "web/src/components/unread-dialog-block.test.tsx",
+        "web/e2e/claude-settings.spec.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/claude--v2283-slash-usage.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "unread-dialog",
+            "viewportNonEmpty": true
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1770,9 +2799,22 @@
       "id": "shared.session-info",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/lib/blocks.ts", "web/src/lib/harness/hermes/session-info.ts"],
-      "tests": ["web/src/lib/harness/hermes/history.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/hermes--resume-history.txt", "agent": "hermes", "expect": { "sessionInfo": "history" } }],
+      "sources": [
+        "web/src/lib/blocks.ts",
+        "web/src/lib/harness/hermes/session-info.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/hermes/history.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/hermes--resume-history.txt",
+          "agent": "hermes",
+          "expect": {
+            "sessionInfo": "history"
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1780,9 +2822,22 @@
       "id": "shared.statusline",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/components/statusline-row.tsx", "web/src/lib/harness/types.ts"],
-      "tests": ["web/src/lib/harness/codex/statusline-chrome.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/codex--v0154-statusline-single-idle.txt", "agent": "codex", "expect": { "statusLinesMin": 1 } }],
+      "sources": [
+        "web/src/components/statusline-row.tsx",
+        "web/src/lib/harness/types.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/codex/statusline-chrome.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/codex--v0154-statusline-single-idle.txt",
+          "agent": "codex",
+          "expect": {
+            "statusLinesMin": 1
+          }
+        }
+      ],
       "live": false,
       "verified": null
     },
@@ -1790,11 +2845,57 @@
       "id": "shared.native-diff",
       "agent": "shared",
       "origin": "shared",
-      "sources": ["web/src/lib/harness/hermes/display.ts", "web/src/lib/harness/codex/display.ts", "web/src/lib/harness/claude/display.ts"],
-      "tests": ["web/src/lib/harness/hermes/display.test.ts", "web/src/lib/harness/claude/display.test.ts", "web/src/lib/harness/codex.test.ts"],
-      "fixtures": [{ "path": "web/src/fixtures/panes/hermes--diff.txt", "agent": "hermes", "expect": { "surface": "diff" } }],
+      "sources": [
+        "web/src/lib/harness/hermes/display.ts",
+        "web/src/lib/harness/codex/display.ts",
+        "web/src/lib/harness/claude/display.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/hermes/display.test.ts",
+        "web/src/lib/harness/claude/display.test.ts",
+        "web/src/lib/harness/codex.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/hermes--diff.txt",
+          "agent": "hermes",
+          "expect": {
+            "surface": "diff"
+          }
+        }
+      ],
       "live": false,
       "verified": null
+    },
+    {
+      "id": "hermes.approval",
+      "agent": "hermes",
+      "origin": "upstream",
+      "sources": [
+        "web/src/lib/harness/hermes/approval.ts",
+        "web/src/lib/harness/hermes/clarify.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/hermes.test.ts",
+        "bridge/surface/ask.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/hermes--v0221-native-approval.txt",
+          "agent": "hermes",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "0.22.1+7.g279aafb.dirty",
+        "date": "2026-10-19",
+        "how": "owned native Herdr pane; scripted local endpoint, SendProtocol and AskAnswerer; no provider inference",
+        "evidence": "web/src/lib/harness/hermes/LOCAL_VERIFICATION.md"
+      }
     }
   ]
 }
