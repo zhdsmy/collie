@@ -4,7 +4,7 @@
 // *between* glyphs, so a regex over the raw buffer would miss (e.g. the `❯` pointer and the `1.` are
 // separate styled segments). Pure functions, no I/O, no React.
 
-import { isBlank, lineText } from "../../blocks";
+import { hasQuestionMark, isBlank, lineText } from "../../blocks";
 import { CLAUDE_RULE_GLYPH_CLASS } from "../../rule-glyphs";
 import { displayWidth } from "../../text-width";
 import { readKeyHintFooter } from "../menu-hints";
@@ -19,7 +19,7 @@ export const CLAUDE_IDLE: IdleProfile = requireProfile("claude").idle;
 // `lineText` / `isBlank` are properties of a StyledLine, not of any grammar, so they live in the
 // neutral core (lib/blocks.ts) where the renderer can reach them without importing a harness. They
 // are re-exported here so the Claude grammars keep their single import site.
-export { isBlank, lineText };
+export { hasQuestionMark, isBlank, lineText };
 
 // A whole line that is nothing but horizontal-rule glyphs: Unicode box-drawing (U+2500–U+257F, which
 // includes the dashed forms ╌ ╍ ┄ ┅ …), the block eighths used as rules (U+2581–U+2594, e.g. ▁ ▔),
@@ -405,15 +405,6 @@ export function planFooterLeadRow(texts: string[]): number {
 // and on the wizard's review step beside an echoed question (2.1.302: "│ ● …" / "│   …"). It is
 // chrome, not question text.
 const QUESTION_GUTTER = /^\s*│\s?/;
-
-/**
- * Whether a row carries the question mark every AskUserQuestion prompt ends on. The model writes the
- * question, so in Chinese or Japanese it ends on the full-width `？` (U+FF1F); accepting only `?`
- * dropped every such dialog to the unread card (captured live on Claude Code 2.1.287, 2026-10-03).
- */
-export function hasQuestionMark(text: string): boolean {
-  return /[?？]/.test(text);
-}
 
 /** A question row with its `│` gutter and outer whitespace removed. */
 export function questionRowText(text: string): string {

@@ -1086,13 +1086,45 @@
             "block": "prompt-select",
             "minOptions": 1
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2303-menu-resume-picker--w119-first.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2303-menu-resume-picker--w119-second.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2303-menu-resume-picker--w160-first.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2303-menu-resume-picker--w160-second.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
         }
       ],
       "live": true,
       "verified": {
-        "version": "2.1.296",
-        "date": "2026-10-13",
-        "how": "upstream captured ANSI replay; recognition only, no local live probe",
+        "version": "2.1.303",
+        "date": "2026-10-20",
+        "how": "upstream v1.23.1 captures and recognition/binding tests; includes 2.1.296 fullwidth question; no local native probe",
         "evidence": "web/src/fixtures/panes/README.md"
       }
     },
@@ -1363,7 +1395,8 @@
         "web/src/lib/harness/claude/markers.ts",
         "web/src/lib/harness/claude/task-checklist.ts",
         "web/src/lib/task-checklist.ts",
-        "bridge/prompt-binding.ts"
+        "bridge/prompt-binding.ts",
+        "web/src/lib/blocks.ts"
       ],
       "tests": [
         "web/src/lib/harness/claude/prompt-select.test.ts",
@@ -1507,6 +1540,30 @@
           "expect": {
             "block": "wizard"
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2296-question-fullwidth--w150.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2303-permission-bash-bg-agent-rm--w80.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2303-permission-bash-bg-agent-rm--w160.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
         }
       ],
       "live": true,
@@ -1515,9 +1572,9 @@
         "answer"
       ],
       "verified": {
-        "version": "2.1.299",
-        "date": "2026-10-15",
-        "how": "upstream captured ANSI replay; recognition and binding only, no local task-list live probe",
+        "version": "2.1.303",
+        "date": "2026-10-20",
+        "how": "upstream v1.23.1 captures and recognition/binding tests; includes 2.1.296 fullwidth question; no local native probe",
         "evidence": "web/src/fixtures/panes/README.md"
       }
     },
@@ -1794,7 +1851,8 @@
       "origin": "upstream-patched",
       "sources": [
         "web/src/lib/harness/agy/prompt-select.ts",
-        "web/src/lib/harness/agy/index.ts"
+        "web/src/lib/harness/agy/index.ts",
+        "web/src/lib/blocks.ts"
       ],
       "tests": [
         "web/src/lib/harness/agy/agy.test.ts"
@@ -2895,6 +2953,53 @@
         "date": "2026-10-19",
         "how": "owned native Herdr pane; scripted local endpoint, SendProtocol and AskAnswerer; no provider inference",
         "evidence": "web/src/lib/harness/hermes/LOCAL_VERIFICATION.md"
+      }
+    },
+    {
+      "id": "muse.send",
+      "agent": "muse",
+      "origin": "upstream",
+      "sources": [
+        "web/src/lib/surface/profiles/muse.json",
+        "web/src/lib/surface/frame.ts",
+        "web/src/lib/surface/command-list.ts",
+        "web/src/lib/harness/muse/chrome.ts",
+        "bridge/surface/protocol.ts"
+      ],
+      "tests": [
+        "web/src/lib/surface/frame.test.ts",
+        "web/src/lib/surface/fold.muse.test.ts",
+        "bridge/surface/protocol.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/muse--prompt-hint-1410.txt",
+          "agent": "muse",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/muse--prompt-hint-typed-1410.txt",
+          "agent": "muse",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/muse--slash-palette-1410.txt",
+          "agent": "muse",
+          "expect": {
+            "block": "raw"
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "1.4.10",
+        "date": "2026-10-20",
+        "how": "upstream captures and fake-pane SendProtocol regression tests; no local native probe",
+        "evidence": "web/src/fixtures/panes/README.md"
       }
     }
   ]
