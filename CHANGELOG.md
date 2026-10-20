@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.1+collie.1] - 2026-10-20
+
 ### Fixed
 
-- **Muse sends and Claude cards follow upstream v1.23.1.** Adopt the shared multilingual question matcher and preserve downstream input controls, Codex queue/steer and Hermes compatibility; see [the integration report](docs/upstream-v1.23.1.md).
+- **Muse sends and Claude cards follow upstream v1.23.1.** Adopt the shared multilingual question matcher and preserve downstream input controls, Codex queue/steer and Hermes compatibility; see [the integration report](docs/upstream-v1.23.1.md). ([4f67a304](https://github.com/zhdsmy/collie/commit/4f67a304))
 
 ## [1.23.0+collie.1] - 2026-10-20
 
