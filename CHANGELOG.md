@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.1+collie.3] - 2026-10-22
+
 ### Fixed
 
-- **Antigravity Auto composers accept messages and follow native queue settings during a turn.** Gray Auto hints are recognized as placeholders by both composer readers; framed running sends use AGY's own Queue/Send Immediately preference while draft, modal, command and frameless guards remain. Capture and mobile replay cover the richer native statusline.
+- **Antigravity Auto composers accept messages and follow native queue settings during a turn.** Gray Auto hints are recognized as placeholders by both composer readers; framed running sends use AGY's own Queue/Send Immediately preference while draft, modal, command and frameless guards remain. Capture and mobile replay cover the richer native statusline. ([67637f9b](https://github.com/zhdsmy/collie/commit/67637f9b))
 
 ## [1.23.1+collie.2] - 2026-10-22
 
