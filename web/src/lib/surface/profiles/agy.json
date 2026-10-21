@@ -13,6 +13,12 @@
   },
   "versions": [
     {
+      "range": "1.4.4 - 1.4.4",
+      "status": "provisional",
+      "verifiedThrough": null,
+      "verifiedOn": null
+    },
+    {
       "range": "1.1.0 - 1.1.17",
       "status": "provisional",
       "verifiedThrough": null,
@@ -41,7 +47,8 @@
     },
     "placeholders": {
       "texts": [],
-      "sgr": 2
+      "sgr": 2,
+      "fg": ["var(--ansi-8)"]
     },
     "volatile": {
       "above": {
@@ -61,6 +68,7 @@
     "submit": [
       "Enter"
     ],
+    "enterWhileRunning": "native",
     "newline": [
       "ctrl+j"
     ],
@@ -89,7 +97,7 @@
   "probe": {
     "char": "⌁",
     "status": "provisional",
-    "note": "No live send has passed on this harness: it is not installed on bluefin, LAB.md has no row for it, and the M56 spec 01 lab did not run it. The box layout comes from the saved screens in web/src/fixtures/panes (agy--*.txt, Antigravity CLI 1.1.17 to 1.3.5). Provisional until a live probed send passes; fallback ¤"
+    "note": "Local macOS verification on 1.4.4 covers boxed composers, gray Auto hints, normal sends and native mid-turn sending (Queued Messages controls Queue/Send Immediately). See harness/agy/LOCAL_VERIFICATION.md. Still provisional: attachments and approval/question interactions are not certified. Fallback ¤"
   },
   "paste": {
     "bracketed": true

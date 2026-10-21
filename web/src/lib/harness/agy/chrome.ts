@@ -1,5 +1,7 @@
 import { parseAnsi } from "../../ansi";
 import type { StyledLine } from "../../blocks";
+import { findInputFrame } from "../../surface/frame";
+import { requireProfile } from "../../surface/profile";
 import { classifyFooter, isBlank, isBoxBorder, lineText } from "./markers";
 import { detectPromptSelectRegionIn, parseOptionRow, trailingMenuRows } from "./prompt-select";
 
@@ -10,6 +12,7 @@ const MAX_DRAFT_LINES = 100;
 const PROMPT_REGEX = /^[❯›>]\s*/;
 const ESC_TO_CANCEL = /\besc(?:ape)?\s+to\s+cancel\b/i;
 const OWN_ESC_STATUS = /^esc to cancel(?:\s|$)/i;
+const AGY_IDLE = requireProfile("agy").idle;
 
 // The slash-command completion popup (agy 1.3.5, live 2026-10-15) paints UNDER the box's bottom rule:
 // suggestion rows, the highlighted one led by `>` (`> /model  Set a model…`) and the rest by two
@@ -217,6 +220,10 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
   while (end > 0 && isBlank(texts[end - 1]!)) end--;
   if (end === 0) return null;
   const box = locateInputBox(texts, end);
+  if (box !== null) {
+    const frame = findInputFrame(lines, AGY_IDLE);
+    if (frame?.top === box.top && frame.interior.prompt === box.prompt && frame.placeholder) return null;
+  }
   return box?.draft ?? null;
 }
 

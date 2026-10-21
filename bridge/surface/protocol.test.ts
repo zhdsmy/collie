@@ -1252,6 +1252,47 @@ describe("Hermes idle sends", () => {
 /** The live running row of Claude Code 2.1.301 (claude--v2301-working-quiet--w100.txt): no interrupt hint. */
 const LIVE_ROW = "* Wibbling… (4s · ↓ 304 tokens)";
 
+describe("a framed send follows native queue/interrupt settings", () => {
+  const native = () => rig({ edit: (profile) => {
+    const { commandWhileRunning, ...keys } = profile.keys;
+    void commandWhileRunning;
+    return { ...profile, keys: { ...keys, enterWhileRunning: "native" } };
+  } });
+
+  test("sends Enter during a turn without claiming a queued witness", async () => {
+    const { pane, send } = native();
+    pane.over = [LIVE_ROW];
+    const answer = await send("guide this turn");
+    expect(answer.receipt).toMatchObject({ outcome: "sent" });
+    expect(answer.receipt?.queued).not.toBe(true);
+    expect(pane.keysSeen.at(-1)).toBe("Enter");
+  });
+
+  test("still commits when a turn starts while typing", async () => {
+    const { pane, send } = native();
+    pane.afterInput = (p, what) => {
+      if (what.includes("guide this turn")) p.over = [LIVE_ROW];
+    };
+    expect((await send("guide this turn")).receipt?.outcome).toBe("sent");
+    expect(pane.keysSeen.at(-1)).toBe("Enter");
+  });
+
+  test("does not send a command during a turn", async () => {
+    const { pane, send } = native();
+    pane.over = [LIVE_ROW];
+    expect((await send("/model", { mode: "command" })).receipt).toMatchObject({ outcome: "refused", reason: "turn_running" });
+    expect(pane.calls).toEqual([]);
+  });
+
+  test("does not type into a modal during a turn", async () => {
+    const { pane, send } = native();
+    pane.over = [LIVE_ROW];
+    pane.dialog = ["Allow this command?", "❯ 1. Yes", "  2. No", "Enter to confirm · Esc cancel"];
+    expect((await send("guide this turn")).receipt?.outcome).toBe("refused");
+    expect(pane.calls).toEqual([]);
+  });
+});
+
 describe("codex: Tab sends every text, Enter steers a running turn (M56 spec 13)", () => {
   const CODEX_RUNNING = "• Working (4s • esc to interrupt)";
   const codex = (options: Parameters<typeof rig>[0] = {}): Rig => rig({ pane: new FakePane("codex"), harness: "codex", version: "0.159.2", ...options });

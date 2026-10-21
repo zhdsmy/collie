@@ -21,11 +21,12 @@ export type HookKind = "edge" | "ask";
 /**
  * What Enter does while a turn runs: `queues` (the text waits for the turn's end), `steers` (the text
  * goes into the running turn), `submits` or `ignored`. The Send Protocol presses Enter into a turn
- * only on `queues`; on any other mode it presses `keys.queueKey` when the profile names one. A
+ * only on `queues` or `native` (a framed send follows the harness's own queue/interrupt setting);
+ * on any other mode it presses `keys.queueKey` when the profile names one. A
  * harness whose Enter steers may name a submit key that is not Enter at all (Codex: Tab sends on an
  * idle box and queues in a turn), ordinary sends queue unless the request explicitly selects the profile's `steerKey`.
  */
-export type EnterWhileRunning = "queues" | "steers" | "submits" | "ignored";
+export type EnterWhileRunning = "queues" | "steers" | "submits" | "ignored" | "native";
 /**
  * What the commit key does to a command (a text with a reserved lead) entered while a turn runs, as
  * the lab measured it (M56 spec 15): `queues` (the harness draws it as a queued row and runs it after
@@ -283,7 +284,7 @@ export interface Profile {
       /** The SGR attribute the placeholder renders with (2 is faint). */
       readonly sgr: number;
       /**
-       * The foreground colours the placeholder renders in, each as `rgb(r,g,b)`, for a harness that
+       * The foreground colours the placeholder renders in, as `rgb(r,g,b)` or an ANSI palette token, for a harness that
        * paints the text of an empty box (a tip, a prompt suggestion) in a grey of its own and no
        * faint attribute. A hole whose every visible run wears one of these colours is a placeholder
        * too; one run in any other colour is typed text. Optional.
@@ -424,7 +425,7 @@ export interface Profile {
     readonly enterWhileRunning?: EnterWhileRunning;
     /**
      * The key that queues a message for after the running turn, on a harness whose Enter does not
-     * queue (`enterWhileRunning` is not `queues`). Optional: without it, a send into a turn is refused.
+     * queue (`enterWhileRunning` is neither `queues` nor `native`). Otherwise a send into a turn is refused.
      * Never Escape and never Enter (what Enter does in a turn is `enterWhileRunning`). It may be the
      * submit key itself, on a harness whose submit key sends on an idle box and queues in a turn.
      */
@@ -512,7 +513,7 @@ const STATUSES = ["verified", "provisional", "revoked"] as const;
 const PROBE_STATUSES = ["verified", "provisional"] as const;
 const HOOK_KINDS = ["edge", "ask"] as const;
 const FRAME_WALKS = ["edges", "interior"] as const;
-const ENTER_MODES = ["queues", "steers", "submits", "ignored"] as const;
+const ENTER_MODES = ["queues", "steers", "submits", "ignored", "native"] as const;
 const COMMAND_MODES = ["queues", "runs", "drops", "steers"] as const;
 const SEMVER = /^\d+\.\d+\.\d+$/;
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -792,13 +793,14 @@ function parseNoticeGaps(value: JsonValue | undefined): string[] {
   });
 }
 
-/** A list of foreground colours: at least one, each written `rgb(r,g,b)` as the ANSI reader gives it, none twice. */
+/** Foreground colours as the ANSI reader gives them: RGB or the 16 named palette tokens, none twice. */
 function colourList(value: JsonValue, path: string): string[] {
   const fg = textList(value, path, 1);
   fg.forEach((colour, i) => {
     const at = `${path}[${String(i)}]`;
     const parts = /^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$/u.exec(colour);
-    if (parts === null || parts.slice(1).some((part) => Number(part) > 255)) fail(at, "must read rgb(r,g,b) with each part 0 to 255");
+    const palette = /^var\(--ansi-(?:[0-9]|1[0-5])\)$/u.test(colour);
+    if (!palette && (parts === null || parts.slice(1).some((part) => Number(part) > 255))) fail(at, "must read rgb(r,g,b) with each part 0 to 255 or an ANSI palette token 0 to 15");
     if (fg.indexOf(colour) !== i) fail(at, "is named twice");
   });
   return fg;
@@ -988,7 +990,7 @@ export function parseProfile(raw: JsonValue): Profile {
     };
     const queueKey = queueNode.default[0] ?? fail("keys.queueKey", "must name one key");
     checkQueueKey(queueKey);
-    if (keys.enterWhileRunning === "queues") fail("keys.queueKey", "is for a harness whose Enter does not queue");
+    if (keys.enterWhileRunning === "queues" || keys.enterWhileRunning === "native") fail("keys.queueKey", "is for a harness whose Enter does not queue or follow native settings");
     const queueByPlatform = Object.fromEntries(Object.entries(queueNode.byPlatform).map(([platform, names]) => [platform, names[0] ?? ""]));
     for (const key of Object.values(queueByPlatform)) checkQueueKey(key);
     keys = Object.keys(queueByPlatform).length === 0 ? { ...keys, queueKey } : { ...keys, queueKey, queueKeyByPlatform: queueByPlatform };

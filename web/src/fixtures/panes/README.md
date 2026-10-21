@@ -2984,3 +2984,8 @@ No account name, project path or conversation body is included. The draft is
 synthetic Chinese text. One no-tools model reply was sent through Collie to sample
 the real running footer; 38/50-column drafts and opening/cancelling Model and Resume
 were also checked. See [the verification record](../../lib/harness/agy/LOCAL_VERIFICATION.md).
+
+`agy--v144-auto-placeholder--w119.txt` is the untouched four-row tail of a fresh native
+Auto composer, with its ANSI-8 ghost hint and configured rich statusline. It includes no
+account, private path or transcript. The native configuration and mid-turn send were
+checked separately in the same owned session; this capture alone proves only rendering.

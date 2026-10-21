@@ -9,7 +9,7 @@ need a rule to be read right.
 - `keys.submit` is the list of keys that send a text on an idle box.
 - Some harnesses send with a key that also queues in a turn, so a send there presses that key.
 - `keys.commandSubmit` is the list of keys that send a command, when they differ from `submit`.
-- `keys.enterWhileRunning` says what Enter does in a turn. The Send Protocol presses Enter into a turn only on `queues`.
+- `keys.enterWhileRunning` says what Enter does in a turn. The Send Protocol presses Enter into a turn on `queues`, or on `native` to follow the harness's own Queue/Send Immediately setting inside a recognized input box. `native` does not authorize a frameless busy send or a command in a turn.
 - `keys.queueKey` is the one key that queues a message in a turn. It is never Enter and never Escape.
 
 ### Keys that differ by platform

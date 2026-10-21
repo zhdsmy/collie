@@ -17,9 +17,28 @@ were removed after the check; no service or existing agent was restarted for sam
 - Saved composer/status tails exclude account, path and transcript data. Unit checks also
   exercise a zero-gap hint/model boundary and wrapped working status. Browser replay at
   320/390px checks field separation, the working composer and absence of the unread card.
+- Native settings were changed to Auto and Queued Messages → Send Immediately. With the
+  same settings in an owned session, the real SendProtocol returned `sent` for an initial
+  request and a follow-up sent after observing `working`; `AGY_STEER_READY` arrived and the
+  agent settled. Framed sends use native Enter, leaving Queue/Send Immediately to AGY.
+  Commands during a turn and frameless busy sends retain their guards. `alt+m` is the
+  opposite of the user's native setting, so it is deliberately not a fixed queue key.
+- Auto's gray ANSI-8 ghost hint is an empty composer, not a draft. Its captured tail is
+  `agy--v144-auto-placeholder--w119.txt`; the same words in ordinary paint and a mix of
+  ghost paint with typed text remain real drafts. The profile stays provisional.
+- A local command statusline reuses the installed Claude renderer and native JSON fields
+  for mode, state, model, context remaining, branch, version, cumulative input/output and
+  last-request cache ratio. The rich native row remained a single scrollable statusline;
+  no unread card was produced. Cache ratio is not a promise that the next request is hot.
+
+A single no-tools headless Argon Medium probe took 11.6 seconds wall time: first text at
+8.4 seconds, last text at 10.4 seconds, 234 output tokens, zero thinking tokens. This is
+one short streaming sample, not a throughput guarantee. The existing long conversation
+showed multi-minute thought stages and many tool/model calls; no model HTTP 429/5xx was
+found in its sampled log. Medium was retained; no provider or proxy was changed.
 
 The rendering change splits the two known fields and retains ANSI styling. It does not
-change status lifecycle, notification policy or sending while busy. Actual modal footers,
+change status lifecycle or notification policy. Actual modal footers,
 numbered menus and misplaced cancel hints retain the existing refusal path. This is not
 a whole-CLI certification; the send profile remains provisional, and model selection,
 approval and question interactions need their own validation when adapted.

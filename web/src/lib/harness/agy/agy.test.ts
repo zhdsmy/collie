@@ -8,6 +8,8 @@ import { agyAdapter, antigravityAdapter } from "./index";
 import { detectPromptSelect } from "./prompt-select";
 import { describeAdapterConformance } from "../conformance";
 import { buildBlocks } from "../index";
+import { findInputFrame } from "../../surface/frame";
+import { requireProfile } from "../../surface/profile";
 
 const PANES_DIR = join(import.meta.dirname, "..", "..", "..", "fixtures", "panes");
 
@@ -21,6 +23,7 @@ const allFixtures = readdirSync(PANES_DIR)
 const allAgyFixtures = allFixtures.filter((f) => f.startsWith("agy--"));
 
 const NEUTRAL = new Set([
+  "agy--v144-auto-placeholder--w119.txt",
   "agy--v144-idle--w119.txt",
   "agy--v144-working--w119.txt",
   "agy--v144-idle--w50.txt",
@@ -102,6 +105,23 @@ describe("the card starts at the question row, so the mirror above it does not r
     // The row above the question is what the mirror now ends on; the question row is the card's first.
     expect(raw!.lines.slice(-4).map((l) => l.segments.map((s) => s.text).join("").trim())).not.toContain(question);
     expect(prompt!.lines[0]!.segments.map((s) => s.text).join("").trim()).toBe(question);
+  });
+
+  it("shares the native Auto hint's paint with the send reader, while retaining typed text", () => {
+    const lines = splitLines(parseAnsi(readFileSync(join(PANES_DIR, "agy--v144-auto-placeholder--w119.txt"), "utf8")));
+    const idle = requireProfile("agy").idle;
+    const frame = findInputFrame(lines, idle)!;
+    expect(frame.placeholder).toBe(true);
+    expect(frame.anchorsHit).toContain("placeholder-fg");
+    expect(agyAdapter.extractInputDraft!(lines)).toBeNull();
+    const typed = lines.map((line, index) => index === frame.interior.prompt
+      ? { segments: parseAnsi(lineText(line)) } : line);
+    expect(findInputFrame(typed, idle)?.placeholder).toBe(false);
+    expect(agyAdapter.extractInputDraft!(typed)).toBe(frame.interior.text);
+    const mixed = lines.map((line, index) => index === frame.interior.prompt
+      ? { segments: [...line.segments, ...parseAnsi(" X")] } : line);
+    expect(findInputFrame(mixed, idle)?.placeholder).toBe(false);
+    expect(agyAdapter.extractInputDraft!(mixed)).toBe(frame.interior.text + " X");
   });
 
   it("the trust prompt keeps the card at its options: a sentence under the question is shown by the mirror alone", () => {

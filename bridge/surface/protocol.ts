@@ -789,13 +789,13 @@ function enterQueues(match: ProfileMatch | null): boolean {
 
 /**
  * Whether the harness takes a message while its turn runs: its Enter queues, or its profile names a
- * queue key (`keys.queueKey`) for a harness whose Enter does something else in a turn (steers it).
- * Both need a version the binary reported, on a range that is not revoked. A provisional version
+ * queue key (`keys.queueKey`), or its native settings own the queue/interrupt choice.
+ * All need a version the binary reported, on a range that is not revoked. A provisional version
  * counts, unless the nearest older range it borrows is revoked. Every send into a turn is probed,
  * whatever the status: a dialog can open at any moment of a turn.
  */
 function queuesInTurn(match: ProfileMatch | null): boolean {
-  return enterQueues(match) || (turnTrusted(match) && match.profile.keys.queueKey !== undefined);
+  return enterQueues(match) || (turnTrusted(match) && (match.profile.keys.queueKey !== undefined || match.profile.keys.enterWhileRunning === "native"));
 }
 
 /**
@@ -828,7 +828,7 @@ function commitKeys(state: RunState): readonly string[] {
   if (state.request.mode === "steer" || state.request.mode === "steer-queued") return [keys.steerKey!];
   // The queued path on a harness whose Enter does not queue: S0 read a turn, or the rows above moved
   // while Collie typed. Commands keep queuing; ordinary messages may explicitly opt into steering.
-  if ((state.queued || state.streamed) && keys.enterWhileRunning !== "queues") {
+  if ((state.queued || state.streamed) && keys.enterWhileRunning !== "queues" && keys.enterWhileRunning !== "native") {
     if (keys.queueKey === undefined) throw new Ended("typed_not_submitted", "changed", { detail: TURN_RUNNING });
     return [keys.queueKey];
   }
@@ -909,7 +909,8 @@ function steeringTurn(state: RunState, snap: Snap): Ended | "queue" | null {
     state.neverHold = true;
     return new Ended("refused", "turn_running", { surface: snap.surface, detail: NEVER_HELD });
   }
-  if (!queuesInTurn(state.match)) return new Ended("refused", "turn_running", { surface: snap.surface, detail: TURN_RUNNING });
+  // Following native settings authorizes a send into a recognized box, never a frameless turn.
+  if (!queuesInTurn(state.match) || profile.keys.enterWhileRunning === "native") return new Ended("refused", "turn_running", { surface: snap.surface, detail: TURN_RUNNING });
   if (isCommand && !commandQueues(state.match)) return new Ended("refused", "turn_running", { surface: snap.surface, detail: COMMAND_IN_TURN });
   return "queue";
 }

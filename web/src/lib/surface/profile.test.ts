@@ -311,6 +311,7 @@ describe("the codex profile (M56 spec 13)", () => {
     ["codex: Escape as a command key", ["keys", "commandSubmit"], ["Escape"], "keys.commandSubmit"],
     ["codex: no command key", ["keys", "commandSubmit"], [], "keys.commandSubmit"],
     ["codex: a queue key on a harness whose Enter queues", ["keys", "enterWhileRunning"], "queues", "keys.queueKey"],
+    ["codex: a queue key on a harness following native settings", ["keys", "enterWhileRunning"], "native", "keys.queueKey"],
     ["codex: an unknown Enter mode", ["keys", "enterWhileRunning"], "sometimes", "keys.enterWhileRunning"],
     ["codex: a blank prompt anchor", ["idle", "frame", "prompt", "blank"], true, "idle.frame.prompt.blank"],
     ["codex: a blank anchor that matches text", ["idle", "frame", "top", "pattern"], "^x$", "idle.frame.top.pattern"],
@@ -378,7 +379,7 @@ interface Spec14Case {
   readonly probeStatus: "verified" | "provisional";
   /** The status of the ledger-version range, when it is not `verified`. */
   readonly rangeStatus?: "provisional";
-  readonly enterWhileRunning: "queues" | "steers" | undefined;
+  readonly enterWhileRunning: Profile["keys"]["enterWhileRunning"];
   /** The key that queues a message in a turn, where Enter does not queue. */
   readonly queueKey?: string;
   /** The pause after the text write the profile names (`paste.settleMs`, #507), where it names one. */
@@ -451,7 +452,7 @@ const SPEC14_CASES: readonly Spec14Case[] = [
     submit: ["Enter"],
     probeStatus: "provisional",
     rangeStatus: "provisional",
-    enterWhileRunning: undefined,
+    enterWhileRunning: "native",
   },
   {
     id: "muse",
@@ -633,7 +634,7 @@ describe.each(SPEC14_CASES)("the $id profile (M56 spec 14)", (c) => {
     // SAFETY: the ledger is this repo's own committed JSON; every agent row has a version and a verified date, and the key is a harness id from this table.
     const row = (ledgerJson.agents as Record<string, { version: string; verified: string } | undefined>)[c.id];
     if (c.rangeStatus === "provisional") {
-      expect(profile().versions.map((range) => range.status)).toEqual(["provisional"]);
+      expect(profile().versions.every((range) => range.status === "provisional")).toBe(true);
       expect(profileFor(c.id, row?.version ?? c.version, { log: () => {} })?.status).toBe("provisional");
       return;
     }
@@ -709,6 +710,11 @@ describe("the frame schema of the interior walk (M56 spec 14)", () => {
     const muse = parseProfile(parseJsonObject(readFileSync(join(PROFILES_DIR, "muse.json"), "utf8"))!);
     expect(muse.idle.placeholders.fg).toEqual(["rgb(175,177,179)"]);
     expect(muse.idle.placeholders.texts).toContain("/loop 10m <prompt> schedules a recurring prompt");
+  });
+
+  it.each([0, 8, 15])("accepts ANSI palette token %s emitted by the shared ANSI reader", (index) => {
+    const colour = `var(--ansi-${index})`;
+    expect(parseProfile(change(rawClaude(), ["idle", "placeholders", "fg"], [colour])).idle.placeholders.fg).toEqual([colour]);
   });
 
   it("omp 18.11 (issue 497): the prompt and continuation rows leave the box's right border out of the draft", () => {
@@ -817,6 +823,8 @@ describe("parseProfile names the failing field", () => {
     ["no placeholder colour", ["idle", "placeholders", "fg"], [], "idle.placeholders.fg"],
     ["a placeholder colour written as hex", ["idle", "placeholders", "fg"], ["#afb1b3"], "idle.placeholders.fg[0]"],
     ["a placeholder colour out of range", ["idle", "placeholders", "fg"], ["rgb(175,177,256)"], "idle.placeholders.fg[0]"],
+    ["an ANSI palette token out of range", ["idle", "placeholders", "fg"], ["var(--ansi-16)"], "idle.placeholders.fg[0]"],
+    ["an arbitrary CSS variable", ["idle", "placeholders", "fg"], ["var(--other)"], "idle.placeholders.fg[0]"],
     ["a placeholder colour named twice", ["idle", "placeholders", "fg"], ["rgb(1,2,3)", "rgb(1,2,3)"], "idle.placeholders.fg[1]"],
     ["a hold on an event hooks does not list as an ask", ["hold", "event"], "Stop", "hold.event"],
     ["a hold tool event hooks does not list as an edge", ["hold", "toolEvent"], "PermissionRequest", "hold.toolEvent"],
