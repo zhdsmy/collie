@@ -423,7 +423,10 @@ describe("the status rule across the whole corpus", () => {
     // a status row the other side. pi's grammar runs on a pi pane only (the registry picks the adapter
     // by agent), so the match is shape, not a misread. The exception stays honest: Hermes still draws it.
     const drawnByHermes = (name: string): boolean => name.startsWith("hermes--");
-    expect(found.filter((name) => !drawnByHermes(name))).toEqual(["agy--after-plan-idle.txt", "agy--done.txt", "agy--fresh-idle.txt"]);
+    expect(found.filter((name) => !drawnByHermes(name))).toEqual([
+      "agy--after-plan-idle.txt", "agy--done.txt", "agy--fresh-idle.txt",
+      "agy--v144-idle--w119.txt", "agy--v144-idle--w50.txt", "agy--v144-working--w119.txt",
+    ]);
     expect(found.some(drawnByHermes)).toBe(true);
   });
 

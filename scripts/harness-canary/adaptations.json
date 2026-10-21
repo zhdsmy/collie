@@ -3001,6 +3001,62 @@
         "how": "upstream captures and fake-pane SendProtocol regression tests; no local native probe",
         "evidence": "web/src/fixtures/panes/README.md"
       }
+    },
+    {
+      "id": "agy.chrome",
+      "agent": "agy",
+      "origin": "upstream-patched",
+      "sources": [
+        "web/src/lib/harness/agy/chrome.ts",
+        "web/src/components/statusline-row.tsx"
+      ],
+      "tests": [
+        "web/src/lib/harness/agy/agy.test.ts",
+        "web/src/lib/harness/unread-dialog.test.ts",
+        "web/src/components/statusline-row.test.tsx",
+        "web/e2e/agy-chrome.spec.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/agy--v144-idle--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v144-working--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v144-idle--w50.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v144-draft--w50.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "1.4.4",
+        "date": "2026-10-22",
+        "how": "owned native Herdr session: SendProtocol sent one no-tools reply, working footer sampled, 38/50-column Chinese drafts; model/resume opened and cancelled; browser geometry replay separately",
+        "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
+      }
     }
   ]
 }

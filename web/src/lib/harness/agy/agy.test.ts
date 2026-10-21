@@ -21,6 +21,10 @@ const allFixtures = readdirSync(PANES_DIR)
 const allAgyFixtures = allFixtures.filter((f) => f.startsWith("agy--"));
 
 const NEUTRAL = new Set([
+  "agy--v144-idle--w119.txt",
+  "agy--v144-working--w119.txt",
+  "agy--v144-idle--w50.txt",
+  "agy--v144-draft--w50.txt",
   "agy--fresh-idle.txt",
   // The 60-row capture that stood as agy--working.txt: the turn is over and the box is free.
   "agy--after-plan-idle.txt",
@@ -109,6 +113,19 @@ describe("the card starts at the question row, so the mirror above it does not r
 });
 
 describe("agyAdapter unit & footer safety", () => {
+  it.each([
+    ["agy--v144-idle--w119.txt", null],
+    ["agy--v144-working--w119.txt", null],
+    ["agy--v144-idle--w50.txt", null],
+    ["agy--v144-draft--w50.txt", "中文输入边界检查"],
+  ])("reads the native 1.4.4 composer on %s without an unread card", (name, draft) => {
+    const lines = splitLines(parseAnsi(readFileSync(join(PANES_DIR, name!), "utf8")));
+    expect(agyAdapter.composerReady!(lines)).toBe(true);
+    expect(agyAdapter.extractInputDraft!(lines)).toBe(draft);
+    expect(agyAdapter.extractStatusLines!(lines)).toHaveLength(1);
+    expect(buildBlocks(lines, { agent: "agy" }).some((b) => b.kind === "unread-dialog")).toBe(false);
+  });
+
   it("claims agent 'agy' and 'antigravity'", () => {
     expect(agyAdapter.agent).toBe("agy");
     expect(antigravityAdapter.agent).toBe("antigravity");
@@ -293,8 +310,6 @@ describe("agyAdapter unit & footer safety", () => {
     expect(statusText).toContain("? for shortcuts");
   });
 
-  // The mid-turn capture (agy--working.txt) carries its status after `esc to cancel` on one row, which
-  // extractStatusLines does not read (0 rows); this screen, once filed as `working`, is a finished turn.
   it("extracts the statusline on agy--after-plan-idle.txt", () => {
     const raw = readFileSync(join(PANES_DIR, "agy--after-plan-idle.txt"), "utf8");
     const lines = splitLines(parseAnsi(raw));
@@ -304,6 +319,37 @@ describe("agyAdapter unit & footer safety", () => {
     expect(status.length).toBeGreaterThan(0);
     const statusText = status.map((l) => l.segments.map((s) => s.text).join("")).join(" ");
     expect(statusText).toContain("Gemini 3.7 Flash");
+  });
+
+  it("strips the working box and extracts statusline on agy--working.txt and narrow wrapped working screens without raising unread-dialog", () => {
+    const raw = readFileSync(join(PANES_DIR, "agy--working.txt"), "utf8");
+    const lines = splitLines(parseAnsi(raw));
+
+    expect(agyAdapter.composerReady!(lines)).toBe(true);
+    expect(agyAdapter.extractInputDraft!(lines)).toBeNull();
+    const status = agyAdapter.extractStatusLines!(lines);
+    expect(status).toHaveLength(1);
+    expect(lineText(status[0]!)).toContain("esc to cancel");
+    expect(lineText(status[0]!)).toContain("Gemini 3.7 Flash");
+    expect(buildBlocks(lines, { agent: "agy" }).map((b) => b.kind)).toEqual(["raw"]);
+
+    const narrow = splitLines(
+      parseAnsi(
+        [
+          "⠇ Running command...",
+          "──────────────────────────────────────",
+          "> ",
+          "──────────────────────────────────────",
+          "\x1b[38;5;8mesc to cancel\x1b[0m",
+          "               \x1b[2mGemini 4 Argon · medium\x1b[0m",
+        ].join("\n"),
+      ),
+    );
+    expect(agyAdapter.composerReady!(narrow)).toBe(true);
+    expect(buildBlocks(narrow, { agent: "agy" }).map((b) => b.kind)).toEqual(["raw"]);
+    const narrowStatus = agyAdapter.extractStatusLines!(narrow);
+    expect(narrowStatus).toHaveLength(1);
+    expect(lineText(narrowStatus[0]!)).toBe("esc to cancel                 Gemini 4 Argon · medium");
   });
 
   it("extracts typed user draft inside an input box", () => {

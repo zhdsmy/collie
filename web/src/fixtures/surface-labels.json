@@ -5205,6 +5205,26 @@
       "harness": "muse",
       "version": "1.4.10",
       "state": "popup"
+    },
+    "agy--v144-idle--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.4",
+      "state": "idle"
+    },
+    "agy--v144-working--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.4",
+      "state": "running"
+    },
+    "agy--v144-idle--w50.txt": {
+      "harness": "agy",
+      "version": "1.4.4",
+      "state": "idle"
+    },
+    "agy--v144-draft--w50.txt": {
+      "harness": "agy",
+      "version": "1.4.4",
+      "state": "draft"
     }
   },
   "knownMismatches": {

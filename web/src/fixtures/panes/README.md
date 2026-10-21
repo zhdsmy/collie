@@ -2975,3 +2975,12 @@ this corpus. Recipes: [`hermes/CLARIFY_NOTES.md`](../../lib/harness/hermes/CLARI
 | `hermes--approval-w60` | The same at 60 columns, prompt `⚠` | Allow once, Deny |
 | `hermes--approval-long` | A 120-character command, `5. Show full command` | Allow once, Show full command, Deny |
 | `hermes--approval-long-full` | After `5`: row 5 gone, `❯` on Deny | Allow once, Deny |
+
+## AGY 1.4.4 composer/status tails (2026-10-22)
+
+`agy--v144-{idle,working}--w119.txt` and `agy--v144-{idle,draft}--w50.txt`
+retain only the native composer and status tail from an owned Herdr canary session.
+No account name, project path or conversation body is included. The draft is
+synthetic Chinese text. One no-tools model reply was sent through Collie to sample
+the real running footer; 38/50-column drafts and opening/cancelling Model and Resume
+were also checked. See [the verification record](../../lib/harness/agy/LOCAL_VERIFICATION.md).

@@ -363,6 +363,28 @@ it.each(["pi", "opencode", "unknown"])("leaves %s status rows verbatim", (agent)
   expect(within(container).getByText("Context 73% left").style.color).toBe("var(--ansi-6)");
 });
 
+it.each(["agy", "antigravity"])("separates %s hint and model fields across wide and zero-gap 38-column rows", (agent) => {
+  const wide = renderRow(
+    "\x1b[38;5;8m? for shortcuts                                  \x1b[0m\x1b[2mGemini 4 Argon · medium\x1b[0m",
+    agent,
+  );
+  const wideStrip = wide.container.querySelector('[data-slot="agy-statusline"]')!;
+  expect(wideStrip).not.toBeNull();
+  expect(wide.container.textContent).not.toMatch(/ {2,}/);
+  expect(wideStrip.querySelectorAll("span.w-px")).toHaveLength(1);
+  expect(within(wide.container).getByText("? for shortcuts").style.color).toBe("var(--ansi-8)");
+  expect(within(wide.container).getByText("Gemini 4 Argon · medium")).toHaveStyle({ opacity: 0.6 });
+
+  const tight = renderRow(
+    "\x1b[38;5;8m? for shortcuts\x1b[0m\x1b[2mGemini 4 Argon · medium\x1b[0m",
+    agent,
+  );
+  const tightStrip = tight.container.querySelector('[data-slot="agy-statusline"]')!;
+  expect(tightStrip.querySelectorAll("span.w-px")).toHaveLength(1);
+  expect(within(tight.container).getByText("? for shortcuts")).toBeInTheDocument();
+  expect(within(tight.container).getByText("Gemini 4 Argon · medium")).toBeInTheDocument();
+});
+
 it("compacts the captured Claude custom statusline without printing its right-side hint", () => {
   const capture = readFileSync(join(import.meta.dirname, "..", "fixtures", "panes", "claude--custom-statusline.txt"), "utf8");
   const rows = extractStatusLines(splitLines(parseAnsi(capture)));

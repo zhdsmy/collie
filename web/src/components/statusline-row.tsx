@@ -372,6 +372,40 @@ function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
   );
 }
 
+/**
+ * Antigravity CLI (`agy`) statusline: left key hint (`? for shortcuts` or `esc to cancel`) and
+ * right-aligned `[mode · ]model · effort`. Ink's `justifyContent="space-between"` pads spaces
+ * between the two columns on wide terminals and butts the two ANSI segments directly against each
+ * other on a 38-column mobile pane (`? for shortcutsGemini 4 Argon · medium`). Splitting on either
+ * the inter-column gap or that zero-gap boundary replaces both with a compact divider.
+ */
+function AgyStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode }) {
+  let offset = 0;
+  const fields: ReactNode[] = [];
+  for (const [index, part] of lineText(row)
+    .split(/((?<=\S)\s{2,}(?=\S)|(?<=^(?:\? for shortcuts|esc to cancel))(?=\S))/i)
+    .entries()) {
+    const text = part.trim();
+    const start = offset + (text ? part.indexOf(text) : 0);
+    offset += part.length;
+    if (!text || index % 2 === 1) continue;
+    fields.push(
+      <span key={index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
+        {fields.length > 0 && <StatuslineDivider />}
+        <span>
+          <StyledText segments={sliceSegments(row.segments, start, start + text.length)} />
+        </span>
+      </span>,
+    );
+  }
+  return (
+    <div data-slot="agy-statusline" className={ROW_CLASS}>
+      {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
+      {fields}
+    </div>
+  );
+}
+
 function FirstTokenField({ ms }: { ms?: number }) {
   useLocale();
   if (ms === undefined || !Number.isSafeInteger(ms) || ms < 0) return null;
@@ -706,6 +740,7 @@ export function StatuslineRow({
     if (/\s\|\s/.test(text)) return <ClaudeStatusline row={row} leading={leading} />;
   }
   if (agent === "cursor") return <CursorStatusline row={row} leading={leading} />;
+  if (agent === "agy" || agent === "antigravity") return <AgyStatusline row={row} leading={leading} />;
   if (agent !== "codex" && agent !== "hermes") {
     return (
       <div data-slot="statusline-row" className={ROW_CLASS}>

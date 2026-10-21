@@ -1,3 +1,4 @@
+import { parseAnsi } from "../../ansi";
 import type { StyledLine } from "../../blocks";
 import { classifyFooter, isBlank, isBoxBorder, lineText } from "./markers";
 import { detectPromptSelectRegionIn, parseOptionRow, trailingMenuRows } from "./prompt-select";
@@ -8,6 +9,7 @@ const MAX_STATUS_LINES = 8;
 const MAX_DRAFT_LINES = 100;
 const PROMPT_REGEX = /^[❯›>]\s*/;
 const ESC_TO_CANCEL = /\besc(?:ape)?\s+to\s+cancel\b/i;
+const OWN_ESC_STATUS = /^esc to cancel(?:\s|$)/i;
 
 // The slash-command completion popup (agy 1.3.5, live 2026-10-15) paints UNDER the box's bottom rule:
 // suggestion rows, the highlighted one led by `>` (`> /model  Set a model…`) and the rest by two
@@ -40,19 +42,20 @@ function isPopupRow(text: string): boolean {
   return t === "" || COMPLETION_ROW.test(t) || COMPLETION_MORE.test(t) || COMPLETION_NONE.test(t);
 }
 
-// What a dialog paints under its rule and a status line never does: a footer hint, `esc to cancel`,
-// or a numbered menu (rows 1., 2. …, as `trailingMenuRows` reads one). Idle and working composers
-// print `? for shortcuts` under the box (every capture in the corpus), so any of these under a rule
-// means that rule belongs to a modal. One numbered item alone is not enough: a custom `statusLine`
-// may print `1. build ok  2. tests ok` (claude-lab--statusline-numbered-rows--w82.txt), and that is
-// still a live box. Under an open completion popup the rows below its footer get the same check, so
-// a modal painted there is still a modal (second review, 2026-10-16); `ownEsc` is the popup's own
-// `esc to cancel` row, the one row there that may say it.
+// What a dialog paints under its rule and a status line never does: a footer hint, `esc to cancel`
+// outside the box's own status row, or a numbered menu (rows 1., 2. …, as `trailingMenuRows` reads
+// one). While a turn runs or the completion popup is open, AGY's own status row directly under the
+// box (or popup footer) starts at column 0 with `esc to cancel`; any other `esc to cancel` under a
+// rule belongs to a modal. One numbered item alone is not enough: a custom `statusLine` may print
+// `1. build ok  2. tests ok` (claude-lab--statusline-numbered-rows--w82.txt), and that is still a
+// live box. Under an open completion popup the rows below its footer get the same check, so a modal
+// painted there is still a modal (second review, 2026-10-16); `ownEsc` is that first status row.
 function dialogUnder(texts: string[], bottomBorder: number, end: number, ownEsc = -1): boolean {
   const options: { n: number }[] = [];
   for (let j = bottomBorder + 1; j < end; j++) {
     const text = texts[j]!;
-    if (classifyFooter(text) !== null || (j !== ownEsc && ESC_TO_CANCEL.test(text))) return true;
+    if (classifyFooter(text) !== null) return true;
+    if (ESC_TO_CANCEL.test(text) && !(j === ownEsc && OWN_ESC_STATUS.test(text))) return true;
     const option = parseOptionRow(text);
     if (option !== null) options.push(option);
   }
@@ -96,8 +99,8 @@ export function locateInputBox(texts: string[], end: number): LocatedBox | null 
   // grammar claiming the screen, means no composer: fail closed, like step 2.
   const footer = bottomBorder === -1 ? -1 : completionFooter(texts, bottomBorder, end);
   if (bottomBorder !== -1) {
-    const modal =
-      footer === -1 ? dialogUnder(texts, bottomBorder, end) : dialogUnder(texts, footer, end, footer + 1);
+    const statusBase = footer === -1 ? bottomBorder : footer;
+    const modal = dialogUnder(texts, statusBase, end, statusBase + 1);
     if (modal || detectPromptSelectRegionIn(texts) !== null) return null;
   }
 
@@ -127,6 +130,7 @@ export function locateInputBox(texts: string[], end: number): LocatedBox | null 
           return { top, prompt: p, bottomBorder, statusStart, statusEnd, draft };
         }
       }
+      if (!isBlank(t) && !/^ {2}/.test(t)) return null;
       p--;
       walk++;
     }
@@ -196,6 +200,13 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   const rows: StyledLine[] = [];
   for (let j = box.statusStart; j < box.statusEnd; j++) {
     if (!isBlank(texts[j]!)) rows.push(lines[j]!);
+  }
+  if (
+    rows.length === 2 &&
+    /^(?:\? for shortcuts|esc to cancel)\s*$/i.test(lineText(rows[0]!)) &&
+    /^\s{2,}\S/.test(lineText(rows[1]!))
+  ) {
+    return [{ segments: [...rows[0]!.segments, ...parseAnsi("  "), ...rows[1]!.segments] }];
   }
   return rows;
 }

@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Antigravity status fields stay separate while a turn runs.** Compact the hint and model into distinct fields, recognize the native running footer without an unread-dialog card, and retain modal guards; verified on agy 1.4.4.
+
 ## [1.23.1+collie.1] - 2026-10-20
 
 ### Fixed
