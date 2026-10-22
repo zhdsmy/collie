@@ -138,6 +138,12 @@ describe("parity with the old walk on the real corpus", () => {
     "claude--v2302-slash-effort-list--w120--h40.txt",
     "claude--v2302-slash-model-list--w120--h40.txt",
     "claude--v2302-heads-up-above-box--w142.txt",
+    // The Heads up follow-ups, 2.1.304 (derived): the box stands under each.
+    "claude--v2304-heads-up-dismissed--w135.txt",
+    "claude--v2304-heads-up-dismissed--w65.txt",
+    "claude--v2304-heads-up-dismissed-after-explain--w65.txt",
+    "claude--v2304-heads-up-explained--w135.txt",
+    "claude--v2304-heads-up-explained--w65.txt",
     // The notice over the agents panel at 69 columns (derived from a bridge read): the box stands.
     "claude--v2302-notice-over-agents-panel--w69.txt",
     // The fix rig's Herdr pane, 120 x 36 (captured 2026-10-17): a screen whose rows reach the bottom
@@ -153,6 +159,8 @@ describe("parity with the old walk on the real corpus", () => {
     "claude--v2303-titled-edge-idle--w160.txt",
     "claude--v2303-titled-edge-survey--w160.txt",
     "claude--v2303-titled-edge-working--w160.txt",
+    // The survey's transcript question, 2.1.306 (captured 2026-10-21): the box stands under it.
+    "claude--v2306-transcript-survey--w153.txt",
     "claude--working-esc-to-interrupt.txt",
     "claude--working.txt",
   ]);
@@ -372,7 +380,7 @@ describe("a statusline-shaped tail still carries no menu", () => {
 
   it("no statusline row in the Claude corpus names a menu key or a numbered option", () => {
     let rows = 0;
-    let asides = 0;
+    const asides: string[] = [];
     for (const name of CLAUDE_FIXTURES) {
       const lines = load(name);
       if (inputBoxTail(lines) !== "statusline") continue;
@@ -382,7 +390,7 @@ describe("a statusline-shaped tail still carries no menu", () => {
         // aside rule rather than this check being loosened by a word list
         // (claude--notification-paste-delete.txt).
         if (isClaudeAsideRow(row)) {
-          asides++;
+          asides.push(name);
           continue;
         }
         rows++;
@@ -391,7 +399,11 @@ describe("a statusline-shaped tail still carries no menu", () => {
       }
     }
     expect(rows).toBeGreaterThan(10);
-    expect(asides).toBe(1); // the one aside in the corpus, counted so a second one is a visible diff
+    expect(asides).toEqual([
+      "claude--notification-paste-delete.txt",
+      "claude--v2306-transcript-survey--w153.txt", // update and /clear hints
+      "claude--v2306-transcript-survey--w153.txt",
+    ]);
   });
 });
 
