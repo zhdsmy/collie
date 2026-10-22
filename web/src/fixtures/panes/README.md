@@ -6,8 +6,8 @@
 timestamped background Bash task, its closing separator and custom statusline.
 It was captured in an owned Herdr canary project using one harmless `sleep 25`
 and `printf` command. The task completed and the session/project were removed.
-Account, workspace banner and conversation are excluded; retained ANSI, spacing
-and line endings are unchanged. It reproduces the task separator being mistaken
+Account, workspace banner and conversation are excluded; ANSI and spacing are
+unchanged, with CRLF normalized to LF. It reproduces the task separator being mistaken
 for the composer bottom rule. Additional task/draft/modal cases are mutations,
 not additional native captures.
 
