@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Changed
+
+- **Antigravity statusline leads with the model and ends with the version.** Use a distinct `Bot` icon for `auto` mode, align `idle` and active-turn `Hourglass` animation with Codex, place the CLI version after quota windows, and omit token/cache counters.
+
 ## [1.23.2+collie.2] - 2026-10-22
 
 ### Fixed

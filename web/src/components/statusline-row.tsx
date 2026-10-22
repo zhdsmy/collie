@@ -1,6 +1,5 @@
 import {
-  ArrowDown,
-  ArrowUp,
+  Bot,
   Keyboard,
   ChevronUp,
   CalendarDays,
@@ -221,23 +220,31 @@ function StatusIconField({
   icon: Icon,
   value,
   animated = false,
+  hourglass = false,
 }: {
   text: string;
   segments: AnsiSegment[];
   icon: LucideIcon;
   value: string;
   animated?: boolean;
+  hourglass?: boolean;
 }) {
-  const start = text.indexOf(value);
+  const start = value ? text.indexOf(value) : 0;
   return (
     <span role="img" aria-label={text} title={text}
       className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none">
       <Icon aria-hidden="true"
-        className={cn("size-[12px] shrink-0", animated && "motion-safe:animate-spin motion-reduce:animate-none")}
+        className={cn(
+          "size-[12px] shrink-0",
+          animated && "motion-safe:animate-spin motion-reduce:animate-none",
+          hourglass && "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]",
+        )}
         strokeWidth={2.25} style={segments[0] && styleFor(segments[0])} />
-      <span aria-hidden="true">
-        <StyledText segments={sliceSegments(segments, start, start + value.length)} />
-      </span>
+      {value && (
+        <span aria-hidden="true">
+          <StyledText segments={sliceSegments(segments, start, start + value.length)} />
+        </span>
+      )}
     </span>
   );
 }
@@ -382,26 +389,29 @@ function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
  * other on a 38-column mobile pane (`? for shortcutsGemini 4 Argon · medium`). Splitting on either
  * the inter-column gap or that zero-gap boundary replaces both with a compact divider.
  */
-const AGY_FIELDS: { pattern: RegExp; icon: LucideIcon }[] = [
-  { pattern: /^auto$/, icon: Zap },
+const AGY_FIELDS: { pattern: RegExp; icon: LucideIcon; hourglass?: boolean }[] = [
+  { pattern: /^auto$/, icon: Bot },
   { pattern: /^(?:default|accept-edits)$/, icon: ShieldCheck },
   { pattern: /^plan$/, icon: ListChecks },
   { pattern: /^idle$/, icon: CircleCheck },
-  { pattern: /^(?:thinking|working|tool_use|initializing)$/, icon: Hourglass },
+  { pattern: /^(?:thinking|working|tool_use|initializing)$/, icon: Hourglass, hourglass: true },
   { pattern: /^\? for shortcuts$/, icon: Keyboard },
   { pattern: /^esc to cancel$/, icon: CircleOff },
-  { pattern: /^(?:Σin|in) (\d+(?:\.\d+)?[km]?)$/, icon: ArrowDown },
-  { pattern: /^(?:Σout|out) (\d+(?:\.\d+)?[km]?)$/, icon: ArrowUp },
-  { pattern: /^cache (\d+(?:\.\d+)?%)$/, icon: Database },
 ];
+
+const AGY_MODE_RE = /^(?:auto|default|accept-edits|plan)$/;
+const AGY_STATE_RE = /^(?:idle|thinking|working|tool_use|initializing)$/;
+const AGY_DROPPED_RE = /^(?:(?:Σin|in|Σout|out) \d+(?:\.\d+)?[km]?|cache \d+(?:\.\d+)?%)$/;
+const AGY_VERSION_RE = /^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
+const AGY_QUOTA_RE = /^(?:(Gemini|GEMINI MODELS|Claude\/GPT|CLAUDE AND GPT MODELS) )?((?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S+)?(?: · (?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S+)?)?)$/;
 
 function AgyField({ text, segments }: { text: string; segments: AnsiSegment[] }) {
   // Complete known fields only; custom labels retain their native text and ANSI styling.
-  for (const { pattern, icon } of AGY_FIELDS) {
+  for (const { pattern, icon, hourglass } of AGY_FIELDS) {
     const match = pattern.exec(text);
-    if (match) return <StatusIconField text={text} segments={segments} icon={icon} value={match[1] ?? ""} />;
+    if (match) return <StatusIconField text={text} segments={segments} icon={icon} value={match[1] ?? ""} hourglass={hourglass} />;
   }
-  const quota = /^(?:(Gemini|GEMINI MODELS|Claude\/GPT|CLAUDE AND GPT MODELS) )?((?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S+)?(?: · (?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S+)?)?)$/.exec(text);
+  const quota = AGY_QUOTA_RE.exec(text);
   if (quota?.[2]) {
     const windows = quota[2].split(" · ");
     if (windows.every((window) => Number.parseFloat(window.slice(3)) <= 100)) return (
@@ -418,9 +428,24 @@ function AgyField({ text, segments }: { text: string; segments: AnsiSegment[] })
   return <ClaudeField text={text} segments={segments} />;
 }
 
+function orderAgyFields(raw: StatuslineField[]): StatuslineField[] {
+  const items = raw.filter((item) => !AGY_DROPPED_RE.test(item.text));
+  if (items.length >= 3 && AGY_MODE_RE.test(items[0]!.text) && AGY_STATE_RE.test(items[1]!.text)) {
+    const [mode, state, model] = items;
+    items.splice(0, 3, model!, mode!, state!);
+  }
+  const versionIndex = items.findIndex((item) => AGY_VERSION_RE.test(item.text));
+  const lastQuotaIndex = items.findLastIndex((item) => AGY_QUOTA_RE.test(item.text));
+  if (versionIndex !== -1 && lastQuotaIndex > versionIndex) {
+    const [version] = items.splice(versionIndex, 1);
+    items.splice(lastQuotaIndex, 0, version!);
+  }
+  return items;
+}
+
 function AgyStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode }) {
   let offset = 0;
-  const fields: ReactNode[] = [];
+  const rawFields: StatuslineField[] = [];
   for (const [index, part] of lineText(row)
     .split(/((?<=\S)\s{2,}(?=\S)|(?<=^(?:\? for shortcuts|esc to cancel))(?=\S))/i)
     .entries()) {
@@ -428,13 +453,14 @@ function AgyStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode 
     const start = offset + (text ? part.indexOf(text) : 0);
     offset += part.length;
     if (!text || index % 2 === 1) continue;
-    fields.push(
-      <span key={index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
-        {fields.length > 0 && <StatuslineDivider />}
-        <AgyField text={text} segments={sliceSegments(row.segments, start, start + text.length)} />
-      </span>,
-    );
+    rawFields.push({ index, text, start });
   }
+  const fields = orderAgyFields(rawFields).map((field, position) => (
+    <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
+      {position > 0 && <StatuslineDivider />}
+      <AgyField text={field.text} segments={sliceSegments(row.segments, field.start, field.start + field.text.length)} />
+    </span>
+  ));
   return (
     <div data-slot="agy-statusline" className={ROW_CLASS}>
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}

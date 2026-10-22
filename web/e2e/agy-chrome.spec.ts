@@ -8,7 +8,7 @@ const working = readFileSync(new URL("../src/fixtures/panes/agy--v144-working--w
 const auto = readFileSync(new URL("../src/fixtures/panes/agy--v144-auto-placeholder--w119.txt", import.meta.url), "utf8");
 const capturedQuota = readFileSync(new URL("../src/fixtures/panes/agy--v144-quota--w119.txt", import.meta.url), "utf8");
 
-const quota = capturedQuota.replace(/auto[^\r\n]*/, "auto  idle  Gemini 4 Argon (High)  ctx 87%  main  v1.4.4  Gemini 5h 82.7% ↻3h32m · 7d 92.4% ↻5d19h  Claude/GPT 5h 100% ↻4h58m · 7d 86% ↻6d17h  in 135.4k  out 138.1k  cache 98%");
+const quota = capturedQuota.replace(/auto[^\r\n]*/, "Gemini 4 Argon (High)  auto  idle  ctx 87%  main  Gemini 5h 82.7% ↻3h32m · 7d 92.4% ↻5d19h  Claude/GPT 5h 100% ↻4h58m · 7d 86% ↻6d17h  v1.4.4");
 
 test.use({ serviceWorkers: "block" });
 test("AGY narrow Resume opens a recognized menu", async ({ page }, testInfo) => {
@@ -151,15 +151,19 @@ for (const width of [320, 390]) {
       await expect(model).toBeVisible();
       const hintBox = await hint.boundingBox();
       const modelBox = await model.boundingBox();
-      expect(modelBox!.x).toBeGreaterThan(hintBox!.x + hintBox!.width);
+      if (state === "auto") {
+        expect(hintBox!.x).toBeGreaterThan(modelBox!.x + modelBox!.width);
+      } else {
+        expect(modelBox!.x).toBeGreaterThan(hintBox!.x + hintBox!.width);
+      }
       await expect(page.getByText("Collie 未识别此界面", { exact: false })).toHaveCount(0);
       const input = page.getByRole("textbox").first();
       await expect(input).toBeEnabled();
       if (state === "auto") {
         await expect(input).toHaveValue("");
         await expect(strip.locator('[data-status-icon="context"][data-value="100"]')).toBeVisible();
-        await expect(strip.getByRole("img", { name: "Σin 0", exact: true })).toHaveCount(1);
-        await expect(strip.getByRole("img", { name: "Σout 0", exact: true })).toHaveCount(1);
+        await expect(strip.getByText("v1.4.4", { exact: true })).toBeVisible();
+        await expect(strip.getByText(/Σin|Σout/)).toHaveCount(0);
       }
       const stripBox = await strip.boundingBox();
       const inputBox = await input.boundingBox();

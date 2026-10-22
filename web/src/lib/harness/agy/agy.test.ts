@@ -580,6 +580,10 @@ describe("agy: the /resume Conversations picker lifts as a menu (1.3.5)", () => 
       expect(menu?.nav.upDown).toBe(true);
       expect(agyAdapter.composerReady!(read(name))).toBe(false);
       expect(buildBlocks(read(name), { agent: "agy" }).some((b) => b.kind === "unread-dialog")).toBe(false);
+      if (name.includes("v145")) {
+        const raw = readFileSync(join(PANES_DIR, name), "utf8").replace(/auto {2}idle {2}(Gemini 4 Argon \([^)]+\))/, "$1  auto  idle");
+        expect(buildBlocks(splitLines(parseAnsi(raw)), { agent: "agy" }).some((b) => b.kind === "menu")).toBe(true);
+      }
     },
   );
 

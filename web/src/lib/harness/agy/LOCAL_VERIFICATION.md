@@ -117,14 +117,16 @@ Chat and History share the existing journal pipeline; session discovery never ch
 newest conversation in a shared directory. Windows discovery and native live model streaming
 are not certified here.
 
-The local stdin-only statusline keeps both quota families and reset times, shortens them to
-`Gemini` and `Claude/GPT`, and uses `in`/`out` counters. It still delegates model/context/git/
-version to the existing Claude-compatible script. No quota polling or currency estimate is
-introduced. Collie's AGY statusline reuses the shared icon field and context ring for modes,
-activity, key hints, context, quota windows and counters; full native labels remain in titles
-and accessible names, and unrecognized fields stay visible. The original native captures
-remain unchanged. Synthetic rich-line replay at 320/390px covers one horizontal strip, an
-enabled composer, quota fields and the separate Chat stream.
+The local stdin-only statusline places model/effort first and the CLI version last, keeps
+both quota families (`Gemini` and `Claude/GPT`) with reset times, and omits cumulative
+token counters and cache hit ratios. It still delegates model/context/git/version to the
+existing Claude-compatible script. No quota polling or currency estimate is introduced.
+Collie's AGY statusline uses `Bot` for `auto` mode, aligns `idle` (`CircleCheck`) and
+active turns (`Hourglass` with the statusline hourglass animation) with Codex, reuses the
+context ring and quota window icons, places model first and version after quotas, and drops
+legacy `in`/`out`/`cache` fields while keeping unrecognized fields visible. The original
+native captures remain unchanged. Synthetic rich-line replay at 320/390px covers one
+horizontal strip, an enabled composer, quota fields and the separate Chat stream.
 
 ## Previous send verification
 

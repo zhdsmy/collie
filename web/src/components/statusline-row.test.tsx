@@ -385,21 +385,33 @@ it.each(["agy", "antigravity"])("separates %s hint and model fields across wide 
   expect(within(tight.container).getByText("Gemini 4 Argon · medium")).toBeInTheDocument();
 });
 
-it.each(["GEMINI MODELS", "Gemini"])("compacts AGY modes, context, quota windows and counters: %s", (group) => {
+it.each(["GEMINI MODELS", "Gemini"])("orders AGY model first and version after quotas while dropping token/cache counters: %s", (group) => {
+  const animation = "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]";
   const view = renderRow(`auto  idle  Gemini 4 Argon (High)  ctx 87%  main  v1.4.4  ${group} 5h 82.7% ↻3h32m · 7d 92.4% ↻5d19h  CLAUDE AND GPT MODELS 5h 100% ↻4h58m · 7d 86% ↻6d17h  Σin 135.4k  out 138.1k  cache 98%  unknown tail`, "agy");
-  expect(view.getByRole("img", { name: "auto" })).toHaveTextContent("");
-  expect(view.getByRole("img", { name: "idle" })).toHaveTextContent("");
+  const autoIcon = view.getByRole("img", { name: "auto" });
+  expect(autoIcon).toHaveTextContent("");
+  expect(autoIcon.querySelector("svg")).toHaveClass("lucide-bot");
+  const idleIcon = view.getByRole("img", { name: "idle" });
+  expect(idleIcon).toHaveTextContent("");
+  expect(idleIcon.querySelector("svg")).toHaveClass("lucide-circle-check");
+  expect(idleIcon.querySelector("svg")).not.toHaveClass(animation);
   expect(view.getByRole("img", { name: "Context 87% left" })).toBeInTheDocument();
-  expect(view.getByRole("img", { name: "Σin 135.4k" })).toHaveTextContent("135.4k");
-  expect(view.getByRole("img", { name: "out 138.1k" })).toHaveTextContent("138.1k");
-  expect(view.getByRole("img", { name: "cache 98%" })).toHaveTextContent("98%");
   expect(view.container.querySelectorAll(".lucide-timer")).toHaveLength(2);
   expect(view.container.querySelectorAll(".lucide-calendar-days")).toHaveLength(2);
   expect(view.getByText("Claude/GPT")).toBeInTheDocument();
   expect(view.getByText("82.7% ↻3h32m")).toBeInTheDocument();
   expect(view.getByText("unknown tail")).toBeInTheDocument();
-  expect(view.container.textContent).not.toMatch(/MODELS|ctx |Σin |cache /);
+  expect(view.container.textContent).toBe(
+    "Gemini 4 Argon (High)87%mainGemini82.7% ↻3h32m92.4% ↻5d19hClaude/GPT100% ↻4h58m86% ↻6d17hv1.4.4unknown tail",
+  );
+  expect(view.container.textContent).not.toMatch(/MODELS|ctx |135\.4k|138\.1k|98%/);
   expect(view.container.querySelector('[data-slot="agy-statusline"]')).toHaveClass("overflow-x-auto", "whitespace-nowrap");
+
+  for (const active of ["thinking", "working", "tool_use", "initializing"]) {
+    view.rerender(<StatuslineRow agent="agy" row={splitLines(parseAnsi(`Gemini 4 Argon (High)  auto  ${active}  ctx 87%  main  v1.4.4`))[0]!} />);
+    const svg = view.getByRole("img", { name: active }).querySelector("svg");
+    expect(svg).toHaveClass("lucide-hourglass", animation);
+  }
 });
 
 it("compacts the captured Claude custom statusline without printing its right-side hint", () => {

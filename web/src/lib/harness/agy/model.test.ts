@@ -27,6 +27,8 @@ describe("AGY native model menu", () => {
       expect(adapter.composerReady!(lines)).toBe(false);
       expect(buildBlocks(lines, { agent: adapter.agent }).some((block) => block.kind === "unread-dialog")).toBe(false);
     }
+    const modelFirst = linesOf(capture(width).replace(/auto {2}idle {2}(Gemini 4 Argon \([^)]+\))/, "$1  auto  idle"));
+    expect(detectModelRegion(modelFirst)?.model.title).toBe("Switch Model");
   });
 
   it("keeps navigation identity but changes the commit signature when the highlight moves", () => {
