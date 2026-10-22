@@ -136,6 +136,21 @@
       "version": "1.4.4",
       "state": "dialog"
     },
+    "agy--v145-status-startup--w120.txt": {
+      "harness": "agy",
+      "version": "1.4.5",
+      "state": "idle"
+    },
+    "agy--v145-status-working--w120.txt": {
+      "harness": "agy",
+      "version": "1.4.5",
+      "state": "working"
+    },
+    "agy--v145-status-interrupted--w120.txt": {
+      "harness": "agy",
+      "version": "1.4.5",
+      "state": "idle"
+    },
     "agy--permission-bash.txt": {
       "harness": "agy",
       "version": "unversioned",

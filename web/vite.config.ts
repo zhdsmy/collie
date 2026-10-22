@@ -324,6 +324,8 @@ export default defineConfig({
         })),
       },
       injectManifest: {
+        // The main application bundle now exceeds Workbox's default 2 MiB ceiling.
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Files baked into the precache manifest (injected at src/sw.ts's `self.__WB_MANIFEST`).
         // The SPA navigation fallback + /api denylist now live in src/sw.ts (a NavigationRoute):
         // injectManifest hands routing to the custom SW rather than generating it here.

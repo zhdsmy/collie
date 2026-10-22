@@ -23,6 +23,14 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Antigravity statusline makes modes and remaining quota explicit.** Show Auto/Ask/Edit/Plan as text, retain authentication and idle state marks with the shared Codex working animation, and label quota windows with 5h/7d, remaining percentages and reset times.
+
+### Packaging
+
+- **The PWA continues precaching the complete application bundle.** Set a bounded 3 MiB per-file ceiling after the main bundle exceeds Workbox's default 2 MiB limit.
+
 ## [1.23.2+collie.4] - 2026-10-22
 
 ### Fixed

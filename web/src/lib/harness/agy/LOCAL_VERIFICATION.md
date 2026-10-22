@@ -121,12 +121,38 @@ The local stdin-only statusline places model/effort first and the CLI version la
 both quota families (`Gemini` and `Claude/GPT`) with reset times, and omits cumulative
 token counters and cache hit ratios. It still delegates model/context/git/version to the
 existing Claude-compatible script. No quota polling or currency estimate is introduced.
-Collie's AGY statusline uses `Bot` for `auto` mode, aligns `idle` (`CircleCheck`) and
-active turns (`Hourglass` with the statusline hourglass animation) with Codex, reuses the
-context ring and quota window icons, places model first and version after quotas, and drops
+Collie's AGY statusline shows `Auto` / `Ask` / `Edit` / `Plan` for the native `auto` /
+`default` / `accept-edits` / `plan` modes, keeping the native token in the accessible name
+and tooltip. It aligns `idle` (`CircleCheck`) and active turns (`Hourglass` with the same
+4.8-second keyframes as Codex), reuses the context ring, labels quota windows `5h` / `7d`
+with remaining percentages and reset countdowns, places model first/version last, and drops
 legacy `in`/`out`/`cache` fields while keeping unrecognized fields visible. The original
 native captures remain unchanged. Synthetic rich-line replay at 320/390px covers one
 horizontal strip, an enabled composer, quota fields and the separate Chat stream.
+
+### State and quota follow-up (AGY 1.4.5)
+
+An owned session sampled native `authenticating`, `idle` and `working` payloads.
+The local script previously filtered `authenticating`; it now preserves nonempty native
+state/mode values, and uses `idle` for missing/empty state as the
+[official example](https://github.com/google-antigravity/antigravity-cli/blob/main/examples/statusline/statusline.sh)
+does. Unknown states remain text instead of disappearing. The authentication state uses
+the shared active-state hourglass. A no-tools request was interrupted with Escape and
+polled until the native strip returned to idle; the isolated session/project were removed.
+
+Nine script payload checks cover missing/empty, known and unknown states without changing
+quota percentages or resets. At 20%/10% remaining, quota text uses the existing warning
+and blocked theme colors. Full window labels and numbers remain visible; unknown or
+incomplete native fields retain their text. Native terminal truncation cannot recover a
+reset time that was never captured. No queue, permissions or sandbox setting was changed.
+
+Current native mode tokens are `auto`, `default`, `accept-edits`, and `plan` (installed
+1.4.5 help/strings and settings). `--dangerously-skip-permissions` and sandbox are
+independent controls, not additional cycle modes. Browser checks cover 320/390px in
+Chromium/WebKit, including startup, working and interruption; 124 statusline component
+checks and AGY conformance pass. The main bundle crossed Workbox's 2 MiB per-file limit;
+the build now uses a bounded 3 MiB limit and verifies the application is in the precache.
+No installed iPhone PWA or production AGY restart is part of this check.
 
 ## Command permission and fixed statusline (2026-10-22)
 

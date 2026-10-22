@@ -1,5 +1,4 @@
 import {
-  Bot,
   Keyboard,
   ChevronUp,
   CalendarDays,
@@ -389,24 +388,27 @@ function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
  * other on a 38-column mobile pane (`? for shortcutsGemini 4 Argon · medium`). Splitting on either
  * the inter-column gap or that zero-gap boundary replaces both with a compact divider.
  */
+const AGY_MODES = new Map([["auto", "Auto"], ["default", "Ask"], ["accept-edits", "Edit"], ["plan", "Plan"]]);
 const AGY_FIELDS: { pattern: RegExp; icon: LucideIcon; hourglass?: boolean }[] = [
-  { pattern: /^auto$/, icon: Bot },
-  { pattern: /^(?:default|accept-edits)$/, icon: ShieldCheck },
-  { pattern: /^plan$/, icon: ListChecks },
   { pattern: /^idle$/, icon: CircleCheck },
-  { pattern: /^(?:thinking|working|tool_use|initializing)$/, icon: Hourglass, hourglass: true },
+  { pattern: /^(?:thinking|working|tool_use|initializing|authenticating)$/, icon: Hourglass, hourglass: true },
   { pattern: /^\? for shortcuts$/, icon: Keyboard },
   { pattern: /^esc to cancel$/, icon: CircleOff },
 ];
 
 const AGY_MODE_RE = /^(?:auto|default|accept-edits|plan)$/;
-const AGY_STATE_RE = /^(?:idle|thinking|working|tool_use|initializing)$/;
+const AGY_STATE_RE = /^(?:idle|thinking|working|tool_use|initializing|authenticating)$/;
 const AGY_DROPPED_RE = /^(?:(?:Σin|in|Σout|out) \d+(?:\.\d+)?[km]?|cache \d+(?:\.\d+)?%)$/;
 const AGY_VERSION_RE = /^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
-const AGY_QUOTA_RE = /^(?:(Gemini|GEMINI MODELS|Claude\/GPT|CLAUDE AND GPT MODELS) )?((?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S+)?(?: · (?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S+)?)?)$/;
+const AGY_QUOTA_RE = /^(?:(Gemini|GEMINI MODELS|Claude\/GPT|CLAUDE AND GPT MODELS) )?((?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S*)?(?: · (?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S*)?)?)$/;
 
 function AgyField({ text, segments }: { text: string; segments: AnsiSegment[] }) {
   // Complete known fields only; custom labels retain their native text and ANSI styling.
+  const mode = AGY_MODES.get(text);
+  if (mode) return (
+    <span role="img" aria-label={text} title={text} className="font-medium"
+      style={segments[0] && styleFor(segments[0])}>{mode}</span>
+  );
   for (const { pattern, icon, hourglass } of AGY_FIELDS) {
     const match = pattern.exec(text);
     if (match) return <StatusIconField text={text} segments={segments} icon={icon} value={match[1] ?? ""} hourglass={hourglass} />;
@@ -415,13 +417,25 @@ function AgyField({ text, segments }: { text: string; segments: AnsiSegment[] })
   if (quota?.[2]) {
     const windows = quota[2].split(" · ");
     if (windows.every((window) => Number.parseFloat(window.slice(3)) <= 100)) return (
-      <span role="img" aria-label={text} title={text} className="inline-flex shrink-0 items-center gap-1.5">
+      <span title={text} className="inline-flex shrink-0 items-center gap-1.5">
         {quota[1] && <span aria-hidden="true" style={segments[0] && styleFor(segments[0])}>
           {quota[1].startsWith("G") ? "Gemini" : "Claude/GPT"}
         </span>}
-        {windows.map((window) => <StatusIconField key={window} text={window}
-          segments={sliceSegments(segments, text.indexOf(window), text.indexOf(window) + window.length)}
-          icon={window.startsWith("5h") ? Timer : CalendarDays} value={window.slice(3)} />)}
+        {windows.map((window) => {
+          const [period, percent, reset] = window.split(" ");
+          const remaining = Number.parseFloat(percent!);
+          const label = `${period} ${percent} ${t("statusline.context.remainingShort")}${reset ? ` ${reset}` : ""}`;
+          return (
+            <span key={window} role="img" aria-label={label} title={label}
+              className="inline-flex shrink-0 items-center gap-1">
+              <span aria-hidden="true" className="text-muted-foreground">{period}</span>
+              <span aria-hidden="true" className={remaining <= 10 ? "text-status-blocked" : remaining <= 20 ? "text-status-working" : "text-status-idle"}>
+                {percent} <span className="text-muted-foreground">{t("statusline.context.remainingShort")}</span>
+              </span>
+              {reset && <span aria-hidden="true" className="text-muted-foreground">{reset}</span>}
+            </span>
+          );
+        })}
       </span>
     );
   }

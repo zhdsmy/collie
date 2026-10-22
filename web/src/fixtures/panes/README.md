@@ -3118,3 +3118,9 @@ both wrapped permission descriptions and the truncated native statusline are ret
 The startup shell echo is omitted; account and scratch path are replaced with padded
 neutral values. Through Collie's guarded key endpoint, digit `4` closed this dialog
 without creating the requested scratch file. The canary session and project were removed.
+
+`agy--v145-status-{startup,working,interrupted}--w120.txt` are unchanged four-row
+composer/status tails from an owned AGY 1.4.5 session at 120 columns. One no-tools
+request was interrupted with Escape, then polled until the native statusline returned
+to `idle`. They retain native truncation, ANSI paint and line endings, and contain
+no account, path or transcript. The isolated session/project were removed.

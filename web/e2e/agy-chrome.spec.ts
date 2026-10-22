@@ -99,8 +99,8 @@ for (const width of [320, 390]) {
     const strip = page.locator('[data-slot="agy-statusline"]');
     await expect(strip).toHaveCount(1);
     await expect(strip.getByText("Gemini 4 Argon (High)", { exact: true })).toBeVisible();
-    await expect(strip.getByText("82.7% ↻3h32m", { exact: true })).toBeVisible();
-    await expect(strip.getByText("92.4% ↻5d19h", { exact: true })).toBeVisible();
+    await expect(strip.getByRole("img", { name: "5h 82.7% 余 ↻3h32m", exact: true })).toBeVisible();
+    await expect(strip.getByRole("img", { name: "7d 92.4% 余 ↻5d19h", exact: true })).toBeVisible();
     const input = page.getByRole("textbox").first();
     await expect(input).toBeEnabled();
     await expect(input).toHaveValue("");
@@ -120,6 +120,8 @@ for (const width of [320, 390]) {
     await bar.getByRole("button", { name: "恢复", exact: true }).click({ trial: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     await page.screenshot({ path: testInfo.outputPath("agy-chat-statusline.png") });
+    await strip.getByRole("img", { name: "5h 82.7% 余 ↻3h32m", exact: true }).scrollIntoViewIfNeeded();
+    await page.screenshot({ path: testInfo.outputPath("agy-quota.png") });
   });
 
   test(`AGY status fields and working composer: ${width}`, async ({ page }, testInfo) => {
@@ -173,3 +175,37 @@ for (const width of [320, 390]) {
     }
   });
 }
+
+test("AGY native startup, working and interrupted states retain their status mark", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("collie:locale:v1", "en");
+    localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+  });
+  await installApiStub(page);
+  let state = "startup";
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+      ? Object.assign({}, agent, { agent: "agy", status: state === "working" ? "working" : "idle", hasSession: false }) : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text: readFileSync(new URL(`../src/fixtures/panes/agy--v145-status-${state}--w120.txt`, import.meta.url), "utf8"), revision: 1,
+  } }));
+  for (state of ["startup", "working", "interrupted"]) {
+    await page.goto("/pane/w1:p1");
+    const strip = page.locator('[data-slot="agy-statusline"]');
+    await expect(strip).toHaveCount(1);
+    const mark = strip.getByRole("img", { name: state === "working" ? "working" : "idle", exact: true });
+    await expect(mark).toBeVisible();
+    const svg = mark.locator("svg");
+    if (state === "working") {
+      await expect(svg).toHaveCSS("animation-name", "statusline-hourglass");
+      await expect(svg).toHaveCSS("animation-duration", "4.8s");
+    } else {
+      await expect(svg).toHaveCSS("animation-name", "none");
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+    await page.screenshot({ path: testInfo.outputPath(`agy-native-${state}.png`) });
+  }
+});

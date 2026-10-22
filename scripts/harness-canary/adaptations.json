@@ -3220,13 +3220,37 @@
             "block": "raw",
             "statusLinesMin": 1
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v145-status-startup--w120.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v145-status-working--w120.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v145-status-interrupted--w120.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
         }
       ],
       "live": false,
       "verified": {
-        "version": "1.4.4",
+        "version": "1.4.5",
         "date": "2026-10-22",
-        "how": "owned native Herdr session: normal and mid-turn SendProtocol sends under Auto/Send Immediately completed; gray Auto placeholder and rich statusline captured; 38/50-column drafts and Model/Resume open/cancel checked; mobile geometry replay separately; read-only installed-session checks: SQLite 185 entries; active authenticated .pb fallback 381 entries from 464 steps (3 type-101 steps counted as unknown); compact statusline and Chat mobile replay; process-held lock prevents selecting newer test sessions; Chat/composer statusline mobile replay; native client sends for Model/Resume at 119/50 columns: one Enter, no provider inference",
+        "how": "owned native Herdr session: normal and mid-turn SendProtocol sends under Auto/Send Immediately completed; gray Auto placeholder and rich statusline captured; 38/50-column drafts and Model/Resume open/cancel checked; mobile geometry replay separately; read-only installed-session checks: SQLite 185 entries; active authenticated .pb fallback 381 entries from 464 steps (3 type-101 steps counted as unknown); compact statusline and Chat mobile replay; process-held lock prevents selecting newer test sessions; Chat/composer statusline mobile replay; native client sends for Model/Resume at 119/50 columns: one Enter, no provider inference; 1.4.5 owned startup/working/Escape-to-idle status captures and mobile replay; earlier send/history checks remain scoped to 1.4.4",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
