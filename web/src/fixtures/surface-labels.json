@@ -5395,6 +5395,11 @@
       "harness": "pi",
       "version": "1.3.0",
       "state": "dialog"
+    },
+    "agy--v145-background-task--w80.txt": {
+      "harness": "agy",
+      "version": "1.4.5",
+      "state": "idle"
     }
   },
   "knownMismatches": {

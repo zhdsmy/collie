@@ -55,8 +55,14 @@
         "maxRows": 6
       },
       "below": {
-        "maxRows": 2,
-        "footerMaxRows": 2,
+        "maxRows": 8,
+        "footerMaxRows": 16,
+        "footerRows": [
+          {
+            "name": "background-task",
+            "pattern": "^ {2}● \\[\\d{2}:\\d{2}:\\d{2}\\] .+ running$"
+          }
+        ],
         "commandList": {
           "sides": ["under"],
           "pointer": "^> (?<command>/\\S+)(?: +\\S.*)?$",

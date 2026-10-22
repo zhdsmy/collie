@@ -845,9 +845,32 @@ function findLayout(rows: readonly FrameRow[], idle: IdleProfile): Frame | null 
   // `maxTailRows` above it when rows the box never draws stand under it (an extension's widget, #468).
   if (c.bottom.open) return openFrame(rows, end, idle) ?? listedLayout(rows, end, idle);
   for (let b = end - 1; b >= 0 && end - 1 - b <= idle.frame.maxTailRows; b--) {
-    if (anchored(rowText(rows[b]!), c.bottom) !== null) return frameAt(rows, b, idle);
+    if (anchored(rowText(rows[b]!), c.bottom) !== null) return frameAt(rows, b, idle) ?? frameBeforeFooter(rows, b, end, idle, c);
   }
   return listedLayout(rows, end, idle);
+}
+
+/** A named widget between the composer's bottom edge and a second rule, followed by status. */
+function frameBeforeFooter(rows: readonly FrameRow[], rule: number, end: number, idle: IdleProfile, c: Compiled): Frame | null {
+  if (c.footerRows.length === 0 || end - rule - 1 > idle.volatile.below.maxRows) return null;
+  const named: NamedRow[] = [];
+  let first = rule;
+  while (first > 0 && rule - first < idle.volatile.below.footerMaxRows) {
+    const row = first - 1;
+    const match = c.footerRows.find((entry) => entry.pattern.test(rowText(rows[row]!).trimEnd()));
+    if (match === undefined) break;
+    named.unshift({ row, name: match.name });
+    first--;
+  }
+  if (named.length === 0 || first === 0 || anchored(rowText(rows[first - 1]!), c.bottom) === null) return null;
+  const frame = frameAt(rows, first - 1, idle);
+  if (frame === null || rowText(rows[first - 1]!).trimEnd() !== rowText(rows[rule]!).trimEnd()) return null;
+  return { ...frame, volatile: {
+    ...frame.volatile,
+    status: end > rule + 1 ? { first: rule + 1, last: end - 1 } : null,
+    footer: { first, last: rule },
+    named,
+  } };
 }
 
 /** How far up from the screen's end a box past its own command list is looked for: a list and its footer are never taller. */

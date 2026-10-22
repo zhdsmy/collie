@@ -23,6 +23,7 @@ const allFixtures = readdirSync(PANES_DIR)
 const allAgyFixtures = allFixtures.filter((f) => f.startsWith("agy--"));
 
 const NEUTRAL = new Set([
+  "agy--v145-background-task--w80.txt",
   "agy--v145-status-startup--w120.txt",
   "agy--v145-status-working--w120.txt",
   "agy--v145-status-interrupted--w120.txt",
@@ -410,6 +411,40 @@ describe("agyAdapter unit & footer safety", () => {
   });
 });
 
+
+describe("agy: background task rail", () => {
+  const captured = readFileSync(join(PANES_DIR, "agy--v145-background-task--w80.txt"), "utf8");
+  const rows = () => splitLines(parseAnsi(captured));
+
+  it.each([agyAdapter, antigravityAdapter])("keeps task progress and finds the composer for $agent", (adapter) => {
+    const lines = rows();
+    expect(adapter.composerReady!(lines)).toBe(true);
+    expect(adapter.extractInputDraft!(lines)).toBeNull();
+    expect(adapter.extractStatusLines!(lines).map(lineText)).toEqual([lineText(lines[5]!)]);
+    const blocks = buildBlocks(lines, { agent: adapter.agent });
+    expect(blocks.map((block) => block.kind)).toEqual(["raw"]);
+    expect(blocks[0]!.lines.map(lineText)).toEqual(["", "", "", lineText(lines[3]!), lineText(lines[4]!)]);
+  });
+
+  it("reads a real draft without including task progress", () => {
+    const lines = rows();
+    lines[1] = splitLines(parseAnsi("> typed draft"))[0]!;
+    expect(agyAdapter.extractInputDraft!(lines)).toBe("typed draft");
+  });
+
+  it.each(["unexpected task row", "enter Confirm · esc Cancel", "  1. Allow\n  2. Deny"])("refuses unknown or modal rows: %s", (extra) => {
+    const lines = rows();
+    lines.splice(4, 0, ...splitLines(parseAnsi(extra)));
+    expect(agyAdapter.composerReady!(lines)).toBe(false);
+    expect(agyAdapter.extractInputDraft!(lines)).toBeNull();
+  });
+
+  it("keeps a modal below the task separator out of the composer", () => {
+    const lines = rows();
+    lines.splice(5, 0, ...splitLines(parseAnsi("enter Confirm · esc Cancel")));
+    expect(agyAdapter.composerReady!(lines)).toBe(false);
+  });
+});
 
 describe("agy: the input-box search window never reads a dialog's rule as a composer", () => {
   const rowsOf = (name: string): string[] =>

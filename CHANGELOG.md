@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Antigravity recognizes its composer while background tasks are running.** Read the native timestamped task list between composer and status separators, retain task progress in Mirror, and keep task timestamps outside the guarded draft. Unknown widgets and modal prompts still refuse input.
+
 ## [1.23.2+collie.7] - 2026-10-22
 
 ### Changed

@@ -136,6 +136,27 @@ describe("Hermes bordered composer", () => {
   });
 });
 
+describe("a named footer between two rules", () => {
+  const idle = requireProfile("agy").idle;
+  const name = "agy--v145-background-task--w80.txt";
+
+  it("finds the real input and separates task progress from status", () => {
+    const rows = fixtureRows(name);
+    expect(findInputFrame(rows, idle)).toMatchObject({
+      top: 0, bottom: 2, interior: { prompt: 1, text: "" },
+      volatile: { footer: { first: 3, last: 4 }, status: { first: 5, last: 5 }, named: [{ row: 3, name: "background-task" }] },
+    });
+  });
+
+  it("accepts several named tasks but refuses unknown rows and a mismatched closing rule", () => {
+    const rows = fixtureRows(name);
+    expect(findInputFrame(rows.toSpliced(3, 0, rows[3]!), idle)?.bottom).toBe(2);
+    expect(findInputFrame(rows.toSpliced(3, 0, ...splitLines(parseAnsi("unknown widget"))), idle)).toBeNull();
+    expect(findInputFrame(rows.toSpliced(4, 1, ...splitLines(parseAnsi("─".repeat(40)))), idle)).toBeNull();
+    expect(findInputFrame(rows.toSpliced(3, 0, ...Array.from({ length: 16 }, () => rows[3]!)), idle)).toBeNull();
+  });
+});
+
 describe("pinned input frames", () => {
   it("pins a row for every Claude fixture and for nothing else", () => {
     expect(PINNED.map((row) => row.fixture)).toEqual(fixtureNames.filter(isClaudeFixture));

@@ -1,5 +1,26 @@
 # AGY 1.4.4 / 1.4.5 UI checks — 2026-10-22
 
+## Background task rail — 2026-10-23
+
+An owned AGY 1.4.5 Herdr canary reproduced the operator's screenshot with one
+background `sleep 25; printf ...` command. Its task row is `  ● [HH:MM:SS] ... running`,
+between the composer's bottom rule and another equal-width rule above status.
+The reader took that second rule for the composer bottom, so both the input
+claim and fixed status were lost and the unread card appeared. The command
+completed; the canary session and project were removed. User sessions received
+no input. The local original capture is in `/private/tmp/collie-agy-background-evidence/`.
+
+The shared frame reader now steps across only a bounded, profile-named footer
+between matching rules. AGY reuses that frame, leaves task progress at its source
+rows in Mirror and extracts only the final statusline. Unknown rows, mismatched
+rules, excessive tasks and modal tails retain refusal. The send protocol replay
+checks one Enter while task timestamps change; no sending shortcut was added.
+
+The sanitized native tail is `agy--v145-background-task--w80.txt`; 320/390px browser
+replay checks progress, status and absence of the unread card. This is a live
+reproduction plus parser/protocol/browser replay, not a new live send through
+the repaired reader or whole-version certification. The profile stays provisional.
+
 ## Resume send and card — AGY 1.4.5
 At 50 columns, opening slash completion after leaving Model retained the first
 banner rows while clipping three middle rows. SendProtocol previously accepted

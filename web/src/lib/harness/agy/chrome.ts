@@ -1,6 +1,6 @@
 import { parseAnsi } from "../../ansi";
 import type { StyledLine } from "../../blocks";
-import { findInputFrame } from "../../surface/frame";
+import { findInputFrame, plainRows, type RowSpan } from "../../surface/frame";
 import { requireProfile } from "../../surface/profile";
 import { classifyFooter, isBlank, isBoxBorder, lineText } from "./markers";
 import { detectPromptSelectRegionIn, parseOptionRow, trailingMenuRows } from "./prompt-select";
@@ -73,10 +73,19 @@ export interface LocatedBox {
   statusStart: number;
   statusEnd: number;
   draft: string | null;
+  taskFooter?: RowSpan;
 }
 
 export function locateInputBox(texts: string[], end: number): LocatedBox | null {
   if (end === 0) return null;
+  const frame = findInputFrame(plainRows(texts.slice(0, end)), AGY_IDLE);
+  const taskFooter = frame?.volatile.footer;
+  if (frame !== null && taskFooter?.first === frame.bottom + 1 && frame.volatile.named.length > 0) {
+    const statusStart = taskFooter.last + 1;
+    if (dialogUnder(texts, statusStart - 1, end, statusStart) || detectPromptSelectRegionIn(texts) !== null) return null;
+    return { top: frame.top, prompt: frame.interior.prompt, bottomBorder: frame.bottom,
+      statusStart, statusEnd: end, draft: frame.interior.text.trim() || null, taskFooter };
+  }
   let bot = end - 1;
   while (bot >= 0 && isBlank(texts[bot]!)) bot--;
   if (bot < 0) return null;
@@ -184,6 +193,10 @@ export function stripChrome(lines: StyledLine[]): StyledLine[] {
 
   const box = locateInputBox(texts, end);
   if (box !== null) {
+    if (box.taskFooter !== undefined) {
+      // Keep task progress at its source rows while removing the composer and fixed status.
+      return lines.slice(0, box.statusStart).map((line, i) => i >= box.top && i <= box.bottomBorder ? { segments: [] } : line);
+    }
     end = box.top;
     while (end > 0 && isBlank(texts[end - 1]!)) end--;
   }

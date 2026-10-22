@@ -6104,6 +6104,23 @@ describe("omp 18.11's box composer (issue 497)", () => {
   });
 });
 
+describe("AGY's native background-task rail", () => {
+  const rows = readFileSync(join(import.meta.dir, "../../web/src/fixtures/panes/agy--v145-background-task--w80.txt"), "utf8").trimEnd().split("\n");
+
+  test("a changing task timestamp stays outside the verified draft and Enter submits once", async () => {
+    const pane = new FakePane("generic");
+    let reads = 0;
+    pane.beforeRead = (p) => {
+      p.fixed = [...p.transcript, rows[0]!, `> ${p.box}`, rows[2]!, rows[3]!.replace("00:10:50", `00:10:${String(reads++ % 60).padStart(2, "0")}`), ...rows.slice(4)].join("\n");
+    };
+    const { send } = rig({ pane, harness: "agy", version: "1.4.5" });
+    const answer = await send("BACKGROUND_READY");
+    expect(answer.receipt).toMatchObject({ outcome: "sent" });
+    expect(pane.keysSeen.filter((key) => key === "Enter")).toHaveLength(1);
+    neverEscape(pane);
+  });
+});
+
 describe("AGY's native command list under a full conversation", () => {
   const rows = readFileSync(join(import.meta.dir, "../../web/src/fixtures/panes/agy--v144-slash-model--w119.txt"), "utf8").trimEnd().split("\n");
 

@@ -3167,7 +3167,8 @@
         "bridge/journal/registry.ts",
         "web/src/lib/journal-agents.ts",
         "web/src/lib/harness-bar.ts",
-        "web/src/lib/agent-commands.ts"
+        "web/src/lib/agent-commands.ts",
+        "web/src/lib/surface/frame.ts"
       ],
       "tests": [
         "web/src/lib/harness/agy/agy.test.ts",
@@ -3180,7 +3181,8 @@
         "bridge/journal/registry.test.ts",
         "web/src/lib/harness-bar.test.ts",
         "web/src/components/harness-bar.test.tsx",
-        "web/src/lib/agent-commands.test.ts"
+        "web/src/lib/agent-commands.test.ts",
+        "web/src/lib/surface/frame.test.ts"
       ],
       "fixtures": [
         {
@@ -3257,6 +3259,14 @@
         },
         {
           "path": "web/src/fixtures/panes/agy--v145-status-interrupted--w120.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v145-background-task--w80.txt",
           "agent": "agy",
           "expect": {
             "block": "raw",

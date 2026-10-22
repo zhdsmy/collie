@@ -11,6 +11,37 @@ const capturedQuota = readFileSync(new URL("../src/fixtures/panes/agy--v144-quot
 const quota = capturedQuota.replace(/auto[^\r\n]*/, "Gemini 4 Argon (High)  auto  idle  ctx 87%  main  Gemini 5h 82.7% ↻3h32m · 7d 92.4% ↻5d19h  Claude/GPT 5h 100% ↻4h58m · 7d 86% ↻6d17h  v1.4.4");
 
 test.use({ serviceWorkers: "block" });
+
+for (const width of [320, 390]) {
+  test(`AGY background tasks keep the composer recognized: ${width}`, async ({ page }, testInfo) => {
+    const text = readFileSync(new URL("../src/fixtures/panes/agy--v145-background-task--w80.txt", import.meta.url), "utf8");
+    await page.setViewportSize({ width, height: 844 });
+    await page.addInitScript(() => {
+      localStorage.setItem("collie:locale:v1", "en");
+      localStorage.setItem("collie:theme:v1", "dark");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+    });
+    await installApiStub(page);
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, index) => index === 0 ? { ...agent, agent: "agy", status: "idle", hasSession: true } : agent),
+    } }));
+    let writes = 0;
+    page.on("request", (request) => {
+      if (request.method() === "POST" && /\/api\/pane\//.test(request.url())) writes++;
+    });
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+      paneId: "w1:p1", text, revision: 1,
+    } }));
+    await page.goto("/pane/w1:p1");
+    await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
+    await expect(page.getByText("[00:10:50]", { exact: false })).toBeVisible();
+    await expect(page.getByText("Gemini 4 Argon", { exact: false })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    expect(writes).toBe(0);
+    await page.screenshot({ path: testInfo.outputPath("agy-background-tasks.png") });
+  });
+}
 test("AGY narrow Resume opens a recognized menu", async ({ page }, testInfo) => {
   const text = readFileSync(new URL("../src/fixtures/panes/agy--v145-resume--w50.txt", import.meta.url), "utf8");
   await page.setViewportSize({ width: 320, height: 844 });

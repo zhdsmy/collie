@@ -1,5 +1,16 @@
 # Pane-buffer fixtures
 
+## AGY 1.4.5 background task rail (captured 2026-10-23)
+
+`agy--v145-background-task--w80.txt` retains only the native composer, one
+timestamped background Bash task, its closing separator and custom statusline.
+It was captured in an owned Herdr canary project using one harmless `sleep 25`
+and `printf` command. The task completed and the session/project were removed.
+Account, workspace banner and conversation are excluded; retained ANSI, spacing
+and line endings are unchanged. It reproduces the task separator being mistaken
+for the composer bottom rule. Additional task/draft/modal cases are mutations,
+not additional native captures.
+
 ## Hermes 0.22.4 modern footer (captured 2026-10-22)
 
 `hermes--v0224-modern-done.txt` is the read-only tail of the reported live pane,
