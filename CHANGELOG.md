@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.1+collie.9] - 2026-10-22
+
 ### Fixed
 
-- **Codex quick model switching submits its command reliably.** A recognized command popup can move existing footer-adjacent text into the checked transcript region without triggering “Could not confirm the new settings.” The sender still refuses new or reordered text and unexpected dialogs.
+- **Codex quick model switching submits its command reliably.** A recognized command popup can move existing footer-adjacent text into the checked transcript region without triggering “Could not confirm the new settings.” The sender still refuses new or reordered text and unexpected dialogs. ([22d24c97](https://github.com/zhdsmy/collie/commit/22d24c97))
 
 ## [1.23.1+collie.8] - 2026-10-22
 
