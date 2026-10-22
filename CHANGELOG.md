@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.2+collie.2] - 2026-10-22
+
 ### Fixed
 
-- **Antigravity Chat reads native fallback conversations and compacts its statusline.** Recover the process-selected authenticated transcript when SQLite creation left an empty database; reuse status icons and the context ring while preserving quota windows, reset times, full labels and unknown fields.
+- **Antigravity Chat reads native fallback conversations and compacts its statusline.** Recover the process-selected authenticated transcript when SQLite creation left an empty database; reuse status icons and the context ring while preserving quota windows, reset times, full labels and unknown fields. ([189859cd](https://github.com/zhdsmy/collie/commit/189859cd))
 
 ## [1.23.2+collie.1] - 2026-10-22
 
