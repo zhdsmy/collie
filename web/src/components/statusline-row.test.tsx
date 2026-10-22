@@ -70,23 +70,31 @@ it("preserves the upstream mobile-transparent fill on the OMP statusline", () =>
   expect(text.style.getPropertyValue("--terminal-seg-bg")).toBe("var(--ansi-7)");
 });
 
-it("compacts Hermes metrics without confusing cache hit with context used", () => {
+it("compacts Hermes statusline to core fields with remaining context and icon-only state", () => {
   const text = " ⚕ example-model │ ~19.5K/1M │ [░░░░░░░░░░] ~2% │ ◎ 65.3% │ ◷ 1.4s │ ↑ 198 t/s │ 1h 32m │ ⏱ 5s │ ✓ 1m       ─ Example conversation ";
   const { container } = renderRow(text, "hermes");
   const ring = container.querySelector('[data-status-icon="context"]');
+  expect(ring).toHaveAttribute("data-value", "98");
   expect(ring).toHaveAttribute("data-used", "2");
-  expect(within(container).getByRole("img", { name: "Cache hit 65.3%" })).toHaveTextContent("65.3%");
-  expect(within(container).getByRole("img", { name: "Generation speed 198 t/s" })).toHaveTextContent("198 t/s");
-  expect(within(container).getByRole("img", { name: "Prompt elapsed 5s" }).querySelector("svg")).toHaveClass("motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]");
-  expect(container.textContent).not.toMatch(/[░█│]/);
-  expect(container.textContent).toContain("Example conversation");
+  expect(within(container).getByRole("img", { name: "Context ~98% left" })).toHaveTextContent("~98%");
+  const elapsed = within(container).getByRole("img", { name: "Prompt elapsed 5s" });
+  expect(elapsed).toHaveTextContent("");
+  expect(elapsed.querySelector("svg")).toHaveClass("lucide-hourglass", "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]");
+  const idle = within(container).getByRole("img", { name: "Idle for 1m" });
+  expect(idle).toHaveTextContent("");
+  expect(idle.querySelector("svg")).toHaveClass("lucide-circle-check");
+  expect(container.textContent).toBe("example-model~98%");
+  expect(container.textContent).not.toMatch(/[░█│]|19\.5K|65\.3%|1\.4s|198|1h 32m|Example conversation/);
   expect(container.querySelector('[data-slot="hermes-statusline"]')).toHaveClass("overflow-x-auto", "whitespace-nowrap");
 });
 
-it("keeps unrecognized Hermes fields and does not turn missing context into zero", () => {
-  const { container } = renderRow(" ⚕ model │ ctx -- │ [░░░░░░░░░░] -- │ 🗜️ 2 │ ⊙ goal 1/4", "hermes");
+it("keeps unrecognized Hermes fields and drops uninitialized context placeholders", () => {
+  const { container } = renderRow(" ⚕ model │ ctx -- │ 上下文 -- │ [░░░░░░░░░░] -- │ 🗜️ 2 │ ⊙ goal 1/4", "hermes");
   expect(container.querySelector('[data-status-icon="context"]')).toBeNull();
-  expect(container.textContent).toContain("ctx --");
+  expect(container.textContent).not.toContain("ctx --");
+  expect(container.textContent).not.toContain("上下文 --");
+  expect(container.textContent).not.toContain("--");
+  expect(container.textContent).toContain("🗜️ 2");
   expect(container.textContent).toContain("⊙ goal 1/4");
 });
 
@@ -221,14 +229,14 @@ it("matches context across ANSI boundaries and gives the ring and value one capa
 
 it.each([
   ["Context 77% left", "77%", 77, 23],
-  ["Context 23% used", "23%", 23, 23],
+  ["Context 23% used", "77%", 77, 23],
   ["Ctx 77% left", "77%", 77, 23],
-  ["Ctx 23% used", "23%", 23, 23],
+  ["Ctx 23% used", "77%", 77, 23],
   ["Context 0% left", "0%", 0, 100],
   ["Context 100% left", "100%", 100, 0],
-  ["Context 0% used", "0%", 0, 0],
-  ["Context 100% used", "100%", 100, 100],
-])("draws the displayed proportion with an explicit unit: %s", (text, visible, percent, used) => {
+  ["Context 0% used", "100%", 100, 0],
+  ["Context 100% used", "0%", 0, 100],
+])("draws the remaining proportion for explicit context unit: %s", (text, visible, percent, used) => {
   const { container, row } = renderRow(text);
   const field = within(container).getByRole("img");
   const ring = field.querySelector<HTMLElement>('[data-status-icon="context"]')!;
@@ -301,20 +309,19 @@ it("keeps plain fields' ANSI spans in one inline flow inside the centered box", 
   expect(field.firstElementChild?.children).toHaveLength(2);
 });
 
-it.each<[Locale, string, string]>([
-  ["zh", "上下文剩余 77%", "上下文已用 23%"],
-  ["ja", "コンテキスト残り 77%", "コンテキスト使用済み 23%"],
-  ["ko", "컨텍스트 잔여 77%", "컨텍스트 사용 23%"],
-  ["de", "Kontext 77% frei", "Kontext 23% belegt"],
-  ["es", "Contexto 77% libre", "Contexto 23% usado"],
-])("keeps context semantics accessible when switching to %s", async (locale, remaining, used) => {
+it.each<[Locale, string]>([
+  ["zh", "上下文剩余 77%"],
+  ["ja", "コンテキスト残り 77%"],
+  ["ko", "컨텍스트 잔여 77%"],
+  ["de", "Kontext 77% frei"],
+  ["es", "Contexto 77% libre"],
+])("keeps context semantics accessible when switching to %s", async (locale, remaining) => {
   const { container } = renderRow("Context 77% left \u00b7 Context 23% used");
   await act(async () => {
     setLocale(locale);
     await whenLocaleReady(locale);
   });
-  expect(within(container).getByRole("img", { name: remaining })).toBeInTheDocument();
-  expect(within(container).getByRole("img", { name: used })).toBeInTheDocument();
+  expect(within(container).getAllByRole("img", { name: remaining })).toHaveLength(2);
   expect(container.textContent).not.toMatch(/余|用|残|使用|잔여|사용|frei|belegt|libre|usado/);
 });
 
@@ -371,7 +378,7 @@ it.each(["agy", "antigravity"])("separates %s hint and model fields across wide 
   expect(wide.container.textContent).not.toMatch(/ {2,}/);
   expect(wideStrip.querySelectorAll("span.w-px")).toHaveLength(1);
   expect(within(wide.container).getByRole("img", { name: "? for shortcuts" }).querySelector("svg")!.style.color).toBe("var(--ansi-8)");
-  expect(within(wide.container).getByText("Gemini 4 Argon · medium")).toHaveStyle({ opacity: 0.6 });
+  expect(within(wide.container).getByTitle("Gemini 4 Argon medium").querySelector("span[style]")).toHaveStyle({ opacity: 0.6 });
 
   const tight = renderRow(
     "\x1b[38;5;8m? for shortcuts\x1b[0m\x1b[2mGemini 4 Argon · medium\x1b[0m",
@@ -380,10 +387,10 @@ it.each(["agy", "antigravity"])("separates %s hint and model fields across wide 
   const tightStrip = tight.container.querySelector('[data-slot="agy-statusline"]')!;
   expect(tightStrip.querySelectorAll("span.w-px")).toHaveLength(1);
   expect(within(tight.container).getByRole("img", { name: "? for shortcuts" })).toBeInTheDocument();
-  expect(within(tight.container).getByText("Gemini 4 Argon · medium")).toBeInTheDocument();
+  expect(within(tight.container).getByTitle("Gemini 4 Argon medium")).toHaveTextContent("Gemini 4 Argon medium");
 });
 
-it.each(["GEMINI MODELS", "Gemini"])("orders AGY model first and version after quotas while dropping token/cache counters: %s", (group) => {
+it.each(["GEMINI MODELS", "Gemini"])("orders AGY model first and version last while dropping token/cache counters: %s", (group) => {
   const animation = "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]";
   const view = renderRow(`auto  idle  Gemini 4 Argon (High)  ctx 87%  main  v1.4.4  ${group} 5h 82.7% ↻3h32m · 7d 92.4% ↻5d19h  CLAUDE AND GPT MODELS 5h 100% ↻4h58m · 7d 86% ↻6d17h  Σin 135.4k  out 138.1k  cache 98%  unknown tail`, "agy");
   const autoMode = view.getByRole("img", { name: "auto" });
@@ -399,7 +406,7 @@ it.each(["GEMINI MODELS", "Gemini"])("orders AGY model first and version after q
   expect(view.getByText("Claude/GPT")).toBeInTheDocument();
   expect(view.getByText("unknown tail")).toBeInTheDocument();
   expect(view.container.textContent).toBe(
-    "Gemini 4 Argon highAuto87%mainGemini5h82.7% left↻3h32m7d92.4% left↻5d19hClaude/GPT5h100% left↻4h58m7d86% left↻6d17hv1.4.4unknown tail",
+    "Gemini 4 Argon highAuto87%mainGemini5h82.7% left↻3h32m7d92.4% left↻5d19hClaude/GPT5h100% left↻4h58m7d86% left↻6d17hunknown tailv1.4.4",
   );
   expect(view.container.textContent).not.toMatch(/MODELS|ctx |135\.4k|138\.1k|98%|\(High\)/);
   expect(view.container.querySelector('[data-slot="agy-statusline"]')).toHaveClass("overflow-x-auto", "whitespace-nowrap");
@@ -561,8 +568,8 @@ it.each(["⚕", "☤"])("expands a matched Hermes %s model without showing its s
   expect(modelField).toHaveAttribute("title", model);
   expect(container.textContent).not.toContain("high");
   expect(container.textContent).not.toContain("...");
-  expect(container.textContent).toContain("~2%");
-  expect(container.textContent).toContain("1.4s");
+  expect(container.textContent).toContain("~98%");
+  expect(container.textContent).not.toContain("1.4s");
   rerender(<StatuslineRow agent="hermes" row={row} sessionModel={{ model }} />);
   expect(within(container).getByText(model, { exact: true })).toBeInTheDocument();
   rerender(<StatuslineRow agent="hermes" row={row} sessionModel={{ model: "different-model", reasoningEffort: "high" }} />);
@@ -629,6 +636,7 @@ it.each(["⚠ 1 warning", "⚠ 3 warnings"])("renders %s as one accessible warni
   expect(button).toHaveTextContent(Number(warning.match(/\d+/)![0]).toString());
   expect(button.querySelector("svg")).toHaveClass("lucide-triangle-alert");
   expect(view.container.textContent).toContain("0.156.1");
+  expect(view.container.textContent?.endsWith("0.156.1")).toBe(true);
   expect(view.container.textContent).toContain("other (shift+tab to cycle)");
   expect(view.container.textContent).not.toContain("f2 to view");
   fireEvent.click(button);
@@ -693,7 +701,7 @@ it("does not consume task status when thinking level is already inside the model
 it.each([
   ["Claude Opus 5.5 (High)", "Claude Opus 5.5 high"],
   ["Gemini 4 Argon (XHigh)", "Gemini 4 Argon xhigh"],
-  ["Gemini 4 Argon · medium", "Gemini 4 Argon · medium"],
+  ["Gemini 4 Argon · medium", "Gemini 4 Argon medium"],
   ["Custom Model (Preview)", "Custom Model (Preview)"],
 ])("prints the AGY thinking level like Codex and Claude: %s", (model, shown) => {
   const view = renderRow(`\x1b[2m${model}\x1b[0m  auto  idle`, "agy");
@@ -712,21 +720,50 @@ it.each([
   expect(within(quota).getByText(percent, { exact: false })).toHaveClass(tone);
 });
 
-it("reads the modern Hermes row in the shared order and drops its key hints", () => {
-  const text = " ☤ deepseek-flash · TP 9.5% · ↻11-21 00:00 · 158K/1M pinned · [██░░░░░░░░] 16% · ◎ 97.2% · ◷ 1.2s · ↑ 7 t/s · 14h 1m · ⏲ 2s · ✓ 13h 59m · ~/.hermes                    / commands · @ files · ! shell";
+it("reads the modern Hermes row in the shared order and drops redundant fields and key hints", () => {
+  const text = " ☤ deepseek-flash · TP 9.5% · ↻11-21 00:00 · 158K/1M pinned · [██░░░░░░░░] 16% · ⎇ main · ◎ 97.2% · ◷ 1.2s · ↑ 7 t/s · 14h 1m · ⏲ 2s · ✓ 13h 59m · ~/.hermes                    / commands · @ files · ! shell";
   const { container } = renderRow(text, "hermes");
   const strip = container.querySelector('[data-slot="hermes-statusline"]')!;
-  expect(strip.querySelectorAll("span.w-px")).toHaveLength(10);
-  expect(container.textContent).not.toMatch(/commands|files|shell|·/);
+  expect(strip.querySelectorAll("span.w-px")).toHaveLength(4);
+  expect(container.textContent).not.toMatch(/commands|files|shell|·|158K|97\.2%|1\.2s|7 t\/s|14h|2s|13h|\.hermes/);
+  const idle = within(container).getByRole("img", { name: "Idle for 13h 59m" });
+  expect(idle).toHaveTextContent("");
+  expect(idle.querySelector("svg")).toHaveClass("lucide-circle-check");
+  expect(within(container).queryByRole("img", { name: /Prompt elapsed/ })).toBeNull();
+  expect(within(container).getByRole("img", { name: "Context 84% left" })).toHaveTextContent("84%");
+  expect(within(container).getByRole("img", { name: "main" }).querySelector("svg")).toHaveClass("lucide-git-branch");
   const quota = within(container).getByRole("img", { name: "TP 9.5% left ↻11-21 00:00" });
   expect(within(quota).getByText("9.5%", { exact: false })).toHaveClass("text-status-blocked");
-  expect(container.textContent).toBe("deepseek-flash2s13h 59m16%158K/1M pinnedTP9.5% left↻11-21 00:0097.2%1.2s7 t/s14h 1m~/.hermes");
+  expect(container.textContent).toBe("deepseek-flash84%mainTP9.5% left↻11-21 00:00");
 });
 
 it("divides every field of the classic Hermes and uncontrolled Codex rows", () => {
   const hermes = renderRow(" ⚕ model │ ~19.5K/1M │ [░░░░░░░░░░] ~2% │ ◎ 65.3%", "hermes");
-  expect(hermes.container.querySelectorAll("span.w-px")).toHaveLength(3);
+  expect(hermes.container.querySelectorAll("span.w-px")).toHaveLength(1);
+  expect(hermes.container.textContent).toBe("model~98%");
   const codex = render(<StatuslineRow agent="codex" row={splitLines(parseAnsi("gpt-6-astra · xhigh · Ready · main"))[0]!} onModelClick={vi.fn()} />);
   expect(codex.container.querySelectorAll("span.w-px")).toHaveLength(2);
   expect(codex.getByRole("button", { name: /gpt-6-astra xhigh/ })).toBeInTheDocument();
+});
+
+it("places version fields at the end of Claude and Codex statuslines", () => {
+  const claude = renderRow("model | v2.1.278 | ctx 34% | main", "claude");
+  expect(claude.container.textContent).toBe("model34%mainv2.1.278");
+
+  const codexRow = splitLines(parseAnsi("gpt-6-astra xhigh · v0.121.0 · Context 85% left · main"))[0]!;
+  const uncontrolled = render(<StatuslineRow agent="codex" row={codexRow} lastTurnFirstTokenMs={1200} />);
+  expect(uncontrolled.container.textContent).toBe("gpt-6-astra xhigh85%main1.2sv0.121.0");
+
+  const controlled = render(
+    <StatuslineRow
+      agent="codex"
+      row={codexRow}
+      lastTurnFirstTokenMs={1200}
+      codexControls={{
+        plan: { enabled: false, busy: false, onClick: vi.fn() },
+        fast: { enabled: false, busy: false, onClick: vi.fn() },
+      }}
+    />,
+  );
+  expect(controlled.container.textContent).toBe("gpt-6-astra xhighPlanFast85%main1.2sv0.121.0");
 });

@@ -2,7 +2,6 @@ import {
   Keyboard,
   ChevronUp,
   CalendarDays,
-  Clock,
   Cpu,
   Database,
   CircleAlert,
@@ -41,13 +40,15 @@ import { CLAUDE_NEW_TASK_HINT, isClaudeAsideRow } from "@/lib/harness/claude/chr
 import { stripCodexPlanHint } from "@/lib/codex-mode-switch";
 import { codexWarningCount } from "@/lib/codex-warning-action";
 
+const CODEX_VERSION_RE = /^(v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/;
+
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
 const CODEX_FIELDS: { pattern: RegExp; icon: LucideIcon; fill?: "currentColor"; color?: string }[] = [
   // ponytail: bare TUI fields have no type; custom branch names need upstream field metadata.
   { pattern: /^(main|master|develop|development|trunk|(?:feat|feature|fix|bugfix|hotfix|release|chore|refactor|test|docs)\/\S+)$/, icon: GitBranch },
   { pattern: /^(?:[Bb]ranch[: ]+|git[: ]+|\s+)(\S+)$/, icon: GitBranch },
-  { pattern: /^(v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/, icon: Tag },
+  { pattern: CODEX_VERSION_RE, icon: Tag },
   { pattern: /^(?:Context|Ctx) (\d+%)$/, icon: Gauge },
   { pattern: /^Ready$/, icon: CircleCheck },
   { pattern: /^Working$/, icon: Hourglass },
@@ -92,7 +93,8 @@ function ContextField({ value, remaining }: {
   const percent = Number.parseFloat(value.replace(/^~/, ""));
   const used = remaining ? 100 - percent : percent;
   const left = 100 - used;
-  const label = t(remaining ? "statusline.context.remainingAria" : "statusline.context.usedAria", { percent: value });
+  const shown = remaining ? value : `${value.startsWith("~") ? "~" : ""}${Number(left.toFixed(1))}%`;
+  const label = t("statusline.context.remainingAria", { percent: shown });
   return (
     <span
       role="img"
@@ -105,7 +107,7 @@ function ContextField({ value, remaining }: {
       <span
         aria-hidden="true"
         data-status-icon="context"
-        data-value={percent}
+        data-value={left}
         data-used={used}
         className="size-[12px] shrink-0 rounded-full"
         style={{
@@ -115,7 +117,7 @@ function ContextField({ value, remaining }: {
         }}
       />
       <span aria-hidden="true" className="inline-block min-w-[4ch] text-right tabular-nums">
-        {value}
+        {shown}
       </span>
     </span>
   );
@@ -365,20 +367,26 @@ function StatuslineDivider() {
 function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode }) {
   useLocale();
   let offset = 0;
-  const fields: ReactNode[] = [];
+  const rawFields: StatuslineField[] = [];
   for (const [index, part] of lineText(row).split(/(\s+\|\s+|(?<=\S)\s{2,}(?=\S))/).entries()) {
     const text = part.trim();
     const start = offset + part.indexOf(text);
     offset += part.length;
     if (!text || index % 2 === 1) continue;
     if (CLAUDE_NEW_TASK_HINT.test(text)) continue;
-    fields.push(
-      <span key={index} className="inline-flex shrink-0 items-center gap-1.5">
-        {fields.length > 0 && <StatuslineDivider />}
-        <ClaudeField text={text} segments={sliceSegments(row.segments, start, start + text.length)} />
-      </span>,
-    );
+    rawFields.push({ index, text, start });
   }
+  const versionIndex = rawFields.findIndex((item) => AGY_VERSION_RE.test(item.text));
+  if (versionIndex !== -1 && versionIndex < rawFields.length - 1) {
+    const [version] = rawFields.splice(versionIndex, 1);
+    rawFields.push(version!);
+  }
+  const fields = rawFields.map((field, position) => (
+    <span key={field.index} className="inline-flex shrink-0 items-center gap-1.5">
+      {position > 0 && <StatuslineDivider />}
+      <ClaudeField text={field.text} segments={sliceSegments(row.segments, field.start, field.start + field.text.length)} />
+    </span>
+  ));
   return (
     <div data-slot="claude-statusline" className={ROW_CLASS}>
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
@@ -407,10 +415,11 @@ const AGY_STATE_RE = /^(?:idle|thinking|working|tool_use|initializing|authentica
 const AGY_DROPPED_RE = /^(?:(?:Σin|in|Σout|out) \d+(?:\.\d+)?[km]?|cache \d+(?:\.\d+)?%)$/;
 const AGY_VERSION_RE = /^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
 const AGY_QUOTA_RE = /^(?:(Gemini|GEMINI MODELS|Claude\/GPT|CLAUDE AND GPT MODELS) )?((?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S*)?(?: · (?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S*)?)?)$/;
-// The wide row prints `Model (High)`; the strip shows it the way Codex and Claude print theirs,
-// `model effort`, lowercase and without parentheses. Only a known level word qualifies, so a model
-// whose own name ends in parentheses keeps them.
-const AGY_MODEL_EFFORT_RE = /^(.*\S) \((minimal|low|medium|high|xhigh|max)\)$/i;
+// The wide row prints `Model (High)` and the compact row prints `Model · medium`; the strip shows
+// both the way Codex and Claude print theirs: `model effort`, lowercase and without parentheses or
+// middle dots. Only a known level word qualifies, so a model whose own name ends in parentheses
+// keeps them.
+const AGY_MODEL_EFFORT_RE = /^(.*\S) (?:\((minimal|low|medium|high|xhigh|max)\)|·\s*(minimal|low|medium|high|xhigh|max))$/i;
 
 interface QuotaWindow {
   /** The window's own name (`5h`, `7d`, `weekly`), absent when the label already names it. */
@@ -479,9 +488,10 @@ function AgyField({ text, segments }: { text: string; segments: AnsiSegment[] })
     );
   }
   const effort = AGY_MODEL_EFFORT_RE.exec(text);
-  if (effort?.[1] && effort[2]) {
-    const level = effort[2].toLowerCase();
-    const levelStart = text.length - effort[2].length - 1;
+  const rawLevel = effort?.[2] ?? effort?.[3];
+  if (effort?.[1] && rawLevel) {
+    const level = rawLevel.toLowerCase();
+    const levelStart = effort[2] ? text.length - rawLevel.length - 1 : text.length - rawLevel.length;
     // `sliceSegments` returns fresh segment copies, so lowercasing them leaves the row untouched.
     const levelSegments = sliceSegments(segments, levelStart, levelStart + level.length);
     for (const segment of levelSegments) segment.text = segment.text.toLowerCase();
@@ -505,10 +515,9 @@ function orderAgyFields(raw: StatuslineField[]): StatuslineField[] {
     items.splice(0, 3, model!, mode!, state!);
   }
   const versionIndex = items.findIndex((item) => AGY_VERSION_RE.test(item.text));
-  const lastQuotaIndex = items.findLastIndex((item) => AGY_QUOTA_RE.test(item.text));
-  if (versionIndex !== -1 && lastQuotaIndex > versionIndex) {
+  if (versionIndex !== -1 && versionIndex < items.length - 1) {
     const [version] = items.splice(versionIndex, 1);
-    items.splice(lastQuotaIndex, 0, version!);
+    items.push(version!);
   }
   return items;
 }
@@ -589,29 +598,39 @@ function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]
   if (context?.[1] && Number.parseFloat(context[1].replace(/^~/, "")) <= 100) {
     return <ContextField value={context[1]} remaining={false} />;
   }
-  const fields = [
-    { pattern: /^◎ (.+)$/, icon: Database, label: "statusline.hermes.cache" },
-    { pattern: /^◷ (.+)$/, icon: Timer, label: "statusline.hermes.latency" },
-    { pattern: /^↑ (.+)$/, icon: Gauge, label: "statusline.hermes.speed" },
-    { pattern: /^[⏱⏲] (.+)$/, icon: Hourglass, label: "statusline.hermes.elapsed" },
-    { pattern: /^✓ (.+)$/, icon: CircleCheck, label: "statusline.hermes.idle" },
-    { pattern: /^((?:\d+[hms]\s*)+)$/, icon: Clock, label: "statusline.hermes.duration" },
-  ] as const;
-  for (const { pattern, icon: Icon, label } of fields) {
-    const value = pattern.exec(text)?.[1];
-    if (!value) continue;
-    const name = t(label, { value });
-    const start = text.indexOf(value);
+  const running = /^⏱ (.+)$/.exec(text);
+  if (running?.[1]) {
     return (
-      <span role="img" aria-label={name} title={name} className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none">
-        <Icon
-          aria-hidden="true"
-          className={cn("size-[12px] shrink-0", text.startsWith("⏱") && "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]")}
-          strokeWidth={2.25}
-          style={segments[0] && styleFor(segments[0])}
-        />
-        <span aria-hidden="true"><StyledText segments={sliceSegments(segments, start, start + value.length)} /></span>
-      </span>
+      <StatusIconField
+        text={t("statusline.hermes.elapsed", { value: running[1] })}
+        segments={segments}
+        icon={Hourglass}
+        value=""
+        hourglass
+      />
+    );
+  }
+  const idle = /^(?:✓|⏲) (.+)$/.exec(text);
+  if (idle?.[1]) {
+    const label = text.startsWith("✓") ? "statusline.hermes.idle" : "statusline.hermes.elapsed";
+    return (
+      <StatusIconField
+        text={t(label, { value: idle[1] })}
+        segments={segments}
+        icon={CircleCheck}
+        value=""
+      />
+    );
+  }
+  const branch = /^⎇\s+(.+)$/.exec(text);
+  if (branch?.[1]) {
+    return (
+      <StatusIconField
+        text={branch[1]}
+        segments={sliceSegments(segments, text.indexOf(branch[1]), text.length)}
+        icon={GitBranch}
+        value={branch[1]}
+      />
     );
   }
   const model = /^[⚕☤]\s+/.exec(text);
@@ -634,19 +653,22 @@ function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]
 
 // Hermes separates fields with `│` (classic) or ` · ` (modern, v0.22.4), puts a conversation title
 // after `  ─`, and in the modern layout right-aligns its key hints (`/ 命令 · @ 文件 · ! 终端`) after
-// a wide gap. The hints are the composer's affordances, not status, so the strip drops them.
-const HERMES_SPLIT_RE = /(\s*│\s*|\s{2,}─\s*| · |\s{3,})/;
+// a wide gap. Both the classic session title and the modern key hints are dropped here.
+const HERMES_SPLIT_RE = /(\s*│\s*|\s{2,}─(?:\s+.*)?$| · |\s{3,})/;
 const HERMES_HINT_RE = /^[/@!] \S+$/;
+// Token counts, uninitialized context bars, performance telemetry, session total duration, and cwd
+// are dropped so Hermes shares the same compact statusline vocabulary as the other agents.
+const HERMES_DROPPED_RE = /^(?:~?\d+(?:\.\d+)?[KkMm]?\/\d+(?:\.\d+)?[KkMm]?(?:\s|$)|(?:ctx|上下文) --|\[[█░]+\]\s*--|[◎◷↑] |(?:\d+[hms]\s*)+$|~(?:\/|$)|\/)/i;
 // The provider quota segment (`TP 100.0%`, remaining) prints its cycle reset as its own ` · ` field.
 const HERMES_QUOTA_RE = /^(TP) (\d+(?:\.\d+)?%)$/;
 const HERMES_RESET_RE = /^↻\S.*$/;
 
-/** Shared order: model, turn state, context, token count, quota, then the rest as Hermes printed it. */
+/** Shared order: model, turn state, context, git branch, quota, then the rest as Hermes printed it. */
 function hermesRank(text: string): number {
   if (/^[⚕☤]\s/.test(text)) return 0;
   if (/^[✓⏱⏲] /.test(text)) return 1;
   if (/^\[[█░]+\]/.test(text)) return 2;
-  if (/^~?\d+(?:\.\d+)?[KkMm]?\/\d+(?:\.\d+)?[KkMm]?(?:\s|$)|^\S+ --$/.test(text)) return 3;
+  if (/^⎇\s+/.test(text)) return 3;
   if (HERMES_QUOTA_RE.test(text)) return 4;
   return 5;
 }
@@ -659,7 +681,7 @@ function HermesStatusline({ row, leading, sessionModel }: { row: StyledLine; lea
     const text = part.trim();
     const start = offset + (text ? part.indexOf(text) : 0);
     offset += part.length;
-    if (!text || index % 2 === 1 || HERMES_HINT_RE.test(text)) continue;
+    if (!text || index % 2 === 1 || HERMES_HINT_RE.test(text) || HERMES_DROPPED_RE.test(text)) continue;
     const previous = fields.at(-1);
     if (previous && !previous.reset && HERMES_RESET_RE.test(text) && HERMES_QUOTA_RE.test(previous.text)) {
       previous.reset = text;
@@ -667,7 +689,9 @@ function HermesStatusline({ row, leading, sessionModel }: { row: StyledLine; lea
     }
     fields.push({ index, text, start });
   }
-  const ordered = fields.map((field, position) => ({ field, position, rank: hermesRank(field.text) }))
+  const hasPrimaryState = fields.some((field) => /^[⏱✓] /.test(field.text));
+  const deduplicated = hasPrimaryState ? fields.filter((field) => !field.text.startsWith("⏲ ")) : fields;
+  const ordered = deduplicated.map((field, position) => ({ field, position, rank: hermesRank(field.text) }))
     .toSorted((a, b) => a.rank - b.rank || a.position - b.position)
     .map(({ field }) => field);
   return (
@@ -748,6 +772,8 @@ function CodexControlledStatusline({
 
   const consumed = new Set([model?.field.index, model?.effort?.index]);
   const rest = fields.filter((field) => !consumed.has(field.index) && !isNativeCodexControlField(field.text));
+  const nonVersionRest = rest.filter((field) => !CODEX_VERSION_RE.test(field.text));
+  const versionRest = rest.filter((field) => CODEX_VERSION_RE.test(field.text));
   const content: ReactNode[] = [];
 
   if (model) {
@@ -781,10 +807,10 @@ function CodexControlledStatusline({
   content.push(<CodexModeToggle key="plan" mode="plan" {...codexControls.plan} />);
   content.push(<StatuslineDivider key="plan-fast" />);
   content.push(<CodexModeToggle key="fast" mode="fast" {...codexControls.fast} />);
-  for (let index = 0; index < rest.length; index++) {
-    const field = rest[index]!;
+  for (let index = 0; index < nonVersionRest.length; index++) {
+    const field = nonVersionRest[index]!;
     content.push(<StatuslineDivider key={`divider-${field.index}`} />);
-    const next = rest[index + 1];
+    const next = nonVersionRest[index + 1];
     const count = next?.index === field.index + 2
       ? codexWarningCount(`${field.text} · ${next.text}`) : null;
     if (count !== null && codexWarning) {
@@ -809,12 +835,22 @@ function CodexControlledStatusline({
       />,
     );
   }
+  const versionContent = versionRest.map((field) => (
+    <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
+      <StatuslineDivider />
+      <CodexField
+        text={field.text}
+        segments={sliceSegments(row.segments, field.start, field.start + field.text.length)}
+      />
+    </span>
+  ));
 
   return (
     <div data-slot="codex-statusline" className={ROW_CLASS}>
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
       {content}
       <FirstTokenField ms={lastTurnFirstTokenMs} />
+      {versionContent}
     </div>
   );
 }
@@ -971,16 +1007,18 @@ export function StatuslineRow({
     offset += part.length;
     if (text && index % 2 === 0) fields.push({ index, text, start });
   }
+  const nonVersionFields = fields.filter((field) => !CODEX_VERSION_RE.test(field.text));
+  const versionFields = fields.filter((field) => CODEX_VERSION_RE.test(field.text));
   const content: ReactNode[] = [];
   let modelShown = false;
-  for (let i = 0; i < fields.length; i++) {
-    const field = fields[i]!;
+  for (let i = 0; i < nonVersionFields.length; i++) {
+    const field = nonVersionFields[i]!;
     const segments = sliceSegments(row.segments, field.start, field.start + field.text.length);
     const model = onModelClick && !modelShown ? parseCodexModelField(field.text, knownModels) : null;
     let node: ReactNode;
     if (model && onModelClick) {
       modelShown = true;
-      const next = fields[i + 1];
+      const next = nonVersionFields[i + 1];
       const joinEffort = model.effort === null && next?.index === field.index + 2 &&
         parseCodexStatuslineField(field.text, next.text, knownModels)?.effort != null;
       if (joinEffort) i++;
@@ -1010,11 +1048,22 @@ export function StatuslineRow({
       </span>,
     );
   }
+  const hasBeforeVersion = content.length > 0 || (lastTurnFirstTokenMs !== undefined && Number.isSafeInteger(lastTurnFirstTokenMs) && lastTurnFirstTokenMs >= 0);
+  const versionContent = versionFields.map((field, index) => (
+    <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
+      {(hasBeforeVersion || index > 0) && <StatuslineDivider />}
+      <CodexField
+        text={field.text}
+        segments={sliceSegments(row.segments, field.start, field.start + field.text.length)}
+      />
+    </span>
+  ));
   return (
     <div data-slot="codex-statusline" className={ROW_CLASS}>
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
       {content}
       <FirstTokenField ms={lastTurnFirstTokenMs} />
+      {versionContent}
     </div>
   );
 }

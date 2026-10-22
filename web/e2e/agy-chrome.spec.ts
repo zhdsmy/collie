@@ -179,9 +179,7 @@ for (const width of [320, 390]) {
       const strip = page.locator('[data-slot="agy-statusline"]');
       await expect(strip).toHaveCount(1);
       const hint = strip.getByRole("img", { name: state === "auto" ? "auto" : state === "idle" ? "? for shortcuts" : "esc to cancel", exact: true });
-      const model = state === "auto"
-        ? strip.getByTitle("Gemini 4 Argon medium", { exact: true })
-        : strip.getByText("Gemini 4 Argon · medium", { exact: true });
+      const model = strip.getByTitle("Gemini 4 Argon medium", { exact: true });
       await expect(hint).toBeVisible();
       await expect(model).toBeVisible();
       const hintBox = await hint.boundingBox();
