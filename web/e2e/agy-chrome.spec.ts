@@ -58,6 +58,8 @@ for (const width of [320, 390]) {
       const buttonBox = await button.boundingBox();
       expect(buttonBox!.y + buttonBox!.height).toBeLessThanOrEqual(inputBox!.y);
     }
+    await bar.evaluate((el) => { el.parentElement!.scrollLeft = el.parentElement!.scrollWidth; });
+    await bar.getByRole("button", { name: "恢复", exact: true }).click({ trial: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     await page.screenshot({ path: testInfo.outputPath("agy-chat-statusline.png") });
   });
