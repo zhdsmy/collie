@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.1+collie.5] - 2026-10-22
+
 ### Fixed
 
-- **Antigravity exposes its model, compact and resume buttons beside the composer.** Register both AGY agent names in the shared scrolling harness bar, and include native `/resume` in the command palette; retain the existing send guards, statusline and Chat view.
+- **Antigravity exposes its model, compact and resume buttons beside the composer.** Register both AGY agent names in the shared scrolling harness bar, and include native `/resume` in the command palette; retain the existing send guards, statusline and Chat view. ([fcae3c5a](https://github.com/zhdsmy/collie/commit/fcae3c5a))
 
 ## [1.23.1+collie.4] - 2026-10-22
 
