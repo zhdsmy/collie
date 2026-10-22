@@ -23,6 +23,8 @@ const allFixtures = readdirSync(PANES_DIR)
 const allAgyFixtures = allFixtures.filter((f) => f.startsWith("agy--"));
 
 const NEUTRAL = new Set([
+  "agy--v145-idle-after-model--w50.txt",
+  "agy--v145-slash-resume--w50.txt",
   "agy--v144-quota--w119.txt",
   "agy--v144-slash-model--w119.txt",
   "agy--v144-auto-placeholder--w119.txt",
@@ -562,7 +564,7 @@ describe("agy: the /resume Conversations picker lifts as a menu (1.3.5)", () => 
     return block?.kind === "menu" ? block.menu : null;
   };
 
-  it.each(["agy--resume-picker.txt", "agy--resume-picker-search.txt"])(
+  it.each(["agy--resume-picker.txt", "agy--resume-picker-search.txt", "agy--v145-resume--w119.txt", "agy--v145-resume--w50.txt"])(
     "%s offers Up/Down, Select and Go back, and nothing that renames or deletes",
     (name) => {
       const menu = menuOf(name);
@@ -573,6 +575,7 @@ describe("agy: the /resume Conversations picker lifts as a menu (1.3.5)", () => 
       ]);
       expect(menu?.nav.upDown).toBe(true);
       expect(agyAdapter.composerReady!(read(name))).toBe(false);
+      expect(buildBlocks(read(name), { agent: "agy" }).some((b) => b.kind === "unread-dialog")).toBe(false);
     },
   );
 

@@ -1102,7 +1102,11 @@ function aboveUnchanged(before: Snap, after: Snap, scroll = 0): boolean {
     // Scrolling can move an old volatile row into the checked band; it must already exist in S0.
     if (shift > 0 && b.length === a.length && b.every((row, i) => row === oldRows[i + shift])) return true;
   }
-  return false;
+  // A popup can retain the top rows while clipping others; the remaining transcript must stay in order.
+  const lost = a.length - b.length;
+  return scroll > 0 && lost > 0 && lost <= scroll &&
+    b.filter((row) => row.trim().length > 0).length >= SCROLL_ANCHOR_ROWS &&
+    a.slice(-SCROLL_ANCHOR_ROWS).every((row, i) => row === b[b.length - SCROLL_ANCHOR_ROWS + i]) && lostTextOnly(a, b);
 }
 
 /** The lines with the first one's lead character cut: a shell line's `!` turns into the box's prompt glyph. */

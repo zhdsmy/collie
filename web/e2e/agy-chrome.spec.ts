@@ -9,6 +9,31 @@ const auto = readFileSync(new URL("../src/fixtures/panes/agy--v144-auto-placehol
 const quota = readFileSync(new URL("../src/fixtures/panes/agy--v144-quota--w119.txt", import.meta.url), "utf8");
 
 test.use({ serviceWorkers: "block" });
+test("AGY narrow Resume opens a recognized menu", async ({ page }, testInfo) => {
+  const text = readFileSync(new URL("../src/fixtures/panes/agy--v145-resume--w50.txt", import.meta.url), "utf8");
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("collie:locale:v1", "en");
+    localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+  });
+  await installApiStub(page);
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+      ? { ...agent, agent: "agy", status: "idle", hasSession: false } : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text, revision: 1,
+  } }));
+  await page.goto("/pane/w1:p1");
+  for (const name of ["Select", "Go back", "Move up", "Move down"]) {
+    await expect(page.getByRole("button", { name, exact: true })).toBeInViewport();
+  }
+  await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await page.screenshot({ path: testInfo.outputPath("agy-resume-menu.png") });
+});
+
 for (const cols of [119, 50]) {
   test(`AGY model menu replaces the unread warning: ${cols} columns`, async ({ page }, testInfo) => {
     const text = readFileSync(new URL(`../src/fixtures/panes/agy--v144-model--w${cols}.txt`, import.meta.url), "utf8");

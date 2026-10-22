@@ -1,5 +1,36 @@
 # AGY 1.4.4 / 1.4.5 UI checks — 2026-10-22
 
+## Resume send and card — AGY 1.4.5
+At 50 columns, opening slash completion after leaving Model retained the first
+banner rows while clipping three middle rows. SendProtocol previously accepted
+only a contiguous scroll from the top and refused `/resume` as
+`typed_not_submitted: changed`. Its existing command-list path now also accepts
+bounded deletion in order, with at least two transcript anchors and unchanged
+last rows beside the composer. New output, reordering, excessive deletion,
+changed boundary, a different pointed command and unknown dialogs still refuse
+Enter. Other send paths do not receive this allowance.
+
+The native Conversations card also accepts the custom rich statusline and the
+50-column footer starting with `Keyboard: enter Select`; the list's existing
+pointer still identifies arrow navigation. Select/Escape remain printed keys;
+Rename/Delete are not added as buttons. Old layouts keep their tests.
+
+Owned Herdr sessions at 50/119 columns verified Model then Resume via the actual
+client and SendProtocol. All four receipts were `sent`, each with `probe`,
+`Backspace` and exactly one `Enter`. Resume then passed Down, Up and Escape via
+`submitMenuKeys` and bridge `keysPane`; the pointer moved both ways and returned
+to its original row, then the menu closed to an empty composer. No existing
+conversation was resumed and no provider inference was used.
+
+The 50-column before/after completion pair and both Conversations menus are
+captured as `agy--v145-{idle-after-model,slash-resume}--w50.txt` and
+`agy--v145-resume--w{50,119}.txt`. Account/project are sanitized; conversation
+labels are masked while preserving ANSI, spacing and pointers. 320px
+Chromium/WebKit replay checks all four controls, absence of the unread card,
+and page width; screenshots are emitted by `web/e2e/agy-chrome.spec.ts`.
+This checks Resume opening/navigation/cancellation, not whole-CLI behavior or
+resuming another user's saved history. The send profile remains provisional.
+
 ## Model picker card
 The shared MenuBlock now recognizes Switch Model from its title, Search, one
 highlighted model and native Keyboard footer. The ANSI body remains visible;
@@ -25,10 +56,8 @@ model was selected and no provider inference was requested. Owned panes,
 projects and temporary native trust/cache entries were removed; user sessions
 and services were preserved.
 
-A supplementary 1.4.5 command-send check opened Model at both widths and Resume
-at 119 columns. Resume at 50 columns returned `typed_not_submitted: changed`;
-this is a pending send-protocol issue, not certification of all 1.4.5 commands.
-The version range was not widened by this model-card change.
+The supplementary narrow Resume send failure found during the model-card check
+is resolved by the later Resume verification above.
 
 ## Composer command buttons
 

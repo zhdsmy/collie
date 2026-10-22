@@ -5908,6 +5908,40 @@ describe("AGY's native command list under a full conversation", () => {
   });
 });
 
+describe("AGY 1.4.5's narrow resume completion retains the first banner rows", () => {
+  const capture = (name: string) => readFileSync(join(import.meta.dir, `../../web/src/fixtures/panes/${name}`), "utf8").split("\n");
+  const before = capture("agy--v145-idle-after-model--w50.txt");
+  const after = capture("agy--v145-slash-resume--w50.txt");
+  const idle = loadProfiles().get("agy")!.idle;
+  const frame = (rows: string[]) => findInputFrame(splitLines(parseAnsi(rows.join("\n"))), idle)!;
+
+  test.each(["unchanged", "new output", "reordered", "too much loss", "lost boundary", "other command", "dialog"])(
+    "only bounded ordered transcript loss is allowed: %s", async (change) => {
+      const pane = new FakePane("generic");
+      pane.beforeRead = (p) => {
+        const completing = p.box.startsWith("/");
+        const rows = [...(completing ? after : before)];
+        const box = frame(rows);
+        rows[box.interior.prompt] = `> ${p.box}`;
+        if (completing) {
+          if (change === "new output") rows[9] = "An answer just started";
+          if (change === "reordered") [rows[4], rows[5]] = [rows[5]!, rows[4]!];
+          if (change === "too much loss") rows.splice(2, 3);
+          if (change === "lost boundary") rows.splice(box.volatile.above!.first - 3, 1);
+          if (change === "other command") rows[box.bottom + 1] = "> /review  Review changes";
+          if (change === "dialog") rows.push("Allow access? Press Enter to confirm.");
+        }
+        p.fixed = rows.join("\n");
+      };
+      const { send } = rig({ pane, harness: "agy", version: "1.4.5" });
+      const answer = await send("/resume", { mode: "command" });
+      expect(answer.receipt?.outcome).toBe(change === "unchanged" ? "sent" : "typed_not_submitted");
+      expect(pane.keysSeen.filter((key) => key === "Enter")).toHaveLength(change === "unchanged" ? 1 : 0);
+      neverEscape(pane);
+    },
+  );
+});
+
 describe("a slash command over Muse's own slash palette inside the box (MUSE-03, #519)", () => {
   const PANES = join(import.meta.dir, "../../web/src/fixtures/panes");
   const capture = (name: string): string[] => readFileSync(join(PANES, name), "utf8").split(/\r?\n/u);

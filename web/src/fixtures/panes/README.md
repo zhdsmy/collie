@@ -1,5 +1,15 @@
 # Pane-buffer fixtures
 
+## AGY 1.4.5 Resume (captured 2026-10-22)
+
+`agy--v145-idle-after-model--w50.txt` and `agy--v145-slash-resume--w50.txt`
+are a native pair from an owned Herdr session: slash completion retains the
+first banner rows while clipping three middle rows. Account/project are
+sanitized. `agy--v145-resume--w{50,119}.txt` retain only Conversations and its
+footer/status; conversation labels are masked, preserving ANSI and spacing.
+Real client sends and guarded navigation/cancel were checked without selecting
+history or requesting inference. See [local verification](../../lib/harness/agy/LOCAL_VERIFICATION.md).
+
 ## AGY model menu (captured 2026-10-22)
 
 `agy--v144-model--w{119,50}.txt` retain only Switch Model and its native status
