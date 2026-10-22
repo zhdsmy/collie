@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Antigravity command buttons submit through their native completion list.** Recognize AGY's selected slash command and navigation footer, and account for the known list footer when it scrolls a full transcript; mismatched completions and unexpected dialogs still keep Enter back.
+
 ## [1.23.1+collie.5] - 2026-10-22
 
 ### Fixed

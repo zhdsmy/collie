@@ -23,6 +23,8 @@ const allFixtures = readdirSync(PANES_DIR)
 const allAgyFixtures = allFixtures.filter((f) => f.startsWith("agy--"));
 
 const NEUTRAL = new Set([
+  "agy--v144-quota--w119.txt",
+  "agy--v144-slash-model--w119.txt",
   "agy--v144-auto-placeholder--w119.txt",
   "agy--v144-idle--w119.txt",
   "agy--v144-working--w119.txt",

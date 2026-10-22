@@ -2,6 +2,21 @@
 
 ## Composer command buttons
 
+AGY 1.4.4's native completion list is recognized before Enter, including its
+navigation footer. The send protocol counts this known footer when the list scrolls
+a full transcript; no extra Enter or relaxed transcript comparison is used. A
+sanitized composer tail from the affected pane is
+`agy--v144-slash-model--w119.txt`. Protocol replay covers Model / Compact / Resume
+on a full transcript, a different pointed command, and an unexpected dialog.
+
+An owned Herdr canary session verified Model and Resume through the actual client
+send function and SendProtocol at 119 and 50 columns. All four receipts were `sent`
+with `probe`, `Backspace`, and exactly one `Enter`; native Switch Model and
+Conversations appeared, and Escape returned to an empty composer. No model was
+selected, no history was resumed, and no provider inference was requested. The
+owned session and project were removed. The model menu keeps its existing native
+fallback; this repair adds no model-picker card.
+
 Both `agy` and `antigravity` use the shared Model / Compact / Resume harness bar.
 The command palette also lists `/resume`, whose native Conversations picker was
 checked below. Component tests assert each bare command reaches the existing send

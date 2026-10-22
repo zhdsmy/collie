@@ -1065,7 +1065,8 @@ const DIALOG_AFTER_ENTER = "A dialog opened as the message went in. Check the ca
 function ownListScroll(before: Snap, after: Snap): number {
   const list = after.ownList;
   if (list === null) return 0;
-  const rows = list.last - list.first + 1;
+  // A list's recognized footer also pushes the transcript up (AGY's navigation and status rows).
+  const rows = list.side === "under" ? contentEnd(after.texts) - list.first : list.last - list.first + 1;
   if (list.side !== "under" || after.frame === null || contentEnd(after.texts) !== list.last + 1) return rows;
   if (transcriptAbove(after, after.frame).filter((row) => row.trim().length > 0).length < SCROLL_ANCHOR_ROWS) return rows;
   return rows + Math.max(0, contentEnd(before.texts) - contentEnd(after.texts));

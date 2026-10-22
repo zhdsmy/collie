@@ -1,5 +1,15 @@
 # Pane-buffer fixtures
 
+## AGY 1.4.4 command completion (captured 2026-10-22)
+
+`agy--v144-slash-model--w119.txt` retains only the native composer, selected
+`/model` completion, navigation footer and statusline from the affected pane.
+Conversation text and account/path headers are excluded. Full-transcript scrolling
+and refusal cases replay through SendProtocol; isolated native Model/Resume sends
+at 119/50 columns used one Enter and no provider inference. See
+[local verification](../../lib/harness/agy/LOCAL_VERIFICATION.md).
+
+
 Byte-faithful captures of real pane buffers as returned by the bridge
 (`GET /api/pane/:id?lines=N`, i.e. Herdr `pane.read` with `format:"ansi"`). They contain **real
 ESC bytes** (SGR styling only — Herdr's contract) and are the ground truth for the block-renderer

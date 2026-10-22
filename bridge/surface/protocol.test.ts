@@ -5869,6 +5869,45 @@ describe("omp 18.11's box composer (issue 497)", () => {
   });
 });
 
+describe("AGY's native command list under a full conversation", () => {
+  const rows = readFileSync(join(import.meta.dir, "../../web/src/fixtures/panes/agy--v144-slash-model--w119.txt"), "utf8").trimEnd().split("\n");
+
+  function scene(pointed: string, extra: string[] = []): FakePane {
+    const pane = new FakePane("generic");
+    pane.transcript = Array.from({ length: 32 }, (_, i) => `Conversation row ${i}`);
+    pane.beforeRead = (p) => {
+      const completing = p.box.startsWith("/");
+      p.fixed = [
+        ...p.transcript.slice(completing ? 4 : 0),
+        rows[0]!, `> ${p.box}`, rows[2]!,
+        ...(completing ? [...rows.slice(3).map((row) => row.replaceAll("/model", pointed)), ...extra] : [rows.at(-1)!]),
+      ].join("\n");
+    };
+    return pane;
+  }
+
+  test.each(["/model", "/resume", "/compact"])("%s submits once when its completion list scrolls the transcript", async (command) => {
+    const pane = scene(command);
+    const { send } = rig({ pane, harness: "agy", version: "1.4.4" });
+    const answer = await send(command, { mode: "command" });
+    expect(answer.receipt).toMatchObject({ outcome: "sent" });
+    expect(pane.keysSeen.filter((key) => key === "Enter")).toHaveLength(1);
+    neverEscape(pane);
+  });
+
+  test.each([
+    { pointed: "/models", extra: [] },
+    { pointed: "/model", extra: ["Allow access?", "> Yes", "  No"] },
+  ])("does not submit a different completion or an unexpected dialog: %j", async ({ pointed, extra }) => {
+    const pane = scene(pointed, extra);
+    const { send } = rig({ pane, harness: "agy", version: "1.4.4" });
+    const answer = await send("/model", { mode: "command" });
+    expect(answer.receipt?.outcome).toBe("typed_not_submitted");
+    expect(pane.keysSeen).not.toContain("Enter");
+    expect(pane.box).toBe("/model");
+  });
+});
+
 describe("a slash command over Muse's own slash palette inside the box (MUSE-03, #519)", () => {
   const PANES = join(import.meta.dir, "../../web/src/fixtures/panes");
   const capture = (name: string): string[] => readFileSync(join(PANES, name), "utf8").split(/\r?\n/u);
