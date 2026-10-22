@@ -22,6 +22,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 `docs/crew.md` → *Updating from 1.7.0*.
 
 ## [Unreleased]
+### Fixed
+- **Antigravity model picker replaces the unknown-screen warning.** Reuse the shared menu card for native model navigation, Effort adjustment, Select and advertised Escape, with fresh-screen guards for every action.
 
 ## [1.23.1+collie.6] - 2026-10-22
 

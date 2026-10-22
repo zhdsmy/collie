@@ -186,7 +186,8 @@ function trailingOutput(): StyledLine[] {
  *  the top of the wrapped group on a narrow one. Falls back to the last non-blank row for a tail
  *  that is not a key-hint footer at all. */
 function footerTop(lines: StyledLine[]): number {
-  return readKeyHintFooter(lines.map(lineText))?.startLine ?? lastNonBlank(lines);
+  const keyboard = lines.findLastIndex((line) => /^Keyboard:\s/.test(lineText(line)));
+  return readKeyHintFooter(lines.map(lineText))?.startLine ?? (keyboard >= 0 ? keyboard : lastNonBlank(lines));
 }
 
 /** The index of the last non-blank line — where every tail-anchored grammar's footer sits. */

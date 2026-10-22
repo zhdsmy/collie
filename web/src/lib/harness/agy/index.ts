@@ -1,6 +1,7 @@
 import { trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { HarnessAdapter } from "../types";
 import { detectConversationsRegion } from "./conversations";
+import { detectModelRegion } from "./model";
 import { detectPromptSelectRegion } from "./prompt-select";
 import { extractInputDraft, extractStatusLines, hasInputBox, stripChrome } from "./chrome";
 import { lineText } from "./markers";
@@ -15,7 +16,7 @@ export function agyBuildBlocks(lines: StyledLine[]): Block[] {
     return blocks;
   }
 
-  const picker = detectConversationsRegion(lines.map((l) => lineText(l).trimEnd()));
+  const picker = detectModelRegion(lines) ?? detectConversationsRegion(lines.map((l) => lineText(l).trimEnd()));
   if (picker) {
     const before = trimTrailingBlank(lines.slice(0, picker.startLine));
     const blocks: Block[] = [];

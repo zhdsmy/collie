@@ -1,4 +1,34 @@
-# AGY 1.4.4 UI check — 2026-10-22
+# AGY 1.4.4 / 1.4.5 UI checks — 2026-10-22
+
+## Model picker card
+The shared MenuBlock now recognizes Switch Model from its title, Search, one
+highlighted model and native Keyboard footer. The ANSI body remains visible;
+Up/Down moves the model, Left/Right adjusts the painted active Effort, Enter
+selects, and Escape is offered only when printed. A clipped 50-column footer
+still lifts the menu. Missing anchors or appended unknown prompts refuse the
+card. No-match search remains the native fallback instead of offering Select.
+
+AGY 1.4.4's sanitized 119/50-column captures are checked in as
+`agy--v144-model--w{119,50}.txt`. Tests cover both adapter aliases, missing paint,
+unknown tails and a moved highlight: stale Select is refused while navigation
+uses the shared identity guard. 320px Chromium/WebKit replay shows model names,
+four arrows, Select, and only the advertised Escape without an unread warning
+or page overflow. Screenshots are emitted by `web/e2e/agy-chrome.spec.ts`.
+
+During this check the installed CLI updated to 1.4.5. Owned native Herdr sessions
+at 119/50 columns verified Down, Up, Left and Right through the actual
+`submitMenuKeys` client and bridge `keysPane` (including prompt binding). Every
+key changed the expected native selection; Effort returned to its initial high
+value. Wide-menu Escape used the same guarded action; the narrow menu's clipped
+Escape stayed keyboard-only. Both returned to an empty composer. No different
+model was selected and no provider inference was requested. Owned panes,
+projects and temporary native trust/cache entries were removed; user sessions
+and services were preserved.
+
+A supplementary 1.4.5 command-send check opened Model at both widths and Resume
+at 119 columns. Resume at 50 columns returned `typed_not_submitted: changed`;
+this is a pending send-protocol issue, not certification of all 1.4.5 commands.
+The version range was not widened by this model-card change.
 
 ## Composer command buttons
 
@@ -14,8 +44,8 @@ send function and SendProtocol at 119 and 50 columns. All four receipts were `se
 with `probe`, `Backspace`, and exactly one `Enter`; native Switch Model and
 Conversations appeared, and Escape returned to an empty composer. No model was
 selected, no history was resumed, and no provider inference was requested. The
-owned session and project were removed. The model menu keeps its existing native
-fallback; this repair adds no model-picker card.
+owned session and project were removed. That earlier command-send check left the
+model menu as native fallback; the later model-card check above supersedes it.
 
 Both `agy` and `antigravity` use the shared Model / Compact / Resume harness bar.
 The command palette also lists `/resume`, whose native Conversations picker was
@@ -60,8 +90,9 @@ were removed after the check; no service or existing agent was restarted for sam
 - At 38 and 50 columns, native startup and a Chinese draft kept the composer recognized
   and emitted no unread-dialog card. The startup announcement can still take substantial
   space; this change does not fold it or guess at its contents.
-- Native `/resume` opened the existing Conversations card. `/model` opened Switch Model,
-  which is still an unread-dialog fallback. Escape returned both to an empty composer.
+- Native `/resume` opened the existing Conversations card. `/model` originally used
+  the unread-dialog fallback, superseded by the model-card check above. Escape returned
+  both to an empty composer.
   No model was selected and no existing session was resumed.
 - Saved composer/status tails exclude account, path and transcript data. Unit checks also
   exercise a zero-gap hint/model boundary and wrapped working status. Browser replay at
@@ -89,5 +120,5 @@ found in its sampled log. Medium was retained; no provider or proxy was changed.
 The rendering change splits the two known fields and retains ANSI styling. It does not
 change status lifecycle or notification policy. Actual modal footers,
 numbered menus and misplaced cancel hints retain the existing refusal path. This is not
-a whole-CLI certification; the send profile remains provisional, and model selection,
-approval and question interactions need their own validation when adapted.
+a whole-CLI certification; the send profile remains provisional. Committing a
+different model, approval and question interactions are not certified here.

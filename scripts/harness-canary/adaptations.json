@@ -3096,6 +3096,47 @@
         "how": "owned native Herdr session: normal and mid-turn SendProtocol sends under Auto/Send Immediately completed; gray Auto placeholder and rich statusline captured; 38/50-column drafts and Model/Resume open/cancel checked; mobile geometry replay separately; read-only installed-session database check: 185 entries, no unknown step types; process-held lock prevents selecting newer test sessions; Chat/composer statusline mobile replay; native client sends for Model/Resume at 119/50 columns: one Enter, no provider inference",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
+    },
+    {
+      "id": "agy.model",
+      "agent": "agy",
+      "origin": "downstream",
+      "sources": [
+        "web/src/lib/harness/agy/model.ts",
+        "web/src/lib/harness/agy/index.ts",
+        "web/src/components/menu-block.tsx",
+        "web/src/lib/menu-action.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/agy/model.test.ts",
+        "web/src/lib/harness/agy/agy.test.ts",
+        "web/src/lib/menu-action.test.ts",
+        "web/src/components/menu-block.test.tsx",
+        "web/e2e/agy-chrome.spec.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/agy--v144-model--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v144-model--w50.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu"
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "1.4.4 / 1.4.5",
+        "date": "2026-10-22",
+        "how": "1.4.4 native 119/50-column captures; 1.4.5 owned Herdr sessions at both widths: shared submitMenuKeys and bridge keysPane verified model/effort navigation and guarded wide Escape, restored initial effort; no provider inference; 320px Chromium/WebKit layout replay",
+        "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
+      }
     }
   ]
 }

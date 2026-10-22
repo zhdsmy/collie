@@ -1,4 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 // The generic-menu race guard. The api layer is mocked so the pane can be made to drift between the
 // render the user tapped and the read the guard takes; the detector is the real thing, driven by
@@ -13,6 +15,7 @@ import { fetchPane, sendKeys, textBeforeLastSend } from "./api";
 import { parseAnsi } from "./ansi";
 import { splitLines } from "./blocks";
 import { detectMenu } from "./harness/claude/menu";
+import { detectModelRegion } from "./harness/agy/model";
 import { settleAfterSend } from "./harness/guard";
 import type { MenuModel } from "./harness/menu-model";
 import { menusEqual, menusSameIdentity, submitMenuKeys } from "./menu-action";
@@ -90,6 +93,18 @@ describe("menusEqual / menusSameIdentity", () => {
 });
 
 describe("submitMenuKeys", () => {
+  it("guards AGY model commits while allowing navigation after a highlight moves", async () => {
+    const original = readFileSync(join(import.meta.dirname, "../fixtures/panes/agy--v144-model--w119.txt"), "utf8");
+    const moved = original.replace("> Gemini", "  Gemini").replace("  Gemini 3.8", "> Gemini 3.8");
+    const menu = detectModelRegion(splitLines(parseAnsi(original)))!.model;
+    pane(moved);
+    const args = { ...base, agent: "agy", menu };
+    expect(await submitMenuKeys({ ...args, keys: ["Enter"] })).toEqual({ status: "changed" });
+    expect(mockSendKeys).not.toHaveBeenCalled();
+    expect(await submitMenuKeys({ ...args, keys: ["Down"], nav: true })).toEqual({ status: "sent" });
+    expect(mockSendKeys).toHaveBeenCalledWith("w1:p1", ["Down"], undefined, expect.any(String));
+  });
+
   it("sends a footer-named key when the screen is unchanged", async () => {
     pane(pickerBuffer(1));
     const menu = menuAt(1);

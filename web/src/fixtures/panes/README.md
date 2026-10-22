@@ -1,5 +1,14 @@
 # Pane-buffer fixtures
 
+## AGY model menu (captured 2026-10-22)
+
+`agy--v144-model--w{119,50}.txt` retain only Switch Model and its native status
+from owned AGY 1.4.4 sessions. Account, workspace and transcript are excluded.
+The 50-column footer clips Escape; the card offers only printed keys. Shared
+menu controls retain the ANSI model list instead of replacing it with an effort
+scale. See [local verification](../../lib/harness/agy/LOCAL_VERIFICATION.md).
+
+
 ## AGY 1.4.4 command completion (captured 2026-10-22)
 
 `agy--v144-slash-model--w119.txt` retains only the native composer, selected
