@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.2+collie.1] - 2026-10-22
+
 ### Fixed
 
-- **Claude notices and extension editors follow upstream v1.23.2.** Merge statement-style questions, notice follow-ups and letter-key guards, pi powerline input, typed-card dismissal and precise running hints; retain downstream Codex and AGY fixes. See [the integration report](docs/upstream-v1.23.2.md).
+- **Claude notices and extension editors follow upstream v1.23.2.** Merge statement-style questions, notice follow-ups and letter-key guards, pi powerline input, typed-card dismissal and precise running hints; retain downstream Codex and AGY fixes. See [the integration report](docs/upstream-v1.23.2.md). ([2c27ae87](https://github.com/zhdsmy/collie/commit/2c27ae87))
 
 ## [1.23.1+collie.9] - 2026-10-22
 
