@@ -22,6 +22,9 @@ test("the current canary loads the protocol client and refuses sends outside its
     await expect(fetch("/api/send", { method: "POST", body: JSON.stringify({
       id: "canary-ownership-check", pane: "foreign", text: "never send", mode: "send",
     }) })).rejects.toThrow("not the canary's");
+    await expect(fetch("/api/pane/foreign/keys", { method: "POST", body: JSON.stringify({
+      keys: ["4"],
+    }) })).rejects.toThrow("not the canary's");
     expect(reads).toBe(0);
   } finally {
     for (const [name, descriptor] of originals) {

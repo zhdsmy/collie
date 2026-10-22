@@ -62,13 +62,6 @@ const KNOWN_FOREIGN_CLAIMS = new Set([
   // The same shape on 2.1.303: a background agent's Bash permission with a tall command (2026-10-19).
   "claude--v2303-permission-bash-bg-agent-rm--w160.txt",
   "claude--v2303-permission-bash-bg-agent-rm--w80.txt",
-  // A Japanese AskUserQuestion on 2.1.296 (issue 543): its question ends in a fullwidth "？", which agy
-  // reads as a question now that both readers share hasQuestionMark. No agy pane paints it.
-  "claude--v2296-question-fullwidth--w150.txt",
-  // A Claude AskUserQuestion on 2.1.304 whose question has no "?" at all: both readers take the
-  // question under the single-question chip, and the scrubbed transcript names Claude nowhere. No agy
-  // pane paints it.
-  "claude--v2304-ask-no-question-mark-plain--w135.txt",
 ]);
 
 const ownFixtures = allAgyFixtures.filter((f) => !NEUTRAL.has(f));
@@ -438,7 +431,7 @@ describe("agy: the input-box search window never reads a dialog's rule as a comp
     expect(agyAdapter.composerReady!(lines)).toBe(false);
     expect(antigravityAdapter.composerReady!(lines)).toBe(false);
     expect(agyAdapter.extractInputDraft!(lines)).toBeNull();
-    expect(agyAdapter.extractStatusLines!(lines)).toEqual([]);
+    expect(agyAdapter.extractStatusLines!(lines).map(lineText).join(" ")).toContain("esc to cancel");
   });
 
   it("the real four-option dialog stays not-ready", () => {
@@ -732,5 +725,34 @@ describe("agy: a question takes its digit alone (1.3.5)", () => {
     });
     expect(rows.some((t) => t.includes("[ ]"))).toBe(false);
     expect(promptOf(splitLines(parseAnsi(rows.join("\n"))))).toBeNull();
+  });
+});
+
+describe("AGY permission context and status boundary", () => {
+  const capture = readFileSync(join(PANES_DIR, "agy--permission-bash.txt"), "utf8");
+  it.each(["Codex", "Grok", "Codex and Hermes"])("does not treat a discussion of %s as another agent", (name) => {
+    const lines = splitLines(parseAnsi(`Comparing ${name} status icons.\n${capture}`));
+    const prompt = detectPromptSelect(lines)!;
+    expect(prompt.family).toBe("permission");
+    expect(prompt.options).toHaveLength(4);
+    expect(prompt.options.at(-1)?.keys).toEqual(["4"]);
+    expect(agyAdapter.composerReady!(lines)).toBe(false);
+    expect(buildBlocks(lines, { agent: "agy" }).some((block) => block.kind === "unread-dialog")).toBe(false);
+  });
+
+  it("keeps the permission statusline in the fixed strip while leaving command details visible", () => {
+    const lines = splitLines(parseAnsi(capture));
+    const status = agyAdapter.extractStatusLines!(lines);
+    expect(status).toHaveLength(1);
+    expect(lineText(status[0]!)).toContain("esc to cancel");
+    const blocks = agyAdapter.buildBlocks(lines);
+    expect(blocks[0]?.kind).toBe("raw");
+    expect(blocks[0]?.lines.map(lineText).join("\n")).toContain("Requesting permission for:");
+    expect(agyAdapter.extractInputDraft!(lines)).toBeNull();
+  });
+
+  it("does not join an option list to a numbered help line across a rule", () => {
+    const text = ["Which option?", "> 1. First", "  2. Second", RULE, "3. about", "enter Select · esc Cancel"].join("\n");
+    expect(detectPromptSelect(splitLines(parseAnsi(text)))).toBeNull();
   });
 });

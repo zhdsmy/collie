@@ -78,7 +78,8 @@ export function isAlienBuffer(texts: string[]): boolean {
       const full = texts.join(" ");
       if (!/Antigravity CLI|\.antigravity|agy/i.test(full)) return true;
     }
-    if (/╭─ Ask ─╮|oh-my-pi|codex|grok/i.test(text)) return true;
+    // Agent names in prose or a command are not terminal ownership markers.
+    if (/╭─ Ask ─╮|oh-my-pi|OpenAI Codex|tell Codex what to do differently|Grok (?:Build|CLI)/i.test(text)) return true;
   }
   return false;
 }

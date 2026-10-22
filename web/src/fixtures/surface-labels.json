@@ -131,6 +131,11 @@
       "version": "unversioned",
       "state": "idle"
     },
+    "agy--v144-permission-status--w80.txt": {
+      "harness": "agy",
+      "version": "1.4.4",
+      "state": "dialog"
+    },
     "agy--permission-bash.txt": {
       "harness": "agy",
       "version": "unversioned",

@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Antigravity permission cards survive agent names in ordinary conversation.** Keep wrapped choices and the native statusline visible during permissions; reject menus separated by terminal rules, and exercise guarded card actions through the existing isolated canary transport.
+
 ## [1.23.2+collie.3] - 2026-10-22
 
 ### Changed

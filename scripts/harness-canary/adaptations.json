@@ -2002,10 +2002,13 @@
       "origin": "upstream-patched",
       "sources": [
         "web/src/lib/harness/agy/prompt-select.ts",
-        "web/src/lib/harness/agy/index.ts"
+        "web/src/lib/harness/agy/index.ts",
+        "web/src/lib/harness/agy/markers.ts",
+        "web/src/lib/harness/agy/chrome.ts"
       ],
       "tests": [
-        "web/src/lib/harness/agy/agy.test.ts"
+        "web/src/lib/harness/agy/agy.test.ts",
+        "web/e2e/agy-permission.spec.ts"
       ],
       "fixtures": [
         {
@@ -2015,14 +2018,23 @@
             "block": "prompt-select",
             "minOptions": 2
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v144-permission-status--w80.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 4,
+            "statusLinesMin": 1
+          }
         }
       ],
       "live": false,
       "verified": {
-        "version": "1.1.17",
-        "date": "2026-08-26",
-        "how": "captured live ANSI replay; recognition only",
-        "evidence": "web/src/fixtures/panes/README.md#agy-corpus"
+        "version": "1.4.4",
+        "date": "2026-10-22",
+        "how": "owned native session: four choices recognized, guarded digit 4 declined without executing; mobile browser replay",
+        "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
     {

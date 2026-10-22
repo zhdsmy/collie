@@ -3111,3 +3111,10 @@ checked separately in the same owned session; this capture alone proves only ren
 private path. The final cache label is already truncated by the native terminal. Chat
 browser replay uses synthetic message text alongside this captured statusline; journal
 wire-format fixtures are separately documented in the verification record.
+
+`agy--v144-permission-status--w80.txt` captures a native 1.4.4 command permission in
+an owned 80-column Herdr canary. The synthetic request mentions Codex and Hermes;
+both wrapped permission descriptions and the truncated native statusline are retained.
+The startup shell echo is omitted; account and scratch path are replaced with padded
+neutral values. Through Collie's guarded key endpoint, digit `4` closed this dialog
+without creating the requested scratch file. The canary session and project were removed.

@@ -198,10 +198,11 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   if (end === 0) return [];
 
   const box = locateInputBox(texts, end);
-  if (box === null) return [];
+  const statusStart = box?.statusStart ?? detectPromptSelectRegionIn(texts)?.statusStartLine;
+  if (statusStart === undefined) return [];
 
   const rows: StyledLine[] = [];
-  for (let j = box.statusStart; j < box.statusEnd; j++) {
+  for (let j = statusStart; j < (box?.statusEnd ?? end); j++) {
     if (!isBlank(texts[j]!)) rows.push(lines[j]!);
   }
   if (

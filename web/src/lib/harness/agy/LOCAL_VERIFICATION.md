@@ -128,7 +128,26 @@ legacy `in`/`out`/`cache` fields while keeping unrecognized fields visible. The 
 native captures remain unchanged. Synthetic rich-line replay at 320/390px covers one
 horizontal strip, an enabled composer, quota fields and the separate Chat stream.
 
-## Previous send verification
+## Command permission and fixed statusline (2026-10-22)
+
+- Native AGY 1.4.4, 80 columns: an owned canary requested a harmless scratch-file
+  command in `accept-edits` mode. Collie recognized all four permission choices even
+  with Codex and Hermes named in the preceding conversation. The wrapped command prefix
+  and persistence description remain available on their respective buttons.
+- `submitPromptOption` sent only digit `4` through the real guarded `/keys` handler.
+  The dialog closed and the scratch file did not exist. The isolated session/project
+  were removed. Approval and persistent allow were deliberately not exercised.
+- Permission/question footers now supply the fixed native statusline when the composer
+  is absent. Composer readiness and prompt guards are unchanged. Explicit foreign TUI
+  markers still reject the screen; a separator cannot join separate numbered lists.
+- The canary fetch shim now routes `/keys` through the existing server handler and
+  retains its owned-pane restriction. This changes no production API.
+- Chromium and WebKit replay at 320/390px passed for permission, Model, Resume,
+  working statusline and Chat (18 cases). Permission screenshots retain the wrapped
+  descriptions, a single fixed statusline and the successful guarded decline action.
+  This is desktop browser emulation, not an installed iPhone PWA check.
+
+## Earlier send checks
 
 An owned `collie-canary` Herdr session ran installed Antigravity CLI 1.4.4 in a fresh
 temporary project. Existing conversations were read only. The test session and project

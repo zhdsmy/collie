@@ -13,12 +13,12 @@ import { AuditLog } from "../../bridge/audit";
 import { loadConfig, type Config } from "../../bridge/config";
 import { herdrMuxFactory } from "../../bridge/mux/herdr/adapter";
 import type { MuxAdapter } from "../../bridge/mux/types";
-import { readPane, replyPane, parseSendRequest } from "../../bridge/server";
+import { readPane, replyPane, keysPane, parseSendRequest } from "../../bridge/server";
 import type { StateEngine } from "../../bridge/state-engine";
 import { asJsonObject, asJsonString, parseJson } from "../../web/src/lib/json";
 import { CANARY_SESSION, type CanarySession } from "./herdr";
 
-const PANE_PATH = /\/api\/pane\/([^/?]+)(?:\/(reply))?$/;
+const PANE_PATH = /\/api\/pane\/([^/?]+)(?:\/(reply|keys))?$/;
 /** Where the client's root-absolute paths are resolved against. Never dialled. */
 const ORIGIN = "http://collie-canary.invalid/";
 /** The device name the audit lines carry, so a canary send is never mistaken for a phone's. */
@@ -106,6 +106,9 @@ export function installTransport(session: Pick<CanarySession, "socket" | "isOwne
     if (match[2] === undefined && req.method === "GET") return readPane(mux, cfg, paneId, url, req, null, engine);
     if (match[2] === "reply" && req.method === "POST") {
       return replyPane(mux, cfg, paneId, req, log, CANARY_DEVICE, CANARY_SESSION);
+    }
+    if (match[2] === "keys" && req.method === "POST") {
+      return keysPane(mux, cfg, paneId, req, log, CANARY_DEVICE, CANARY_SESSION);
     }
     throw new Error(`canary transport: ${req.method} ${url.pathname} is not routed`);
   };
