@@ -6,7 +6,9 @@ import { installApiStub } from "./fixtures/api";
 const idle = readFileSync(new URL("../src/fixtures/panes/agy--v144-idle--w50.txt", import.meta.url), "utf8");
 const working = readFileSync(new URL("../src/fixtures/panes/agy--v144-working--w119.txt", import.meta.url), "utf8");
 const auto = readFileSync(new URL("../src/fixtures/panes/agy--v144-auto-placeholder--w119.txt", import.meta.url), "utf8");
-const quota = readFileSync(new URL("../src/fixtures/panes/agy--v144-quota--w119.txt", import.meta.url), "utf8");
+const capturedQuota = readFileSync(new URL("../src/fixtures/panes/agy--v144-quota--w119.txt", import.meta.url), "utf8");
+
+const quota = capturedQuota.replace(/auto[^\r\n]*/, "auto  idle  Gemini 4 Argon (High)  ctx 87%  main  v1.4.4  Gemini 5h 82.7% ↻3h32m · 7d 92.4% ↻5d19h  Claude/GPT 5h 100% ↻4h58m · 7d 86% ↻6d17h  in 135.4k  out 138.1k  cache 98%");
 
 test.use({ serviceWorkers: "block" });
 test("AGY narrow Resume opens a recognized menu", async ({ page }, testInfo) => {
@@ -96,9 +98,9 @@ for (const width of [320, 390]) {
     await expect(stream.getByText("原生会话已显示在", { exact: false })).toBeVisible();
     const strip = page.locator('[data-slot="agy-statusline"]');
     await expect(strip).toHaveCount(1);
-    await expect(strip.getByText("Gemini 4 Argon (Medium)", { exact: true })).toBeVisible();
-    await expect(strip.getByText("5h 98.6% ↻4h59m", { exact: true })).toBeVisible();
-    await expect(strip.getByText("7d 97.2% ↻6d6h", { exact: true })).toBeVisible();
+    await expect(strip.getByText("Gemini 4 Argon (High)", { exact: true })).toBeVisible();
+    await expect(strip.getByText("82.7% ↻3h32m", { exact: true })).toBeVisible();
+    await expect(strip.getByText("92.4% ↻5d19h", { exact: true })).toBeVisible();
     const input = page.getByRole("textbox").first();
     await expect(input).toBeEnabled();
     await expect(input).toHaveValue("");
@@ -143,7 +145,7 @@ for (const width of [320, 390]) {
       await page.goto("/pane/w1:p1");
       const strip = page.locator('[data-slot="agy-statusline"]');
       await expect(strip).toHaveCount(1);
-      const hint = strip.getByText(state === "auto" ? "auto" : state === "idle" ? "? for shortcuts" : "esc to cancel", { exact: true });
+      const hint = strip.getByRole("img", { name: state === "auto" ? "auto" : state === "idle" ? "? for shortcuts" : "esc to cancel", exact: true });
       const model = strip.getByText(state === "auto" ? "Gemini 4 Argon (Medium)" : "Gemini 4 Argon · medium", { exact: true });
       await expect(hint).toBeVisible();
       await expect(model).toBeVisible();
@@ -155,9 +157,9 @@ for (const width of [320, 390]) {
       await expect(input).toBeEnabled();
       if (state === "auto") {
         await expect(input).toHaveValue("");
-        await expect(strip.getByText("ctx 100%", { exact: true })).toBeVisible();
-        await expect(strip.getByText("Σin 0", { exact: true })).toHaveCount(1);
-        await expect(strip.getByText("Σout 0", { exact: true })).toHaveCount(1);
+        await expect(strip.locator('[data-status-icon="context"][data-value="100"]')).toBeVisible();
+        await expect(strip.getByRole("img", { name: "Σin 0", exact: true })).toHaveCount(1);
+        await expect(strip.getByRole("img", { name: "Σout 0", exact: true })).toHaveCount(1);
       }
       const stripBox = await strip.boundingBox();
       const inputBox = await input.boundingBox();

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { createCipheriv } from "node:crypto";
 import { Database } from "bun:sqlite";
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -29,6 +30,15 @@ const tool = step(132, field(140, field(2, field(1, "Command exited with code 0.
   field(4, message(field(1, "call-1"), field(2, "run_command"), field(3, '{"CommandLine":"pwd"}'))));
 function row(idx: number, type: number, payload: Uint8Array, format = 0) {
   return JSON.stringify({ idx, type, format, payload: Buffer.from(payload).toString("base64") });
+}
+
+
+function encrypted(steps: Buffer[], id = ID) {
+  // Public AGY format key; synthetic plaintext only.
+  const nonce = Buffer.alloc(12, 7);
+  const cipher = createCipheriv("aes-256-gcm", Buffer.from("73616665436f646569756d776f726c644b655973656372657442616c6c6f6f6e", "hex"), nonce);
+  const plain = message(field(6, id), ...steps.map((payload) => field(2, payload)));
+  return Buffer.concat([nonce, cipher.update(plain), cipher.final(), cipher.getAuthTag()]);
 }
 
 describe("AGY native steps", () => {
@@ -141,5 +151,54 @@ describe("AGY read-only source and exact discovery", () => {
     expect(await agyJournal(root, async () => `n${lock}\nn${other}\n`).discover!("/cwd", hints)).toBeNull();
     const outside = join(foreign, "presence", `${ID}.lock`); await writeFile(outside, "");
     expect(await agyJournal(root, async () => `n${outside}\n`).discover!("/cwd", hints)).toBeNull();
+  });
+});
+
+
+describe("AGY native fallback storage", () => {
+  test("reads the active .pb when SQLite creation left an empty database, then follows migration", async () => {
+    const root = await home(); const { path, db } = database(root);
+    db.run("delete from steps"); db.close();
+    const pb = path.replace(/\.db$/, ".pb");
+    await writeFile(pb, encrypted([user, answer, tool]));
+    const lock = join(root, "presence", `${ID}.lock`); await writeFile(lock, "");
+    const adapter = agyJournal(root, async () => `p42\nn${lock}\n`);
+    const ref = await adapter.discover!("/cwd", { processes: [{ pid: 42, argv: ["agy"] }] });
+    expect(ref).toEqual({ kind: "id", value: ID });
+    expect(await adapter.source.resolve(ref!)).toBe(pb);
+    const history = adapter.parse((await adapter.source.load(pb)).text);
+    expect(history.map((entry) => entry.role)).toEqual(["user", "assistant", "assistant"]);
+    expect(adapter.parse((await adapter.source.readSince(pb, NO_CURSOR)).lines.join("\n"))).toEqual(history);
+    await writeFile(pb, encrypted([user, answer, tool, answer]));
+    expect(adapter.parse((await adapter.source.readSince(pb, NO_CURSOR)).lines.join("\n"))).toHaveLength(4);
+    const migrated = new Database(path);
+    migrated.run("insert into steps values (0,14,0,?)", [user]); migrated.close();
+    expect(await adapter.source.resolve(ref!)).toBe(path);
+  });
+
+  test("authenticates the file and its conversation identity before publishing any text", async () => {
+    const root = await home(); const pb = join(root, "conversations", `${ID}.pb`);
+    const source = new AgyTranscriptSource(root);
+    const badTag = encrypted([user]); badTag[badTag.length - 1]! ^= 1;
+    for (const data of [Buffer.from("truncated"), badTag, encrypted([user], OTHER)]) {
+      await writeFile(pb, data);
+      expect((await source.load(pb)).text).toBe("");
+      expect((await source.readSince(pb, NO_CURSOR)).lines).toEqual([]);
+    }
+    const outside = await home(); const foreign = join(outside, `${ID}.pb`);
+    await writeFile(foreign, encrypted([user])); await rm(pb); await symlink(foreign, pb);
+    expect(await source.resolve({ kind: "id", value: ID })).toBeNull();
+    expect((await source.load(pb)).text).toBe("");
+  });
+
+  test("keeps stable tail indexes for more than 1024 steps", async () => {
+    const root = await home(); const pb = join(root, "conversations", `${ID}.pb`);
+    await writeFile(pb, encrypted(Array.from({ length: 1100 }, () => answer)));
+    const adapter = agyJournal(root);
+    const history = adapter.parse((await adapter.source.load(pb)).text);
+    const tail = await adapter.source.readSince(pb, NO_CURSOR);
+    expect(history).toHaveLength(1100);
+    expect(adapter.parse(tail.lines.join("\n")).at(-1)?.uuid).toBe("agy-1099");
+    expect(tail.fromStart).toBe(false);
   });
 });

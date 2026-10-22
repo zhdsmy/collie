@@ -1,4 +1,7 @@
 import {
+  ArrowDown,
+  ArrowUp,
+  Keyboard,
   ChevronUp,
   CalendarDays,
   Clock,
@@ -212,7 +215,7 @@ function ClaudeField({ segments, text }: { segments: AnsiSegment[]; text: string
   );
 }
 
-function CursorIconField({
+function StatusIconField({
   text,
   segments,
   icon: Icon,
@@ -270,13 +273,13 @@ function CursorStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
         const plan = /^plan\s+(\d+%)\s+\(auto\s+(\d+%)\s+api\s+(\d+%)\)(?:\s+od\s+(\$[\d,.]+\/\$[\d,.]+))?\s+↻(\S+)$/i.exec(field.text);
         let content: ReactNode;
         if (task?.[1]) {
-          content = <CursorIconField text={field.text} segments={segments} icon={Loader2}
+          content = <StatusIconField text={field.text} segments={segments} icon={Loader2}
             value={task[1]} animated />;
         } else if (position === modelIndex) {
-          content = <CursorIconField text={field.text} segments={segments} icon={Cpu}
+          content = <StatusIconField text={field.text} segments={segments} icon={Cpu}
             value={field.text} />;
         } else if (position === locationIndex) {
-          content = <CursorIconField text={field.text} segments={segments} icon={FolderGit2}
+          content = <StatusIconField text={field.text} segments={segments} icon={FolderGit2}
             value={field.text} />;
         } else if (context?.[1] && Number.parseInt(context[1], 10) <= 100) {
           const valueStart = field.text.indexOf(context[1]);
@@ -379,6 +382,42 @@ function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
  * other on a 38-column mobile pane (`? for shortcutsGemini 4 Argon · medium`). Splitting on either
  * the inter-column gap or that zero-gap boundary replaces both with a compact divider.
  */
+const AGY_FIELDS: { pattern: RegExp; icon: LucideIcon }[] = [
+  { pattern: /^auto$/, icon: Zap },
+  { pattern: /^(?:default|accept-edits)$/, icon: ShieldCheck },
+  { pattern: /^plan$/, icon: ListChecks },
+  { pattern: /^idle$/, icon: CircleCheck },
+  { pattern: /^(?:thinking|working|tool_use|initializing)$/, icon: Hourglass },
+  { pattern: /^\? for shortcuts$/, icon: Keyboard },
+  { pattern: /^esc to cancel$/, icon: CircleOff },
+  { pattern: /^(?:Σin|in) (\d+(?:\.\d+)?[km]?)$/, icon: ArrowDown },
+  { pattern: /^(?:Σout|out) (\d+(?:\.\d+)?[km]?)$/, icon: ArrowUp },
+  { pattern: /^cache (\d+(?:\.\d+)?%)$/, icon: Database },
+];
+
+function AgyField({ text, segments }: { text: string; segments: AnsiSegment[] }) {
+  // Complete known fields only; custom labels retain their native text and ANSI styling.
+  for (const { pattern, icon } of AGY_FIELDS) {
+    const match = pattern.exec(text);
+    if (match) return <StatusIconField text={text} segments={segments} icon={icon} value={match[1] ?? ""} />;
+  }
+  const quota = /^(?:(Gemini|GEMINI MODELS|Claude\/GPT|CLAUDE AND GPT MODELS) )?((?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S+)?(?: · (?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S+)?)?)$/.exec(text);
+  if (quota?.[2]) {
+    const windows = quota[2].split(" · ");
+    if (windows.every((window) => Number.parseFloat(window.slice(3)) <= 100)) return (
+      <span role="img" aria-label={text} title={text} className="inline-flex shrink-0 items-center gap-1.5">
+        {quota[1] && <span aria-hidden="true" style={segments[0] && styleFor(segments[0])}>
+          {quota[1].startsWith("G") ? "Gemini" : "Claude/GPT"}
+        </span>}
+        {windows.map((window) => <StatusIconField key={window} text={window}
+          segments={sliceSegments(segments, text.indexOf(window), text.indexOf(window) + window.length)}
+          icon={window.startsWith("5h") ? Timer : CalendarDays} value={window.slice(3)} />)}
+      </span>
+    );
+  }
+  return <ClaudeField text={text} segments={segments} />;
+}
+
 function AgyStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode }) {
   let offset = 0;
   const fields: ReactNode[] = [];
@@ -392,9 +431,7 @@ function AgyStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode 
     fields.push(
       <span key={index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
         {fields.length > 0 && <StatuslineDivider />}
-        <span>
-          <StyledText segments={sliceSegments(row.segments, start, start + text.length)} />
-        </span>
+        <AgyField text={text} segments={sliceSegments(row.segments, start, start + text.length)} />
       </span>,
     );
   }

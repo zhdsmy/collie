@@ -372,7 +372,7 @@ it.each(["agy", "antigravity"])("separates %s hint and model fields across wide 
   expect(wideStrip).not.toBeNull();
   expect(wide.container.textContent).not.toMatch(/ {2,}/);
   expect(wideStrip.querySelectorAll("span.w-px")).toHaveLength(1);
-  expect(within(wide.container).getByText("? for shortcuts").style.color).toBe("var(--ansi-8)");
+  expect(within(wide.container).getByRole("img", { name: "? for shortcuts" }).querySelector("svg")!.style.color).toBe("var(--ansi-8)");
   expect(within(wide.container).getByText("Gemini 4 Argon · medium")).toHaveStyle({ opacity: 0.6 });
 
   const tight = renderRow(
@@ -381,8 +381,25 @@ it.each(["agy", "antigravity"])("separates %s hint and model fields across wide 
   );
   const tightStrip = tight.container.querySelector('[data-slot="agy-statusline"]')!;
   expect(tightStrip.querySelectorAll("span.w-px")).toHaveLength(1);
-  expect(within(tight.container).getByText("? for shortcuts")).toBeInTheDocument();
+  expect(within(tight.container).getByRole("img", { name: "? for shortcuts" })).toBeInTheDocument();
   expect(within(tight.container).getByText("Gemini 4 Argon · medium")).toBeInTheDocument();
+});
+
+it.each(["GEMINI MODELS", "Gemini"])("compacts AGY modes, context, quota windows and counters: %s", (group) => {
+  const view = renderRow(`auto  idle  Gemini 4 Argon (High)  ctx 87%  main  v1.4.4  ${group} 5h 82.7% ↻3h32m · 7d 92.4% ↻5d19h  CLAUDE AND GPT MODELS 5h 100% ↻4h58m · 7d 86% ↻6d17h  Σin 135.4k  out 138.1k  cache 98%  unknown tail`, "agy");
+  expect(view.getByRole("img", { name: "auto" })).toHaveTextContent("");
+  expect(view.getByRole("img", { name: "idle" })).toHaveTextContent("");
+  expect(view.getByRole("img", { name: "Context 87% left" })).toBeInTheDocument();
+  expect(view.getByRole("img", { name: "Σin 135.4k" })).toHaveTextContent("135.4k");
+  expect(view.getByRole("img", { name: "out 138.1k" })).toHaveTextContent("138.1k");
+  expect(view.getByRole("img", { name: "cache 98%" })).toHaveTextContent("98%");
+  expect(view.container.querySelectorAll(".lucide-timer")).toHaveLength(2);
+  expect(view.container.querySelectorAll(".lucide-calendar-days")).toHaveLength(2);
+  expect(view.getByText("Claude/GPT")).toBeInTheDocument();
+  expect(view.getByText("82.7% ↻3h32m")).toBeInTheDocument();
+  expect(view.getByText("unknown tail")).toBeInTheDocument();
+  expect(view.container.textContent).not.toMatch(/MODELS|ctx |Σin |cache /);
+  expect(view.container.querySelector('[data-slot="agy-statusline"]')).toHaveClass("overflow-x-auto", "whitespace-nowrap");
 });
 
 it("compacts the captured Claude custom statusline without printing its right-side hint", () => {

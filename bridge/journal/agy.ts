@@ -1,8 +1,10 @@
-// AGY 1.4.4 stores one SQLite trajectory per conversation, with CortexStep protobuf payloads.
+// AGY 1.4.4 stores SQLite trajectories, or authenticated .pb files when SQLite creation fails.
 // Read only the measured message fields; unknown step types remain visible to the drift tally.
 import { Database } from "bun:sqlite";
 import { execFile } from "node:child_process";
+import { createDecipheriv } from "node:crypto";
 import { existsSync } from "node:fs";
+import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -16,12 +18,14 @@ import { classifyToolCall } from "./tool-call.ts";
 import type { AgentSessionRef, DiscoverHints, JournalAdapter, TranscriptEntry, TranscriptPart, TranscriptSource } from "./types.ts";
 
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Fixed public AGY 1.4.4 format key, not a user credential. Provenance: LOCAL_VERIFICATION.md.
+const AGY_FORMAT_KEY = Buffer.from("73616665436f646569756d776f726c644b655973656372657442616c6c6f6f6e", "hex");
 const MAX_STEP_BYTES = 4 * 1024 * 1024;
 const exec = promisify(execFile);
 type ProtoField = { field: number; value: number | Uint8Array };
 
 /** The bounded protobuf wire reader only descends into fields named below, never arbitrary data. */
-function proto(raw: Uint8Array): ProtoField[] {
+function proto(raw: Uint8Array, maxFields = 1024): ProtoField[] {
   let at = 0;
   function integer(): number {
     let value = 0n;
@@ -37,7 +41,7 @@ function proto(raw: Uint8Array): ProtoField[] {
   }
   const fields: ProtoField[] = [];
   while (at < raw.length) {
-    if (fields.length >= 1024) throw new Error("too many protobuf fields");
+    if (fields.length >= maxFields) throw new Error("too many protobuf fields");
     const tag = integer();
     const field = Math.floor(tag / 8);
     const wire = tag % 8;
@@ -154,6 +158,8 @@ export class AgyTranscriptSource implements TranscriptSource {
     for (const root of this.roots) {
       const path = await containedRealpath(join(root, "conversations", `${ref.value}.db`), root);
       if (path !== null && withDb(path, (db) => db.query("select idx from steps limit 1").get()) !== null) return path;
+      const fallback = await containedRealpath(join(root, "conversations", `${ref.value}.pb`), root);
+      if (fallback !== null && await statFile(fallback)) return fallback;
     }
     return null;
   }
@@ -161,7 +167,7 @@ export class AgyTranscriptSource implements TranscriptSource {
   private async contained(key: string): Promise<string | null> {
     for (const root of this.roots) {
       const path = await containedRealpath(key, join(root, "conversations"));
-      if (path !== null && SESSION_ID.test(path.split(/[/\\]/).pop()?.replace(/\.db$/, "") ?? "")) return path;
+      if (path !== null && /\.(?:db|pb)$/.test(path) && SESSION_ID.test(path.split(/[/\\]/).pop()?.replace(/\.(?:db|pb)$/, "") ?? "")) return path;
     }
     return null;
   }
@@ -170,7 +176,7 @@ export class AgyTranscriptSource implements TranscriptSource {
     const path = await this.contained(key);
     if (path === null) return null;
     const db = await statFile(path);
-    const wal = await statFile(`${path}-wal`);
+    const wal = path.endsWith(".db") ? await statFile(`${path}-wal`) : null;
     return db ? { size: db.size + (wal?.size ?? 0), mtimeMs: Math.max(db.mtimeMs, wal?.mtimeMs ?? 0) } : null;
   }
 
@@ -178,7 +184,7 @@ export class AgyTranscriptSource implements TranscriptSource {
     const path = await this.contained(key);
     const meta = await this.stat(key);
     if (path === null || meta === null) return null;
-    const data = withDb(path, (db) => {
+    const data = path.endsWith(".pb") ? await this.readFallback(path, cap, limit, meta) : withDb(path, (db) => {
       const lines: string[] = [];
       const total = db.query<{ total: number }, []>("select count(*) as total from steps").get()?.total ?? 0;
       let size = 0;
@@ -196,6 +202,33 @@ export class AgyTranscriptSource implements TranscriptSource {
     const after = await this.stat(key);
     // An immutable read takes no file lock: discard a snapshot if a native writer moved underneath it.
     return after?.mtimeMs === meta.mtimeMs && after.size === meta.size ? data : null;
+  }
+
+  private async readFallback(path: string, cap: number, limit: number, meta: { size: number; mtimeMs: number }) {
+    try {
+      if (meta.size < 28 || meta.size > MAX_TRANSCRIPT_BYTES || !(await stat(path)).isFile()) return null;
+      const raw = Buffer.from(await Bun.file(path).slice(0, MAX_TRANSCRIPT_BYTES + 1).arrayBuffer());
+      if (raw.length !== meta.size) return null;
+      const decipher = createDecipheriv("aes-256-gcm", AGY_FORMAT_KEY, raw.subarray(0, 12));
+      decipher.setAuthTag(raw.subarray(-16));
+      const fields = proto(Buffer.concat([decipher.update(raw.subarray(12, -16)), decipher.final()]), 10032);
+      // Authenticate first, then bind the embedded conversation to the process-selected filename.
+      if (string(fields, 6) !== path.split(/[/\\]/).pop()!.slice(0, -3)) return null;
+      const steps = fields.filter((field) => field.field === 2);
+      const lines: string[] = [];
+      let size = 0;
+      for (let idx = steps.length - 1; idx >= Math.max(0, steps.length - limit); idx--) {
+        const payload = steps[idx]!.value;
+        if (!(payload instanceof Uint8Array) || payload.length > MAX_STEP_BYTES) return null;
+        const type = proto(payload).find((field) => field.field === 1)?.value;
+        if (typeof type !== "number") return null;
+        const line = JSON.stringify({ idx, type, format: 0, payload: Buffer.from(payload).toString("base64") });
+        size += Buffer.byteLength(line);
+        if (size > cap) break;
+        lines.push(line);
+      }
+      return { lines: lines.toReversed(), complete: lines.length === steps.length, ...meta };
+    } catch { return null; }
   }
 
   async load(key: string) {

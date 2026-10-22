@@ -85,26 +85,46 @@ compaction is not executed against the user's conversation.
 
 ## Chat and composer statusline
 
-The installed 1.4.4 session was read without prompting or restarting it. Its process-held
-`presence/<uuid>.lock` names the active conversation exactly, including when newer test
-conversations exist in the same workspace. The read-only `conversations/<uuid>.db` reader
-found 185 entries (3 user, 180 assistant/tool and 2 compaction summaries), with no unknown
-step types. Only native CortexStep fields measured in this version are read. Synthetic
-wire-schema tests cover paragraphs, reasoning, non-duplicated answers, tools/errors,
-in-place updates, malformed payloads and path containment.
+Read-only verification on 2026-10-22 used the installed AGY 1.4.4 process and its
+`presence/<uuid>.lock`; no prompt, restart, or conversation migration was needed.
+The earlier SQLite session yielded 185 entries. The current session instead had an
+empty `.db` and a growing `.pb`: AGY's own log reported `set user_version: database
+is locked` during creation, then selected its fallback backend. Before this fix,
+Collie's Chat and History routes returned `no-session` and Chat displayed the mirror.
+The cause of that native database lock was not established.
+
+The reader now selects a populated SQLite database first, then the same conversation's
+native `.pb`. The fallback is AES-256-GCM authenticated with AGY's **public fixed format
+key**, not a user credential. Its embedded cascade ID must match the process-selected
+filename. Reuse of the existing CortexStep parser recovered 381 entries from 464 steps
+(2 user, 376 assistant/tool, 3 summaries). Three type-101 steps remain in the unknown-type
+tally; no unsupported step is guessed into a message. Only measured native fields are
+projected, so this is not a lossless transcript export.
+
+Format provenance: [agy-reader's native fallback reader](https://github.com/mjacobs/agy-reader/blob/main/internal/completeness/legacy.go),
+[public format key](https://github.com/mjacobs/agy-reader/blob/main/internal/completeness/legacy_key.bin),
+and [AGY 1.4.4 verification](https://github.com/mjacobs/agy-reader/blob/main/docs/compatibility/agy-1.4.4-legacy-verification.md).
+Collie reuses its existing bounded protobuf parser and Node crypto, with no new dependency,
+daemon, export job, or persisted plaintext. Synthetic tests cover authenticated corruption,
+identity mismatch, containment, empty-database fallback, later SQLite migration, mutable
+updates and stable indexes beyond 1024 steps. Fallback files above 32 MiB or 10,032 top-level
+fields remain unreadable rather than bypassing the bounds.
 
 AGY closes/checkpoints its SQLite WAL between writes. Without a WAL, the reader uses an
 immutable read-only URI to avoid creating side files and discards a snapshot whose file
 metadata changed while reading. With a WAL it uses SQLite's normal read-only connection.
-The live window re-reads a bounded tail because native steps can change in place.
+Chat and History share the existing journal pipeline; session discovery never chooses the
+newest conversation in a shared directory. Windows discovery and native live model streaming
+are not certified here.
 
-Chat and History share the existing journal pipeline; the composer keeps the existing
-AGY statusline and native quota fields. `agy--v144-quota--w119.txt` is a transcript-free
-tail captured from the installed session; its last cache field is natively truncated.
-The 320/390px browser replay checks Chat, one lifted statusline, quota fields and an empty
-enabled composer together. Unix session discovery uses the installed `lsof` without DNS
-lookups and falls back to the terminal when identity is unavailable; no newest-session
-guessing. Windows discovery and native live model streaming are not certified here.
+The local stdin-only statusline keeps both quota families and reset times, shortens them to
+`Gemini` and `Claude/GPT`, and uses `in`/`out` counters. It still delegates model/context/git/
+version to the existing Claude-compatible script. No quota polling or currency estimate is
+introduced. Collie's AGY statusline reuses the shared icon field and context ring for modes,
+activity, key hints, context, quota windows and counters; full native labels remain in titles
+and accessible names, and unrecognized fields stay visible. The original native captures
+remain unchanged. Synthetic rich-line replay at 320/390px covers one horizontal strip, an
+enabled composer, quota fields and the separate Chat stream.
 
 ## Previous send verification
 
