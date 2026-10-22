@@ -37,7 +37,7 @@ describe("the shipped bar", () => {
   });
 
   it("names a bar for exactly the harnesses this milestone drove from a phone", () => {
-    expect(BAR_AGENTS.toSorted()).toEqual(["claude", "codex", "cursor", "hermes", "omp", "pi"]);
+    expect(BAR_AGENTS.toSorted()).toEqual(["agy", "antigravity", "claude", "codex", "cursor", "hermes", "omp", "pi"]);
   });
 
   it("gives Claude Model, Effort, Compact and Resume, in that order", () => {
@@ -75,9 +75,17 @@ describe("the shipped bar", () => {
   });
 
   it("renders nothing for an agent with no bar, and for no agent at all", () => {
-    for (const agent of ["grok", "opencode", "agy", "antigravity", "bash", "", undefined, null]) {
+    for (const agent of ["grok", "opencode", "bash", "", undefined, null]) {
       expect(barFor(agent), `${String(agent)} has no bar`).toEqual([]);
     }
+  });
+
+  it.each(["agy", "antigravity", "agy-cli", "Antigravity CLI"])("gives %s Model, Compact and Resume", (agent) => {
+    expect(barFor(agent).map((i) => [i.id, i.command])).toEqual([
+      ["model", "/model"],
+      ["compact", "/compact"],
+      ["resume", "/resume"],
+    ]);
   });
 
   it("reaches a bar through the catalog's own agent ladder", () => {

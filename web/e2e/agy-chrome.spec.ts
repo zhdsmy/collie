@@ -50,6 +50,14 @@ for (const width of [320, 390]) {
     const inputBox = await input.boundingBox();
     expect(stripBox!.y + stripBox!.height).toBeLessThanOrEqual(inputBox!.y);
     await expect(page.getByText("Collie 未识别此界面", { exact: false })).toHaveCount(0);
+    const bar = page.locator('[data-slot="harness-bar"]');
+    for (const label of ["模型", "压缩", "恢复"]) {
+      const button = bar.getByRole("button", { name: label, exact: true });
+      await button.scrollIntoViewIfNeeded();
+      await expect(button).toBeInViewport();
+      const buttonBox = await button.boundingBox();
+      expect(buttonBox!.y + buttonBox!.height).toBeLessThanOrEqual(inputBox!.y);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     await page.screenshot({ path: testInfo.outputPath("agy-chat-statusline.png") });
   });

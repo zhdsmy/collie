@@ -1,5 +1,14 @@
 # AGY 1.4.4 UI check — 2026-10-22
 
+## Composer command buttons
+
+Both `agy` and `antigravity` use the shared Model / Compact / Resume harness bar.
+The command palette also lists `/resume`, whose native Conversations picker was
+checked below. Component tests assert each bare command reaches the existing send
+callback; 320/390px browser replay checks every button is reachable by scrolling
+without overlapping the composer. This change adds no key sequence or menu parser;
+compaction is not executed against the user's conversation.
+
 ## Chat and composer statusline
 
 The installed 1.4.4 session was read without prompting or restarting it. Its process-held

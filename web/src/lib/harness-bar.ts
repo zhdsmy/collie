@@ -155,6 +155,13 @@ const HERMES: readonly HarnessBarItem[] = [
   { id: "resume", label: "harnessBar.resume", command: "/resume" },
 ];
 
+// ── Antigravity ──────────────────────────────────────────────────────────────
+const AGY: readonly HarnessBarItem[] = [
+  { id: "model", label: "harnessBar.model", command: "/model" },
+  { id: "compact", label: "harnessBar.compact", command: "/compact" },
+  { id: "resume", label: "harnessBar.resume", command: "/resume" },
+];
+
 // ── durable ──────────────────────────────────────────────────────────────────
 // A durable program has no screen and no slash commands, so its section is not made of text the
 // phone types. Its two buttons are ACTIONS the program declared, and each row is gated by the
@@ -205,6 +212,8 @@ const BARS = new Map<string, readonly HarnessBarItem[]>([
   ["pi", PI],
   ["omp", OMP],
   ["hermes", HERMES],
+  ["agy", AGY],
+  ["antigravity", AGY],
 ]);
 
 /** The agent names a shipped bar is filed under — pinned in the tests. */
@@ -212,8 +221,8 @@ export const BAR_AGENTS: readonly string[] = [...BARS.keys()];
 
 /**
  * The bar for a Herdr-detected agent — the operator's own `bar = true` rows if any of them address
- * this pane, otherwise the shipped table. Returns `[]` for every other agent (grok, opencode, agy,
- * antigravity, a bare shell, a pane with no agent at all) and the row does not render.
+ * this pane, otherwise the shipped table. Returns `[]` for every other agent (grok, opencode,
+ * a bare shell, a pane with no agent at all) and the row does not render.
  *
  * **THE REPLACEMENT RULE IS PER SURFACE.** ADR 0018 says that if any operator row addresses a pane,
  * the operator's rows ARE the catalog for that pane. This applies that rule to the BAR alone: the

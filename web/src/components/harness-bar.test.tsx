@@ -50,6 +50,16 @@ describe("HarnessBar", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it.each(["agy", "antigravity"])("runs %s commands through the existing send callback", async (agent) => {
+    const onRun = took();
+    render(<HarnessBar agent={agent} onRun={onRun} />);
+    for (const [label, command] of [["Model", "/model"], ["Compact", "/compact"], ["Resume", "/resume"]]) {
+      await userEvent.click(screen.getByRole("button", { name: label }));
+      expect(onRun).toHaveBeenLastCalledWith(command);
+    }
+    expect(onRun).toHaveBeenCalledTimes(3);
+  });
+
   it("renders nothing while the per-device toggle is off", () => {
     setHarnessBarEnabled(false);
     const { container } = render(<HarnessBar agent="claude" onRun={took()} />);

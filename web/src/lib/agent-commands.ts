@@ -277,6 +277,7 @@ const OMP: readonly AgentCommand[] = [
 
 // ── Antigravity (agy) ────────────────────────────────────────────────────────
 const AGY: readonly AgentCommand[] = [
+  { command: "/resume", description: "Open the conversation picker to resume a previous session", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/plan", description: "Switch into plan mode to outline steps before execution", takesArg: true, argHint: "[goal]", common: true, dangerous: false },
   { command: "/grill-me", description: "Interactive interview to resolve ambiguity and align on design", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/learn", description: "Persist lessons, corrections, and project workflows", takesArg: true, argHint: "[lesson]", common: true, dangerous: false },

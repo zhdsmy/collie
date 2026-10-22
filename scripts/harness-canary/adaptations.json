@@ -3014,7 +3014,9 @@
         "bridge/surface/protocol.ts",
         "bridge/journal/agy.ts",
         "bridge/journal/registry.ts",
-        "web/src/lib/journal-agents.ts"
+        "web/src/lib/journal-agents.ts",
+        "web/src/lib/harness-bar.ts",
+        "web/src/lib/agent-commands.ts"
       ],
       "tests": [
         "web/src/lib/harness/agy/agy.test.ts",
@@ -3024,7 +3026,10 @@
         "web/src/lib/surface/profile.test.ts",
         "bridge/surface/protocol.test.ts",
         "bridge/journal/agy.test.ts",
-        "bridge/journal/registry.test.ts"
+        "bridge/journal/registry.test.ts",
+        "web/src/lib/harness-bar.test.ts",
+        "web/src/components/harness-bar.test.tsx",
+        "web/src/lib/agent-commands.test.ts"
       ],
       "fixtures": [
         {
