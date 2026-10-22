@@ -144,7 +144,7 @@
     "agy--v145-status-working--w120.txt": {
       "harness": "agy",
       "version": "1.4.5",
-      "state": "working"
+      "state": "running"
     },
     "agy--v145-status-interrupted--w120.txt": {
       "harness": "agy",
@@ -4406,6 +4406,11 @@
       "version": "0.22.1",
       "state": "idle"
     },
+    "hermes--v0224-modern-done.txt": {
+      "harness": "hermes",
+      "version": "0.22.4",
+      "state": "idle"
+    },
     "hermes--working.txt": {
       "harness": "hermes",
       "version": "unversioned",
@@ -5394,6 +5399,7 @@
   },
   "knownMismatches": {
     "$comment": "Fixtures whose label is running but whose Surface reads free, with the reason. fold.corpus.test.ts fails on any other running label that reads free, and on an entry here that no longer reads free.",
+    "agy--v145-status-working--w120.txt": "AGY's native statusline says working below an empty bordered composer; the generic Surface reader has no AGY running cue. The display statusline reader recognizes the state, but this capture does not certify Send Protocol busy detection.",
     "claude--v2301-hold-subagent.txt": "The main turn is over and a background subagent waits on a hook-held permission: the screen shows a free box and a finished row, and only a hook can say the session is busy.",
     "claude--v2301-spinner-no-timer--w100.txt": "The first second of a turn: the spinner row has no timer yet, and the running sign needs the timer. A send there goes ahead and Claude Code queues it.",
     "claude--v2302-turn-ending-stop-hooks--w119.txt": "The last read of a turn on Claude Code 2.1.302: the spinner row carries 'running Stop hooks' before its timer, which the running sign does not take. The turn is ending; a send there goes ahead, and Enter either queues it or starts the next turn.",

@@ -1,5 +1,15 @@
 # Pane-buffer fixtures
 
+## Hermes 0.22.4 modern footer (captured 2026-10-22)
+
+`hermes--v0224-modern-done.txt` is the read-only tail of the reported live pane,
+starting at the harmless upgrade-check prompt and ending at the native footer.
+Earlier history and startup output are excluded; only the session title is
+replaced by an equal-width label. ANSI, blank rows, the 40-cell response rules,
+titled composer rule, italic suggestion and bottom status are preserved.
+It reproduces the assistant reply being claimed as a terminal draft. Replay
+checks display and input-frame parsing; no new model call or send is certified.
+
 ## AGY 1.4.5 Resume (captured 2026-10-22)
 
 `agy--v145-idle-after-model--w50.txt` and `agy--v145-slash-resume--w50.txt`

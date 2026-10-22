@@ -25,6 +25,7 @@
 // blank status slot under a panel box is the picker's positive evidence; a status bar the operator
 // turned off removes the row instead, so it is not mistaken for one.
 //
+// Modern layout (v0.22.4) puts the status after the input/menu and adds activity/title to its top rule.
 // Conservative: every step can only reject, and anything short of the whole frame at the tail is
 // "no input here". Pure; no pane access, no network.
 
@@ -33,6 +34,7 @@ import { DEFAULT_TAIL_LINES } from "../../tail-lines";
 import { displayWidth } from "../../text-width";
 import {
   isBlank,
+  isInputRule,
   isPanelRow,
   isRule,
   lastNonBlankIndex,
@@ -49,8 +51,7 @@ export type PromptState = "idle" | "running" | "freetext" | "clarify" | "approva
 
 /** The input frame located at the tail. Every index is into the ORIGINAL `lines` array. */
 export interface InputFrame {
-  /** The status bar, directly above the top rule; null when that slot is blank, or the operator
-   *  turned the bar off and another row sits there. */
+  /** The status bar, above the classic frame or below the modern frame; null when absent. */
   statusRow: number | null;
   /** Whether the slot above the top rule is a blank row: the status bar rendering nothing. */
   statusSlotBlank: boolean;
@@ -122,6 +123,9 @@ function isMenuRow(line: StyledLine): boolean {
 export function locateInput(lines: StyledLine[]): InputFrame | null {
   const texts = rowTexts(lines);
   let end = lastNonBlankIndex(texts);
+  // Modern layout moves the status bar below the input and its completion menu.
+  const statusBelow = end >= 0 && STATUS_BAR.test(texts[end]!) ? end : null;
+  if (statusBelow !== null) end = lastNonBlankIndex(texts, end - 1);
   // (a) A completion menu under the input.
   let menuRows = 0;
   while (end >= 0 && isMenuRow(lines[end]!)) {
@@ -137,15 +141,18 @@ export function locateInput(lines: StyledLine[]): InputFrame | null {
   if (isRule(texts[end]!) && displayWidth(texts[end]!) >= WIDE_COLUMNS) {
     bottomRule = end;
     for (let i = end - 1; i >= Math.max(0, end - 1 - MAX_INPUT_ROWS); i--) {
-      if (texts[i] === texts[bottomRule] && parsePrompt(texts[i + 1]!) !== null) {
+      if (isInputRule(texts[i]!) && displayWidth(texts[i]!) === displayWidth(texts[bottomRule]!) && parsePrompt(texts[i + 1]!) !== null) {
         topRule = i;
         break;
       }
     }
-    if (topRule < 0 || texts[topRule] !== texts[bottomRule] || topRule === end - 1) return null;
+    if (topRule < 0 || topRule === end - 1) return null;
   } else {
     for (let i = end; i >= Math.max(0, end - MAX_INPUT_ROWS); i--) {
-      if (isRule(texts[i]!) && parsePrompt(texts[i + 1]!) !== null) {
+      if (!isInputRule(texts[i]!)) continue;
+      // A torn wide footer must not fall through to a narrow response separator above it.
+      if (displayWidth(texts[i]!) >= WIDE_COLUMNS) return null;
+      if (parsePrompt(texts[i + 1]!) !== null) {
         topRule = i;
         break;
       }
@@ -166,7 +173,7 @@ export function locateInput(lines: StyledLine[]): InputFrame | null {
   // a reply's box).
   const above = topRule - 1;
   const statusSlotBlank = above >= 0 && isBlank(texts[above]!);
-  const statusRow = above >= 0 && STATUS_BAR.test(texts[above]!) ? above : null;
+  const statusRow = statusBelow ?? (above >= 0 && STATUS_BAR.test(texts[above]!) ? above : null);
 
   return {
     statusRow,
@@ -224,11 +231,11 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   return frame === null || frame.statusRow === null ? [] : [lines[frame.statusRow]!];
 }
 
-/** The mirror without the input frame: the status bar (or the top rule when it has none) to the end. */
+/** The mirror without the input frame and its status bar, in either layout. */
 export function stripChrome(lines: StyledLine[]): StyledLine[] {
   const frame = locateInput(lines);
   if (frame === null) return lines;
-  return trimTrailingBlank(lines.slice(0, frame.statusRow ?? frame.topRule));
+  return trimTrailingBlank(lines.slice(0, Math.min(frame.statusRow ?? frame.topRule, frame.topRule)));
 }
 
 // One input row's draft: the characters after `skip`, minus the italic placeholder Hermes paints in

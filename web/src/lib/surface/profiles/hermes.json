@@ -19,7 +19,7 @@
   "idle": {
     "frame": {
       "top": {
-        "pattern": "^─+$",
+        "pattern": "^─{2,}(?: [\\s\\S]*─)?$",
         "minCells": 64,
         "column": 0
       },
@@ -72,7 +72,7 @@
       {
         "walk": "interior",
         "top": {
-          "pattern": "^─+$",
+          "pattern": "^─{2,}(?: [\\s\\S]*─)?$",
           "minCells": 8,
           "column": 0
         },

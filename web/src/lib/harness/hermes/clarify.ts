@@ -80,7 +80,7 @@ export function panelAboveInput(
   // The key hint sits on the row above the status bar, or above the top rule when the operator has
   // turned the status bar off. Anything else between them (a subagent dock, a stash panel) is a
   // layout this grammar has not seen.
-  const hintRow = (frame.statusRow ?? frame.topRule) - 1;
+  const hintRow = Math.min(frame.statusRow ?? frame.topRule, frame.topRule) - 1;
   if (hintRow < 0 || !hint.test(texts[hintRow]!)) return null;
 
   // Between the hint and the panel: the spinner, directly on the hint (wide panes only), then blank
@@ -119,7 +119,7 @@ export function panelAboveInput(
 
   // Nothing may sit under the input frame either (a completion menu, stray output): the declared
   // tail would count it.
-  const frameEnd = frame.bottomRule ?? frame.lastInputRow;
+  const frameEnd = Math.max(frame.bottomRule ?? frame.lastInputRow, frame.statusRow ?? -1);
   for (let i = frameEnd + 1; i < texts.length; i++) if (!isBlank(texts[i]!)) return null;
   let rowsBelow = 0;
   for (let i = bottom + 1; i <= frameEnd; i++) if (!isBlank(texts[i]!)) rowsBelow++;

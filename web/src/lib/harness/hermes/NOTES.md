@@ -1,5 +1,25 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## Modern footer and missing replies — 2026-10-22
+
+The reported live Hermes 0.22.4 (`647bc64`) uses modern layout: a titled/activity
+top rule, composer, bottom rule, then status (after completions when present).
+The classic reader missed this footer and selected the short response separator
+above `☤ Hermes` as a narrow input. It removed the reply from Mirror and offered
+the same text as a terminal draft. Screen still showed the reply.
+
+The reader now removes the bottom status before locating the composer, accepts
+equal-cell-width titled rules, and strips from the earlier of status and input.
+A torn wide footer stops the narrow search rather than reaching a response above.
+Modal tail binding includes the relocated status; the shared send profile accepts
+the same top-rule vocabulary. Guards and send keys are unchanged.
+
+The sanitized live tail is `hermes--v0224-modern-done.txt`. Tests retain the reply,
+empty suggestion, real draft, completions, narrow/wide working prompts and torn
+footer refusals. A source-derived status relocation checks the existing clarify
+binding. Browser replay checks Mirror/Screen at 320/390px with no writes.
+This is display/frame evidence, not a new send or whole-version certification.
+
 ## Send Protocol input profile — 2026-10-17
 
 The new Send Protocol was enabled for Hermes but had no Hermes input profile. A normal idle

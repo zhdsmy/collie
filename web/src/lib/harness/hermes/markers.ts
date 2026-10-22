@@ -31,6 +31,11 @@ export function isRule(text: string): boolean {
   return /^─{8,}$/.test(text);
 }
 
+/** Modern chrome adds activity and/or a session title to the top input rule. */
+export function isInputRule(text: string): boolean {
+  return isRule(text) || /^─{2,} [\s\S]*─$/.test(text);
+}
+
 /** Hermes drops the rule under the input below this width (`_use_minimal_tui_chrome`), and with it
  *  the spinner row and the `❯` after a state icon. A rule this long or longer is a wide layout's. */
 export const WIDE_COLUMNS = 64;

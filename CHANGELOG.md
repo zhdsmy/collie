@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hermes replies stay visible with the modern composer layout.** Recognize titled input rules and the status bar below the composer, preserve assistant responses instead of presenting them as terminal drafts, and retain input-frame and modal-tail guards. Add a sanitized live capture and focused regressions.
+
 ## [1.23.2+collie.5] - 2026-10-22
 
 ### Fixed

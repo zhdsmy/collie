@@ -6,6 +6,7 @@ import { fixtureSnapshot } from "@/test/handlers";
 const working = readFileSync(new URL("../src/fixtures/panes/hermes--running.txt", import.meta.url), "utf8");
 const done = readFileSync(new URL("../src/fixtures/panes/hermes--done.txt", import.meta.url), "utf8");
 const submitted = readFileSync(new URL("../src/fixtures/panes/hermes--submitted-input.txt", import.meta.url), "utf8");
+const modern = readFileSync(new URL("../src/fixtures/panes/hermes--v0224-modern-done.txt", import.meta.url), "utf8");
 const model = "example-model-with-a-very-long-name";
 const history = Array.from({ length: 80 }, (_, i) => `Earlier response ${i}.`).join("\n") + "\n";
 
@@ -18,6 +19,41 @@ async function tabIsVisible(tab: Locator): Promise<boolean> {
 }
 
 test.use({ serviceWorkers: "block" });
+
+for (const width of [320, 390]) {
+  test(`Hermes modern reply stays visible: ${width}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.addInitScript(() => {
+      localStorage.setItem("collie:locale:v1", "en");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+    });
+    await installApiStub(page);
+    let writes = 0;
+    page.on("request", (request) => {
+      if (request.method() === "POST" && /\/api\/pane\//.test(request.url())) writes++;
+    });
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, i) => i === 0 ? { ...agent, agent: "hermes", status: "done" } : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+      paneId: "w1:p1", text: modern, truncated: false, revision: 1,
+    } }));
+    await page.goto("/pane/w1:p1");
+    const reply = page.getByText("HERMES_UPGRADE_OK", { exact: true });
+    await expect(reply).toBeVisible();
+    await expect(page.getByText("deepseek-flash", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Dismiss the terminal draft notice" })).toHaveCount(0);
+    await page.screenshot({ path: testInfo.outputPath("modern-mirror.png"), animations: "disabled" });
+    const screen = page.getByRole("button", { name: "Show the screen rows, without cards" });
+    await screen.click();
+    await expect(reply).toBeVisible();
+    await screen.click();
+    await expect(reply).toBeVisible();
+    expect(writes).toBe(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+  });
+}
 
 for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (const locale of ["en", "zh"]) {
   test(`Hermes working footer and selected tab: ${width} ${theme} ${locale}`, async ({ page }, testInfo) => {

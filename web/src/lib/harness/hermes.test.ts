@@ -73,6 +73,7 @@ const PINNED = [
   "hermes--v0221-native-other.txt",
   "hermes--v0221-zh-idle.txt",
   "hermes--v0221-zh-send-running.txt",
+  "hermes--v0224-modern-done.txt",
   "hermes--working.txt"
 ];
 
@@ -110,6 +111,58 @@ function liftedModel(name: string): PromptModel {
 const rowsOf = (lines: StyledLine[]) => lines.map(lineText);
 
 const options = (m: PromptModel) => m.options.map((o) => `${o.keys.join("+")} ${o.label}`);
+
+describe("Hermes modern footer", () => {
+  const name = "hermes--v0224-modern-done.txt";
+
+  it("keeps the assistant reply in the mirror instead of claiming it as a draft", () => {
+    const rows = load(name);
+    const frame = locateInput(rows);
+    expect(frame).toMatchObject({ topRule: 10, promptRow: 11, bottomRule: 12, statusRow: 13, state: "idle" });
+    expect(hermesAdapter.extractInputDraft(rows)).toBeNull();
+    expect(hermesAdapter.extractStatusLines(rows).map(lineText)).toEqual([lineText(rows[13]!)]);
+    expect(hermesAdapter.buildBlocks(rows).flatMap((block) => block.lines).map(lineText)).toEqual(rowsOf(rows.slice(0, 10)));
+    expect(rowsOf(stripChrome(rows))).toContain("HERMES_UPGRADE_OK");
+  });
+
+  it("keeps real drafts separate from the reply and stops before completion menus", () => {
+    const rows = load(name);
+    rows[11] = splitLines(parseAnsi("❯ typed draft"))[0]!;
+    expect(hermesAdapter.extractInputDraft(rows)).toBe("typed draft");
+    expect(rowsOf(stripChrome(rows))).toContain("HERMES_UPGRADE_OK");
+    const menu = rows.toSpliced(13, 0, ...splitLines(parseAnsi("\x1b[48;5;236m/model  Switch model\x1b[0m")));
+    expect(hermesAdapter.extractInputDraft(menu)).toBe("typed draft");
+  });
+
+  it("leaves the reply visible when the modern footer is incomplete", () => {
+    const rows = load(name);
+    for (const torn of [rows.slice(0, 12), rows.filter((_, i) => i !== 12), rows.slice(0, 11)]) {
+      expect(rowsOf(stripChrome(torn))).toContain("HERMES_UPGRADE_OK");
+      expect(hermesAdapter.extractInputDraft(torn)).toBeNull();
+    }
+  });
+
+  it.each([50, 80])("reads modern working chrome at %i columns", (width) => {
+    const top = "── ⠋ Working " + "─".repeat(width - 13);
+    const prompt = width < 64 ? "☤ typed draft" : "☤ ❯ typed draft";
+    const rows = splitLines(parseAnsi([top, prompt, ...(width < 64 ? [] : ["─".repeat(width)]), " ☤ lab-model"].join("\n")));
+    expect(locateInput(rows)?.state).toBe("running");
+    expect(hermesAdapter.extractInputDraft(rows)).toBe("typed draft");
+    expect(hermesAdapter.extractStatusLines(rows).map(lineText)).toEqual([" ☤ lab-model"]);
+    expect(stripChrome(rows)).toEqual([]);
+  });
+
+  it("keeps the modal binding complete when the status bar moves below its input", () => {
+    const rows = load("hermes--clarify-choices.txt");
+    const frame = locateInput(rows)!;
+    const modern = rows.filter((_, i) => i !== frame.statusRow);
+    modern.push(rows[frame.statusRow!]!);
+    const model = detectClarifyRegion(modern)!.model;
+    expect(model.question).toBe(liftedModel("hermes--clarify-choices.txt").question);
+    expect(options(model)).toEqual(options(liftedModel("hermes--clarify-choices.txt")));
+    expect(model.bindTail).toBe(liftedModel("hermes--clarify-choices.txt").bindTail);
+  });
+});
 
 it("keeps the raw binding when Hermes wraps a Chinese row's right border", () => {
   const name = "hermes--v0221-native-clarify-w50.txt";

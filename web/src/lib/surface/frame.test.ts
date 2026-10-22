@@ -115,6 +115,17 @@ describe("Hermes bordered composer", () => {
     expect(findInputFrame(fixtureRows("hermes--clarify-other.txt"), idle)).not.toBeNull();
   });
 
+  it("finds the modern titled composer above the bottom status bar", () => {
+    const rows = fixtureRows("hermes--v0224-modern-done.txt");
+    expect(findInputFrame(rows, idle)).toMatchObject({ top: 10, bottom: 12, placeholder: true });
+    const draft = rows.toSpliced(11, 1, ...splitLines(parseAnsi("❯ typed draft")));
+    expect(findInputFrame(draft, idle)).toMatchObject({ top: 10, bottom: 12, placeholder: false, interior: { text: "typed draft" } });
+    const busy = rows.toSpliced(11, 1, ...splitLines(parseAnsi("☤ ❯ \x1b[3mworking\x1b[0m")));
+    const frame = findInputFrame(busy, idle)!;
+    expect(frame).toMatchObject({ top: 10, bottom: 12 });
+    expect(runningSign(busy, frame, idle.runningRows, idle.runningPrompt)).toBe(true);
+  });
+
   it.each(["⚠", "?", "🔐", "🔑", "⚙", "●", "◉", "🎤", "⠋"])("never treats the %s state prompt as idle", (icon) => {
     const text = readFileSync(join(PANES_DIR, "hermes--v0221-zh-idle.txt"), "utf8");
     expect(findInputFrame(splitLines(parseAnsi(text.replace("❯ ", `${icon} ❯ `))), idle)).toBeNull();

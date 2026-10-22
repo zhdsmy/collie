@@ -63,6 +63,13 @@
           "expect": {
             "block": "raw"
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/hermes--v0224-modern-done.txt",
+          "agent": "hermes",
+          "expect": {
+            "block": "raw"
+          }
         }
       ],
       "live": false,
@@ -1928,6 +1935,14 @@
       "fixtures": [
         {
           "path": "web/src/fixtures/panes/hermes--running.txt",
+          "agent": "hermes",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/hermes--v0224-modern-done.txt",
           "agent": "hermes",
           "expect": {
             "block": "raw",
