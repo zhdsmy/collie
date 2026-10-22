@@ -23,8 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.1+collie.8] - 2026-10-22
+
 ### Fixed
-- **Antigravity Resume submits once and opens a recognized card.** Allow bounded, ordered transcript clipping by a command completion while preserving the composer boundary, and recognize the native narrow Resume footer and rich statusline; unexpected output and dialogs still prevent Enter.
+- **Antigravity Resume submits once and opens a recognized card.** Allow bounded, ordered transcript clipping by a command completion while preserving the composer boundary, and recognize the native narrow Resume footer and rich statusline; unexpected output and dialogs still prevent Enter. ([f4dd5179](https://github.com/zhdsmy/collie/commit/f4dd5179))
 
 ## [1.23.1+collie.7] - 2026-10-22
 ### Fixed
