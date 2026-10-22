@@ -10,6 +10,7 @@
 // LIVE MIRROR; this one owns reading an on-disk log. A harness can plausibly have one without the
 // other.
 
+import { agyJournal } from "./agy.ts";
 import { claudeJournal } from "./claude.ts";
 import { codexJournal } from "./codex.ts";
 import { cursorJournal } from "./cursor.ts";
@@ -32,6 +33,8 @@ import type { JournalAdapter } from "./types.ts";
  * an adapter still accepts a bare string so one-root callers read unchanged.
  */
 export interface JournalRoots {
+  /** Antigravity CLI's home, with conversations/<uuid>.db and presence/<uuid>.lock. */
+  agy?: readonly string[];
   /** Claude Code's `~/.claude/projects`, one per config dir. */
   claude: readonly string[];
   /** Codex's `$CODEX_HOME/sessions`. */
@@ -68,6 +71,7 @@ export interface JournalRoots {
  */
 export function buildJournalRegistry(roots: JournalRoots): Record<string, JournalAdapter> {
   const adapters: JournalAdapter[] = [
+    agyJournal(roots.agy ?? []),
     claudeJournal(roots.claude),
     codexJournal(roots.codex),
     cursorJournal(roots.cursor),
@@ -85,8 +89,8 @@ export function buildJournalRegistry(roots: JournalRoots): Record<string, Journa
 /**
  * Agent names that are a SECOND NAME for a registered adapter, not an adapter of their own.
  *
- * Oh My Pi ships as `omp` and reports itself that way, and its session log is pi's log in pi's
- * format — one adapter, two names an agent may answer to. It is a map rather than a branch in
+ * Oh My Pi ships as `omp` and writes pi's format; AGY is also reported as `antigravity`.
+ * Each pair is one adapter with two names. It is a map rather than a branch in
  * {@link adapterFor} because both sides need to read it: the registry resolves a name through it,
  * and `web/src/lib/journal-agents.ts` mirrors the same pairs so the browser knows an `omp` pane
  * COULD have a transcript (registry.test.ts fails when the two drift).
@@ -94,7 +98,7 @@ export function buildJournalRegistry(roots: JournalRoots): Record<string, Journa
  * An alias never adds an adapter, so it is absent from {@link KNOWN_HARNESS_NAMES}: that list
  * answers "which adapters does this build have", and the answer is still the adapters themselves.
  */
-export const AGENT_ALIASES = { omp: "pi" } as const;
+export const AGENT_ALIASES = { omp: "pi", antigravity: "agy" } as const;
 
 /**
  * Agents that report their session to Herdr on the FIRST PROMPT, not when they start (issue #294).
@@ -139,7 +143,7 @@ export const DRAWS_IMAGES_OFF_GRID: readonly string[] = ["omp", "pi"];
  * history section must not advise `herdr integration install` for an agent no hook could ever
  * report. Pinned against the adapters themselves in registry.test.ts, so the two cannot drift.
  */
-export const DISCOVERS_OWN_SESSIONS: readonly string[] = ["muse", "openclaw"];
+export const DISCOVERS_OWN_SESSIONS: readonly string[] = ["agy", "muse", "openclaw"];
 
 /**
  * The same pairs as a Map, which is how {@link adapterFor} asks.

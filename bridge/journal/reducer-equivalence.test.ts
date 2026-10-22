@@ -13,6 +13,7 @@ import { createMuseReducer, parseMuseTranscript } from "./muse.ts";
 import { createOpenclawReducer, parseOpenclawTranscript } from "./openclaw.ts";
 import { createOpencodeReducer, parseOpencodeTranscript } from "./opencode.ts";
 import { createPiReducer, parsePiTranscript } from "./pi.ts";
+import { agyJournal, createAgyReducer } from "./agy.ts";
 import type { TranscriptEntry } from "./types.ts";
 
 // ── THE GATE FOR THE ROW REDUCER ────────────────────────────────────────────────────────────────
@@ -98,6 +99,7 @@ function expectEquivalent(make: () => RowReducer, parse: (text: string) => Trans
  * equivalence proof is an adapter whose tail nobody has checked.
  */
 const COVERED = [
+  "agy",
   "claude",
   "codex",
   "cursor",
@@ -111,6 +113,11 @@ const COVERED = [
 
 test("every harness the registry knows has an equivalence section here", () => {
   expect([...KNOWN_HARNESS_NAMES].toSorted()).toEqual([...COVERED].toSorted());
+});
+
+test("AGY whole, row and torn-chunk reads agree", () => {
+  const text = readFileSync(join(import.meta.dir, "fixtures/agy-1.4.4.jsonl"), "utf8");
+  expectEquivalent(createAgyReducer, agyJournal([]).parse, text);
 });
 
 test("Cursor whole, row and torn-chunk reads agree", () => {

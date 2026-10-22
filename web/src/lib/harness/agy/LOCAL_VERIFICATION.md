@@ -1,5 +1,30 @@
 # AGY 1.4.4 UI check — 2026-10-22
 
+## Chat and composer statusline
+
+The installed 1.4.4 session was read without prompting or restarting it. Its process-held
+`presence/<uuid>.lock` names the active conversation exactly, including when newer test
+conversations exist in the same workspace. The read-only `conversations/<uuid>.db` reader
+found 185 entries (3 user, 180 assistant/tool and 2 compaction summaries), with no unknown
+step types. Only native CortexStep fields measured in this version are read. Synthetic
+wire-schema tests cover paragraphs, reasoning, non-duplicated answers, tools/errors,
+in-place updates, malformed payloads and path containment.
+
+AGY closes/checkpoints its SQLite WAL between writes. Without a WAL, the reader uses an
+immutable read-only URI to avoid creating side files and discards a snapshot whose file
+metadata changed while reading. With a WAL it uses SQLite's normal read-only connection.
+The live window re-reads a bounded tail because native steps can change in place.
+
+Chat and History share the existing journal pipeline; the composer keeps the existing
+AGY statusline and native quota fields. `agy--v144-quota--w119.txt` is a transcript-free
+tail captured from the installed session; its last cache field is natively truncated.
+The 320/390px browser replay checks Chat, one lifted statusline, quota fields and an empty
+enabled composer together. Unix session discovery uses the installed `lsof` without DNS
+lookups and falls back to the terminal when identity is unavailable; no newest-session
+guessing. Windows discovery and native live model streaming are not certified here.
+
+## Previous send verification
+
 An owned `collie-canary` Herdr session ran installed Antigravity CLI 1.4.4 in a fresh
 temporary project. Existing conversations were read only. The test session and project
 were removed after the check; no service or existing agent was restarted for sampling.

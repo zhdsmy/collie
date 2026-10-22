@@ -331,12 +331,12 @@ describe("the history section", () => {
     expect(finding?.remedy).not.toContain("collie start");
   });
 
-  test("`herdr integration status` that says nothing leaves every agent skipped, never ok", async () => {
+  test("silent integration status skips hooks and keeps discovering adapters available", async () => {
     const byCheck = await run({ status: "" });
     for (const agent of JOURNAL_AGENT_NAMES) {
-      // The exception proves the rule: Muse and OpenClaw need no hook at all: their ok does not
+      // Discovering adapters need no hook at all: their ok does not
       // come from Herdr's answer, so Herdr's silence cannot take it away.
-      if (agent === "muse" || agent === "openclaw") {
+      if (["agy", "antigravity", "muse", "openclaw"].includes(agent)) {
         expect(byCheck.get(`integration-${agent}`)?.status).toBe("ok");
       } else {
         expect(byCheck.get(`integration-${agent}`)?.status).toBe("skipped");
@@ -358,8 +358,8 @@ describe("the history section", () => {
   test("no journal root on disk warns, and a present-but-unlistable one says which", async () => {
     const none = await run({ files: {} });
     expect(none.get("journal-roots")?.status).toBe("warn");
-// Ten roots: Cursor, Muse and OpenClaw have their own, and pi has two (omp and pi).
-    expect(none.get("journal-roots")?.detail).toContain("none of the 10 journal roots is there");
+    // Each harness owns a root, and pi has two (omp and pi).
+    expect(none.get("journal-roots")?.detail).toContain("none of the 11 journal roots is there");
 
     // `list` answers `[]` for a directory this user cannot read AND for an empty one; the finding
     // says both, because the seam cannot tell them apart and a doctor may not guess.

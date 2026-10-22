@@ -29,6 +29,7 @@ const KEYS = [
   "COLLIE_TRANSCRIPT_ROOT",
   "COLLIE_REDACT",
   "COLLIE_CODEX_ROOT",
+  "COLLIE_AGY_ROOT",
   "COLLIE_PI_ROOT",
   "COLLIE_OPENCODE_ROOT",
   "COLLIE_GROK_ROOT",
@@ -102,6 +103,7 @@ describe("loadConfig", () => {
     expect(cfg.journalRoots.grok).toEqual([join(homedir(), ".grok", "sessions")]);
     expect(cfg.journalRoots.hermes).toEqual([join(homedir(), ".hermes")]);
     expect(cfg.journalRoots.openclaw).toEqual([join(homedir(), ".openclaw")]);
+    expect(cfg.journalRoots.agy).toEqual([join(homedir(), ".gemini", "antigravity-cli")]);
     expect(cfg.submitKeys).toEqual(["Enter"]);
     expect(cfg.trustedUser).toBe("");
     expect(cfg.trustedUserOptional).toBe(false);

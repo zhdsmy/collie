@@ -22,7 +22,7 @@
 //
 // This is NOT `lib/harness/registry.ts`, and the two must not be folded together — that one owns
 // block grammars for the LIVE MIRROR (claude, codex, grok, omp, agy), this one owns reading an
-// on-disk log (claude, codex, grok, hermes, muse, openclaw, opencode, pi). A harness can plausibly have
+// on-disk log (agy, claude, codex, cursor, grok, hermes, muse, openclaw, opencode, pi). A harness can plausibly have
 // either without the other, which is exactly why the bridge keeps two registries too.
 //
 // Kept in step with `bridge/journal/registry.ts` by hand, deliberately: the list is not on the wire
@@ -37,6 +37,8 @@
  *  this list and cannot ask for one without the list. Still a NAME LIST and still never a detector:
  *  read it to enumerate, ask {@link hasJournalAdapter} to decide. */
 export const JOURNAL_AGENT_NAMES: ReadonlySet<string> = new Set([
+  "agy",
+  "antigravity",
   "claude",
   "codex",
   "cursor",

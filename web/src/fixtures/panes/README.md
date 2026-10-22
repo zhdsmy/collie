@@ -2989,3 +2989,9 @@ were also checked. See [the verification record](../../lib/harness/agy/LOCAL_VER
 Auto composer, with its ANSI-8 ghost hint and configured rich statusline. It includes no
 account, private path or transcript. The native configuration and mid-turn send were
 checked separately in the same owned session; this capture alone proves only rendering.
+
+`agy--v144-quota--w119.txt` is the untouched four-row composer tail from the installed
+1.4.4 session after adding native quota windows. It contains no transcript, account or
+private path. The final cache label is already truncated by the native terminal. Chat
+browser replay uses synthetic message text alongside this captured statusline; journal
+wire-format fixtures are separately documented in the verification record.

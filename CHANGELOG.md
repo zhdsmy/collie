@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Antigravity Chat reads its native conversation beside the composer statusline.** Bind read-only SQLite history to the running process's session lock, reuse Chat and History rendering for messages, reasoning, tool results and summaries, and retain the lifted model/context/quota strip above the input; unknown sessions fall back to the terminal.
+
 ## [1.23.1+collie.3] - 2026-10-22
 
 ### Fixed

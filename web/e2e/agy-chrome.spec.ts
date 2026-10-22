@@ -6,9 +6,54 @@ import { installApiStub } from "./fixtures/api";
 const idle = readFileSync(new URL("../src/fixtures/panes/agy--v144-idle--w50.txt", import.meta.url), "utf8");
 const working = readFileSync(new URL("../src/fixtures/panes/agy--v144-working--w119.txt", import.meta.url), "utf8");
 const auto = readFileSync(new URL("../src/fixtures/panes/agy--v144-auto-placeholder--w119.txt", import.meta.url), "utf8");
+const quota = readFileSync(new URL("../src/fixtures/panes/agy--v144-quota--w119.txt", import.meta.url), "utf8");
 
 test.use({ serviceWorkers: "block" });
 for (const width of [320, 390]) {
+  test(`AGY Chat keeps its dedicated composer statusline: ${width}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.addInitScript(() => {
+      localStorage.setItem("collie:locale:v1", "zh");
+      localStorage.setItem("collie:theme:v1", "dark");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "chat" }));
+    });
+    await installApiStub(page);
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+        ? Object.assign({}, agent, { agent: "agy", status: "idle", hasSession: true }) : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+      paneId: "w1:p1", text: quota, revision: 1,
+    } }));
+    await page.route("**/api/pane/*/chat*", (route) => route.fulfill({ json: {
+      paneId: "w1:p1", available: true, page: "live", gen: 1, rev: 1,
+      head: 1_000_001, oldest: 1_000_000, hasOlder: false,
+      upserts: [
+        { uuid: "agy-0", seq: 1_000_000, ts: "", role: "user", parts: [{ kind: "text", text: "检查 AGY 聊天视图" }] },
+        { uuid: "agy-1", seq: 1_000_001, ts: "", role: "assistant", parts: [{ kind: "text", text: "原生会话已显示在 **Chat** 中。" }] },
+      ],
+    } }));
+    await page.goto("/pane/w1:p1");
+    const stream = page.locator('[data-slot="session-stream"]');
+    await expect(stream).toBeVisible();
+    await expect(stream.getByText("原生会话已显示在", { exact: false })).toBeVisible();
+    const strip = page.locator('[data-slot="agy-statusline"]');
+    await expect(strip).toHaveCount(1);
+    await expect(strip.getByText("Gemini 4 Argon (Medium)", { exact: true })).toBeVisible();
+    await expect(strip.getByText("5h 98.6% ↻4h59m", { exact: true })).toBeVisible();
+    await expect(strip.getByText("7d 97.2% ↻6d6h", { exact: true })).toBeVisible();
+    const input = page.getByRole("textbox").first();
+    await expect(input).toBeEnabled();
+    await expect(input).toHaveValue("");
+    const stripBox = await strip.boundingBox();
+    const inputBox = await input.boundingBox();
+    expect(stripBox!.y + stripBox!.height).toBeLessThanOrEqual(inputBox!.y);
+    await expect(page.getByText("Collie 未识别此界面", { exact: false })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await page.screenshot({ path: testInfo.outputPath("agy-chat-statusline.png") });
+  });
+
   test(`AGY status fields and working composer: ${width}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript(() => {
