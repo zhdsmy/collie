@@ -133,6 +133,12 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
       />
     );
   }
+  // Usage windows say their own unit; read them like every other agent's quota field. A bare
+  // percentage keeps the icon below because left versus used is not on screen.
+  const quota = /^(5h|weekly) (\d+(?:\.\d+)?%) (left|used)$/i.exec(text);
+  if (quota?.[1] && quota[2] && quota[3] && Number.parseFloat(quota[2]) <= 100) {
+    return <QuotaField text={text} windows={[{ period: quota[1], percent: quota[2], remaining: quota[3].toLowerCase() === "left" }]} />;
+  }
   for (const { pattern, icon: Icon, fill, color } of CODEX_FIELDS) {
     const match = pattern.exec(text);
     if (!match) continue;
@@ -401,6 +407,54 @@ const AGY_STATE_RE = /^(?:idle|thinking|working|tool_use|initializing|authentica
 const AGY_DROPPED_RE = /^(?:(?:Σin|in|Σout|out) \d+(?:\.\d+)?[km]?|cache \d+(?:\.\d+)?%)$/;
 const AGY_VERSION_RE = /^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
 const AGY_QUOTA_RE = /^(?:(Gemini|GEMINI MODELS|Claude\/GPT|CLAUDE AND GPT MODELS) )?((?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S*)?(?: · (?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S*)?)?)$/;
+// The wide row prints `Model (High)`; the strip shows it the way Codex and Claude print theirs,
+// `model effort`, lowercase and without parentheses. Only a known level word qualifies, so a model
+// whose own name ends in parentheses keeps them.
+const AGY_MODEL_EFFORT_RE = /^(.*\S) \((minimal|low|medium|high|xhigh|max)\)$/i;
+
+interface QuotaWindow {
+  /** The window's own name (`5h`, `7d`, `weekly`), absent when the label already names it. */
+  period?: string;
+  percent: string;
+  /** Whether `percent` is what is LEFT (true) or what is USED (false), exactly as the agent said. */
+  remaining: boolean;
+  reset?: string;
+}
+
+/**
+ * One quota field, shared by every agent that prints usage windows: an optional group label, then per
+ * window its period, the percentage with an explicit left/used word, and the reset time. The
+ * percentage is coloured by what is left, so the same amount of headroom reads alike on every agent.
+ */
+function QuotaField({ text, label, labelSegment, windows }: {
+  text: string;
+  label?: string;
+  labelSegment?: AnsiSegment;
+  windows: QuotaWindow[];
+}) {
+  useLocale();
+  return (
+    <span title={text} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5 leading-none">
+      {label && <span aria-hidden="true" style={labelSegment && styleFor(labelSegment)}>{label}</span>}
+      {windows.map((window, index) => {
+        const value = Number.parseFloat(window.percent);
+        const left = window.remaining ? value : 100 - value;
+        const unit = t(window.remaining ? "statusline.context.remainingShort" : "statusline.context.usedShort");
+        const name = [label, window.period, window.percent, unit, window.reset].filter(Boolean).join(" ");
+        return (
+          <span key={index} role="img" aria-label={name} title={name}
+            className="inline-flex shrink-0 items-center gap-1">
+            {window.period && <span aria-hidden="true" className="text-muted-foreground">{window.period}</span>}
+            <span aria-hidden="true" className={left <= 10 ? "text-status-blocked" : left <= 20 ? "text-status-working" : "text-status-idle"}>
+              {window.percent} <span className="text-muted-foreground">{unit}</span>
+            </span>
+            {window.reset && <span aria-hidden="true" className="text-muted-foreground">{window.reset}</span>}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
 
 function AgyField({ text, segments }: { text: string; segments: AnsiSegment[] }) {
   // Complete known fields only; custom labels retain their native text and ANSI styling.
@@ -415,27 +469,29 @@ function AgyField({ text, segments }: { text: string; segments: AnsiSegment[] })
   }
   const quota = AGY_QUOTA_RE.exec(text);
   if (quota?.[2]) {
-    const windows = quota[2].split(" · ");
-    if (windows.every((window) => Number.parseFloat(window.slice(3)) <= 100)) return (
-      <span title={text} className="inline-flex shrink-0 items-center gap-1.5">
-        {quota[1] && <span aria-hidden="true" style={segments[0] && styleFor(segments[0])}>
-          {quota[1].startsWith("G") ? "Gemini" : "Claude/GPT"}
-        </span>}
-        {windows.map((window) => {
-          const [period, percent, reset] = window.split(" ");
-          const remaining = Number.parseFloat(percent!);
-          const label = `${period} ${percent} ${t("statusline.context.remainingShort")}${reset ? ` ${reset}` : ""}`;
-          return (
-            <span key={window} role="img" aria-label={label} title={label}
-              className="inline-flex shrink-0 items-center gap-1">
-              <span aria-hidden="true" className="text-muted-foreground">{period}</span>
-              <span aria-hidden="true" className={remaining <= 10 ? "text-status-blocked" : remaining <= 20 ? "text-status-working" : "text-status-idle"}>
-                {percent} <span className="text-muted-foreground">{t("statusline.context.remainingShort")}</span>
-              </span>
-              {reset && <span aria-hidden="true" className="text-muted-foreground">{reset}</span>}
-            </span>
-          );
-        })}
+    const windows = quota[2].split(" · ").map((window): QuotaWindow => {
+      const [period, percent, reset] = window.split(" ");
+      return { period, percent: percent!, remaining: true, reset };
+    });
+    if (windows.every((window) => Number.parseFloat(window.percent) <= 100)) return (
+      <QuotaField text={text} windows={windows} labelSegment={segments[0]}
+        label={quota[1] && (quota[1].startsWith("G") ? "Gemini" : "Claude/GPT")} />
+    );
+  }
+  const effort = AGY_MODEL_EFFORT_RE.exec(text);
+  if (effort?.[1] && effort[2]) {
+    const level = effort[2].toLowerCase();
+    const levelStart = text.length - effort[2].length - 1;
+    // `sliceSegments` returns fresh segment copies, so lowercasing them leaves the row untouched.
+    const levelSegments = sliceSegments(segments, levelStart, levelStart + level.length);
+    for (const segment of levelSegments) segment.text = segment.text.toLowerCase();
+    return (
+      <span className="inline-flex min-h-3.5 shrink-0 items-center" title={`${effort[1]} ${level}`}>
+        <span>
+          <StyledText segments={sliceSegments(segments, 0, effort[1].length)} />
+          {" "}
+          <StyledText segments={levelSegments} />
+        </span>
       </span>
     );
   }
@@ -573,6 +629,64 @@ function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]
     <span className="inline-flex min-h-3.5 shrink-0 items-center leading-normal" title={text}>
       <StyledText segments={model ? sliceSegments(segments, model[0].length, text.length) : segments} />
     </span>
+  );
+}
+
+// Hermes separates fields with `│` (classic) or ` · ` (modern, v0.22.4), puts a conversation title
+// after `  ─`, and in the modern layout right-aligns its key hints (`/ 命令 · @ 文件 · ! 终端`) after
+// a wide gap. The hints are the composer's affordances, not status, so the strip drops them.
+const HERMES_SPLIT_RE = /(\s*│\s*|\s{2,}─\s*| · |\s{3,})/;
+const HERMES_HINT_RE = /^[/@!] \S+$/;
+// The provider quota segment (`TP 100.0%`, remaining) prints its cycle reset as its own ` · ` field.
+const HERMES_QUOTA_RE = /^(TP) (\d+(?:\.\d+)?%)$/;
+const HERMES_RESET_RE = /^↻\S.*$/;
+
+/** Shared order: model, turn state, context, token count, quota, then the rest as Hermes printed it. */
+function hermesRank(text: string): number {
+  if (/^[⚕☤]\s/.test(text)) return 0;
+  if (/^[✓⏱⏲] /.test(text)) return 1;
+  if (/^\[[█░]+\]/.test(text)) return 2;
+  if (/^~?\d+(?:\.\d+)?[KkMm]?\/\d+(?:\.\d+)?[KkMm]?(?:\s|$)|^\S+ --$/.test(text)) return 3;
+  if (HERMES_QUOTA_RE.test(text)) return 4;
+  return 5;
+}
+
+function HermesStatusline({ row, leading, sessionModel }: { row: StyledLine; leading?: ReactNode; sessionModel?: SessionModel }) {
+  useLocale();
+  const fields: (StatuslineField & { reset?: string })[] = [];
+  let offset = 0;
+  for (const [index, part] of lineText(row).split(HERMES_SPLIT_RE).entries()) {
+    const text = part.trim();
+    const start = offset + (text ? part.indexOf(text) : 0);
+    offset += part.length;
+    if (!text || index % 2 === 1 || HERMES_HINT_RE.test(text)) continue;
+    const previous = fields.at(-1);
+    if (previous && !previous.reset && HERMES_RESET_RE.test(text) && HERMES_QUOTA_RE.test(previous.text)) {
+      previous.reset = text;
+      continue;
+    }
+    fields.push({ index, text, start });
+  }
+  const ordered = fields.map((field, position) => ({ field, position, rank: hermesRank(field.text) }))
+    .toSorted((a, b) => a.rank - b.rank || a.position - b.position)
+    .map(({ field }) => field);
+  return (
+    <div data-slot="hermes-statusline" className={ROW_CLASS}>
+      {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
+      {ordered.map((field, position) => {
+        const segments = sliceSegments(row.segments, field.start, field.start + field.text.length);
+        const quota = HERMES_QUOTA_RE.exec(field.text);
+        return (
+          <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
+            {position > 0 && <StatuslineDivider />}
+            {quota?.[1] && quota[2] && Number.parseFloat(quota[2]) <= 100
+              ? <QuotaField text={field.reset ? `${field.text} · ${field.reset}` : field.text} label={quota[1]}
+                labelSegment={segments[0]} windows={[{ percent: quota[2], remaining: true, reset: field.reset }]} />
+              : <HermesField text={field.text} segments={segments} sessionModel={sessionModel} />}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -818,7 +932,8 @@ export function StatuslineRow({
   }
   if (agent === "cursor") return <CursorStatusline row={row} leading={leading} />;
   if (agent === "agy" || agent === "antigravity") return <AgyStatusline row={row} leading={leading} />;
-  if (agent !== "codex" && agent !== "hermes") {
+  if (agent === "hermes") return <HermesStatusline row={row} leading={leading} sessionModel={sessionModel} />;
+  if (agent !== "codex") {
     return (
       <div data-slot="statusline-row" className={ROW_CLASS}>
         {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
@@ -829,7 +944,7 @@ export function StatuslineRow({
     );
   }
 
-  if (agent === "codex" && codexControls) {
+  if (codexControls) {
     return (
       <CodexControlledStatusline
         row={row}
@@ -848,60 +963,58 @@ export function StatuslineRow({
 
   // Split the joined text, not each ANSI span: a field's label and value can have different paint.
   // Keep unknown fields verbatim and scroll long rows rather than dropping their final fields.
+  const fields: StatuslineField[] = [];
   let offset = 0;
-  let groupedEffortIndex = -1;
-  const Field = agent === "hermes" ? HermesField : CodexField;
-  const parts = agent === "hermes"
-    ? lineText(row).split(/(\s*│\s*|\s{2,}─\s*)/)
-    : lineText(row).split(/( \u00b7 )/);
-  return (
-    <div
-      data-slot={agent === "hermes" ? "hermes-statusline" : "codex-statusline"}
-      className={ROW_CLASS}
-    >
-      {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
-      {parts.map((part, i) => {
-        const text = part.trim();
-        const start = offset + part.indexOf(text);
-        offset += part.length;
-        if (!text || i % 2 === 1 || i === groupedEffortIndex) return null;
-        const model = agent === "codex" && onModelClick ? parseCodexModelField(text, knownModels) : null;
-        if (model && onModelClick) {
-          const nextPart = parts[i + 2] ?? "";
-          const next = nextPart.trim();
-          const joinEffort = model.effort === null && parseCodexStatuslineField(text, next, knownModels)?.effort != null;
-          if (joinEffort) groupedEffortIndex = i + 2;
-          const effortStart = offset + (parts[i + 1]?.length ?? 0) + nextPart.indexOf(next);
-          return (
-            <span key={i} className="inline-flex shrink-0 items-center gap-1" title={modelDisabledReason}>
-              <CodexModelButton label={joinEffort ? `${text} ${next}` : text} onClick={onModelClick}
-                disabledReason={modelDisabledReason} expanded={modelExpanded} switchable={modelSwitchable}>
-                <span>
-                  <StyledText segments={sliceSegments(row.segments, start, start + text.length)} />
-                  {joinEffort && (
-                    <>
-                      {" "}
-                      <StyledText segments={sliceSegments(row.segments, effortStart, effortStart + next.length)} />
-                    </>
-                  )}
-                </span>
-              </CodexModelButton>
-              {parts[i + (joinEffort ? 4 : 2)]?.trim() && (
-                <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/25" />
+  for (const [index, part] of lineText(row).split(/( \u00b7 )/).entries()) {
+    const text = part.trim();
+    const start = offset + (text ? part.indexOf(text) : 0);
+    offset += part.length;
+    if (text && index % 2 === 0) fields.push({ index, text, start });
+  }
+  const content: ReactNode[] = [];
+  let modelShown = false;
+  for (let i = 0; i < fields.length; i++) {
+    const field = fields[i]!;
+    const segments = sliceSegments(row.segments, field.start, field.start + field.text.length);
+    const model = onModelClick && !modelShown ? parseCodexModelField(field.text, knownModels) : null;
+    let node: ReactNode;
+    if (model && onModelClick) {
+      modelShown = true;
+      const next = fields[i + 1];
+      const joinEffort = model.effort === null && next?.index === field.index + 2 &&
+        parseCodexStatuslineField(field.text, next.text, knownModels)?.effort != null;
+      if (joinEffort) i++;
+      node = (
+        <span className="inline-flex shrink-0 items-center gap-1" title={modelDisabledReason}>
+          <CodexModelButton label={joinEffort ? `${field.text} ${next!.text}` : field.text} onClick={onModelClick}
+            disabledReason={modelDisabledReason} expanded={modelExpanded} switchable={modelSwitchable}>
+            <span>
+              <StyledText segments={segments} />
+              {joinEffort && (
+                <>
+                  {" "}
+                  <StyledText segments={sliceSegments(row.segments, next!.start, next!.start + next!.text.length)} />
+                </>
               )}
             </span>
-          );
-        }
-        return (
-          <Field
-            key={i}
-            text={text}
-            segments={sliceSegments(row.segments, start, start + text.length)}
-            sessionModel={sessionModel}
-          />
-        );
-      })}
-      {agent === "codex" && <FirstTokenField ms={lastTurnFirstTokenMs} />}
+          </CodexModelButton>
+        </span>
+      );
+    } else {
+      node = <CodexField text={field.text} segments={segments} />;
+    }
+    content.push(
+      <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
+        {content.length > 0 && <StatuslineDivider />}
+        {node}
+      </span>,
+    );
+  }
+  return (
+    <div data-slot="codex-statusline" className={ROW_CLASS}>
+      {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
+      {content}
+      <FirstTokenField ms={lastTurnFirstTokenMs} />
     </div>
   );
 }

@@ -98,9 +98,9 @@ for (const width of [320, 390]) {
     await expect(stream.getByText("原生会话已显示在", { exact: false })).toBeVisible();
     const strip = page.locator('[data-slot="agy-statusline"]');
     await expect(strip).toHaveCount(1);
-    await expect(strip.getByText("Gemini 4 Argon (High)", { exact: true })).toBeVisible();
-    await expect(strip.getByRole("img", { name: "5h 82.7% 余 ↻3h32m", exact: true })).toBeVisible();
-    await expect(strip.getByRole("img", { name: "7d 92.4% 余 ↻5d19h", exact: true })).toBeVisible();
+    await expect(strip.getByTitle("Gemini 4 Argon high", { exact: true })).toBeVisible();
+    await expect(strip.getByRole("img", { name: "Gemini 5h 82.7% 余 ↻3h32m", exact: true })).toBeVisible();
+    await expect(strip.getByRole("img", { name: "Gemini 7d 92.4% 余 ↻5d19h", exact: true })).toBeVisible();
     const input = page.getByRole("textbox").first();
     await expect(input).toBeEnabled();
     await expect(input).toHaveValue("");
@@ -120,7 +120,7 @@ for (const width of [320, 390]) {
     await bar.getByRole("button", { name: "恢复", exact: true }).click({ trial: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     await page.screenshot({ path: testInfo.outputPath("agy-chat-statusline.png") });
-    await strip.getByRole("img", { name: "5h 82.7% 余 ↻3h32m", exact: true }).scrollIntoViewIfNeeded();
+    await strip.getByRole("img", { name: "Gemini 5h 82.7% 余 ↻3h32m", exact: true }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: testInfo.outputPath("agy-quota.png") });
   });
 
@@ -148,7 +148,9 @@ for (const width of [320, 390]) {
       const strip = page.locator('[data-slot="agy-statusline"]');
       await expect(strip).toHaveCount(1);
       const hint = strip.getByRole("img", { name: state === "auto" ? "auto" : state === "idle" ? "? for shortcuts" : "esc to cancel", exact: true });
-      const model = strip.getByText(state === "auto" ? "Gemini 4 Argon (Medium)" : "Gemini 4 Argon · medium", { exact: true });
+      const model = state === "auto"
+        ? strip.getByTitle("Gemini 4 Argon medium", { exact: true })
+        : strip.getByText("Gemini 4 Argon · medium", { exact: true });
       await expect(hint).toBeVisible();
       await expect(model).toBeVisible();
       const hintBox = await hint.boundingBox();

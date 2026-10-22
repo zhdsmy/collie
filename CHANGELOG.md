@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Changed
+
+- **Codex, Claude, Hermes and Antigravity statuslines share one layout.** Each strip leads with the model and thinking level, then state, context, quota and other fields, with a divider between every field. Antigravity prints `model high` without parentheses. Codex, Antigravity and Hermes quota windows share one labelled left/used style with reset times and remaining-quota colours. The modern Hermes status bar is split into fields, and its right-aligned key hints are dropped.
+
 ## [1.23.2+collie.6] - 2026-10-22
 
 ### Fixed

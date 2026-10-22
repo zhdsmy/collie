@@ -193,8 +193,6 @@ it.each([
   ["Fast on", "", "lucide-zap"],
   ["Fast off", "", "lucide-zap"],
   ["Tasks 2/4", "2/4", "lucide-list-checks"],
-  ["weekly 91% left", "91%", "lucide-calendar-days"],
-  ["5h 9% used", "9% used", "lucide-timer"],
   ["Pursuing goal", "", "lucide-target"],
   ["Goal paused (/goal resume)", "", "lucide-pause"],
   ["Goal stalled (/goal resume)", "", "lucide-circle-alert"],
@@ -286,7 +284,7 @@ it.each([" ", ":"])("uses the same lightning outline for Fast OFF and ON with se
   expect(container.textContent).toBe("");
 });
 
-it.each(["Ready", "Working", "Approve for me", "Tasks 2/4", "weekly 91% left", "5h 9% used", "Goal:active", "Goal:done"])("keeps Codex's own color for %s", (text) => {
+it.each(["Ready", "Working", "Approve for me", "Tasks 2/4", "Goal:active", "Goal:done"])("keeps Codex's own color for %s", (text) => {
   const { container } = renderRow(`\x1b[35m${text}\x1b[0m`);
   const field = within(container).getByRole("img", { name: text });
   expect(field.querySelector("svg")?.style.color).toBe("var(--ansi-5)");
@@ -397,13 +395,13 @@ it.each(["GEMINI MODELS", "Gemini"])("orders AGY model first and version after q
   expect(idleIcon.querySelector("svg")).not.toHaveClass(animation);
   expect(view.getByRole("img", { name: "Context 87% left" })).toBeInTheDocument();
   expect(view.container.querySelectorAll(".lucide-timer, .lucide-calendar-days")).toHaveLength(0);
-  expect(view.getByRole("img", { name: "5h 82.7% left ↻3h32m" })).toHaveTextContent("5h82.7% left↻3h32m");
+  expect(view.getByRole("img", { name: "Gemini 5h 82.7% left ↻3h32m" })).toHaveTextContent("5h82.7% left↻3h32m");
   expect(view.getByText("Claude/GPT")).toBeInTheDocument();
   expect(view.getByText("unknown tail")).toBeInTheDocument();
   expect(view.container.textContent).toBe(
-    "Gemini 4 Argon (High)Auto87%mainGemini5h82.7% left↻3h32m7d92.4% left↻5d19hClaude/GPT5h100% left↻4h58m7d86% left↻6d17hv1.4.4unknown tail",
+    "Gemini 4 Argon highAuto87%mainGemini5h82.7% left↻3h32m7d92.4% left↻5d19hClaude/GPT5h100% left↻4h58m7d86% left↻6d17hv1.4.4unknown tail",
   );
-  expect(view.container.textContent).not.toMatch(/MODELS|ctx |135\.4k|138\.1k|98%/);
+  expect(view.container.textContent).not.toMatch(/MODELS|ctx |135\.4k|138\.1k|98%|\(High\)/);
   expect(view.container.querySelector('[data-slot="agy-statusline"]')).toHaveClass("overflow-x-auto", "whitespace-nowrap");
 
   for (const active of ["thinking", "working", "tool_use", "initializing", "authenticating"]) {
@@ -431,7 +429,7 @@ it("keeps measured quota percentages when the native capture clips the final res
   const row = splitLines(parseAnsi(text)).at(-1)!;
   const view = render(<StatuslineRow agent="agy" row={row} />);
   expect(view.getByRole("img", { name: "idle" })).toBeVisible();
-  expect(view.getByRole("img", { name: "7d 86% left ↻" })).toBeVisible();
+  expect(view.getByRole("img", { name: "Claude/GPT 7d 86% left ↻" })).toBeVisible();
 });
 
 it("compacts the captured Claude custom statusline without printing its right-side hint", () => {
@@ -690,4 +688,45 @@ it("does not consume task status when thinking level is already inside the model
   expect(view.getByRole("button", { name: "Switch model and thinking level: gpt-6-astra xhigh" })).not.toHaveTextContent("Working");
   expect(view.getByRole("img", { name: "Working" })).toBeVisible();
   expect(view.getByRole("img", { name: "Context 70% left" })).toBeVisible();
+});
+
+it.each([
+  ["Claude Opus 5.5 (High)", "Claude Opus 5.5 high"],
+  ["Gemini 4 Argon (XHigh)", "Gemini 4 Argon xhigh"],
+  ["Gemini 4 Argon · medium", "Gemini 4 Argon · medium"],
+  ["Custom Model (Preview)", "Custom Model (Preview)"],
+])("prints the AGY thinking level like Codex and Claude: %s", (model, shown) => {
+  const view = renderRow(`\x1b[2m${model}\x1b[0m  auto  idle`, "agy");
+  expect(view.container.textContent?.startsWith(`${shown}Auto`)).toBe(true);
+  if (shown !== model) expect(view.getByTitle(shown).querySelector("span[style]")).toHaveStyle({ opacity: 0.6 });
+});
+
+it.each([
+  ["weekly 91% left", "weekly 91% left", "91%", "text-status-idle"],
+  ["5h 85% used", "5h 85% used", "85%", "text-status-working"],
+  ["weekly 9% left", "weekly 9% left", "9%", "text-status-blocked"],
+])("renders the Codex quota %s with the shared quota field", (field, name, percent, tone) => {
+  const view = renderRow(`model · ${field} · main`);
+  const quota = view.getByRole("img", { name });
+  expect(quota.querySelector("svg")).toBeNull();
+  expect(within(quota).getByText(percent, { exact: false })).toHaveClass(tone);
+});
+
+it("reads the modern Hermes row in the shared order and drops its key hints", () => {
+  const text = " ☤ deepseek-flash · TP 9.5% · ↻11-21 00:00 · 158K/1M pinned · [██░░░░░░░░] 16% · ◎ 97.2% · ◷ 1.2s · ↑ 7 t/s · 14h 1m · ⏲ 2s · ✓ 13h 59m · ~/.hermes                    / commands · @ files · ! shell";
+  const { container } = renderRow(text, "hermes");
+  const strip = container.querySelector('[data-slot="hermes-statusline"]')!;
+  expect(strip.querySelectorAll("span.w-px")).toHaveLength(10);
+  expect(container.textContent).not.toMatch(/commands|files|shell|·/);
+  const quota = within(container).getByRole("img", { name: "TP 9.5% left ↻11-21 00:00" });
+  expect(within(quota).getByText("9.5%", { exact: false })).toHaveClass("text-status-blocked");
+  expect(container.textContent).toBe("deepseek-flash2s13h 59m16%158K/1M pinnedTP9.5% left↻11-21 00:0097.2%1.2s7 t/s14h 1m~/.hermes");
+});
+
+it("divides every field of the classic Hermes and uncontrolled Codex rows", () => {
+  const hermes = renderRow(" ⚕ model │ ~19.5K/1M │ [░░░░░░░░░░] ~2% │ ◎ 65.3%", "hermes");
+  expect(hermes.container.querySelectorAll("span.w-px")).toHaveLength(3);
+  const codex = render(<StatuslineRow agent="codex" row={splitLines(parseAnsi("gpt-6-astra · xhigh · Ready · main"))[0]!} onModelClick={vi.fn()} />);
+  expect(codex.container.querySelectorAll("span.w-px")).toHaveLength(2);
+  expect(codex.getByRole("button", { name: /gpt-6-astra xhigh/ })).toBeInTheDocument();
 });
