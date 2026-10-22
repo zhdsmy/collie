@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.2+collie.9] - 2026-10-23
+
 ### Changed
 
-- **Statuslines show remaining context, place versions last, and simplify Hermes and Antigravity fields.** Convert `used` context percentages in Codex and Hermes to remaining capacity so every context ring reads as remaining percentage, move version tags to the end of the Codex, Claude, and Antigravity statuslines, remove the middle dot before Antigravity's compact thinking level (`Model medium`), and streamline Hermes to model, single state icon, remaining context ring, git branch, and TP quota.
+- **Statuslines show remaining context, place versions last, and simplify Hermes and Antigravity fields.** Convert `used` context percentages in Codex and Hermes to remaining capacity so every context ring reads as remaining percentage, move version tags to the end of the Codex, Claude, and Antigravity statuslines, remove the middle dot before Antigravity's compact thinking level (`Model medium`), and streamline Hermes to model, single state icon, remaining context ring, git branch, and TP quota. ([dd86feb3](https://github.com/zhdsmy/collie/commit/dd86feb3))
 
 ## [1.23.2+collie.8] - 2026-10-23
 
