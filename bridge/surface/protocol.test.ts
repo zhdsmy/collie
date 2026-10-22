@@ -5872,7 +5872,7 @@ describe("omp 18.11's box composer (issue 497)", () => {
 describe("AGY's native command list under a full conversation", () => {
   const rows = readFileSync(join(import.meta.dir, "../../web/src/fixtures/panes/agy--v144-slash-model--w119.txt"), "utf8").trimEnd().split("\n");
 
-  function scene(pointed: string, extra: string[] = []): FakePane {
+  function scene(pointed: string, extra: readonly string[] = []): FakePane {
     const pane = new FakePane("generic");
     pane.transcript = Array.from({ length: 32 }, (_, i) => `Conversation row ${i}`);
     pane.beforeRead = (p) => {
