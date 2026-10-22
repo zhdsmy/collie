@@ -1099,8 +1099,9 @@ function aboveUnchanged(before: Snap, after: Snap, scroll = 0): boolean {
   for (let shift = 0; shift <= Math.max(0, grew) + 1 + scroll; shift++) {
     const tail = a.slice(shift);
     if (tail.length === b.length && tail.every((row, i) => row === b[i])) return true;
-    // Scrolling can move an old volatile row into the checked band; it must already exist in S0.
-    if (shift > 0 && b.length === a.length && b.every((row, i) => row === oldRows[i + shift])) return true;
+    // A known popup can expose old volatile rows; all previously checked rows that did not scroll off must remain.
+    const covered = scroll > 0 ? b.length >= a.length - shift : shift > 0 && b.length === a.length;
+    if (covered && b.every((row, i) => row === oldRows[i + shift])) return true;
   }
   // A popup can retain the top rows while clipping others; the remaining transcript must stay in order.
   const lost = a.length - b.length;

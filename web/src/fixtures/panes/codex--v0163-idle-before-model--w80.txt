@@ -1,0 +1,11 @@
+
+  [0m[38;2;99;168;248m>_ [0m[1mOpenAI Codex[0m[2m (v0.163.0)[0m
+     [0m[2m/private/tmp/collie-codex-ui-iHtfvm[0m
+
+  [0m[1mTip:[0m Maximize usage with GPT-6.1 Sol. Try it on complex work for near-Astra
+  performance at a lower cost.
+ 
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[1m[48;2;57;57;71m›[0m[48;2;57;57;71m [0m[2m[48;2;57;57;71mAsk Codex to do anything[0m[48;2;57;57;71m                                                                                              [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+  [0m[38;2;246;226;183mgpt-5.4 medium[0m[38;2;135;140;164m · [0m[38;2;242;181;144mContext 100% left[0m[38;2;135;140;164m · [0m[38;2;171;223;167m/private/tmp/collie-codex-ui-iHtfvm[0m

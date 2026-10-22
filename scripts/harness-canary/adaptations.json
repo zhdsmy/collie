@@ -419,12 +419,14 @@
         "web/src/lib/harness/codex/index.ts",
         "web/src/lib/codex-model-switch.ts",
         "web/src/components/codex-model-recents.tsx",
-        "web/src/components/picker-block.tsx"
+        "web/src/components/picker-block.tsx",
+        "bridge/surface/protocol.ts"
       ],
       "tests": [
         "web/src/lib/harness/codex/picker.test.ts",
         "web/src/lib/codex-model-switch.test.ts",
-        "web/e2e/codex-model-recents.spec.ts"
+        "web/e2e/codex-model-recents.spec.ts",
+        "bridge/surface/protocol.test.ts"
       ],
       "fixtures": [
         {
@@ -448,10 +450,10 @@
       ],
       "live": true,
       "verified": {
-        "version": "0.158.0",
-        "date": "2026-09-30",
-        "how": "captured ANSI replay; recognition only",
-        "evidence": "web/src/fixtures/panes/codex--v0158-picker-model.txt"
+        "version": "0.163.0",
+        "date": "2026-10-22",
+        "how": "isolated live quick model and effort switching at 50/80/119 columns through the send protocol and guarded picker keys; native statusline readback, no model request",
+        "evidence": "web/src/lib/harness/codex/PICKER_NOTES.md"
       }
     },
     {

@@ -1,5 +1,20 @@
 # Codex model and statusline pickers
 
+## Quick model command validation (2026-10-22)
+
+Codex 0.163.0's `/model` completion moves existing text out of the volatile band
+above the composer. The checked transcript can grow on a fresh screen, or shrink
+by fewer rows than the popup scrolls after `/status`. The sender now compares that
+text with the original rows, retaining every checked row that has not scrolled
+off. New text, a changed boundary, another command and an approval still stop Enter.
+
+The `codex--v0163-{idle-before-model,slash-model}--w{50,80}.txt` pairs are native
+captures from disposable Codex homes with an unavailable local provider. The
+protocol regressions cover both layouts and their refusal cases. Live checks at
+50, 80 and 119 columns used `runCodexModelSwitch`, the actual send protocol and
+guarded picker keys to select GPT-6.1-Sol/high and read back the native statusline.
+No model request was sent; no user session or configuration was changed.
+
 ## Agent chooser (2026-09-28)
 
 Codex 0.158.0's daemon `Agent command center` is lifted through the existing

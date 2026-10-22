@@ -1,0 +1,24 @@
+
+  [0m[38;2;99;168;248m>_ [0m[1mOpenAI Codex[0m[2m (v0.163.0)[0m
+
+[0m[2m  Model:               [0mgpt-5.4[0m[2m (reasoning medium,[0m
+[0m[2m                       summaries auto)[0m
+[0m[2m  Model provider:      [0mfixture
+[0m[2m  Directory:           [0m/private/tmp/
+[0m[2m                       [0mcollie-codex-ui-WoHr1h
+[0m[2m  Permissions:         [0mWorkspace (Ask for
+[0m[2m                       [0mapproval)
+[0m[2m  Agents.md:           [0m<none>
+[0m[2m  Collaboration mode:  [0mDefault
+[0m[2m  Session:[0m
+[0m[2m                       [0m01a1628f-c5ab-7470-bd36-4c1
+[0m[2m                       [0m7f834137b
+
+[0m[2m  Token usage:         [0m0 total [0m[2m (0 input + 0[0m
+[0m[2m                       output)[0m
+[0m[2m  Limits:              data not available yet[0m
+ 
+[0m[48;2;57;57;71m                                                                                                                        [0m
+[0m[1m[48;2;57;57;71m›[0m[48;2;57;57;71m [0m[2m[48;2;57;57;71mAsk Codex to do anything[0m[48;2;57;57;71m                                                                                              [0m
+[0m[48;2;57;57;71m                                                                                                                        [0m
+  [0m[38;2;246;226;183mgpt-5.4 medium[0m[38;2;135;140;164m · [0m[38;2;242;181;144mContext 100% left[0m[38;2;135;140;164m · [0m[38;2;171;223;167m/private/t…[0m

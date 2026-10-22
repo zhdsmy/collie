@@ -1637,6 +1637,37 @@ describe("codex: Tab sends every text, Enter steers a running turn (M56 spec 13)
     else expect(answer.receipt).toMatchObject({ outcome: "typed_not_submitted", reason: change === "other command" ? "modal_cue" : "changed", keys: [] });
   });
 
+  test.each([50, 80])("Codex's model popup changes the checked band at %d columns without changing its text", async (width) => {
+    const capture = (stage: string) => readFileSync(join(import.meta.dir, `../../web/src/fixtures/panes/codex--v0163-${stage}--w${width}.txt`), "utf8").split("\n");
+    const before = capture("idle-before-model");
+    const after = capture("slash-model");
+    const idle = loadProfiles().get("codex")!.idle;
+    for (const change of ["unchanged", "new output", "changed boundary", "other command", "dialog", "unconfigured"]) {
+      const pane = new FakePane("generic");
+      pane.beforeRead = (p) => {
+        const completing = p.box.startsWith("/");
+        const rows = [...(completing ? after : before)];
+        const frame = findInputFrame(splitLines(parseAnsi(rows.join("\n"))), idle)!;
+        rows[frame.interior.prompt] = `› ${p.box}`;
+        if (completing) {
+          if (change === "new output") rows[1] = "An answer just started";
+          if (change === "changed boundary") rows[frame.volatile.above!.first - 1] = "New text at the checked boundary";
+          if (change === "other command") rows[frame.top - 1] = "› /models  another command";
+          if (change === "dialog") rows.splice(0, rows.length, fixture("codex--v0156-approval-exec-2opt.txt"));
+        }
+        p.fixed = rows.join("\n");
+      };
+      const edit = (profile: Profile): Profile => change !== "unconfigured" ? profile : {
+        ...profile, idle: { ...profile.idle, volatile: { ...profile.idle.volatile, below: { ...profile.idle.volatile.below, commandList: undefined } } },
+      };
+      const { send } = rig({ pane, harness: "codex", version: "0.163.0", edit });
+      const answer = await send("/model", { mode: "command" });
+      expect(answer.receipt?.outcome, change).toBe(change === "unchanged" ? "sent" : "typed_not_submitted");
+      expect(pane.keysSeen.filter((key) => key === "Enter"), change).toHaveLength(change === "unchanged" ? 1 : 0);
+      neverEscape(pane);
+    }
+  });
+
   test("`!ls` is a shell command on Codex: Enter on an idle box; in a turn it is refused, never queued (keys.neverHeld)", async () => {
     // Lab, 2026-10-16: on an idle box Tab does nothing with `!ls` (Shell mode) and Enter runs it; in a
     // turn Tab would queue it, but a shell line acts on the machine as it is then, so the profile lists

@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Codex quick model switching submits its command reliably.** A recognized command popup can move existing footer-adjacent text into the checked transcript region without triggering “Could not confirm the new settings.” The sender still refuses new or reordered text and unexpected dialogs.
+
 ## [1.23.1+collie.8] - 2026-10-22
 
 ### Fixed
