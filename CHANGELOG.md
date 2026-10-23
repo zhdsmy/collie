@@ -23,11 +23,13 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.3+collie.1] - 2026-10-23
+
 ### Packaging
 
 - **Every build embeds Bun 1.4.4, which rejects certificates issued under the compromised eMudhra intermediates.** Bun 1.4.1 accepted them, so `collie update` on a hostile network could have taken a forged release (#568, oven-sh/bun#46300). The compiled binary, the Nix package and the Windows zip all take the new Bun. A checkout install builds with the operator's own Bun: upgrade it to 1.4.4 and run `collie update` again, the preflight now says so when it is older. ([7049ab8](https://github.com/AltanS/collie/commit/7049ab8))
 
-- **Upstream security builds use Bun with revoked intermediates rejected.** Follow v1.23.3, raise the checkout update preflight to Bun 1.4.4, refresh Nix archive pins, and apply the Vitest worker storage fix. Keep downstream UI and delivery customizations, including disabled GitHub workflows; document the complete upstream delta.
+- **Upstream security builds use Bun with revoked intermediates rejected.** Follow v1.23.3, raise the checkout update preflight to Bun 1.4.4, refresh Nix archive pins, and apply the Vitest worker storage fix. Keep downstream UI and delivery customizations, including disabled GitHub workflows; document the complete upstream delta. ([76260390](https://github.com/zhdsmy/collie/commit/76260390))
 
 ## [1.23.2+collie.10] - 2026-10-23
 
