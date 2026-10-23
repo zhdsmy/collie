@@ -23,11 +23,13 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.4+collie.1] - 2026-10-24
+
 ### Fixed
 
 - **Replace sends a slash command onto a draft.** When the agent's input box held a draft, a slash command from the phone, such as the Model button on the belt or a typed `/model`, offered Replace, but the Replace was refused with "A slash command is sent as a command". Collie now empties the box and sends the command, as a Replace of a message does. A slash command onto a draft now offers Replace and Cancel, not Add, since Add would send the draft with the command at its end. ([ab3adc2](https://github.com/AltanS/collie/commit/ab3adc2)) ([861bfcd](https://github.com/AltanS/collie/commit/861bfcd)) ([85924fe](https://github.com/AltanS/collie/commit/85924fe)) ([90b5e6f](https://github.com/AltanS/collie/commit/90b5e6f))
 
-- **Upstream command replacement clears drafts without offering unsafe append.** Follow v1.23.4 with matching fresh and replayed refusal actions, localized draft notices, and browser rig reliability fixes. Preserve downstream Queue/Steer settings, card adaptations, compact statuslines and disabled workflows.
+- **Upstream command replacement clears drafts without offering unsafe append.** Follow v1.23.4 with matching fresh and replayed refusal actions, localized draft notices, and browser rig reliability fixes. Preserve downstream Queue/Steer settings, card adaptations, compact statuslines and disabled workflows. ([6a14e5ca](https://github.com/zhdsmy/collie/commit/6a14e5ca))
 
 ## [1.23.3+collie.1] - 2026-10-23
 
