@@ -132,6 +132,18 @@ for (const width of [320, 390]) {
     await expect(strip.getByTitle("Gemini 4 Argon high", { exact: true })).toBeVisible();
     await expect(strip.getByRole("img", { name: "Gemini 5h 82.7% 余 ↻3h32m", exact: true })).toBeVisible();
     await expect(strip.getByRole("img", { name: "Gemini 7d 92.4% 余 ↻5d19h", exact: true })).toBeVisible();
+    const state = strip.getByRole("img", { name: "idle", exact: true });
+    const model = strip.getByTitle("Gemini 4 Argon high", { exact: true });
+    const ring = strip.locator('[data-status-icon="context"]');
+    await expect(ring).toHaveCSS("background-image", /87%/);
+    await expect(strip.locator('[data-slot="statusline-divider"]')).toHaveCount(2);
+    await expect(strip.getByText("余", { exact: true })).toHaveCount(2);
+    const stateBox = await state.boundingBox();
+    const modelBox = await model.boundingBox();
+    const contextBox = await ring.locator("..").boundingBox();
+    const coreBox = await strip.boundingBox();
+    expect(stateBox!.x + stateBox!.width).toBeLessThan(modelBox!.x);
+    expect(contextBox!.x + contextBox!.width).toBeLessThanOrEqual(coreBox!.x + coreBox!.width);
     const input = page.getByRole("textbox").first();
     await expect(input).toBeEnabled();
     await expect(input).toHaveValue("");

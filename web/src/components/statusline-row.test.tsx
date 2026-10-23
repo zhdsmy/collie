@@ -80,9 +80,8 @@ it("compacts Hermes statusline to core fields with remaining context and icon-on
   const elapsed = within(container).getByRole("img", { name: "Prompt elapsed 5s" });
   expect(elapsed).toHaveTextContent("");
   expect(elapsed.querySelector("svg")).toHaveClass("lucide-hourglass", "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]");
-  const idle = within(container).getByRole("img", { name: "Idle for 1m" });
-  expect(idle).toHaveTextContent("");
-  expect(idle.querySelector("svg")).toHaveClass("lucide-circle-check");
+  expect(within(container).queryByRole("img", { name: "Idle for 1m" })).toBeNull();
+  expect(container.firstElementChild?.firstElementChild).toContainElement(elapsed);
   expect(container.textContent).toBe("example-model~98%");
   expect(container.textContent).not.toMatch(/[░█│]|19\.5K|65\.3%|1\.4s|198|1h 32m|Example conversation/);
   expect(container.querySelector('[data-slot="hermes-statusline"]')).toHaveClass("overflow-x-auto", "whitespace-nowrap");
@@ -245,7 +244,7 @@ it.each([
   expect(ring).toHaveAttribute("data-used", String(used));
   // jsdom drops these gradients; verify the emitted paint here and rendered pixels in a browser.
   const markup = renderToStaticMarkup(<StatuslineRow agent="codex" row={row} />);
-  expect(markup).toContain(`conic-gradient(currentColor ${used}%`);
+  expect(markup).toContain(`conic-gradient(currentColor ${percent}%`);
   expect(markup).toContain("mask:radial-gradient(farthest-side, transparent calc(100% - 1.5px)");
   expect(lineText(row)).toBe(text);
 });
@@ -376,7 +375,7 @@ it.each(["agy", "antigravity"])("separates %s hint and model fields across wide 
   const wideStrip = wide.container.querySelector('[data-slot="agy-statusline"]')!;
   expect(wideStrip).not.toBeNull();
   expect(wide.container.textContent).not.toMatch(/ {2,}/);
-  expect(wideStrip.querySelectorAll("span.w-px")).toHaveLength(1);
+  expect(wideStrip.querySelectorAll("span.w-px")).toHaveLength(0);
   expect(within(wide.container).getByRole("img", { name: "? for shortcuts" }).querySelector("svg")!.style.color).toBe("var(--ansi-8)");
   expect(within(wide.container).getByTitle("Gemini 4 Argon medium").querySelector("span[style]")).toHaveStyle({ opacity: 0.6 });
 
@@ -385,12 +384,12 @@ it.each(["agy", "antigravity"])("separates %s hint and model fields across wide 
     agent,
   );
   const tightStrip = tight.container.querySelector('[data-slot="agy-statusline"]')!;
-  expect(tightStrip.querySelectorAll("span.w-px")).toHaveLength(1);
+  expect(tightStrip.querySelectorAll("span.w-px")).toHaveLength(0);
   expect(within(tight.container).getByRole("img", { name: "? for shortcuts" })).toBeInTheDocument();
   expect(within(tight.container).getByTitle("Gemini 4 Argon medium")).toHaveTextContent("Gemini 4 Argon medium");
 });
 
-it.each(["GEMINI MODELS", "Gemini"])("orders AGY model first and version last while dropping token/cache counters: %s", (group) => {
+it.each(["GEMINI MODELS", "Gemini"])("orders AGY state first and version last while dropping token/cache counters: %s", (group) => {
   const animation = "motion-safe:animate-[statusline-hourglass_4.8s_ease-in-out_infinite]";
   const view = renderRow(`auto  idle  Gemini 4 Argon (High)  ctx 87%  main  v1.4.4  ${group} 5h 82.7% ↻3h32m · 7d 92.4% ↻5d19h  CLAUDE AND GPT MODELS 5h 100% ↻4h58m · 7d 86% ↻6d17h  Σin 135.4k  out 138.1k  cache 98%  unknown tail`, "agy");
   const autoMode = view.getByRole("img", { name: "auto" });
@@ -402,11 +401,11 @@ it.each(["GEMINI MODELS", "Gemini"])("orders AGY model first and version last wh
   expect(idleIcon.querySelector("svg")).not.toHaveClass(animation);
   expect(view.getByRole("img", { name: "Context 87% left" })).toBeInTheDocument();
   expect(view.container.querySelectorAll(".lucide-timer, .lucide-calendar-days")).toHaveLength(0);
-  expect(view.getByRole("img", { name: "Gemini 5h 82.7% left ↻3h32m" })).toHaveTextContent("5h82.7% left↻3h32m");
+  expect(view.getByRole("img", { name: "Gemini 5h 82.7% left ↻3h32m" })).toHaveTextContent("5h82.7%");
   expect(view.getByText("Claude/GPT")).toBeInTheDocument();
   expect(view.getByText("unknown tail")).toBeInTheDocument();
   expect(view.container.textContent).toBe(
-    "Gemini 4 Argon highAuto87%mainGemini5h82.7% left↻3h32m7d92.4% left↻5d19hClaude/GPT5h100% left↻4h58m7d86% left↻6d17hunknown tailv1.4.4",
+    "Gemini 4 Argon highAuto87%unknown tailGeminileft5h82.7%7d92.4%5h ↻3h32m · 7d ↻5d19hClaude/GPTleft5h100%7d86%5h ↻4h58m · 7d ↻6d17hmainv1.4.4",
   );
   expect(view.container.textContent).not.toMatch(/MODELS|ctx |135\.4k|138\.1k|98%|\(High\)/);
   expect(view.container.querySelector('[data-slot="agy-statusline"]')).toHaveClass("overflow-x-auto", "whitespace-nowrap");
@@ -429,6 +428,25 @@ it("marks low remaining AGY quota and retains unknown fields", () => {
   expect(view.getByText("19%")).toHaveClass("text-status-working");
   expect(view.getByText("future-state")).toBeVisible();
   expect(view.getByText("unknown-mode")).toBeVisible();
+});
+
+it.each([
+  ["Gemini 4 Argon (High)", "Gemini"],
+  ["Claude Opus 5.5 (High)", "Claude/GPT"],
+  ["gpt-6-astra (High)", "Claude/GPT"],
+  ["Custom Model", "Gemini"],
+])("prioritizes the active quota family without guessing unknown models: %s", (model, first) => {
+  const view = renderRow(`auto  idle  ${model}  ctx 87%  main  Gemini 5h 82.7% ↻3h32m · 7d 92.4% ↻5d19h  Claude/GPT 5h 100% ↻4h58m · 7d 86% ↻6d17h  v1.4.5`, "agy");
+  const strip = view.container.firstElementChild!;
+  expect(strip.firstElementChild).toContainElement(view.getByRole("img", { name: "idle" }));
+  const windows = view.getAllByRole("img", { name: /^(?:Gemini|Claude\/GPT) (?:5h|7d)/ });
+  expect(windows).toHaveLength(4);
+  expect(windows[0]).toHaveAccessibleName(new RegExp(`^${first} 5h`));
+  expect(view.getAllByText("left", { exact: true })).toHaveLength(2);
+  expect(strip.querySelectorAll('[data-slot="statusline-divider"]')).toHaveLength(2);
+  expect(strip.textContent?.endsWith("mainv1.4.5")).toBe(true);
+  const group = windows[0]!.parentElement!;
+  expect(group.textContent?.indexOf("7d")).toBeLessThan(group.textContent!.indexOf("↻"));
 });
 
 it("keeps measured quota percentages when the native capture clips the final reset", () => {
@@ -616,7 +634,7 @@ it("orders Codex mode controls after the model and filters native mode fields", 
   expect(strip.textContent).toContain("PlanFast");
   expect(strip.textContent).not.toContain("Fast on");
   expect(strip.textContent).not.toContain("Plan mode");
-  expect(strip.querySelectorAll(".bg-white\\/25")).toHaveLength(4);
+  expect(strip.querySelectorAll(".bg-white\\/25")).toHaveLength(1);
   expect(strip).toHaveClass("overflow-x-auto", "whitespace-nowrap");
   expect([...strip.children].some((child) => child.className.includes("overflow-x-auto"))).toBe(false);
 });
@@ -710,21 +728,24 @@ it.each([
 });
 
 it.each([
-  ["weekly 91% left", "weekly 91% left", "91%", "text-status-idle"],
-  ["5h 85% used", "5h 85% used", "85%", "text-status-working"],
-  ["weekly 9% left", "weekly 9% left", "9%", "text-status-blocked"],
+  ["weekly 91% left", "7d 91% left", "91%", "text-status-idle"],
+  ["5h 85% used", "5h 15% left", "15%", "text-status-working"],
+  ["5h 100% used", "5h 0% left", "0%", "text-status-blocked"],
+  ["5h 0% used", "5h 100% left", "100%", "text-status-idle"],
+  ["weekly 9% left", "7d 9% left", "9%", "text-status-blocked"],
 ])("renders the Codex quota %s with the shared quota field", (field, name, percent, tone) => {
   const view = renderRow(`model · ${field} · main`);
   const quota = view.getByRole("img", { name });
   expect(quota.querySelector("svg")).toBeNull();
   expect(within(quota).getByText(percent, { exact: false })).toHaveClass(tone);
+  expect(view.getByTitle(field, { exact: true })).toBeInTheDocument();
 });
 
 it("reads the modern Hermes row in the shared order and drops redundant fields and key hints", () => {
   const text = " ☤ deepseek-flash · TP 9.5% · ↻11-21 00:00 · 158K/1M pinned · [██░░░░░░░░] 16% · ⎇ main · ◎ 97.2% · ◷ 1.2s · ↑ 7 t/s · 14h 1m · ⏲ 2s · ✓ 13h 59m · ~/.hermes                    / commands · @ files · ! shell";
   const { container } = renderRow(text, "hermes");
   const strip = container.querySelector('[data-slot="hermes-statusline"]')!;
-  expect(strip.querySelectorAll("span.w-px")).toHaveLength(4);
+  expect(strip.querySelectorAll("span.w-px")).toHaveLength(2);
   expect(container.textContent).not.toMatch(/commands|files|shell|·|158K|97\.2%|1\.2s|7 t\/s|14h|2s|13h|\.hermes/);
   const idle = within(container).getByRole("img", { name: "Idle for 13h 59m" });
   expect(idle).toHaveTextContent("");
@@ -734,15 +755,36 @@ it("reads the modern Hermes row in the shared order and drops redundant fields a
   expect(within(container).getByRole("img", { name: "main" }).querySelector("svg")).toHaveClass("lucide-git-branch");
   const quota = within(container).getByRole("img", { name: "TP 9.5% left ↻11-21 00:00" });
   expect(within(quota).getByText("9.5%", { exact: false })).toHaveClass("text-status-blocked");
-  expect(container.textContent).toBe("deepseek-flash84%mainTP9.5% left↻11-21 00:00");
+  expect(container.textContent).toBe("deepseek-flash84%TPleft9.5%↻11-21 00:00main");
 });
 
-it("divides every field of the classic Hermes and uncontrolled Codex rows", () => {
+it.each([false, true])("groups Codex windows behind one remaining unit with controls=%s", (controlled) => {
+  const row = splitLines(parseAnsi("gpt-6-astra xhigh · Ready · main · 5h 85% used · weekly 9% left · v0.163.0"))[0]!;
+  const view = render(<StatuslineRow agent="codex" row={row} codexControls={controlled ? {
+    plan: { enabled: false, busy: false, onClick: vi.fn() },
+    fast: { enabled: false, busy: false, onClick: vi.fn() },
+  } : undefined} />);
+  const strip = view.container.firstElementChild!;
+  expect(strip.firstElementChild).toContainElement(view.getByRole("img", { name: "Ready" }));
+  expect(view.getAllByText("left", { exact: true })).toHaveLength(1);
+  expect(view.getByRole("img", { name: "5h 15% left" })).toHaveTextContent("5h15%");
+  expect(view.getByRole("img", { name: "7d 9% left" })).toHaveTextContent("7d9%");
+  expect(strip.querySelectorAll('[data-slot="statusline-divider"]')).toHaveLength(2);
+  expect(strip.textContent?.endsWith("mainv0.163.0")).toBe(true);
+});
+
+it.each(["5h 91%", "5h 101% used"])("keeps a remaining unit after an ambiguous or invalid quota: %s", (field) => {
+  const view = renderRow(`model · ${field} · weekly 9% left`);
+  expect(view.getByText("left", { exact: true })).toBeVisible();
+  expect(view.getByRole("img", { name: "7d 9% left" })).toBeVisible();
+});
+
+it("divides functional groups in classic Hermes and uncontrolled Codex rows", () => {
   const hermes = renderRow(" ⚕ model │ ~19.5K/1M │ [░░░░░░░░░░] ~2% │ ◎ 65.3%", "hermes");
-  expect(hermes.container.querySelectorAll("span.w-px")).toHaveLength(1);
+  expect(hermes.container.querySelectorAll("span.w-px")).toHaveLength(0);
   expect(hermes.container.textContent).toBe("model~98%");
   const codex = render(<StatuslineRow agent="codex" row={splitLines(parseAnsi("gpt-6-astra · xhigh · Ready · main"))[0]!} onModelClick={vi.fn()} />);
-  expect(codex.container.querySelectorAll("span.w-px")).toHaveLength(2);
+  expect(codex.container.querySelectorAll("span.w-px")).toHaveLength(1);
   expect(codex.getByRole("button", { name: /gpt-6-astra xhigh/ })).toBeInTheDocument();
 });
 

@@ -591,7 +591,8 @@
       "tests": [
         "web/src/lib/harness/codex/statusline-chrome.test.ts",
         "web/src/lib/harness/codex.test.ts",
-        "web/src/lib/reply-action.test.ts"
+        "web/src/lib/reply-action.test.ts",
+        "web/src/components/statusline-row.test.tsx"
       ],
       "fixtures": [
         {
@@ -1665,7 +1666,8 @@
       ],
       "tests": [
         "web/src/lib/harness/claude/status-hints.test.ts",
-        "web/src/lib/harness/claude/input-box-frame.test.ts"
+        "web/src/lib/harness/claude/input-box-frame.test.ts",
+        "web/src/components/statusline-row.test.tsx"
       ],
       "fixtures": [
         {

@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Changed
+
+- **Statuslines group core fields and consistently show remaining capacity.** Fill context rings by the remaining percentage, move available turn-state icons first, divide core status, quota and project details as groups, normalize explicit quota windows to remaining 5h/7d percentages with one unit per group and resets last, and prioritize Antigravity’s active model-family quota. Preserve native field tooltips, accessible window labels, unknown fields and mode controls.
+
 ## [1.23.2+collie.9] - 2026-10-23
 
 ### Changed

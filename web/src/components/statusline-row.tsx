@@ -41,12 +41,13 @@ import { stripCodexPlanHint } from "@/lib/codex-mode-switch";
 import { codexWarningCount } from "@/lib/codex-warning-action";
 
 const CODEX_VERSION_RE = /^(v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/;
+const BRANCH_RE = /^(main|master|develop|development|trunk|(?:feat|feature|fix|bugfix|hotfix|release|chore|refactor|test|docs)\/\S+)$/;
 
 // These are display-only matches over complete fields, never composer recognition rules.
 // Capture the value to keep it visible; the full terminal label remains the accessible name.
 const CODEX_FIELDS: { pattern: RegExp; icon: LucideIcon; fill?: "currentColor"; color?: string }[] = [
   // ponytail: bare TUI fields have no type; custom branch names need upstream field metadata.
-  { pattern: /^(main|master|develop|development|trunk|(?:feat|feature|fix|bugfix|hotfix|release|chore|refactor|test|docs)\/\S+)$/, icon: GitBranch },
+  { pattern: BRANCH_RE, icon: GitBranch },
   { pattern: /^(?:[Bb]ranch[: ]+|git[: ]+|\s+)(\S+)$/, icon: GitBranch },
   { pattern: CODEX_VERSION_RE, icon: Tag },
   { pattern: /^(?:Context|Ctx) (\d+%)$/, icon: Gauge },
@@ -111,7 +112,7 @@ function ContextField({ value, remaining }: {
         data-used={used}
         className="size-[12px] shrink-0 rounded-full"
         style={{
-          background: `conic-gradient(currentColor ${used}%, rgb(255 255 255 / 22%) 0)`,
+          background: `conic-gradient(currentColor ${left}%, rgb(255 255 255 / 22%) 0)`,
           WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0)",
           mask: "radial-gradient(farthest-side, transparent calc(100% - 1.5px), #000 0)",
         }}
@@ -123,7 +124,7 @@ function ContextField({ value, remaining }: {
   );
 }
 
-function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string }) {
+function CodexField({ segments, text, quotaUnit = true }: { segments: AnsiSegment[]; text: string; quotaUnit?: boolean }) {
   // Only explicit units are safe to label; bare legacy "Ctx N%" stays ambiguous.
   const context = /^(?:Context|Ctx) (\d+%) (left|used)$/.exec(text);
   if (context?.[1] && Number.parseInt(context[1], 10) <= 100) {
@@ -137,9 +138,9 @@ function CodexField({ segments, text }: { segments: AnsiSegment[]; text: string 
   }
   // Usage windows say their own unit; read them like every other agent's quota field. A bare
   // percentage keeps the icon below because left versus used is not on screen.
-  const quota = /^(5h|weekly) (\d+(?:\.\d+)?%) (left|used)$/i.exec(text);
-  if (quota?.[1] && quota[2] && quota[3] && Number.parseFloat(quota[2]) <= 100) {
-    return <QuotaField text={text} windows={[{ period: quota[1], percent: quota[2], remaining: quota[3].toLowerCase() === "left" }]} />;
+  const quota = codexQuota(text);
+  if (quota) {
+    return <QuotaField text={text} showUnit={quotaUnit} windows={[quota]} />;
   }
   for (const { pattern, icon: Icon, fill, color } of CODEX_FIELDS) {
     const match = pattern.exec(text);
@@ -210,7 +211,7 @@ function ClaudeField({ segments, text }: { segments: AnsiSegment[]; text: string
       </span>
     );
   }
-  const Icon = /^(?:main|master|develop|development|trunk|(?:feat|feature|fix|bugfix|hotfix|release|chore|refactor|test|docs)\/\S+)$/.test(text)
+  const Icon = BRANCH_RE.test(text)
     ? GitBranch
     : /^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(text) ? Tag : null;
   return (
@@ -350,7 +351,18 @@ const ROW_CLASS =
 type CodexControlProps = Omit<CodexModeToggleProps, "mode">;
 
 function StatuslineDivider() {
-  return <span aria-hidden="true" className="h-3 w-px shrink-0 bg-white/25" />;
+  return <span data-slot="statusline-divider" aria-hidden="true" className="h-3 w-px shrink-0 bg-white/25" />;
+}
+
+// Keep native field contents; only separate core status, quota, and project/diagnostic details.
+function fieldGroup(text: string): number {
+  if (AGY_QUOTA_RE.test(text) || HERMES_QUOTA_RE.test(text) || /^(?:5h|weekly) \d+(?:\.\d+)?%/i.test(text)) return 1;
+  if (BRANCH_RE.test(text) || /^(?:[Bb]ranch[: ]+|git[: ]+|\s+|⎇\s+|cache )/.test(text) || CODEX_VERSION_RE.test(text)) return 2;
+  return 0;
+}
+
+function dividesFields(previous: string | undefined, current: string): boolean {
+  return previous !== undefined && fieldGroup(previous) !== fieldGroup(current);
 }
 
 /**
@@ -381,9 +393,10 @@ function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
     const [version] = rawFields.splice(versionIndex, 1);
     rawFields.push(version!);
   }
-  const fields = rawFields.map((field, position) => (
+  const ordered = rawFields.toSorted((a, b) => fieldGroup(a.text) - fieldGroup(b.text));
+  const fields = ordered.map((field, position) => (
     <span key={field.index} className="inline-flex shrink-0 items-center gap-1.5">
-      {position > 0 && <StatuslineDivider />}
+      {dividesFields(ordered[position - 1]?.text, field.text) && <StatuslineDivider />}
       <ClaudeField text={field.text} segments={sliceSegments(row.segments, field.start, field.start + field.text.length)} />
     </span>
   ));
@@ -430,37 +443,49 @@ interface QuotaWindow {
   reset?: string;
 }
 
+function codexQuota(text: string): QuotaWindow | null {
+  const match = /^(5h|weekly) (\d+(?:\.\d+)?%) (left|used)$/i.exec(text);
+  if (!match?.[1] || !match[2] || !match[3] || Number.parseFloat(match[2]) > 100) return null;
+  return { period: match[1].toLowerCase() === "weekly" ? "7d" : "5h", percent: match[2], remaining: match[3].toLowerCase() === "left" };
+}
+
 /**
  * One quota field, shared by every agent that prints usage windows: an optional group label, then per
- * window its period, the percentage with an explicit left/used word, and the reset time. The
- * percentage is coloured by what is left, so the same amount of headroom reads alike on every agent.
+ * window its period and remaining percentage, followed by reset times. The unit appears once per
+ * group; each accessible window keeps its full label and reset time.
  */
-function QuotaField({ text, label, labelSegment, windows }: {
+function QuotaField({ text, label, labelSegment, windows, showUnit = true }: {
   text: string;
   label?: string;
   labelSegment?: AnsiSegment;
   windows: QuotaWindow[];
+  showUnit?: boolean;
 }) {
   useLocale();
   return (
     <span title={text} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5 leading-none">
       {label && <span aria-hidden="true" style={labelSegment && styleFor(labelSegment)}>{label}</span>}
+      {showUnit && <span aria-hidden="true" className="text-muted-foreground">{t("statusline.context.remainingShort")}</span>}
       {windows.map((window, index) => {
         const value = Number.parseFloat(window.percent);
         const left = window.remaining ? value : 100 - value;
-        const unit = t(window.remaining ? "statusline.context.remainingShort" : "statusline.context.usedShort");
-        const name = [label, window.period, window.percent, unit, window.reset].filter(Boolean).join(" ");
+        const shown = `${Number(left.toFixed(1))}%`;
+        const name = [label, window.period, shown, t("statusline.context.remainingShort"), window.reset].filter(Boolean).join(" ");
         return (
           <span key={index} role="img" aria-label={name} title={name}
             className="inline-flex shrink-0 items-center gap-1">
             {window.period && <span aria-hidden="true" className="text-muted-foreground">{window.period}</span>}
             <span aria-hidden="true" className={left <= 10 ? "text-status-blocked" : left <= 20 ? "text-status-working" : "text-status-idle"}>
-              {window.percent} <span className="text-muted-foreground">{unit}</span>
+              {shown}
             </span>
-            {window.reset && <span aria-hidden="true" className="text-muted-foreground">{window.reset}</span>}
           </span>
         );
       })}
+      {windows.some((window) => window.reset) && (
+        <span aria-hidden="true" className="text-muted-foreground">
+          {windows.filter((window) => window.reset).map((window) => `${windows.length > 1 ? `${window.period} ` : ""}${window.reset}`).join(" · ")}
+        </span>
+      )}
     </span>
   );
 }
@@ -514,6 +539,13 @@ function orderAgyFields(raw: StatuslineField[]): StatuslineField[] {
     const [mode, state, model] = items;
     items.splice(0, 3, model!, mode!, state!);
   }
+  const model = items.find((item) => !AGY_MODE_RE.test(item.text) && !AGY_STATE_RE.test(item.text))?.text ?? "";
+  const activeQuota = /^Gemini\b/i.test(model) ? /^(?:Gemini|GEMINI MODELS) / : /^(?:Claude\b|gpt[- ])/i.test(model) ? /^(?:Claude\/GPT|CLAUDE AND GPT MODELS) / : null;
+  items.sort((a, b) => {
+    const rank = (text: string) => AGY_STATE_RE.test(text) ? -1 : fieldGroup(text);
+    return rank(a.text) - rank(b.text) || (fieldGroup(a.text) === 1 && activeQuota
+      ? Number(activeQuota.test(b.text)) - Number(activeQuota.test(a.text)) : 0);
+  });
   const versionIndex = items.findIndex((item) => AGY_VERSION_RE.test(item.text));
   if (versionIndex !== -1 && versionIndex < items.length - 1) {
     const [version] = items.splice(versionIndex, 1);
@@ -534,9 +566,10 @@ function AgyStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode 
     if (!text || index % 2 === 1) continue;
     rawFields.push({ index, text, start });
   }
-  const fields = orderAgyFields(rawFields).map((field, position) => (
+  const ordered = orderAgyFields(rawFields);
+  const fields = ordered.map((field, position) => (
     <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
-      {position > 0 && <StatuslineDivider />}
+      {dividesFields(ordered[position - 1]?.text, field.text) && <StatuslineDivider />}
       <AgyField text={field.text} segments={sliceSegments(row.segments, field.start, field.start + field.text.length)} />
     </span>
   ));
@@ -548,14 +581,14 @@ function AgyStatusline({ row, leading }: { row: StyledLine; leading?: ReactNode 
   );
 }
 
-function FirstTokenField({ ms }: { ms?: number }) {
+function FirstTokenField({ ms, divider = true }: { ms?: number; divider?: boolean }) {
   useLocale();
   if (ms === undefined || !Number.isSafeInteger(ms) || ms < 0) return null;
   const value = `${(ms / 1000).toFixed(1)}s`;
   const label = t("statusline.codex.firstToken", { value });
   return (
     <span className="inline-flex shrink-0 items-center gap-1.5">
-      <StatuslineDivider />
+      {divider && <StatuslineDivider />}
       <span role="img" aria-label={label} title={label} className="inline-flex min-h-3.5 shrink-0 items-center gap-0.5 leading-none">
         <Timer aria-hidden="true" className="size-[12px] shrink-0" strokeWidth={2.25} />
         <span aria-hidden="true">{value}</span>
@@ -645,7 +678,7 @@ function HermesField({ segments, text, sessionModel }: { segments: AnsiSegment[]
     }
   }
   return (
-    <span className="inline-flex min-h-3.5 shrink-0 items-center leading-normal" title={text}>
+    <span className="inline-flex min-h-3.5 shrink-0 items-center leading-none" title={text}>
       <StyledText segments={model ? sliceSegments(segments, model[0].length, text.length) : segments} />
     </span>
   );
@@ -663,13 +696,13 @@ const HERMES_DROPPED_RE = /^(?:~?\d+(?:\.\d+)?[KkMm]?\/\d+(?:\.\d+)?[KkMm]?(?:\s
 const HERMES_QUOTA_RE = /^(TP) (\d+(?:\.\d+)?%)$/;
 const HERMES_RESET_RE = /^↻\S.*$/;
 
-/** Shared order: model, turn state, context, git branch, quota, then the rest as Hermes printed it. */
+/** Shared order: turn state, model, context, quota, then project details. */
 function hermesRank(text: string): number {
-  if (/^[⚕☤]\s/.test(text)) return 0;
-  if (/^[✓⏱⏲] /.test(text)) return 1;
+  if (/^[⚕☤]\s/.test(text)) return 1;
+  if (/^[✓⏱⏲] /.test(text)) return 0;
   if (/^\[[█░]+\]/.test(text)) return 2;
-  if (/^⎇\s+/.test(text)) return 3;
-  if (HERMES_QUOTA_RE.test(text)) return 4;
+  if (/^⎇\s+/.test(text)) return 4;
+  if (HERMES_QUOTA_RE.test(text)) return 3;
   return 5;
 }
 
@@ -689,8 +722,9 @@ function HermesStatusline({ row, leading, sessionModel }: { row: StyledLine; lea
     }
     fields.push({ index, text, start });
   }
+  const hasRunningState = fields.some((field) => field.text.startsWith("⏱ "));
   const hasPrimaryState = fields.some((field) => /^[⏱✓] /.test(field.text));
-  const deduplicated = hasPrimaryState ? fields.filter((field) => !field.text.startsWith("⏲ ")) : fields;
+  const deduplicated = fields.filter((field) => !(hasPrimaryState && field.text.startsWith("⏲ ")) && !(hasRunningState && field.text.startsWith("✓ ")));
   const ordered = deduplicated.map((field, position) => ({ field, position, rank: hermesRank(field.text) }))
     .toSorted((a, b) => a.rank - b.rank || a.position - b.position)
     .map(({ field }) => field);
@@ -702,7 +736,7 @@ function HermesStatusline({ row, leading, sessionModel }: { row: StyledLine; lea
         const quota = HERMES_QUOTA_RE.exec(field.text);
         return (
           <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
-            {position > 0 && <StatuslineDivider />}
+            {dividesFields(ordered[position - 1]?.text, field.text) && <StatuslineDivider />}
             {quota?.[1] && quota[2] && Number.parseFloat(quota[2]) <= 100
               ? <QuotaField text={field.reset ? `${field.text} · ${field.reset}` : field.text} label={quota[1]}
                 labelSegment={segments[0]} windows={[{ percent: quota[2], remaining: true, reset: field.reset }]} />
@@ -771,10 +805,13 @@ function CodexControlledStatusline({
   }
 
   const consumed = new Set([model?.field.index, model?.effort?.index]);
-  const rest = fields.filter((field) => !consumed.has(field.index) && !isNativeCodexControlField(field.text));
-  const nonVersionRest = rest.filter((field) => !CODEX_VERSION_RE.test(field.text));
+  const states = fields.filter((field) => /^(?:Ready|Working)$/.test(field.text));
+  const rest = fields.filter((field) => !consumed.has(field.index) && !states.includes(field) && !isNativeCodexControlField(field.text));
+  const nonVersionRest = rest.filter((field) => !CODEX_VERSION_RE.test(field.text))
+    .toSorted((a, b) => fieldGroup(a.text) - fieldGroup(b.text));
   const versionRest = rest.filter((field) => CODEX_VERSION_RE.test(field.text));
-  const content: ReactNode[] = [];
+  const content: ReactNode[] = states.map((field) => <CodexField key={field.index} text={field.text}
+    segments={sliceSegments(row.segments, field.start, field.start + field.text.length)} />);
 
   if (model) {
     const fullText = model.effort ? `${model.field.text} ${model.effort.text}` : model.field.text;
@@ -803,13 +840,14 @@ function CodexControlledStatusline({
     }
   }
 
-  if (model) content.push(<StatuslineDivider key="model-plan" />);
   content.push(<CodexModeToggle key="plan" mode="plan" {...codexControls.plan} />);
-  content.push(<StatuslineDivider key="plan-fast" />);
   content.push(<CodexModeToggle key="fast" mode="fast" {...codexControls.fast} />);
+  let previous = "Ready";
   for (let index = 0; index < nonVersionRest.length; index++) {
     const field = nonVersionRest[index]!;
-    content.push(<StatuslineDivider key={`divider-${field.index}`} />);
+    const quotaUnit = codexQuota(previous) === null;
+    if (dividesFields(previous, field.text)) content.push(<StatuslineDivider key={`divider-${field.index}`} />);
+    previous = field.text;
     const next = nonVersionRest[index + 1];
     const count = next?.index === field.index + 2
       ? codexWarningCount(`${field.text} · ${next.text}`) : null;
@@ -831,13 +869,15 @@ function CodexControlledStatusline({
       <CodexField
         key={field.index}
         text={field.text}
+        quotaUnit={quotaUnit}
         segments={sliceSegments(row.segments, field.start, field.start + field.text.length)}
       />,
     );
   }
-  const versionContent = versionRest.map((field) => (
+  const hasFirstToken = lastTurnFirstTokenMs !== undefined && Number.isSafeInteger(lastTurnFirstTokenMs) && lastTurnFirstTokenMs >= 0;
+  const versionContent = versionRest.map((field, index) => (
     <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
-      <StatuslineDivider />
+      {index === 0 && !hasFirstToken && dividesFields(previous, field.text) && <StatuslineDivider />}
       <CodexField
         text={field.text}
         segments={sliceSegments(row.segments, field.start, field.start + field.text.length)}
@@ -849,7 +889,7 @@ function CodexControlledStatusline({
     <div data-slot="codex-statusline" className={ROW_CLASS}>
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
       {content}
-      <FirstTokenField ms={lastTurnFirstTokenMs} />
+      <FirstTokenField ms={lastTurnFirstTokenMs} divider={fieldGroup(previous) !== 2} />
       {versionContent}
     </div>
   );
@@ -1007,10 +1047,15 @@ export function StatuslineRow({
     offset += part.length;
     if (text && index % 2 === 0) fields.push({ index, text, start });
   }
-  const nonVersionFields = fields.filter((field) => !CODEX_VERSION_RE.test(field.text));
+  const nonVersionFields = fields.filter((field) => !CODEX_VERSION_RE.test(field.text))
+    .toSorted((a, b) => {
+      const rank = (text: string) => /^(?:Ready|Working)$/.test(text) ? -1 : fieldGroup(text);
+      return rank(a.text) - rank(b.text);
+    });
   const versionFields = fields.filter((field) => CODEX_VERSION_RE.test(field.text));
   const content: ReactNode[] = [];
   let modelShown = false;
+  let previous: string | undefined;
   for (let i = 0; i < nonVersionFields.length; i++) {
     const field = nonVersionFields[i]!;
     const segments = sliceSegments(row.segments, field.start, field.start + field.text.length);
@@ -1039,19 +1084,20 @@ export function StatuslineRow({
         </span>
       );
     } else {
-      node = <CodexField text={field.text} segments={segments} />;
+      node = <CodexField text={field.text} segments={segments} quotaUnit={previous === undefined || codexQuota(previous) === null} />;
     }
     content.push(
       <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
-        {content.length > 0 && <StatuslineDivider />}
+        {dividesFields(previous, field.text) && <StatuslineDivider />}
         {node}
       </span>,
     );
+    previous = field.text;
   }
-  const hasBeforeVersion = content.length > 0 || (lastTurnFirstTokenMs !== undefined && Number.isSafeInteger(lastTurnFirstTokenMs) && lastTurnFirstTokenMs >= 0);
+  const hasFirstToken = lastTurnFirstTokenMs !== undefined && Number.isSafeInteger(lastTurnFirstTokenMs) && lastTurnFirstTokenMs >= 0;
   const versionContent = versionFields.map((field, index) => (
     <span key={field.index} className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
-      {(hasBeforeVersion || index > 0) && <StatuslineDivider />}
+      {index === 0 && !hasFirstToken && dividesFields(previous, field.text) && <StatuslineDivider />}
       <CodexField
         text={field.text}
         segments={sliceSegments(row.segments, field.start, field.start + field.text.length)}
@@ -1062,7 +1108,7 @@ export function StatuslineRow({
     <div data-slot="codex-statusline" className={ROW_CLASS}>
       {leading !== undefined && <span data-slot="statusline-target" className="shrink-0">{leading}</span>}
       {content}
-      <FirstTokenField ms={lastTurnFirstTokenMs} />
+      <FirstTokenField ms={lastTurnFirstTokenMs} divider={previous !== undefined && fieldGroup(previous) !== 2} />
       {versionContent}
     </div>
   );
