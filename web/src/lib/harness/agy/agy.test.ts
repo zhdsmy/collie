@@ -685,6 +685,36 @@ describe("agy: the /resume Conversations picker lifts as a menu (1.3.5)", () => 
     const lines = splitLines(parseAnsi(rows.join("\n")));
     expect(buildBlocks(lines, { agent: "agy" }).some((b) => b.kind === "menu")).toBe(false);
   });
+
+  it("lifts the picker on wide terminals (>= 134 cols) where the entire Keyboard footer fits on one line", () => {
+    const wide = [
+      RULE,
+      ">",
+      RULE,
+      "Conversations",
+      "  Search: ",
+      "           ────────────────────",
+      "> Wide terminal conversation                                                       2m ago",
+      "  [1-1 of 1 items]",
+      "Keyboard: ↑/↓ Navigate  enter Select  tab Complete search  ctrl+r Rename  ctrl+d Delete  esc Go back / Clear search",
+      "Gemini 4 Argon (High)  idle  ctx 100%  v1.4.7",
+    ].join("\n");
+    const lines = splitLines(parseAnsi(wide));
+    const blocks = buildBlocks(lines, { agent: "agy" });
+    const menuBlock = blocks.find((b) => b.kind === "menu");
+    expect(menuBlock?.kind).toBe("menu");
+    if (menuBlock?.kind === "menu") {
+      expect(menuBlock.menu.title).toBe("Conversations");
+      expect(menuBlock.menu.nav.upDown).toBe(true);
+      expect(menuBlock.menu.actions.map((a) => [a.label, a.keys])).toEqual([
+        ["Select", ["Enter"]],
+        ["Go back", ["Escape"]],
+      ]);
+    }
+    expect(agyAdapter.extractStatusLines!(lines).map(lineText)).toEqual([
+      "Gemini 4 Argon (High)  idle  ctx 100%  v1.4.7",
+    ]);
+  });
 });
 
 describe("agy: a question takes its digit alone (1.3.5)", () => {
@@ -998,5 +1028,90 @@ describe("AGY /artifact review and detail viewer (1.4.7)", () => {
         ["Cancel", ["Escape"]],
       ]);
     }
+  });
+});
+
+describe("AGY native Keyboard modals (1.4.7)", () => {
+  const load = (name: string) => splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8")));
+
+  it.each([
+    [
+      "agy--v147-rewind--w119.txt",
+      "Rewind Conversation",
+      { upDown: true, leftRight: undefined },
+      [
+        ["Select", ["Enter"]],
+        ["Cancel", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-agents--w119.txt",
+      "Available Agents",
+      { upDown: true, leftRight: undefined },
+      [
+        ["Select", ["Enter"]],
+        ["Go back", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-skills--w119.txt",
+      "Skills",
+      { upDown: true, leftRight: undefined },
+      [
+        ["View", ["Enter"]],
+        ["Cancel", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-tasks--w119.txt",
+      "Tasks",
+      { upDown: false, leftRight: undefined },
+      [["Close", ["Escape"]]],
+    ],
+    [
+      "agy--v147-mcp--w119.txt",
+      "MCP Servers",
+      { upDown: false, leftRight: undefined },
+      [["Exit", ["Escape"]]],
+    ],
+    [
+      "agy--v147-settings--w119.txt",
+      "Settings",
+      { upDown: true, leftRight: { verb: "Change", label: "auto" } },
+      [
+        ["Select", ["Enter"]],
+        ["Exit", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-permissions--w119.txt",
+      "Permission Config Editor",
+      { upDown: true, leftRight: undefined },
+      [
+        ["Save", ["Enter"]],
+        ["Close", ["Escape"]],
+      ],
+    ],
+  ])("%s lifts into a safe MenuModel card without unread-dialog", (name, title, nav, actions) => {
+    const lines = load(name);
+    for (const adapter of [agyAdapter, antigravityAdapter]) {
+      expect(adapter.composerReady!(lines)).toBe(false);
+      expect(adapter.extractStatusLines!(lines)).toHaveLength(1);
+      const blocks = buildBlocks(lines, { agent: adapter.agent });
+      expect(blocks.some((b) => b.kind === "unread-dialog")).toBe(false);
+      const menuBlock = blocks.find((b) => b.kind === "menu");
+      expect(menuBlock?.kind).toBe("menu");
+      if (menuBlock?.kind === "menu") {
+        expect(menuBlock.menu.title).toBe(title);
+        expect(menuBlock.menu.nav).toEqual(nav);
+        expect(menuBlock.menu.actions.map((a) => [a.label, a.keys])).toEqual(actions);
+      }
+    }
+  });
+
+  it("refuses to lift a modal when a confirmation prompt is painted inside or below it", () => {
+    const rows = load("agy--v147-agents--w119.txt").map((l) => lineText(l).trimEnd());
+    const withConfirm = splitLines(parseAnsi([...rows, "Kill active subagent? [y/N]"].join("\n")));
+    expect(agyAdapter.buildBlocks(withConfirm).some((b) => b.kind === "menu")).toBe(false);
   });
 });

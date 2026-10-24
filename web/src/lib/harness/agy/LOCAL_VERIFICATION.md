@@ -1,5 +1,70 @@
 # AGY 1.4.4 / 1.4.5 / 1.4.7 UI checks — 2026-10-24
 
+## Model stability, `/effort` scale chips, wide `/resume`, and native `Keyboard:` modals — AGY 1.4.7 (2026-10-24)
+
+An owned AGY 1.4.7 Herdr canary (`collie-canary`) exercised `Switch Model`
+(`/model`), `Set Effort` (`/effort`), `Conversations` (`/resume`), and the
+remaining native `Keyboard:` modals (`/rewind`, `/agents`, `/skills`, `/tasks`,
+`/mcp`, `/settings`, `/permissions`) at 119 and 50 columns.
+
+- **Root causes of `Switch Model` (`/model`) and `Conversations` (`/resume`)
+  instability in AGY 1.4.7:**
+  1. In AGY 1.4.7's default `auto` mode, the initial statusline omits the `auto`
+     token between the model name and state (`Gemini 4 Argon (High)  idle  ctx 100%  v1.4.7`).
+     `STATUS` in `model.ts`, `conversations.ts`, `artifact.ts`, and `modals.ts`
+     now makes the mode token optional so `Switch Model` and `Conversations`
+     never fail closed when opened in default mode.
+  2. When moving the highlight onto or off a model with fixed effort (such as
+     `GPT-OSS 120B (Medium)` in AGY's `Switch Model`, or `Haiku` in Claude's
+     `Select model`), the secondary `←/→ Effort` gauge disappears and reappears.
+     Previously, `menusSameIdentity` required `Boolean(a.nav.leftRight) === Boolean(b.nav.leftRight)`,
+     causing `submitMenuKeys` (`nav: true`) to fail with `status: "changed"` on
+     rapid `Up`/`Down` taps across a fixed-effort row, and causing the `[ ↑ ]` /
+     `[ ↓ ]` buttons to jump horizontally when `[ ← Effort → ]` appeared or
+     disappeared. `menusSameIdentity` now allows `leftRight` presence to vary in
+     an `upDown` list without a printed scale (`values === undefined`), and
+     `<MenuBlock>` stacks `[ ↑ ] [ ↓ ]` and `[ ← label → ]` onto separate rows
+     so the primary vertical arrows stay fixed under the user's thumb (`DESIGN.md §2`).
+  3. `model.ts` now joins wrapped `Keyboard:` continuation lines across all
+     terminal widths, accepts `tab Context` and `esc Clear search` (`Clear search`
+     action), and removes the false `|\?\s*$` rejection on model rows.
+  4. `conversations.ts` fixed an off-by-one loop bound (`i = escRow` and
+     `texts.slice(keyboard, escRow + 1)`) so `/resume` (`Conversations`) lifts
+     cleanly on wide terminals (`>= 134` columns) where the entire `Keyboard:`
+     legend fits on a single row.
+- **`/effort` (`Set Effort` — `EffortSelectorModel`):**
+  `detectEffortSelectorRegion` in `model.ts` lifts AGY 1.4.7's standalone
+  `/effort` modal (`Set Effort`) with `leftRight: { verb: "Effort", label, values: ["low", "medium", "high"] }`,
+  rendering tappable scale chips (`[ low ] [ medium ] [ high ]`) plus `Select`
+  (`Enter`) and `Go back` (`Escape`), matching Claude Code's `/effort` card.
+  The non-adjustable notice (`Effort isn't adjustable for the current model`)
+  lifts as a dismissible `Go back` (`Escape`) card.
+- **Native `Keyboard:` modals (`modals.ts`):**
+  Because `dialogUnder` in `chrome.ts` blocks `composerReady` whenever
+  `^Keyboard:\s` appears below the dormant composer box, any unadapted
+  `Keyboard:` modal previously dropped onto the yellow `unread-dialog` warning.
+  `detectAgyModalRegion` in `modals.ts` conservatively lifts `/rewind`
+  (`Rewind Conversation`), `/agents` (`Available Agents`), `/skills` (`Skills`),
+  `/tasks` (`Tasks` / `Task Details`), `/mcp` (`MCP Servers`), `/settings`
+  (`Settings`, including `leftRight: { verb: "Change" }`), and `/permissions`
+  (`Permission Config Editor` / `Permissions — ...`) into `MenuModel` cards with
+  safe navigation, `Enter`, and `Escape`, while omitting destructive single-key
+  shortcuts (`k Kill Active Subagent`, `k Kill Task`, `x Remove Task From List`,
+  `d Delete rule`).
+- **Statusline preservation & command palette:**
+  `extractStatusLines` in `chrome.ts` now preserves the bottom statusline across
+  `detectModelRegion`, `detectConversationsRegion`, `detectArtifactRegion`, and
+  `detectAgyModalRegion`. `agent-commands.ts` sets `takesArg: false` on `/model`
+  and `/mcp` so tapping them opens the picker immediately, and adds `/effort`,
+  `/rewind`, `/agents`, `/tasks`, `/settings`, and `/permissions`.
+- Sanitized captures from the owned canary are checked in as
+  `agy--v147-effort--w{119,50}.txt`, `agy--v147-model-fixed-effort--w119.txt`,
+  `agy--v147-rewind--w119.txt`, `agy--v147-agents--w119.txt`,
+  `agy--v147-skills--w119.txt`, `agy--v147-tasks--w119.txt`,
+  `agy--v147-mcp--w119.txt`, `agy--v147-settings--w119.txt`, and
+  `agy--v147-permissions--w119.txt`. The owned canary session and temporary
+  directories were removed; user sessions received no input.
+
 ## Artifact review and detail viewer — AGY 1.4.7 (2026-10-24)
 
 An owned AGY 1.4.7 Herdr canary in `plan` mode produced artifacts with

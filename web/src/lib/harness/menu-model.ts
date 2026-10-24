@@ -96,13 +96,7 @@ export function menusSameIdentity(a: MenuModel, b: MenuModel): boolean {
   return (
     a.title === b.title &&
     a.nav.upDown === b.nav.upDown &&
-    // Only the VERB: `leftRight.label` is the live value the arrows adjust ("◐ Medium effort"), so a
-    // Left/Right tap changes it by design — comparing it would make every second arrow tap fail.
-    a.nav.leftRight?.verb === b.nav.leftRight?.verb &&
-    // …and the SCALE, when the screen printed one. The scale is the set of values the arrows move
-    // along, which an arrow tap never changes — so comparing it strengthens identity rather than
-    // breaking the second arrow tap the way comparing `label` would.
-    sameScale(a.nav.leftRight?.values, b.nav.leftRight?.values) &&
+    sameLeftRight(a.nav, b.nav) &&
     a.actions.length === b.actions.length &&
     a.actions.every(
       (x, i) =>
@@ -111,6 +105,23 @@ export function menusSameIdentity(a: MenuModel, b: MenuModel): boolean {
         x.keys.every((k, j) => k === b.actions[i]!.keys[j]),
     )
   );
+}
+
+/** Whether two derivations advertise compatible horizontal navigation on the same menu screen.
+ *  - `leftRight.label` is the live value the arrows adjust ("◐ Medium effort"), so a Left/Right tap
+ *    changes it by design — comparing it would make every second arrow tap fail.
+ *  - `leftRight.values` (the printed scale, when present) never changes on an arrow tap, so a
+ *    different scale is a different screen.
+ *  - In an `upDown` list without a printed scale (AGY's `Switch Model`, Claude's `Select model`),
+ *    individual rows may or may not offer a secondary `←/→` gauge (e.g. `GPT-OSS 120B (Medium)` has
+ *    fixed effort and omits `←/→ Effort`), so moving the highlight onto or off such a row preserves
+ *    menu identity. */
+function sameLeftRight(a: MenuNav, b: MenuNav): boolean {
+  if (!sameScale(a.leftRight?.values, b.leftRight?.values)) return false;
+  if (a.leftRight !== undefined && b.leftRight !== undefined) {
+    return a.leftRight.verb === b.leftRight.verb;
+  }
+  return (a.upDown && b.upDown) || a.leftRight === b.leftRight;
 }
 
 /** Two scales are the same when both are absent, or both list the same strings in the same order.

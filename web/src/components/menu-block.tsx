@@ -147,34 +147,31 @@ export function MenuBlock({ menu, lines, onAction, disabled }: MenuBlockProps) {
 
       {/* Arrow cluster — only the directions the screen itself advertised (a `❯` row for Up/Down, an
           "←/→ to <verb>" row for Left/Right). Each is one keystroke; they move a highlight and commit
-          nothing, so they take the weaker identity guard. */}
-      {(menu.nav.upDown || (leftRight !== undefined && !readsBody)) && (
+          nothing, so they take the weaker identity guard. Up/Down and Left/Right sit on separate rows
+          so a list row that omits the secondary ←/→ gauge (e.g. a fixed-effort model in Switch Model)
+          never shifts the Up/Down buttons horizontally under the operator's thumb (DESIGN.md §2). */}
+      {menu.nav.upDown && (
         <div className="flex items-center gap-1.5">
-          {menu.nav.upDown &&
-            navButton("up", t("dialog.menu.moveUp"), MENU_UP_KEYS, <ArrowUp className="size-4" />)}
-          {menu.nav.upDown &&
-            navButton("down", t("dialog.menu.moveDown"), MENU_DOWN_KEYS, <ArrowDown className="size-4" />)}
-          {/* The ←/→ pair sits AROUND the value it adjusts ("←  ◐ Medium effort  →"): the arrows are
-              meaningless without it, and the row is re-derived every poll, so the label tracks the
-              live value. Rendered in app space, not mirror space — no `dark:` question arises. */}
-          {leftRight !== undefined && !readsBody && (
-            <div className="flex min-w-0 flex-1 items-center gap-1.5">
-              {navButton(
-                "left",
-                t("dialog.menu.leftAria", { verb: leftRight.verb, label: leftRight.label }),
-                MENU_LEFT_KEYS,
-                <ArrowLeft className="size-4" />,
-              )}
-              <span className="min-w-0 flex-1 truncate text-center font-mono text-[11px] text-muted-foreground">
-                {leftRight.label}
-              </span>
-              {navButton(
-                "right",
-                t("dialog.menu.rightAria", { verb: leftRight.verb, label: leftRight.label }),
-                MENU_RIGHT_KEYS,
-                <ArrowRight className="size-4" />,
-              )}
-            </div>
+          {navButton("up", t("dialog.menu.moveUp"), MENU_UP_KEYS, <ArrowUp className="size-4" />)}
+          {navButton("down", t("dialog.menu.moveDown"), MENU_DOWN_KEYS, <ArrowDown className="size-4" />)}
+        </div>
+      )}
+      {leftRight !== undefined && !readsBody && (
+        <div className="flex items-center gap-1.5">
+          {navButton(
+            "left",
+            t("dialog.menu.leftAria", { verb: leftRight.verb, label: leftRight.label }),
+            MENU_LEFT_KEYS,
+            <ArrowLeft className="size-4" />,
+          )}
+          <span className="min-w-0 flex-1 truncate text-center font-mono text-[11px] text-muted-foreground">
+            {leftRight.label}
+          </span>
+          {navButton(
+            "right",
+            t("dialog.menu.rightAria", { verb: leftRight.verb, label: leftRight.label }),
+            MENU_RIGHT_KEYS,
+            <ArrowRight className="size-4" />,
           )}
         </div>
       )}

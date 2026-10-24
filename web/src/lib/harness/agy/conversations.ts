@@ -19,6 +19,7 @@ import { regionSignature } from "./prompt-select";
 export interface ConversationsRegion {
   model: MenuModel;
   startLine: number;
+  statusStartLine?: number;
 }
 
 const TITLE = /^\s*Conversations\s*$/;
@@ -36,7 +37,7 @@ const STATUS_ROWS = 2;
 // every capture), or on the footer itself. A last row of any other shape, an indented line of text
 // included, was painted after the picker and is content this reader does not know, so the picker
 // stays raw rather than offer Enter over it (reviews, 2026-10-15 and 10-16).
-const STATUS = /^(?:\s{8,}\S+(?: \S+)* · \S+\s*|\S+\s+(?:idle|reviewing|error|working|thinking|authenticating|merging|waiting|done)\s+\S.*|\S+(?: \S+)*\s{2,}(?:auto|default|accept-edits|plan|fast|custom)\s{2,}(?:idle|reviewing|error|working|thinking|tool_use|initializing|authenticating|merging|waiting|done)(?:\s{2,}\S.*)?)$/;
+const STATUS = /^(?:\s{8,}\S+(?: \S+)* · \S+\s*|\S+\s+(?:idle|reviewing|error|working|thinking|authenticating|merging|waiting|done)\s+\S.*|\S+(?: \S+)*\s{2,}(?:(?:auto|default|accept-edits|plan|fast|custom)\s{2,})?(?:idle|reviewing|error|working|thinking|tool_use|initializing|authenticating|merging|waiting|done)(?:\s{2,}\S.*)?)$/;
 // A row between the footer and the status is not checked for its shape: the shared conformance test
 // splices one in there (`footerTop` falls back to the last row, agy's footer not being one it reads)
 // and expects the picker to keep lifting. A row there that names a key the way a prompt does is
@@ -76,14 +77,15 @@ export function detectConversationsRegion(texts: string[]): ConversationsRegion 
   if (escRow < 0) return null;
 
   let keyboard = -1;
-  for (let i = escRow - 1; i >= 0 && escRow - i <= FOOTER_ROWS; i--) {
+  for (let i = escRow; i >= 0 && escRow - i <= FOOTER_ROWS; i--) {
     if (KEYBOARD.test(texts[i]!)) {
       keyboard = i;
       break;
     }
+    if (i < escRow && !/^\s{2,}\S/.test(texts[i]!)) return null;
   }
   if (keyboard < 0) return null;
-  const footer = texts.slice(keyboard, escRow).join("  ");
+  const footer = texts.slice(keyboard, escRow + 1).join("  ");
   // At 50 columns the native footer drops navigation hints and starts with Select; the list keeps its pointer.
   if ((!NAVIGATE.test(footer) && !/^Keyboard:\s+enter Select(?:\s{2,}|$)/i.test(footer)) || !SELECT.test(footer)) return null;
 
@@ -114,5 +116,6 @@ export function detectConversationsRegion(texts: string[]): ConversationsRegion 
       signature,
     },
     startLine: top,
+    statusStartLine: escRow + 1 < texts.length ? escRow + 1 : undefined,
   };
 }

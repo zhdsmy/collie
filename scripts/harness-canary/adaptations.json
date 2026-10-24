@@ -3299,8 +3299,11 @@
       "sources": [
         "web/src/lib/harness/agy/model.ts",
         "web/src/lib/harness/agy/index.ts",
+        "web/src/lib/harness/agy/chrome.ts",
+        "web/src/lib/harness/menu-model.ts",
         "web/src/components/menu-block.tsx",
-        "web/src/lib/menu-action.ts"
+        "web/src/lib/menu-action.ts",
+        "web/src/lib/agent-commands.ts"
       ],
       "tests": [
         "web/src/lib/harness/agy/model.test.ts",
@@ -3323,13 +3326,39 @@
           "expect": {
             "block": "menu"
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-model-fixed-effort--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-effort--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "scaleMin": 3,
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-effort--w50.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "scaleMin": 3,
+            "statusLinesMin": 1
+          }
         }
       ],
       "live": false,
       "verified": {
-        "version": "1.4.4 / 1.4.5",
-        "date": "2026-10-22",
-        "how": "1.4.4 native 119/50-column captures; 1.4.5 owned Herdr sessions at both widths: shared submitMenuKeys and bridge keysPane verified model/effort navigation and guarded wide Escape, restored initial effort; no provider inference; 320px Chromium/WebKit layout replay",
+        "version": "1.4.4 / 1.4.5 / 1.4.7",
+        "date": "2026-10-24",
+        "how": "1.4.4/1.4.7 native 119/50-column captures; 1.4.7 owned Herdr sessions verified Switch Model navigation onto/off fixed-effort models (GPT-OSS 120B), /effort Set Effort scale chips, statusline extraction, and Escape via submitMenuKeys; 320px Chromium/WebKit layout replay",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3340,7 +3369,8 @@
       "sources": [
         "bridge/surface/protocol.ts",
         "web/src/lib/harness/agy/conversations.ts",
-        "web/src/lib/harness/agy/index.ts"
+        "web/src/lib/harness/agy/index.ts",
+        "web/src/lib/harness/agy/chrome.ts"
       ],
       "tests": [
         "bridge/surface/protocol.test.ts",
@@ -3381,9 +3411,90 @@
       ],
       "live": false,
       "verified": {
-        "version": "1.4.5",
-        "date": "2026-10-22",
-        "how": "owned native Herdr sessions at 50/119 columns: actual client/SendProtocol opened Model and Resume with one Enter; Resume Down/Up/Escape through submitMenuKeys and bridge keysPane; no history resumed or provider inference; 320px Chromium/WebKit replay",
+        "version": "1.4.5 / 1.4.7",
+        "date": "2026-10-24",
+        "how": "owned native Herdr sessions at 50/119 columns and wide >=134-column single-line footer test: actual client/SendProtocol opened Model and Resume with one Enter; Resume Down/Up/Escape through submitMenuKeys and bridge keysPane; 320px Chromium/WebKit replay",
+        "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
+      }
+    },
+    {
+      "id": "agy.modals",
+      "agent": "agy",
+      "origin": "downstream",
+      "sources": [
+        "web/src/lib/harness/agy/modals.ts",
+        "web/src/lib/harness/agy/index.ts",
+        "web/src/lib/harness/agy/chrome.ts",
+        "web/src/lib/agent-commands.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/agy/agy.test.ts",
+        "web/src/lib/agent-commands.test.ts",
+        "web/e2e/agy-chrome.spec.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/agy--v147-rewind--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-agents--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-skills--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-tasks--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-mcp--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-settings--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-permissions--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "1.4.7",
+        "date": "2026-10-24",
+        "how": "owned native Herdr session at 119 columns: /rewind, /agents, /skills, /tasks, /mcp, /settings, and /permissions opened, recognized as MenuModel cards with preserved statuslines, and closed via submitMenuKeys Escape; 320px Chromium/WebKit replay",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },

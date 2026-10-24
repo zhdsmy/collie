@@ -52,7 +52,7 @@ const UNSENT_PROMPT = /^\s*You have \d+ unsent comment\(s\)\. Send to agent\?\s*
 const UNSENT_FOOTER = /^\s*y send \+ close · n discard \+ close · esc cancel\s*$/;
 
 const STATUS =
-  /^(?:\s{8,}\S+(?: \S+)* · \S+\s*|\S+\s+(?:idle|reviewing|error|working|thinking|authenticating|merging|waiting|done)\s+\S.*|\S+(?: \S+)*\s{2,}(?:auto|default|accept-edits|plan|fast|custom)\s{2,}(?:idle|reviewing|error|working|thinking|tool_use|initializing|authenticating|merging|waiting|done)(?:\s{2,}\S.*)?)$/;
+  /^(?:\s{8,}\S+(?: \S+)* · \S+\s*|\S+\s+(?:idle|reviewing|error|working|thinking|authenticating|merging|waiting|done)\s+\S.*|\S+(?: \S+)*\s{2,}(?:(?:auto|default|accept-edits|plan|fast|custom)\s{2,})?(?:idle|reviewing|error|working|thinking|tool_use|initializing|authenticating|merging|waiting|done)(?:\s{2,}\S.*)?)$/;
 const NAMES_A_KEY = /\b(?:enter|esc(?:ape)?|space|tab|ctrl\+\S+|y\/n)\b/i;
 const PROMPTS_FOR_A_KEY = /\b(?:press|hit)\s+\S+\s+to\b|\[y\/n\]|\(y\/n\)/i;
 

@@ -3,7 +3,10 @@ import type { StyledLine } from "../../blocks";
 import { findInputFrame, plainRows, type RowSpan } from "../../surface/frame";
 import { requireProfile } from "../../surface/profile";
 import { detectArtifactRegion } from "./artifact";
+import { detectConversationsRegion } from "./conversations";
 import { classifyFooter, isBlank, isBoxBorder, lineText } from "./markers";
+import { detectAgyModalRegion } from "./modals";
+import { detectModelRegion } from "./model";
 import { detectPromptSelectRegionIn, parseOptionRow, trailingMenuRows } from "./prompt-select";
 
 // Rows under the bottom border. A custom `statusLine` command prints as many rows as the user wrote,
@@ -215,7 +218,10 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   const statusStart =
     box?.statusStart ??
     detectPromptSelectRegionIn(texts)?.statusStartLine ??
-    detectArtifactRegion(lines)?.statusStartLine;
+    detectModelRegion(lines)?.statusStartLine ??
+    detectConversationsRegion(texts.map((t) => t.trimEnd()))?.statusStartLine ??
+    detectArtifactRegion(lines)?.statusStartLine ??
+    detectAgyModalRegion(lines)?.statusStartLine;
   if (statusStart === undefined) return [];
 
   const rows: StyledLine[] = [];

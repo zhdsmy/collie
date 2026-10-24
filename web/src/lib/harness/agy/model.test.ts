@@ -56,4 +56,87 @@ describe("AGY native model menu", () => {
     const plain = linesOf(capture(119)).map((line) => ({ segments: parseAnsi(line.segments.map((s) => s.text).join("")) }));
     expect(detectModelRegion(plain)!.model.nav.leftRight).toBeUndefined();
   });
+
+  it("preserves navigation identity when moving onto a fixed-effort model in 1.4.7", () => {
+    const adjustable = detectModelRegion(linesOf(capture(119)))!.model;
+    const fixedRaw = readFileSync(
+      join(import.meta.dirname, "../../../fixtures/panes/agy--v147-model-fixed-effort--w119.txt"),
+      "utf8",
+    );
+    const fixedLines = linesOf(fixedRaw);
+    const fixedRegion = detectModelRegion(fixedLines)!;
+    expect(fixedRegion.model.title).toBe("Switch Model");
+    expect(fixedRegion.model.nav).toEqual({ upDown: true, leftRight: undefined });
+    expect(menusSameIdentity(adjustable, fixedRegion.model)).toBe(true);
+    expect(menusEqual(adjustable, fixedRegion.model)).toBe(false);
+    expect(agyAdapter.extractStatusLines!(fixedLines)).toHaveLength(1);
+  });
+
+  it("accepts wrapped Keyboard footers, tab Context, esc Clear search, and 1.4.7 default statuslines without mode", () => {
+    const wrapped = [
+      "Switch Model",
+      "",
+      "  Search: gemini",
+      "           ────────────────────",
+      "",
+      "> Gemini 4 Argon        (current)",
+      "",
+      "  Effort   ◂       ●━━━━━━━━━━━━━━●━━━━━━━━━━━━━━◉        ▸",
+      "             \x1b[2m      low          medium      \x1b[0m\x1b[1m\x1b[38;5;1m     high       \x1b[0m",
+      "",
+      "Keyboard: ↑/↓ Navigate  ←/→ Effort  tab Context  enter Select",
+      "  esc Clear search",
+      "",
+      "Gemini 4 Argon (High)  idle  ctx 100%  v1.4.7",
+    ].join("\n");
+    const region = detectModelRegion(linesOf(wrapped))!;
+    expect(region.model.title).toBe("Switch Model");
+    expect(region.model.nav).toEqual({ upDown: true, leftRight: { verb: "Effort", label: "high" } });
+    expect(region.model.actions).toEqual([
+      { label: "Select", keys: ["Enter"] },
+      { label: "Clear search", keys: ["Escape"], cancel: true },
+    ]);
+  });
+});
+
+describe("AGY /effort Set Effort card (1.4.7)", () => {
+  const effortCapture = (width: number) =>
+    readFileSync(join(import.meta.dirname, "../../../fixtures/panes", `agy--v147-effort--w${width}.txt`), "utf8");
+
+  it.each([119, 50])("lifts the %i-column /effort slider with tappable scale values", (width) => {
+    const lines = linesOf(effortCapture(width));
+    const region = detectModelRegion(lines)!;
+    expect(region.model.title).toBe("Set Effort");
+    expect(region.model.nav).toEqual({
+      upDown: false,
+      leftRight: {
+        verb: "Effort",
+        label: "high",
+        values: ["low", "medium", "high"],
+      },
+    });
+    expect(region.model.actions).toEqual([
+      { label: "Select", keys: ["Enter"] },
+      { label: "Go back", keys: ["Escape"], cancel: true },
+    ]);
+    for (const adapter of [agyAdapter, antigravityAdapter]) {
+      expect(adapter.composerReady!(lines)).toBe(false);
+      expect(adapter.extractStatusLines!(lines)).toHaveLength(1);
+      expect(buildBlocks(lines, { agent: adapter.agent }).some((b) => b.kind === "unread-dialog")).toBe(false);
+    }
+  });
+
+  it("lifts the non-adjustable /effort notice as a dismissible card", () => {
+    const nonAdjustable = [
+      "Set Effort",
+      "  Effort isn't adjustable for the current model",
+      "",
+      "Keyboard: esc Go Back",
+      "GPT-OSS 120B (Medium)  idle  ctx 100%  v1.4.7",
+    ].join("\n");
+    const region = detectModelRegion(linesOf(nonAdjustable))!;
+    expect(region.model.title).toBe("Set Effort");
+    expect(region.model.nav).toEqual({ upDown: false });
+    expect(region.model.actions).toEqual([{ label: "Go back", keys: ["Escape"], cancel: true }]);
+  });
 });

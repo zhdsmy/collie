@@ -329,3 +329,52 @@ test("AGY artifact detail viewer and reviewing composer keep their controls and 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
   await page.screenshot({ path: testInfo.outputPath("agy-reviewing-idle.png") });
 });
+
+test("AGY /effort scale chips and /settings stacked controls render cleanly at 320px", async ({ page }, testInfo) => {
+  const effortText = readFileSync(new URL("../src/fixtures/panes/agy--v147-effort--w119.txt", import.meta.url), "utf8");
+  const settingsText = readFileSync(new URL("../src/fixtures/panes/agy--v147-settings--w119.txt", import.meta.url), "utf8");
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("collie:locale:v1", "en");
+    localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+  });
+  await installApiStub(page);
+  let text = effortText;
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+      ? Object.assign({}, agent, { agent: "agy", status: "idle", hasSession: false }) : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text, revision: 1,
+  } }));
+
+  await page.goto("/pane/w1:p1");
+  await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
+  for (const name of ["Effort to low", "Effort to medium", "high, current", "Select", "Go back"]) {
+    const button = page.getByRole("button", { name, exact: true });
+    await button.scrollIntoViewIfNeeded();
+    await expect(button).toBeInViewport();
+  }
+  await expect(page.getByRole("button", { name: "high, current", exact: true })).toHaveAttribute("aria-current", "true");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await page.screenshot({ path: testInfo.outputPath("agy-effort-w119.png") });
+
+  text = settingsText;
+  await page.goto("/pane/w1:p1");
+  await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
+  const moveUp = page.getByRole("button", { name: "Move up", exact: true });
+  const changeLeft = page.getByRole("button", { name: "Left, Change (auto)", exact: true });
+  await moveUp.scrollIntoViewIfNeeded();
+  await changeLeft.scrollIntoViewIfNeeded();
+  const upBox = await moveUp.boundingBox();
+  const leftBox = await changeLeft.boundingBox();
+  expect(leftBox!.y).toBeGreaterThanOrEqual(upBox!.y + upBox!.height);
+  for (const name of ["Move up", "Move down", "Left, Change (auto)", "Right, Change (auto)", "Select", "Exit"]) {
+    const button = page.getByRole("button", { name, exact: true });
+    await button.scrollIntoViewIfNeeded();
+    await expect(button).toBeInViewport();
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await page.screenshot({ path: testInfo.outputPath("agy-settings-w119.png") });
+});

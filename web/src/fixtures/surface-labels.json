@@ -221,6 +221,11 @@
       "version": "unversioned",
       "state": "running"
     },
+    "agy--v147-agents--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
     "agy--v147-artifact-detail--w119.txt": {
       "harness": "agy",
       "version": "1.4.7",
@@ -256,10 +261,55 @@
       "version": "1.4.7",
       "state": "dialog"
     },
+    "agy--v147-effort--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-effort--w50.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-mcp--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-model-fixed-effort--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-permissions--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
     "agy--v147-reviewing-idle--w119.txt": {
       "harness": "agy",
       "version": "1.4.7",
       "state": "idle"
+    },
+    "agy--v147-rewind--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-settings--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-skills--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-tasks--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
     },
     "claude--autocomplete-slash-clipped.txt": {
       "harness": "claude",

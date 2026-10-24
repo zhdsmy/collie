@@ -127,8 +127,25 @@ describe("commandsFor", () => {
     expect(agyCmds.length).toBeGreaterThan(0);
     expect(agyCmds.some((c) => c.command === "/grill-me")).toBe(true);
     expect(agyCmds.some((c) => c.command === "/learn")).toBe(true);
-    expect(agyCmds.find((c) => c.command === "/artifact")).toMatchObject({ takesArg: false, common: true, dangerous: false });
-    expect(agyCmds.find((c) => c.command === "/resume")).toMatchObject({ takesArg: false, dangerous: false });
+    for (const picker of [
+      "/artifact",
+      "/model",
+      "/effort",
+      "/resume",
+      "/rewind",
+      "/agents",
+      "/skills",
+      "/tasks",
+      "/mcp",
+      "/settings",
+      "/permissions",
+    ]) {
+      expect(agyCmds.find((c) => c.command === picker), picker).toMatchObject({
+        takesArg: false,
+        argHint: "",
+        dangerous: false,
+      });
+    }
     expect(commandsFor("antigravity")).toEqual(agyCmds);
     expect(commandsFor("agy-cli")).toEqual(agyCmds);
   });

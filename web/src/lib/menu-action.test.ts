@@ -90,12 +90,23 @@ describe("menusEqual / menusSameIdentity", () => {
     const b = withScale(menuAt(1), scale, "high");
     expect(menusSameIdentity(a, b)).toBe(true);
   });
+
+  it("an upDown picker where a row omits the secondary leftRight gauge is still the same screen", () => {
+    const withGauge = menuAt(1);
+    const withoutGauge: MenuModel = { ...withGauge, nav: { upDown: true } };
+    expect(menusSameIdentity(withGauge, withoutGauge)).toBe(true);
+    expect(menusSameIdentity(withoutGauge, withGauge)).toBe(true);
+  });
 });
 
 describe("submitMenuKeys", () => {
-  it("guards AGY model commits while allowing navigation after a highlight moves", async () => {
+  it("guards AGY model commits while allowing navigation after a highlight moves, including onto a fixed-effort model", async () => {
     const original = readFileSync(join(import.meta.dirname, "../fixtures/panes/agy--v144-model--w119.txt"), "utf8");
     const moved = original.replace("> Gemini", "  Gemini").replace("  Gemini 3.8", "> Gemini 3.8");
+    const fixed = readFileSync(
+      join(import.meta.dirname, "../fixtures/panes/agy--v147-model-fixed-effort--w119.txt"),
+      "utf8",
+    );
     const menu = detectModelRegion(splitLines(parseAnsi(original)))!.model;
     pane(moved);
     const args = { ...base, agent: "agy", menu };
@@ -103,6 +114,9 @@ describe("submitMenuKeys", () => {
     expect(mockSendKeys).not.toHaveBeenCalled();
     expect(await submitMenuKeys({ ...args, keys: ["Down"], nav: true })).toEqual({ status: "sent" });
     expect(mockSendKeys).toHaveBeenCalledWith("w1:p1", ["Down"], undefined, expect.any(String));
+
+    pane(fixed);
+    expect(await submitMenuKeys({ ...args, keys: ["Down"], nav: true })).toEqual({ status: "sent" });
   });
 
   it("sends a footer-named key when the screen is unchanged", async () => {
