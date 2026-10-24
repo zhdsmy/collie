@@ -36,7 +36,7 @@ const STATUS_ROWS = 2;
 // every capture), or on the footer itself. A last row of any other shape, an indented line of text
 // included, was painted after the picker and is content this reader does not know, so the picker
 // stays raw rather than offer Enter over it (reviews, 2026-10-15 and 10-16).
-const STATUS = /^(?:\s{8,}\S+(?: \S+)* · \S+\s*|\S+\s+(?:idle|working|thinking|waiting|done)\s+\S.*|\S+(?: \S+)*\s{2,}(?:auto|default|accept-edits|plan)\s{2,}(?:idle|working|thinking|tool_use|initializing|waiting|done)(?:\s{2,}\S.*)?)$/;
+const STATUS = /^(?:\s{8,}\S+(?: \S+)* · \S+\s*|\S+\s+(?:idle|reviewing|error|working|thinking|authenticating|merging|waiting|done)\s+\S.*|\S+(?: \S+)*\s{2,}(?:auto|default|accept-edits|plan|fast|custom)\s{2,}(?:idle|reviewing|error|working|thinking|tool_use|initializing|authenticating|merging|waiting|done)(?:\s{2,}\S.*)?)$/;
 // A row between the footer and the status is not checked for its shape: the shared conformance test
 // splices one in there (`footerTop` falls back to the last row, agy's footer not being one it reads)
 // and expects the picker to keep lifting. A row there that names a key the way a prompt does is

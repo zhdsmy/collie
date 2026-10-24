@@ -252,3 +252,80 @@ test("AGY native startup, working and interrupted states retain their status mar
     await page.screenshot({ path: testInfo.outputPath(`agy-native-${state}.png`) });
   }
 });
+
+for (const cols of [119, 50]) {
+  test(`AGY artifact review menu replaces the unread warning: ${cols} columns`, async ({ page }, testInfo) => {
+    const text = readFileSync(new URL(`../src/fixtures/panes/agy--v147-artifact-review--w${cols}.txt`, import.meta.url), "utf8");
+    await page.setViewportSize({ width: 320, height: 844 });
+    await page.addInitScript(() => {
+      localStorage.setItem("collie:locale:v1", "en");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+    });
+    await installApiStub(page);
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+        ? Object.assign({}, agent, { agent: "agy", status: "idle", hasSession: false }) : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+      paneId: "w1:p1", text, revision: 1,
+    } }));
+    await page.goto("/pane/w1:p1");
+    await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
+    for (const name of ["Approve", "Reject", "Preview", "Open", "Done", "Move up", "Move down"]) {
+      const button = page.getByRole("button", { name, exact: true });
+      await button.scrollIntoViewIfNeeded();
+      await expect(button).toBeInViewport();
+    }
+    const strip = page.locator('[data-slot="agy-statusline"]');
+    await expect(strip).toHaveCount(1);
+    await expect(strip.getByRole("img", { name: "reviewing", exact: true })).toBeVisible();
+    await expect(strip.getByText("Plan", { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+    await page.screenshot({ path: testInfo.outputPath(`agy-artifact-review-w${cols}.png`) });
+  });
+}
+
+test("AGY artifact detail viewer and reviewing composer keep their controls and statusline", async ({ page }, testInfo) => {
+  const detailText = readFileSync(new URL("../src/fixtures/panes/agy--v147-artifact-detail--w119.txt", import.meta.url), "utf8");
+  const idleReviewingText = readFileSync(new URL("../src/fixtures/panes/agy--v147-reviewing-idle--w119.txt", import.meta.url), "utf8");
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("collie:locale:v1", "en");
+    localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+  });
+  await installApiStub(page);
+  let text = detailText;
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+      ? Object.assign({}, agent, { agent: "agy", status: "idle", hasSession: false }) : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text, revision: 1,
+  } }));
+  await page.goto("/pane/w1:p1");
+  await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
+  for (const name of ["Outline", "Hide lines", "Close", "Move up", "Move down"]) {
+    const button = page.getByRole("button", { name, exact: true });
+    await button.scrollIntoViewIfNeeded();
+    await expect(button).toBeInViewport();
+  }
+  const strip = page.locator('[data-slot="agy-statusline"]');
+  await expect(strip).toHaveCount(1);
+  await expect(strip.getByRole("img", { name: "idle", exact: true })).toBeVisible();
+  await expect(strip.getByText("Plan", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await page.screenshot({ path: testInfo.outputPath("agy-artifact-detail.png") });
+
+  text = idleReviewingText;
+  await page.goto("/pane/w1:p1");
+  await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
+  await expect(strip).toHaveCount(1);
+  await expect(strip.getByRole("img", { name: "reviewing", exact: true })).toBeVisible();
+  await expect(strip.getByText("Plan", { exact: true })).toBeVisible();
+  const input = page.getByRole("textbox").first();
+  await expect(input).toBeEnabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await page.screenshot({ path: testInfo.outputPath("agy-reviewing-idle.png") });
+});

@@ -3274,6 +3274,14 @@
             "block": "raw",
             "statusLinesMin": 1
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-reviewing-idle--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
         }
       ],
       "live": false,
@@ -3376,6 +3384,89 @@
         "version": "1.4.5",
         "date": "2026-10-22",
         "how": "owned native Herdr sessions at 50/119 columns: actual client/SendProtocol opened Model and Resume with one Enter; Resume Down/Up/Escape through submitMenuKeys and bridge keysPane; no history resumed or provider inference; 320px Chromium/WebKit replay",
+        "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
+      }
+    },
+    {
+      "id": "agy.artifact",
+      "agent": "agy",
+      "origin": "downstream",
+      "sources": [
+        "web/src/lib/harness/agy/artifact.ts",
+        "web/src/lib/harness/agy/index.ts",
+        "web/src/lib/harness/agy/chrome.ts",
+        "web/src/components/statusline-row.tsx",
+        "web/src/lib/agent-commands.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/agy/agy.test.ts",
+        "web/src/components/statusline-row.test.tsx",
+        "web/src/lib/agent-commands.test.ts",
+        "web/e2e/agy-chrome.spec.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/agy--v147-artifact-review--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-artifact-review-preview--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-artifact-review--w50.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-artifact-review-submit--w50.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-artifact-list--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-artifact-detail--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-artifact-detail--w50.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "1.4.7",
+        "date": "2026-10-24",
+        "how": "owned native Herdr session at 119 and 50 columns in plan mode: /artifact review card, inline preview toggle (p), full-screen detail viewer (Enter/o/l/Esc), confirm-exit Submit/Dismiss state, and post-review Artifacts list; submitMenuKeys and bridge keysPane exercised; 320px Chromium/WebKit layout replay",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     }

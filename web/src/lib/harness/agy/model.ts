@@ -3,7 +3,7 @@ import type { MenuModel } from "../menu-model";
 import { regionSignature } from "./prompt-select";
 
 const KEYBOARD = /^Keyboard: ↑\/↓ Navigate(?: ←\/→ Effort)? enter Select(?: esc Go Back)?$/i;
-const STATUS = /^(?:\s{8,}\S.* · \S+|\S+\s+(?:idle|working|thinking|waiting|done)\s+\S.*|\S+(?: \S+)*\s{2,}(?:auto|default|accept-edits|plan)\s{2,}(?:idle|working|thinking|tool_use|initializing|waiting|done)(?:\s{2,}\S.*)?)$/;
+const STATUS = /^(?:\s{8,}\S.* · \S+|\S+\s+(?:idle|reviewing|error|working|thinking|authenticating|merging|waiting|done)\s+\S.*|\S+(?: \S+)*\s{2,}(?:auto|default|accept-edits|plan|fast|custom)\s{2,}(?:idle|reviewing|error|working|thinking|tool_use|initializing|authenticating|merging|waiting|done)(?:\s{2,}\S.*)?)$/;
 
 /** The native model menu, including footer keys clipped at narrow terminal widths. */
 export function detectModelRegion(lines: StyledLine[]): { model: MenuModel; startLine: number } | null {

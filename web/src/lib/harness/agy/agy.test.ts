@@ -23,6 +23,7 @@ const allFixtures = readdirSync(PANES_DIR)
 const allAgyFixtures = allFixtures.filter((f) => f.startsWith("agy--"));
 
 const NEUTRAL = new Set([
+  "agy--v147-reviewing-idle--w119.txt",
   "agy--v145-background-task--w80.txt",
   "agy--v145-status-startup--w120.txt",
   "agy--v145-status-working--w120.txt",
@@ -792,5 +793,210 @@ describe("AGY permission context and status boundary", () => {
   it("does not join an option list to a numbered help line across a rule", () => {
     const text = ["Which option?", "> 1. First", "  2. Second", RULE, "3. about", "enter Select · esc Cancel"].join("\n");
     expect(detectPromptSelect(splitLines(parseAnsi(text)))).toBeNull();
+  });
+});
+
+describe("AGY /artifact review and detail viewer (1.4.7)", () => {
+  const load = (name: string) => splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8")));
+
+  it("extracts the reviewing statusline when the composer is idle awaiting artifact review", () => {
+    const lines = load("agy--v147-reviewing-idle--w119.txt");
+    expect(agyAdapter.composerReady!(lines)).toBe(true);
+    const status = agyAdapter.extractStatusLines!(lines).map(lineText);
+    expect(status).toEqual([
+      "Gemini 3.8 Flash (Low)  plan  reviewing  ctx 98%  main  Gemini 5h 98.4% ↻4h56m · 7d 86.8% ↻4d2h  Cla",
+    ]);
+  });
+
+  it.each([
+    [
+      "agy--v147-artifact-review--w119.txt",
+      "Action required (1 left)",
+      true,
+      [
+        ["Approve", ["y"]],
+        ["Reject", ["n"]],
+        ["Preview", ["p"]],
+        ["Open", ["Enter"]],
+        ["Done", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-artifact-review-preview--w119.txt",
+      "Action required (1 left)",
+      true,
+      [
+        ["Approve", ["y"]],
+        ["Reject", ["n"]],
+        ["Preview", ["p"]],
+        ["Open", ["Enter"]],
+        ["Done", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-artifact-review--w50.txt",
+      "Action required (1 left)",
+      true,
+      [
+        ["Approve", ["y"]],
+        ["Reject", ["n"]],
+        ["Preview", ["p"]],
+        ["Open", ["Enter"]],
+        ["Done", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-artifact-review-submit--w50.txt",
+      "Action required (1 left)",
+      false,
+      [
+        ["Submit", ["Enter"]],
+        ["Dismiss", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-artifact-list--w119.txt",
+      "Artifacts",
+      true,
+      [
+        ["Preview", ["p"]],
+        ["Open", ["Enter"]],
+        ["Dismiss", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-artifact-detail--w119.txt",
+      "plan.md",
+      true,
+      [
+        ["Outline", ["t"]],
+        ["Hide lines", ["l"]],
+        ["Close", ["Escape"]],
+      ],
+    ],
+    [
+      "agy--v147-artifact-detail--w50.txt",
+      "part1.md",
+      true,
+      [
+        ["Outline", ["t"]],
+        ["Hide lines", ["l"]],
+        ["Close", ["Escape"]],
+      ],
+    ],
+  ])("%s lifts into a menu card and preserves the bottom statusline", (name, title, upDown, expectedActions) => {
+    const lines = load(name);
+    expect(agyAdapter.composerReady!(lines)).toBe(false);
+    const blocks = agyAdapter.buildBlocks(lines);
+    const menuBlock = blocks.find((b) => b.kind === "menu");
+    expect(menuBlock?.kind).toBe("menu");
+    if (menuBlock?.kind !== "menu") return;
+    expect(menuBlock.menu.title).toBe(title);
+    expect(menuBlock.menu.nav).toEqual({ upDown });
+    expect(menuBlock.menu.actions.map((a) => [a.label, a.keys])).toEqual(expectedActions);
+    const status = agyAdapter.extractStatusLines!(lines).map(lineText);
+    expect(status).toHaveLength(1);
+    expect(status[0]).toMatch(/Gemini 3\.8 Flash \(Low\)\s+plan\s+(?:reviewing|idle)\s+ctx 98%/);
+  });
+
+  it("switches the Submit action to Tab+Enter when Dismiss is focused in confirm-exit mode", () => {
+    const raw = readFileSync(join(PANES_DIR, "agy--v147-artifact-review-submit--w50.txt"), "utf8").replace(
+      "  \x1b[0m\x1b[7m\x1b[38;5;2m Submit \x1b[0m \x1b[0m\x1b[38;5;8mDismiss\x1b[0m",
+      "  \x1b[0m\x1b[1m\x1b[38;5;2mSubmit\x1b[0m \x1b[0m\x1b[1m\x1b[38;5;3mDismiss\x1b[0m",
+    );
+    const blocks = agyAdapter.buildBlocks(splitLines(parseAnsi(raw)));
+    const menuBlock = blocks.find((b) => b.kind === "menu");
+    expect(menuBlock?.kind).toBe("menu");
+    if (menuBlock?.kind !== "menu") return;
+    expect(menuBlock.menu.nav).toEqual({ upDown: false });
+    expect(menuBlock.menu.actions.map((a) => [a.label, a.keys])).toEqual([
+      ["Submit", ["Tab", "Enter"]],
+      ["Dismiss", ["Escape"]],
+    ]);
+  });
+
+  it("lifts unexpanded Artifacts list and switches Open to Select when approve/reject is focused", () => {
+    const unexpandedList = [
+      "Artifacts",
+      "› plan.md   open ",
+      "",
+      "Keyboard: ↑/↓ Navigate  p preview  enter open  ctrl+g open in editor  esc Dismiss",
+      "",
+      "Gemini 3.8 Flash (Low)  plan  idle  ctx 98%",
+    ].join("\n");
+    const listBlocks = agyAdapter.buildBlocks(splitLines(parseAnsi(unexpandedList)));
+    const listMenu = listBlocks.find((b) => b.kind === "menu");
+    expect(listMenu?.kind).toBe("menu");
+    if (listMenu?.kind === "menu") {
+      expect(listMenu.menu.title).toBe("Artifacts");
+      expect(listMenu.menu.actions.map((a) => [a.label, a.keys])).toEqual([
+        ["Preview", ["p"]],
+        ["Open", ["Enter"]],
+        ["Dismiss", ["Escape"]],
+      ]);
+    }
+
+    const approveFocused = [
+      "Action required (1 left)",
+      "› □ new plan.md  open  approve  reject",
+      "",
+      "Keyboard: ↑/↓ Navigate  y/n Approve/reject  shift+a Approve all  p Preview  ctrl+g open in editor",
+      "  esc Done",
+      "",
+      "Gemini 3.8 Flash (Low)  plan  reviewing  ctx 98%",
+    ].join("\n");
+    const reviewBlocks = agyAdapter.buildBlocks(splitLines(parseAnsi(approveFocused)));
+    const reviewMenu = reviewBlocks.find((b) => b.kind === "menu");
+    expect(reviewMenu?.kind).toBe("menu");
+    if (reviewMenu?.kind === "menu") {
+      expect(reviewMenu.menu.actions.map((a) => [a.label, a.keys])).toEqual([
+        ["Approve", ["y"]],
+        ["Reject", ["n"]],
+        ["Preview", ["p"]],
+        ["Select", ["Enter"]],
+        ["Done", ["Escape"]],
+      ]);
+    }
+  });
+
+  it("lifts ArtifactDetailModel outline and unsent-comment confirmation views", () => {
+    const outlineText = [
+      " part1.md — Outline ",
+      "> H1  Plan Part 1",
+      "  ↑/↓ navigate · enter jump · t back",
+      "Gemini 3.8 Flash (Low)  plan  reviewing  ctx 98%",
+    ].join("\n");
+    const outlineBlocks = agyAdapter.buildBlocks(splitLines(parseAnsi(outlineText)));
+    const outlineMenu = outlineBlocks.find((b) => b.kind === "menu");
+    expect(outlineMenu?.kind).toBe("menu");
+    if (outlineMenu?.kind === "menu") {
+      expect(outlineMenu.menu.title).toBe("part1.md — Outline");
+      expect(outlineMenu.menu.nav).toEqual({ upDown: true });
+      expect(outlineMenu.menu.actions.map((a) => [a.label, a.keys])).toEqual([
+        ["Jump", ["Enter"]],
+        ["Back", ["Escape"]],
+      ]);
+    }
+
+    const unsentText = [
+      " part2.md (1 comment) ",
+      ">   1 💬   Plan Part 2 ",
+      "      │ Looks good",
+      "  You have 1 unsent comment(s). Send to agent?",
+      "  y send + close · n discard + close · esc cancel",
+      "Gemini 3.8 Flash (Low)  plan  reviewing  ctx 98%",
+    ].join("\n");
+    const unsentBlocks = agyAdapter.buildBlocks(splitLines(parseAnsi(unsentText)));
+    const unsentMenu = unsentBlocks.find((b) => b.kind === "menu");
+    expect(unsentMenu?.kind).toBe("menu");
+    if (unsentMenu?.kind === "menu") {
+      expect(unsentMenu.menu.title).toBe("part2.md");
+      expect(unsentMenu.menu.nav).toEqual({ upDown: false });
+      expect(unsentMenu.menu.actions.map((a) => [a.label, a.keys])).toEqual([
+        ["Send & close", ["y"]],
+        ["Discard & close", ["n"]],
+        ["Cancel", ["Escape"]],
+      ]);
+    }
   });
 });

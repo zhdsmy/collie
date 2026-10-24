@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Added
+
+- **Antigravity `/artifact` review and detail viewer lift into menu cards.** Recognize `Action required (N left)`, the confirm-exit `Submit  Dismiss` prompt, the post-review `Artifacts` list, and the full-screen `ArtifactDetailModel` document, outline, and unsent-comments views in Antigravity 1.4.7 so Plan-mode reviews expose `Approve`, `Reject`, `Preview`, `Open`, `Outline`, `Hide lines`, and navigation controls without falling back to the unread-dialog warning. Preserve the bottom statusline during artifact review, add `reviewing`, `error`, and `merging` statusline state icons, and register `/artifact` in Antigravity's slash-command palette.
+
 ## [1.23.4+collie.1] - 2026-10-24
 
 ### Fixed

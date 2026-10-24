@@ -1,4 +1,45 @@
-# AGY 1.4.4 / 1.4.5 UI checks — 2026-10-22
+# AGY 1.4.4 / 1.4.5 / 1.4.7 UI checks — 2026-10-24
+
+## Artifact review and detail viewer — AGY 1.4.7 (2026-10-24)
+
+An owned AGY 1.4.7 Herdr canary in `plan` mode produced artifacts with
+`RequestFeedback=true` (`implementation_plan.md` and `checklist.md`) and entered
+native `reviewing` state at 119 and 50 columns.
+
+- When `/artifact` opens `ArtifactViewModel` (`Action required (N left)` or
+  `Artifacts`), a dormant `─── / > / ───` composer box remains painted above the
+  modal while `Keyboard: ...` sits at the bottom above the statusline.
+  `dialogUnder` now treats `^Keyboard:\s` below the composer box as a modal tail
+  so `locateInputBox` / `composerReady` fails closed instead of claiming the
+  dormant composer.
+- `detectArtifactRegion` lifts `ArtifactViewModel` into a `MenuModel` card
+  across all three native sub-states:
+  1. Active review (`Action required (N left)`): `Approve` (`y`), `Reject` (`n`),
+     `Preview` (`p`), `Open` (`Enter`), and `Done` (`Escape`), plus `Up`/`Down`
+     when multiple artifacts are listed.
+  2. Confirm-exit prompt (`Submit  Dismiss` with inverse-painted pill):
+     `Submit` (`Enter` or `Tab` + `Enter`) and `Dismiss` (`Escape`).
+  3. Non-review artifact list (`Artifacts`): `Preview` (`p`), `Open` (`Enter`),
+     and `Dismiss` (`Escape`), plus `Up`/`Down`.
+- Pressing `Enter` on an artifact opens `ArtifactDetailModel` (` <name> [pct%]` or
+  ` <name> — Outline` with a bottom shortcut bar). It lifts into a `MenuModel`
+  card with `Up`/`Down` and state-appropriate actions (`Outline` `t`, `Hide lines`
+  / `Show lines` `l`, `Close` `Escape` in document view; `Jump` `Enter` and
+  `Back` `Escape` in outline view; `Send & close` `y`, `Discard & close` `n`, and
+  `Cancel` `Escape` on the unsent-comments prompt).
+- `<StatuslineRow>` (`AGY_FIELDS` / `AGY_STATE_RE`) and the statusline matchers
+  in `model.ts` / `conversations.ts` now recognize `reviewing` (`ListChecks`),
+  `error` (`CircleAlert`), and `merging` (`Hourglass`). `/artifact` is also listed
+  in AGY's slash-command palette (`agent-commands.ts`).
+- Sanitized captures from the owned canary are checked in as
+  `agy--v147-reviewing-idle--w119.txt`,
+  `agy--v147-artifact-review--w{119,50}.txt`,
+  `agy--v147-artifact-review-preview--w119.txt`,
+  `agy--v147-artifact-review-submit--w50.txt`,
+  `agy--v147-artifact-list--w119.txt`, and
+  `agy--v147-artifact-detail--w{119,50}.txt`.
+  The owned canary session, temporary project directories, and temporary native
+  state were removed; user sessions received no input.
 
 ## Background task rail — 2026-10-23
 

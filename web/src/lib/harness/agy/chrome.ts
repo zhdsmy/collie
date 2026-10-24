@@ -2,6 +2,7 @@ import { parseAnsi } from "../../ansi";
 import type { StyledLine } from "../../blocks";
 import { findInputFrame, plainRows, type RowSpan } from "../../surface/frame";
 import { requireProfile } from "../../surface/profile";
+import { detectArtifactRegion } from "./artifact";
 import { classifyFooter, isBlank, isBoxBorder, lineText } from "./markers";
 import { detectPromptSelectRegionIn, parseOptionRow, trailingMenuRows } from "./prompt-select";
 
@@ -57,7 +58,7 @@ function dialogUnder(texts: string[], bottomBorder: number, end: number, ownEsc 
   const options: { n: number }[] = [];
   for (let j = bottomBorder + 1; j < end; j++) {
     const text = texts[j]!;
-    if (classifyFooter(text) !== null) return true;
+    if (classifyFooter(text) !== null || /^Keyboard:\s/.test(text)) return true;
     if (ESC_TO_CANCEL.test(text) && !(j === ownEsc && OWN_ESC_STATUS.test(text))) return true;
     const option = parseOptionRow(text);
     if (option !== null) options.push(option);
@@ -211,7 +212,10 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   if (end === 0) return [];
 
   const box = locateInputBox(texts, end);
-  const statusStart = box?.statusStart ?? detectPromptSelectRegionIn(texts)?.statusStartLine;
+  const statusStart =
+    box?.statusStart ??
+    detectPromptSelectRegionIn(texts)?.statusStartLine ??
+    detectArtifactRegion(lines)?.statusStartLine;
   if (statusStart === undefined) return [];
 
   const rows: StyledLine[] = [];

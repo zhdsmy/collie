@@ -418,13 +418,15 @@ function ClaudeStatusline({ row, leading }: { row: StyledLine; leading?: ReactNo
 const AGY_MODES = new Map([["auto", "Auto"], ["default", "Ask"], ["accept-edits", "Edit"], ["plan", "Plan"]]);
 const AGY_FIELDS: { pattern: RegExp; icon: LucideIcon; hourglass?: boolean }[] = [
   { pattern: /^idle$/, icon: CircleCheck },
-  { pattern: /^(?:thinking|working|tool_use|initializing|authenticating)$/, icon: Hourglass, hourglass: true },
+  { pattern: /^reviewing$/, icon: ListChecks },
+  { pattern: /^error$/, icon: CircleAlert },
+  { pattern: /^(?:thinking|working|tool_use|initializing|authenticating|merging)$/, icon: Hourglass, hourglass: true },
   { pattern: /^\? for shortcuts$/, icon: Keyboard },
   { pattern: /^esc to cancel$/, icon: CircleOff },
 ];
 
 const AGY_MODE_RE = /^(?:auto|default|accept-edits|plan)$/;
-const AGY_STATE_RE = /^(?:idle|thinking|working|tool_use|initializing|authenticating)$/;
+const AGY_STATE_RE = /^(?:idle|reviewing|error|thinking|working|tool_use|initializing|authenticating|merging)$/;
 const AGY_DROPPED_RE = /^(?:(?:Σin|in|Σout|out) \d+(?:\.\d+)?[km]?|cache \d+(?:\.\d+)?%)$/;
 const AGY_VERSION_RE = /^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
 const AGY_QUOTA_RE = /^(?:(Gemini|GEMINI MODELS|Claude\/GPT|CLAUDE AND GPT MODELS) )?((?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S*)?(?: · (?:5h|7d) \d+(?:\.\d+)?%(?: ↻\S*)?)?)$/;

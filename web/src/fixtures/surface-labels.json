@@ -221,6 +221,46 @@
       "version": "unversioned",
       "state": "running"
     },
+    "agy--v147-artifact-detail--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-artifact-detail--w50.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-artifact-list--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-artifact-review--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-artifact-review--w50.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-artifact-review-preview--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-artifact-review-submit--w50.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-reviewing-idle--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "idle"
+    },
     "claude--autocomplete-slash-clipped.txt": {
       "harness": "claude",
       "version": "unversioned",

@@ -410,11 +410,16 @@ it.each(["GEMINI MODELS", "Gemini"])("orders AGY state first and version last wh
   expect(view.container.textContent).not.toMatch(/MODELS|ctx |135\.4k|138\.1k|98%|\(High\)/);
   expect(view.container.querySelector('[data-slot="agy-statusline"]')).toHaveClass("overflow-x-auto", "whitespace-nowrap");
 
-  for (const active of ["thinking", "working", "tool_use", "initializing", "authenticating"]) {
+  for (const active of ["thinking", "working", "tool_use", "initializing", "authenticating", "merging"]) {
     view.rerender(<StatuslineRow agent="agy" row={splitLines(parseAnsi(`Gemini 4 Argon (High)  auto  ${active}  ctx 87%  main  v1.4.4`))[0]!} />);
     const svg = view.getByRole("img", { name: active }).querySelector("svg");
     expect(svg).toHaveClass("lucide-hourglass", animation);
   }
+  view.rerender(<StatuslineRow agent="agy" row={splitLines(parseAnsi("Gemini 3.8 Flash (Low)  plan  reviewing  ctx 98%  main  v1.4.7"))[0]!} />);
+  expect(view.getByRole("img", { name: "plan" })).toHaveTextContent("Plan");
+  expect(view.getByRole("img", { name: "reviewing" }).querySelector("svg")).toHaveClass("lucide-list-checks");
+  view.rerender(<StatuslineRow agent="agy" row={splitLines(parseAnsi("Gemini 3.8 Flash (Low)  plan  error  ctx 98%  main  v1.4.7"))[0]!} />);
+  expect(view.getByRole("img", { name: "error" }).querySelector("svg")).toHaveClass("lucide-circle-alert");
 });
 
 it.each([["auto", "Auto"], ["default", "Ask"], ["accept-edits", "Edit"], ["plan", "Plan"]])("keeps AGY %s mode readable", (mode, label) => {
