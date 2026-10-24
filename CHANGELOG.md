@@ -23,13 +23,15 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.23.4+collie.3] - 2026-10-25
+
 ### Added
 
-- **Antigravity `/effort` and native `Keyboard:` modals lift into menu cards.** Recognize Antigravity 1.4.7's `Set Effort` (`/effort`) slider with tappable `[ low ] [ medium ] [ high ]` scale chips as well as `Rewind Conversation` (`/rewind`), `Available Agents` (`/agents`), `Skills` (`/skills`), `Tasks` / `Task Details` (`/tasks`), `MCP Servers` (`/mcp`), `Settings` (`/settings`), and `Permission Config Editor` (`/permissions`) so every interactive modal below the composer renders as a menu card instead of the unread-dialog warning, and expand Antigravity's slash-command palette with one-tap pickers.
+- **Antigravity `/effort` and native `Keyboard:` modals lift into menu cards.** Recognize Antigravity 1.4.7's `Set Effort` (`/effort`) slider with tappable `[ low ] [ medium ] [ high ]` scale chips as well as `Rewind Conversation` (`/rewind`), `Available Agents` (`/agents`), `Skills` (`/skills`), `Tasks` / `Task Details` (`/tasks`), `MCP Servers` (`/mcp`), `Settings` (`/settings`), and `Permission Config Editor` (`/permissions`) so every interactive modal below the composer renders as a menu card instead of the unread-dialog warning, and expand Antigravity's slash-command palette with one-tap pickers. ([93792052](https://github.com/zhdsmy/collie/commit/93792052))
 
 ### Fixed
 
-- **Antigravity `/model` and `/resume` cards stay stable across default statuslines, fixed-effort models, and all terminal widths.** Accept Antigravity 1.4.7 default-mode statuslines that omit the `auto` mode word, keep `menusSameIdentity` stable and stack `<MenuBlock>` `↑/↓` and `←/→` rows separately when moving across fixed-effort models such as `GPT-OSS 120B (Medium)`, join wrapped `Keyboard:` footers and recognize `esc Clear search` / `tab Context`, fix `/resume` footer slicing on wide terminals (`>= 134` columns), and preserve the bottom statusline strip while `/model`, `/resume`, or any modal card is open.
+- **Antigravity `/model` and `/resume` cards stay stable across default statuslines, fixed-effort models, and all terminal widths.** Accept Antigravity 1.4.7 default-mode statuslines that omit the `auto` mode word, keep `menusSameIdentity` stable and stack `<MenuBlock>` `↑/↓` and `←/→` rows separately when moving across fixed-effort models such as `GPT-OSS 120B (Medium)`, join wrapped `Keyboard:` footers and recognize `esc Clear search` / `tab Context`, fix `/resume` footer slicing on wide terminals (`>= 134` columns), and preserve the bottom statusline strip while `/model`, `/resume`, or any modal card is open. ([93792052](https://github.com/zhdsmy/collie/commit/93792052))
 
 ## [1.23.4+collie.2] - 2026-10-24
 
