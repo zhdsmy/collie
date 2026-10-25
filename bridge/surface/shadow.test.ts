@@ -411,7 +411,14 @@ describe("canSteer (M69)", () => {
     return { mux, shadow };
   };
 
-  test("pi 1.3.0 in a running turn can be steered; Claude cannot; nothing before the first read", async () => {
+  test.each([["2.1.274", false], ["2.1.275", true], [null, false]] as const)("Claude %s exposes steering only when supported", async (version, expected) => {
+    const { mux, shadow } = steerRig({ claude: version });
+    mux.set("w1:p1", IDLE, 1);
+    await shadow.observe([agent("w1:p1", "claude")]);
+    expect(shadow.canSteer("w1:p1")).toBe(expected);
+  });
+
+  test("pi and recent Claude can be steered; nothing before the first read", async () => {
     const { mux, shadow } = steerRig({ pi: "1.3.0", claude: "2.1.296" });
     expect(shadow.canSteer("w1:p1")).toBe(false);
     mux.set("w1:p1", PI_RUNNING, 1);
@@ -419,7 +426,7 @@ describe("canSteer (M69)", () => {
     await shadow.observe([agent("w1:p1", "pi"), agent("w1:p2", "claude")]);
     expect(shadow.surfaceOf("w1:p1")?.turn).toBe("running");
     expect(shadow.canSteer("w1:p1")).toBe(true);
-    expect(shadow.canSteer("w1:p2")).toBe(false);
+    expect(shadow.canSteer("w1:p2")).toBe(true);
   });
 
   test("a pi binary whose version could not be read is not steered", async () => {

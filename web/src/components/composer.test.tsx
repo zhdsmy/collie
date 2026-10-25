@@ -238,10 +238,10 @@ describe("Composer: keyboard hints on the field (issue 465)", () => {
 
 describe("Composer: Codex queue and steer", () => {
   const running: Surface = { ...FREE, turn: "running" };
-  it.each(["queue", "steer"] as const)("uses the selected Codex default: %s", async (mode) => {
+  it.each([["codex", "queue"], ["codex", "steer"], ["claude", "queue"], ["claude", "steer"]] as const)("uses the selected %s default: %s", async (agent, mode) => {
     const user = userEvent.setup();
-    const prefs = { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system" as const, rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, codexSendMode: mode , stretchText: false };
-    renderComposer({ agent: "codex", canSteer: true, surface: running, prefs });
+    const prefs = { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system" as const, rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, codexSendMode: agent === "codex" ? mode : "steer", claudeSendMode: mode, stretchText: false };
+    renderComposer({ agent, canSteer: true, surface: running, prefs });
     await user.type(screen.getByRole("textbox"), "guide this task");
     const primary = document.querySelector('[data-slot="composer-primary"]')!;
     await user.click(primary);
@@ -250,12 +250,22 @@ describe("Composer: Codex queue and steer", () => {
     expect(recordedSends()[0]!.when).toBe(mode === "steer" ? "steer" : undefined);
   });
 
-  it("offers a one-off steer while the default is queue", async () => {
+  it.each(["codex", "claude"])("offers a one-off %s steer while the default is queue", async (agent) => {
     const user = userEvent.setup();
-    renderComposer({ agent: "codex", canSteer: true, surface: running });
+    renderComposer({ agent, canSteer: true, surface: running });
     await user.type(screen.getByRole("textbox"), "guide now");
     await user.click(screen.getByRole("button", { name: "Steer now" }));
     await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "send", when: "steer", text: "guide now" }));
+  });
+
+  it("ignores the Claude preference without native steer capability", async () => {
+    const user = userEvent.setup();
+    renderComposer({ agent: "claude", canSteer: false, surface: running, prefs: { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system", rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, stretchText: false, claudeSendMode: "steer" } });
+    await user.type(screen.getByRole("textbox"), "wait normally");
+    expect(screen.queryByRole("button", { name: "Steer now" })).not.toBeInTheDocument();
+    await user.click(document.querySelector('[data-slot="composer-primary"]')!);
+    await waitFor(() => expect(recordedSends()).toHaveLength(1));
+    expect(recordedSends()[0]!.when).toBeUndefined();
   });
 
   it("promotes the last native queued message and preserves the phone draft", async () => {

@@ -4,6 +4,8 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const it: Dictionary = {
+  "settings.claudeSend.title": "Invio Claude",
+  "settings.claudeSend.description": "Scegli come inviare mentre Claude lavora. Solo su questo dispositivo; i comandi restano invariati. Guida ora invia anche tutti i messaggi in coda e può interrompere la risposta corrente.",
   "settings.codexSend.title": "Invio a Codex",
   "settings.codexSend.description": "Azione predefinita mentre Codex lavora. Solo su questo dispositivo; i comandi mantengono il proprio comportamento.",
   "settings.codexSend.queue": "In coda",

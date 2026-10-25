@@ -111,6 +111,7 @@
 // Rows live only in the short memory ring below; the receipt and the request file hold hashes.
 // No harness name lives here (no-harness-names.test.ts scans this folder).
 
+import { compareSemver } from "../../web/src/lib/semver.ts";
 import { queuedTexts } from "../../web/src/lib/surface/queued.ts";
 import { statSync } from "node:fs";
 import type { MuxAck, MuxGrid, MuxGridRequest, MuxOutcome } from "../mux/types.ts";
@@ -1019,11 +1020,14 @@ function queuesInTurn(match: ProfileMatch | null): boolean {
 
 /**
  * Whether a pane's harness may be steered (M69): its profile names a steer key (`keys.steer`, which
- * parses only with a witness and only where Enter steers) and may be trusted with a running turn
+ * parses only with a witness and only where Enter steers or queues) and may be trusted with a running turn
  * ({@link turnTrusted}). The pane view's `canSteer` and the protocol read this one rule.
  */
 export function steerTrusted(match: ProfileMatch | null): boolean {
-  return turnTrusted(match) && match.profile.keys.enterWhileRunning === "steers" && match.profile.keys.steer !== undefined && match.profile.keys.steerWitness !== undefined;
+  if (!turnTrusted(match) || match.version === null) return false;
+  const keys = match.profile.keys;
+  return keys.steer !== undefined && keys.steerWitness !== undefined &&
+    (keys.steerMinVersion === undefined || compareSemver(match.version, keys.steerMinVersion) >= 0);
 }
 
 /**

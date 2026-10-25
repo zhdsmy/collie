@@ -113,8 +113,9 @@ export interface DisplayPrefs {
    * a payload written before the setting existed reads the right hand.
    */
   hand?: Hand;
-  /** Default for ordinary Codex messages during a turn; other harnesses keep native behavior. */
+  /** Defaults for ordinary messages during a turn, independent for each harness. */
   codexSendMode?: "queue" | "steer";
+  claudeSendMode?: "queue" | "steer";
   /**
    * Whether a shell pane offers lines from Sent above its box while the box has focus (M61). On by
    * default. Optional in the TYPE only, for the same reason as {@link hand}: every read goes through
@@ -428,6 +429,7 @@ function loadPrefs(): DisplayPrefs {
       // one that picked the default) reads the right hand through {@link handOf}.
       hand: readHand(asJsonString(p.hand)),
       codexSendMode: p.codexSendMode === "steer" ? "steer" : undefined,
+      claudeSendMode: p.claudeSendMode === "steer" ? "steer" : undefined,
       // Absent until the operator chooses, and read as on through {@link sentSuggestionsOf}.
       sentSuggestions: asJsonBoolean(p.sentSuggestions),
       // Absent until the operator chooses, and read as Two fingers through {@link paneNavOf}.
@@ -477,6 +479,7 @@ export interface UseDisplayPrefsReturn {
   /** Which thumb the pane screen is laid out for. */
   setHand: (hand: Hand) => void;
   setCodexSendMode: (mode: "queue" | "steer") => void;
+  setClaudeSendMode: (mode: "queue" | "steer") => void;
   /** Whether a shell pane offers lines from Sent above its box. */
   setSentSuggestions: (on: boolean) => void;
   /** How the pane screen takes a navigation gesture. */
@@ -601,6 +604,14 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     });
   }, []);
 
+  const setClaudeSendMode = useCallback((claudeSendMode: "queue" | "steer") => {
+    setPrefs((p) => {
+      const next: DisplayPrefs = { ...p, claudeSendMode };
+      savePrefs(next);
+      return next;
+    });
+  }, []);
+
   const setSentSuggestions = useCallback((sentSuggestions: boolean) => {
     setPrefs((p) => {
       const next: DisplayPrefs = { ...p, sentSuggestions };
@@ -620,6 +631,7 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
   return {
     prefs,
     setCodexSendMode,
+    setClaudeSendMode,
     setWrap,
     setFontSize,
     setFontFamily,

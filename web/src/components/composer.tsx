@@ -1018,6 +1018,8 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // any agent without an adapter, which is exactly the "no idea" case those helpers already handle.
   const adapter = adapterFor(agent ?? undefined);
   const codexRunning = agent === "codex" && shownSurface.turn === "running" && shownSurface.modal === "none";
+  const runningSendChoice = (agent === "codex" || agent === "claude") && shownSurface.turn === "running" && shownSurface.modal === "none" && canSteer === true;
+  const runningSendMode = agent === "claude" ? prefs.claudeSendMode : prefs.codexSendMode;
   const lastQueued = useMemo(() => {
     if (!codexRunning) return undefined;
     const rows = splitLines(parseAnsi(text));
@@ -1459,7 +1461,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
       return false;
     }
     const mode = modeFor(trimmed);
-    const preferredWhen = mode === "send" && codexRunning && canSteer && prefs.codexSendMode === "steer" ? "steer" : undefined;
+    const preferredWhen = mode === "send" && runningSendChoice && runningSendMode === "steer" ? "steer" : undefined;
     return sendThroughProtocol(t, isDraft, mode, null, false, undefined, when ?? preferredWhen);
   }
 
@@ -2481,7 +2483,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         {/* M69: what the plain tap does, and where the other choice is, while a turn runs on a harness
             that can steer. Only then: a pane without `canSteer` draws nothing here, and a closed
             Collapse holds no height, so its layout does not move. */}
-        <Collapse open={steerRow && !direct.active && !(agent === "codex" && prefs.codexSendMode === "steer")}>
+        <Collapse open={steerRow && !direct.active && !(runningSendChoice && runningSendMode === "steer")}>
           <p data-slot="composer-steer-hint" className="px-1 pb-1 text-xs leading-snug text-muted-foreground">
             {translate("composer.steer.hint")}
           </p>
@@ -2771,7 +2773,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               }}
             />
           </AnchoredMenu>
-          {!direct.active && codexRunning && canSteer && prefs.codexSendMode !== "steer" && hasDraft && modeFor(composeLine(input, attachments)) === "send" && (
+          {!direct.active && runningSendChoice && runningSendMode !== "steer" && hasDraft && modeFor(composeLine(input, attachments)) === "send" && (
             <Button variant="ghost" size="icon" className={cn(TOOLBAR_TAP_TARGET, "size-9 shrink-0 rounded-full")} disabled={locked || sending || offline} onClick={() => onSendClick("steer")} aria-label={translate("settings.codexSend.steer")} title={translate("settings.codexSend.steer")}>
               <Zap className="size-4" aria-hidden="true" />
             </Button>
@@ -2887,7 +2889,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   ? translate("composer.send.stopTypingAria")
                   : offline
                     ? translate("composer.send.reconnect")
-                    : codexRunning && modeFor(composeLine(input, attachments)) === "send" ? translate(prefs.codexSendMode === "steer" ? "settings.codexSend.steer" : "settings.codexSend.queue") : translate("composer.send.sendAria")
+                    : runningSendChoice && modeFor(composeLine(input, attachments)) === "send" ? translate(runningSendMode === "steer" ? "settings.codexSend.steer" : "settings.codexSend.queue") : translate("composer.send.sendAria")
               }
               aria-pressed={direct.active}
             >

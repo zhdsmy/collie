@@ -6,6 +6,8 @@ import type { Dictionary } from "./en";
 // Instructions name the translated controls (입력, 화면, 전송), not their English labels.
 
 export const ko: Dictionary = {
+  "settings.claudeSend.title": "Claude 전송 방식",
+  "settings.claudeSend.description": "Claude 작업 중 전송 동작을 선택합니다. 이 기기에만 적용되며 명령 동작은 유지됩니다. 즉시 유도하면 대기 중인 모든 메시지도 전송되며 현재 응답이 중단될 수 있습니다.",
   "settings.codexSend.title": "Codex 전송 방식",
   "settings.codexSend.description": "Codex 실행 중 전송 버튼의 기본 동작입니다. 이 기기에만 적용되며 명령 동작은 유지됩니다.",
   "settings.codexSend.queue": "대기열에 추가",

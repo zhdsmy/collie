@@ -463,6 +463,51 @@ function neverEscape(pane: FakePane): void {
 
 // ── the happy paths ──
 
+describe("Claude queue and native send-now", () => {
+  test("Enter keeps a message queued while Claude runs", async () => {
+    const { pane, send } = rig({ version: "2.1.310" });
+    pane.over = ["✻ Working… (3s · esc to interrupt)"];
+    pane.drawsQueuedRow = true;
+    const answer = await send("wait for this turn");
+    expect(answer.receipt).toMatchObject({ outcome: "sent", queued: true });
+    expect(pane.keysSeen).toContain("Enter");
+    expect(pane.keysSeen).not.toContain("ctrl+x");
+  });
+
+  test("an explicit phone steer uses the native chord and proves the transcript took the draft", async () => {
+    const { pane, send } = rig({ version: "2.1.310" });
+    pane.over = ["✻ Working… (3s · esc to interrupt)"];
+    pane.afterInput = (p, what) => {
+      if (what === "keys:ctrl+x,ctrl+s") {
+        p.transcript.push(`❯ ${p.box}`);
+        p.box = "";
+      }
+    };
+    const answer = await send("guide this turn", { when: "steer", fromPhone: true });
+    expect(answer.receipt?.outcome).toBe("steered");
+    expect(pane.keysSeen.slice(-2)).toEqual(["ctrl+x", "ctrl+s"]);
+    expect(pane.keysSeen).not.toContain("Enter");
+    neverEscape(pane);
+  });
+
+  test.each(["2.1.0", "2.1.274"])("never steers an older Claude %s", async (version) => {
+    const { pane, send } = rig({ version });
+    const answer = await send("guide this turn", { when: "steer", fromPhone: true });
+    expect(answer.receipt).toMatchObject({ outcome: "refused", reason: "steer_unsupported" });
+    expect(pane.keysSeen).toEqual([]);
+    expect(pane.box).toBe("");
+  });
+
+  test("an unacknowledged chord keeps the draft and never reports steered", async () => {
+    const { pane, send } = rig({ version: "2.1.310" });
+    pane.over = ["✻ Working… (3s · esc to interrupt)"];
+    const answer = await send("guide this turn", { when: "steer", fromPhone: true });
+    expect(answer.receipt?.outcome).toBe("typed_not_submitted");
+    expect(pane.box).toBe("guide this turn");
+    neverEscape(pane);
+  });
+});
+
 describe("a send that goes through", () => {
   test("free box, verified profile: one write, Enter through the gate, sent, with a full receipt", async () => {
     const { pane, send, deps } = rig();

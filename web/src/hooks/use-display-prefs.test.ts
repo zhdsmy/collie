@@ -19,6 +19,20 @@ const STORAGE_KEY = "collie:display-prefs:v4";
 describe("useDisplayPrefs", () => {
   beforeEach(() => localStorage.clear());
 
+  it("persists Claude steering independently from Codex", () => {
+    const { result, unmount } = renderHook(() => useDisplayPrefs());
+    expect(result.current.prefs.claudeSendMode ?? "queue").toBe("queue");
+    act(() => result.current.setClaudeSendMode("steer"));
+    unmount();
+    const reloaded = renderHook(() => useDisplayPrefs());
+    expect(reloaded.result.current.prefs.claudeSendMode).toBe("steer");
+    expect(reloaded.result.current.prefs.codexSendMode ?? "queue").toBe("queue");
+    act(() => reloaded.result.current.setCodexSendMode("steer"));
+    act(() => reloaded.result.current.setClaudeSendMode("queue"));
+    expect(reloaded.result.current.prefs.codexSendMode).toBe("steer");
+    expect(reloaded.result.current.prefs.claudeSendMode).toBe("queue");
+  });
+
   it("keeps Codex queue as the default and persists the steering choice", () => {
     const { result, unmount } = renderHook(() => useDisplayPrefs());
     expect(result.current.prefs.codexSendMode ?? "queue").toBe("queue");

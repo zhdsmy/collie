@@ -132,6 +132,11 @@
       "cancel": "Escape"
     },
     "enterWhileRunning": "queues",
+    "steer": ["ctrl+x", "ctrl+s"],
+    "steerMinVersion": "2.1.275",
+    "steerWitness": [
+      { "pattern": "^\\s*❯ (?<text>\\S.*?)\\s*$", "transcript": true }
+    ],
     "commandWhileRunning": "queues",
     "commandWhileRunningNote": "Lab 2026-10-16: measured on Claude Code 2.1.301 with /help only (queued as a row above the box, ran after the turn).",
     "neverHeld": [

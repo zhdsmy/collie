@@ -566,12 +566,14 @@ export interface Profile {
     readonly commandsRunInTurnNote?: string;
     /**
      * The keys that steer a running turn: the text goes into the turn the agent runs now, read after
-     * its current tool call (M69, lab 2026-10-23). Only on a harness whose Enter steers
-     * (`enterWhileRunning: "steers"`), never Escape, never the queue key, and never without
+     * its current tool call (M69, lab 2026-10-23). On a harness whose Enter steers or queues,
+     * never Escape, never the queue key, and never without
      * `steerWitness`. Collie presses them only on a send the person marked as a steer
      * (`when: "steer"`); a plain send keeps the queue key. Optional: without it no send steers.
      */
     readonly steer?: readonly string[];
+    /** First native version that supports these steering keys. */
+    readonly steerMinVersion?: string;
     /**
      * How the harness shows that a steer reached the turn, one or more ways ({@link SteerWitness}).
      * Required with `steer`, allowed only with it.
@@ -749,12 +751,13 @@ function sameKey(a: string, b: string): boolean {
 
 /**
  * `keys.steer`, `keys.steerWitness` and `keys.steerDelayMs` (M69): read after `enterWhileRunning` and
- * `queueKey`, which they are checked against. A steer key exists only where Enter steers; no key of it
+ * `queueKey`, which they are checked against. A steer key exists where Enter steers or queues; no key of it
  * holds Escape (alone or in a chord), is the queue key (on any platform) or an interrupt key, and it
  * never comes without a witness.
  */
 function parseSteer(keysNode: JsonObject, keys: Profile["keys"]): Profile["keys"] {
   if (keysNode.steer === undefined) {
+    if (keysNode.steerMinVersion !== undefined) fail("keys.steerMinVersion", "is only allowed with keys.steer");
     if (keysNode.steerWitness !== undefined) fail("keys.steerWitness", "is only allowed with keys.steer");
     if (keysNode.steerDelayMs !== undefined) fail("keys.steerDelayMs", "is only allowed with keys.steer");
     return keys;
@@ -762,7 +765,8 @@ function parseSteer(keysNode: JsonObject, keys: Profile["keys"]): Profile["keys"
   const steer = textList(keysNode.steer, "keys.steer", 1);
   // A chord counts too: `alt+Escape` holds Escape.
   if (steer.some((key) => key.toLowerCase().split("+").some((token) => token === "escape" || token === "esc"))) fail("keys.steer", "must not hold Escape");
-  if (keys.enterWhileRunning !== "steers") fail("keys.steer", "is for a harness whose Enter steers a turn (keys.enterWhileRunning: steers)");
+  if (keys.enterWhileRunning !== "steers" && keys.enterWhileRunning !== "queues") fail("keys.steer", "requires Enter to steer or queue a turn");
+  if (keys.enterWhileRunning === "queues" && steer.some((key) => sameKey(key, "Enter"))) fail("keys.steer", "must not hold the Enter that queues");
   const queueKeys = [keys.queueKey, ...Object.values(keys.queueKeyByPlatform ?? {})].filter((key): key is string => key !== undefined);
   if (steer.some((key) => queueKeys.some((queue) => sameKey(key, queue)))) fail("keys.steer", "must not hold the queue key");
   if (steer.some((key) => keys.interrupt.some((interrupt) => sameKey(key, interrupt)))) fail("keys.steer", "must not hold an interrupt key");
@@ -772,6 +776,11 @@ function parseSteer(keysNode: JsonObject, keys: Profile["keys"]): Profile["keys"
   if (entries.length === 0) fail("keys.steerWitness", "must name at least one witness");
   const steerWitness = entries.map((entry, i) => parseSteerWitness(entry, Array.isArray(witnessNode) ? `keys.steerWitness[${String(i)}]` : "keys.steerWitness"));
   let out: Profile["keys"] = { ...keys, steer, steerWitness };
+  if (keysNode.steerMinVersion !== undefined) {
+    const min = text(keysNode.steerMinVersion, "keys.steerMinVersion");
+    if (!SEMVER.test(min)) fail("keys.steerMinVersion", "must read X.Y.Z");
+    out = { ...out, steerMinVersion: min };
+  }
   if (keysNode.steerDelayMs !== undefined) {
     const delay = asJsonNumber(keysNode.steerDelayMs);
     if (delay === undefined || !Number.isInteger(delay) || delay < 0 || delay > STEER_DELAY_MAX_MS) fail("keys.steerDelayMs", `must be a whole number of ms from 0 to ${String(STEER_DELAY_MAX_MS)}`);

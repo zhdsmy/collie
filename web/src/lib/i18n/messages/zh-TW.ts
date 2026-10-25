@@ -4,6 +4,8 @@ import type { Dictionary } from "./en";
 // suffixes match.
 
 export const zhTW: Dictionary = {
+  "settings.claudeSend.title": "Claude 傳送方式",
+  "settings.claudeSend.description": "Claude 執行時，選擇傳送按鈕的預設行為。僅此裝置生效；命令維持原有行為。立即引導會同時提交全部排隊訊息，可能中斷目前回覆。",
   "settings.codexSend.title": "Codex 傳送方式",
   "settings.codexSend.description": "Codex 執行時，選擇傳送按鈕的預設行為。僅此裝置生效；命令維持原有行為。",
   "settings.codexSend.queue": "排隊",

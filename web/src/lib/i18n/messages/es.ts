@@ -3,6 +3,8 @@ import type { Dictionary } from "./en";
 // Spanish. See de.ts for the typing contract.
 
 export const es: Dictionary = {
+  "settings.claudeSend.title": "Envío de Claude",
+  "settings.claudeSend.description": "Elige cómo enviar mientras Claude trabaja. Solo en este dispositivo; los comandos no cambian. Guiar ahora también envía todos los mensajes en cola y puede interrumpir la respuesta actual.",
   "settings.codexSend.title": "Envío a Codex",
   "settings.codexSend.description": "Acción al enviar mientras Codex trabaja. Solo en este dispositivo; los comandos conservan su comportamiento.",
   "settings.codexSend.queue": "Encolar",

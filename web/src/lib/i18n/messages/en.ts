@@ -14,6 +14,8 @@
 // Seeded with the language-selector copy only — the full string sweep lands separately.
 
 export const en = {
+  "settings.claudeSend.title": "Claude sending",
+  "settings.claudeSend.description": "While Claude is working, choose what Send does. This device only; commands keep their native behavior. Steer now also sends all queued messages and may interrupt the current reply.",
   "settings.codexSend.title": "Codex sending",
   "settings.codexSend.description": "While Codex is working, choose what Send does. This device only; commands keep their native behavior.",
   "settings.codexSend.queue": "Queue",

@@ -4,6 +4,8 @@ import type { Dictionary } from "./en";
 // match.
 
 export const zh: Dictionary = {
+  "settings.claudeSend.title": "Claude 发送方式",
+  "settings.claudeSend.description": "Claude 运行时，选择发送按钮的默认行为。仅此设备生效；命令保持原有行为。立即引导会同时提交全部排队消息，可能中断当前回复。",
   "settings.codexSend.title": "Codex 发送方式",
   "settings.codexSend.description": "Codex 运行时，选择发送按钮的默认行为。仅此设备生效；命令保持原有行为。",
   "settings.codexSend.queue": "排队",

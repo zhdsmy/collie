@@ -1191,17 +1191,18 @@ describe("the steer keys (M69)", () => {
     });
   };
 
-  it("pi, Codex and OMP steer with Enter; Codex waits a second first; every other profile has no steer key", () => {
+  it("pi, Codex and OMP steer with Enter; Claude uses its native chord; other profiles have no steer key", () => {
     for (const id of ["pi", "codex", "omp"]) {
       const keys = loadProfiles().get(id)!.keys;
       expect([id, keys.steer, keys.enterWhileRunning]).toEqual([id, ["Enter"], "steers"]);
       expect(keys.steerWitness?.length).toBeGreaterThan(0);
     }
     expect(loadProfiles().get("codex")!.keys.steerDelayMs).toBe(1000);
+    expect(loadProfiles().get("claude")!.keys).toMatchObject({ steer: ["ctrl+x", "ctrl+s"], steerMinVersion: "2.1.275", enterWhileRunning: "queues" });
     expect(loadProfiles().get("pi")!.keys.steerDelayMs).toBeUndefined();
     expect(loadProfiles().get("omp")!.keys.steerDelayMs).toBeUndefined();
     for (const [id, profile] of loadProfiles()) {
-      if (["pi", "codex", "omp"].includes(id)) continue;
+      if (["pi", "codex", "omp", "claude"].includes(id)) continue;
       expect([id, profile.keys.steer, profile.keys.steerWitness]).toEqual([id, undefined, undefined]);
     }
   });
@@ -1303,6 +1304,8 @@ describe("the steer keys (M69)", () => {
 
   const cases: [string, string, (string | number)[], JsonValue | undefined, string][] = [
     ["Escape as the steer key", "pi", ["keys", "steer"], ["Escape"], "keys.steer"],
+    ["Enter that queues cannot steer", "claude", ["keys", "steer"], ["Enter"], "keys.steer"],
+    ["an invalid minimum steering version", "claude", ["keys", "steerMinVersion"], "latest", "keys.steerMinVersion"],
     ["a chord that holds Escape as the steer key", "pi", ["keys", "steer"], ["alt+Escape"], "keys.steer"],
     ["a chord that holds esc as the steer key", "omp", ["keys", "steer"], ["ctrl+esc"], "keys.steer"],
     ["a two-key steer that holds the queue key", "codex", ["keys", "steer"], ["Enter", "Tab"], "keys.steer"],

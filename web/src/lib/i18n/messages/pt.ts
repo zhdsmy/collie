@@ -4,6 +4,8 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const pt: Dictionary = {
+  "settings.claudeSend.title": "Envio do Claude",
+  "settings.claudeSend.description": "Escolha como enviar enquanto o Claude trabalha. Apenas neste dispositivo; os comandos não mudam. Orientar agora também envia todas as mensagens na fila e pode interromper a resposta atual.",
   "settings.codexSend.title": "Envio ao Codex",
   "settings.codexSend.description": "Ação padrão enquanto o Codex trabalha. Apenas neste dispositivo; os comandos mantêm seu comportamento.",
   "settings.codexSend.queue": "Enfileirar",

@@ -9,7 +9,7 @@
         "web/src/lib/surface/queued.ts",
         "bridge/surface/protocol.ts",
         "web/src/components/composer.tsx",
-        "web/src/components/codex-send-control.tsx"
+        "web/src/components/running-send-control.tsx"
       ],
       "tests": [
         "bridge/surface/protocol.test.ts",
@@ -40,6 +40,42 @@
         "date": "2026-10-17",
         "how": "owned Herdr canary: Tab queued, Shift+Left removed last item, Enter steered once; default and one-off choice covered in DOM tests",
         "evidence": "web/src/lib/harness/codex/SEND_NOTES.md"
+      }
+    },
+    {
+      "id": "claude.send",
+      "agent": "claude",
+      "origin": "downstream",
+      "sources": [
+        "web/src/lib/surface/profiles/claude.json",
+        "web/src/lib/surface/profile.ts",
+        "bridge/surface/protocol.ts",
+        "web/src/components/composer.tsx",
+        "web/src/components/running-send-control.tsx"
+      ],
+      "tests": [
+        "bridge/surface/protocol.test.ts",
+        "bridge/surface/shadow.test.ts",
+        "web/src/lib/surface/profile.test.ts",
+        "web/src/components/composer.test.tsx",
+        "web/src/hooks/use-display-prefs.test.ts",
+        "web/e2e/codex-send-mode.spec.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/claude--v2301-working-queued-message--w100.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "raw"
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "2.1.310",
+        "date": "2026-10-25",
+        "how": "isolated native PTY and loopback test API, no provider: Enter queued; Ctrl+X Ctrl+S sent existing queue and draft; capability and protocol replay checked separately",
+        "evidence": "web/src/lib/harness/claude/SEND_NOTES.md"
       }
     },
     {
