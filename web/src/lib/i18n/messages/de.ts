@@ -4,12 +4,12 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const de: Dictionary = {
-  "settings.claudeSend.title": "Claude senden",
-  "settings.claudeSend.description": "Wähle das Sendeverhalten, während Claude arbeitet. Nur auf diesem Gerät; Befehle bleiben unverändert. Sofort lenken sendet auch alle wartenden Nachrichten und kann die aktuelle Antwort unterbrechen.",
-  "settings.codexSend.title": "Codex-Nachrichten",
-  "settings.codexSend.description": "Standardaktion beim Senden während Codex arbeitet. Nur dieses Gerät; Befehle behalten ihr Verhalten.",
-  "settings.codexSend.queue": "Einreihen",
-  "settings.codexSend.steer": "Jetzt steuern",
+  "settings.runningSend.title": "Senden",
+  "settings.runningSend.description": "Standardverhalten während der Arbeit wählen. Nur auf diesem Gerät; Befehle bleiben unverändert.",
+  "settings.runningSend.scope": "Gilt derzeit nur für Codex und Claude Code. Andere Agenten sind nicht in diese Einstellung integriert; ihre nativen Clients können dennoch Warteschlangen oder Lenkung unterstützen.",
+  "settings.runningSend.claudeNote": "Claude Code: Sofort lenken sendet auch alle wartenden Nachrichten und kann die aktuelle Antwort unterbrechen.",
+  "settings.runningSend.queue": "Einreihen",
+  "settings.runningSend.steer": "Jetzt steuern",
   "composer.codex.lastQueued": "Letzte Nachricht in der Warteschlange",
 
   "statusline.claude.hint": "Claude-Hinweis",

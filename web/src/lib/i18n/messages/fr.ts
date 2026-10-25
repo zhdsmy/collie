@@ -4,12 +4,12 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const fr: Dictionary = {
-  "settings.claudeSend.title": "Envoi Claude",
-  "settings.claudeSend.description": "Choisissez le comportement pendant que Claude travaille. Sur cet appareil uniquement ; les commandes restent inchangées. Guider maintenant envoie aussi tous les messages en attente et peut interrompre la réponse en cours.",
-  "settings.codexSend.title": "Envoi à Codex",
-  "settings.codexSend.description": "Action par défaut pendant que Codex travaille. Sur cet appareil uniquement ; les commandes gardent leur comportement.",
-  "settings.codexSend.queue": "Mettre en attente",
-  "settings.codexSend.steer": "Guider maintenant",
+  "settings.runningSend.title": "Envoi",
+  "settings.runningSend.description": "Choisissez le comportement pendant le travail. Sur cet appareil uniquement ; les commandes restent inchangées.",
+  "settings.runningSend.scope": "S’applique actuellement à Codex et Claude Code uniquement. Les autres agents ne sont pas intégrés à ce réglage ; leurs clients natifs peuvent néanmoins gérer la file ou le guidage.",
+  "settings.runningSend.claudeNote": "Claude Code : Guider maintenant envoie aussi tous les messages en attente et peut interrompre la réponse en cours.",
+  "settings.runningSend.queue": "Mettre en attente",
+  "settings.runningSend.steer": "Guider maintenant",
   "composer.codex.lastQueued": "Dernier message en attente",
 
   "statusline.claude.hint": "Astuce Claude",

@@ -26,11 +26,11 @@ test("Codex queue setting and immediate steering fit a 320px phone", async ({ pa
     return route.fulfill({ json: sendAnswer(body.id, "sent") });
   });
   await page.goto("/settings/device");
-  await expect(page.getByText("Codex 发送方式", { exact: true })).toBeVisible();
-  await page.getByRole("radiogroup", { name: "Codex 发送方式" }).getByRole("radio", { name: "立即引导" }).click();
+  await expect(page.getByText("发送方式", { exact: true })).toBeVisible();
+  await page.getByRole("radiogroup", { name: "发送方式" }).getByRole("radio", { name: "立即引导" }).click();
   await page.reload();
-  await expect(page.getByRole("radiogroup", { name: "Codex 发送方式" }).getByRole("radio", { name: "立即引导" })).toHaveAttribute("aria-checked", "true");
-  await page.getByRole("radiogroup", { name: "Codex 发送方式" }).getByRole("radio", { name: "排队" }).click();
+  await expect(page.getByRole("radiogroup", { name: "发送方式" }).getByRole("radio", { name: "立即引导" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("radiogroup", { name: "发送方式" }).getByRole("radio", { name: "排队" }).click();
   await page.screenshot({ path: info.outputPath("codex-send-setting.png") });
   await page.goto("/pane/w1:p1");
   await expect(page.getByText(/队列最后一条:/)).toBeVisible();
@@ -50,7 +50,7 @@ test("Codex queue setting and immediate steering fit a 320px phone", async ({ pa
   await expect.poll(() => modes).toEqual(["steer-queued:steer", "send:steer"]);
 });
 
-test("Claude queue and steer are independent and fit a 320px phone", async ({ page }, info) => {
+test("Claude uses the shared sending choice on a 320px phone", async ({ page }, info) => {
   await page.setViewportSize({ width: 320, height: 844 });
   await installApiStub(page);
   await page.addInitScript(() => {
@@ -69,11 +69,12 @@ test("Claude queue and steer are independent and fit a 320px phone", async ({ pa
     return route.fulfill({ json: sendAnswer(body.id, body.when === "steer" ? "steered" : "sent") });
   });
   await page.goto("/settings/device");
-  const choice = page.getByRole("radiogroup", { name: "Claude 发送方式" });
+  const choice = page.getByRole("radiogroup", { name: "发送方式" });
   await choice.getByRole("radio", { name: "立即引导" }).click();
   await page.reload();
   await expect(choice.getByRole("radio", { name: "立即引导" })).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByRole("radiogroup", { name: "Codex 发送方式" }).getByRole("radio", { name: "排队" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("radiogroup", { name: "发送方式" })).toHaveCount(1);
+  await expect(page.getByText(/暂仅适配 Codex 和 Claude Code/)).toBeVisible();
   await choice.getByRole("radio", { name: "排队" }).click();
   await page.screenshot({ path: info.outputPath("claude-send-settings.png") });
   await page.goto("/pane/w1:p1");
@@ -82,6 +83,7 @@ test("Claude queue and steer are independent and fit a 320px phone", async ({ pa
   await box.fill("这条消息排队");
   await primary.click();
   await expect.poll(() => modes).toEqual(["send"]);
+  await expect(box).toHaveValue("");
   await box.fill("这条消息立即引导");
   const steer = page.getByRole("button", { name: "立即引导", exact: true });
   const rect = await steer.boundingBox();
@@ -90,12 +92,14 @@ test("Claude queue and steer are independent and fit a 320px phone", async ({ pa
   await page.screenshot({ path: info.outputPath("claude-queue-steer.png") });
   await steer.click();
   await expect.poll(() => modes).toEqual(["send", "send:steer"]);
+  await expect(box).toHaveValue("");
   await page.goto("/settings/device");
   await choice.getByRole("radio", { name: "立即引导" }).click();
   await page.goto("/pane/w1:p1");
   await box.fill("按默认方式立即引导");
   await primary.click();
   await expect.poll(() => modes).toEqual(["send", "send:steer", "send:steer"]);
+  await expect(box).toHaveValue("");
   await box.fill("/status");
   await primary.click();
   await expect.poll(() => modes).toEqual(["send", "send:steer", "send:steer", "command"]);

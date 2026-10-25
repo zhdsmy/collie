@@ -4,12 +4,12 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const it: Dictionary = {
-  "settings.claudeSend.title": "Invio Claude",
-  "settings.claudeSend.description": "Scegli come inviare mentre Claude lavora. Solo su questo dispositivo; i comandi restano invariati. Guida ora invia anche tutti i messaggi in coda e può interrompere la risposta corrente.",
-  "settings.codexSend.title": "Invio a Codex",
-  "settings.codexSend.description": "Azione predefinita mentre Codex lavora. Solo su questo dispositivo; i comandi mantengono il proprio comportamento.",
-  "settings.codexSend.queue": "In coda",
-  "settings.codexSend.steer": "Guida ora",
+  "settings.runningSend.title": "Invio",
+  "settings.runningSend.description": "Scegli il comportamento durante il lavoro. Solo su questo dispositivo; i comandi restano invariati.",
+  "settings.runningSend.scope": "Per ora si applica solo a Codex e Claude Code. Gli altri agenti non sono integrati in questa impostazione; i loro client nativi possono comunque supportare coda o guida.",
+  "settings.runningSend.claudeNote": "Claude Code: Guida ora invia anche tutti i messaggi in coda e può interrompere la risposta corrente.",
+  "settings.runningSend.queue": "In coda",
+  "settings.runningSend.steer": "Guida ora",
   "composer.codex.lastQueued": "Ultimo messaggio in coda",
 
   "statusline.claude.hint": "Suggerimento di Claude",

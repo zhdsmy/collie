@@ -4,12 +4,12 @@ import type { Dictionary } from "./en";
 // key this file invents that English does not have is one too. Keep the `{slot}` names byte-exact.
 
 export const tr: Dictionary = {
-  "settings.claudeSend.title": "Claude gönderimi",
-  "settings.claudeSend.description": "Claude çalışırken gönderme davranışını seçin. Yalnızca bu cihazda geçerlidir; komutlar değişmez. Şimdi yönlendir, kuyruktaki tüm mesajları da gönderir ve mevcut yanıtı kesebilir.",
-  "settings.codexSend.title": "Codex gönderimi",
-  "settings.codexSend.description": "Codex çalışırken Gönder düğmesinin varsayılan eylemi. Yalnızca bu cihazda; komutların davranışı değişmez.",
-  "settings.codexSend.queue": "Sıraya al",
-  "settings.codexSend.steer": "Şimdi yönlendir",
+  "settings.runningSend.title": "Gönderim",
+  "settings.runningSend.description": "Çalışma sırasındaki varsayılan davranışı seçin. Yalnızca bu cihazda geçerlidir; komutlar değişmez.",
+  "settings.runningSend.scope": "Şimdilik yalnızca Codex ve Claude Code için geçerlidir. Diğer ajanlar bu ayara entegre değildir; kendi istemcileri kuyruk veya yönlendirme sunabilir.",
+  "settings.runningSend.claudeNote": "Claude Code: Şimdi yönlendir, kuyruktaki tüm mesajları da gönderir ve mevcut yanıtı kesebilir.",
+  "settings.runningSend.queue": "Sıraya al",
+  "settings.runningSend.steer": "Şimdi yönlendir",
   "composer.codex.lastQueued": "Sıradaki son mesaj",
 
   "statusline.claude.hint": "Claude ipucu",

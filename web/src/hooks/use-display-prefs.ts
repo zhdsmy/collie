@@ -113,9 +113,8 @@ export interface DisplayPrefs {
    * a payload written before the setting existed reads the right hand.
    */
   hand?: Hand;
-  /** Defaults for ordinary messages during a turn, independent for each harness. */
-  codexSendMode?: "queue" | "steer";
-  claudeSendMode?: "queue" | "steer";
+  /** Shared default for ordinary Codex and Claude messages during a turn. */
+  runningSendMode?: "queue" | "steer";
   /**
    * Whether a shell pane offers lines from Sent above its box while the box has focus (M61). On by
    * default. Optional in the TYPE only, for the same reason as {@link hand}: every read goes through
@@ -405,6 +404,8 @@ function loadPrefs(): DisplayPrefs {
     const fontSize = asJsonNumber(p.fontSize);
     const draftFontSize = asJsonNumber(p.draftFontSize);
     const chatFontSize = asJsonNumber(p.chatFontSize);
+    // Preserve an explicit Codex choice first when merging the former per-agent defaults.
+    const runningSendMode = [p.runningSendMode, p.codexSendMode, p.claudeSendMode].find((mode) => mode === "queue" || mode === "steer");
     return {
       wrap: asJsonBoolean(p.wrap) ?? DEFAULTS.wrap,
       fontSize: fontSize === undefined ? DEFAULTS.fontSize : clampFont(fontSize),
@@ -428,8 +429,7 @@ function loadPrefs(): DisplayPrefs {
       // Absent until the operator picks one, so a payload written before the setting existed (and
       // one that picked the default) reads the right hand through {@link handOf}.
       hand: readHand(asJsonString(p.hand)),
-      codexSendMode: p.codexSendMode === "steer" ? "steer" : undefined,
-      claudeSendMode: p.claudeSendMode === "steer" ? "steer" : undefined,
+      runningSendMode: runningSendMode === "steer" ? "steer" : undefined,
       // Absent until the operator chooses, and read as on through {@link sentSuggestionsOf}.
       sentSuggestions: asJsonBoolean(p.sentSuggestions),
       // Absent until the operator chooses, and read as Two fingers through {@link paneNavOf}.
@@ -478,8 +478,7 @@ export interface UseDisplayPrefsReturn {
   setKeepChat: (keepChat: KeepChat) => void;
   /** Which thumb the pane screen is laid out for. */
   setHand: (hand: Hand) => void;
-  setCodexSendMode: (mode: "queue" | "steer") => void;
-  setClaudeSendMode: (mode: "queue" | "steer") => void;
+  setRunningSendMode: (mode: "queue" | "steer") => void;
   /** Whether a shell pane offers lines from Sent above its box. */
   setSentSuggestions: (on: boolean) => void;
   /** How the pane screen takes a navigation gesture. */
@@ -596,17 +595,9 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
     });
   }, []);
 
-  const setCodexSendMode = useCallback((codexSendMode: "queue" | "steer") => {
+  const setRunningSendMode = useCallback((runningSendMode: "queue" | "steer") => {
     setPrefs((p) => {
-      const next: DisplayPrefs = { ...p, codexSendMode };
-      savePrefs(next);
-      return next;
-    });
-  }, []);
-
-  const setClaudeSendMode = useCallback((claudeSendMode: "queue" | "steer") => {
-    setPrefs((p) => {
-      const next: DisplayPrefs = { ...p, claudeSendMode };
+      const next: DisplayPrefs = { ...p, runningSendMode };
       savePrefs(next);
       return next;
     });
@@ -630,8 +621,7 @@ export function useDisplayPrefs(): UseDisplayPrefsReturn {
 
   return {
     prefs,
-    setCodexSendMode,
-    setClaudeSendMode,
+    setRunningSendMode,
     setWrap,
     setFontSize,
     setFontFamily,

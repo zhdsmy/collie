@@ -3,12 +3,12 @@ import type { Dictionary } from "./en";
 // Spanish. See de.ts for the typing contract.
 
 export const es: Dictionary = {
-  "settings.claudeSend.title": "Envío de Claude",
-  "settings.claudeSend.description": "Elige cómo enviar mientras Claude trabaja. Solo en este dispositivo; los comandos no cambian. Guiar ahora también envía todos los mensajes en cola y puede interrumpir la respuesta actual.",
-  "settings.codexSend.title": "Envío a Codex",
-  "settings.codexSend.description": "Acción al enviar mientras Codex trabaja. Solo en este dispositivo; los comandos conservan su comportamiento.",
-  "settings.codexSend.queue": "Encolar",
-  "settings.codexSend.steer": "Guiar ahora",
+  "settings.runningSend.title": "Envío",
+  "settings.runningSend.description": "Elige el comportamiento durante el trabajo. Solo en este dispositivo; los comandos no cambian.",
+  "settings.runningSend.scope": "Por ahora solo se aplica a Codex y Claude Code. Otros agentes no están integrados en este ajuste; sus clientes nativos pueden admitir cola o guía.",
+  "settings.runningSend.claudeNote": "Claude Code: Guiar ahora también envía todos los mensajes en cola y puede interrumpir la respuesta actual.",
+  "settings.runningSend.queue": "Encolar",
+  "settings.runningSend.steer": "Guiar ahora",
   "composer.codex.lastQueued": "Último mensaje en cola",
 
   "statusline.claude.hint": "Consejo de Claude",

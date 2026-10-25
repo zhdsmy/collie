@@ -19,29 +19,33 @@ const STORAGE_KEY = "collie:display-prefs:v4";
 describe("useDisplayPrefs", () => {
   beforeEach(() => localStorage.clear());
 
-  it("persists Claude steering independently from Codex", () => {
+  it("defaults to queue and persists the shared sending choice", () => {
     const { result, unmount } = renderHook(() => useDisplayPrefs());
-    expect(result.current.prefs.claudeSendMode ?? "queue").toBe("queue");
-    act(() => result.current.setClaudeSendMode("steer"));
+    expect(result.current.prefs.runningSendMode ?? "queue").toBe("queue");
+    act(() => result.current.setRunningSendMode("steer"));
     unmount();
     const reloaded = renderHook(() => useDisplayPrefs());
-    expect(reloaded.result.current.prefs.claudeSendMode).toBe("steer");
-    expect(reloaded.result.current.prefs.codexSendMode ?? "queue").toBe("queue");
-    act(() => reloaded.result.current.setCodexSendMode("steer"));
-    act(() => reloaded.result.current.setClaudeSendMode("queue"));
-    expect(reloaded.result.current.prefs.codexSendMode).toBe("steer");
-    expect(reloaded.result.current.prefs.claudeSendMode).toBe("queue");
+    expect(reloaded.result.current.prefs.runningSendMode).toBe("steer");
+    act(() => reloaded.result.current.setRunningSendMode("queue"));
+    expect(reloaded.result.current.prefs.runningSendMode).toBe("queue");
   });
 
-  it("keeps Codex queue as the default and persists the steering choice", () => {
-    const { result, unmount } = renderHook(() => useDisplayPrefs());
-    expect(result.current.prefs.codexSendMode ?? "queue").toBe("queue");
-    act(() => result.current.setCodexSendMode("steer"));
-    unmount();
-    const reloaded = renderHook(() => useDisplayPrefs());
-    expect(reloaded.result.current.prefs.codexSendMode).toBe("steer");
-    act(() => reloaded.result.current.setCodexSendMode("queue"));
-    expect(reloaded.result.current.prefs.codexSendMode).toBe("queue");
+  it.each([
+    [{ codexSendMode: "steer" }, "steer"],
+    [{ claudeSendMode: "steer" }, "steer"],
+    [{ codexSendMode: "queue", claudeSendMode: "steer" }, "queue"],
+    [{ codexSendMode: "steer", claudeSendMode: "queue" }, "steer"],
+    [{ runningSendMode: "queue", codexSendMode: "steer" }, "queue"],
+    [{ runningSendMode: "invalid", claudeSendMode: "steer" }, "steer"],
+  ] as const)("migrates the former choices %j to %s", (stored, expected) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    const { result } = renderHook(() => useDisplayPrefs());
+    expect(result.current.prefs.runningSendMode ?? "queue").toBe(expected);
+    act(() => result.current.setRunningSendMode("steer"));
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    expect(saved.runningSendMode).toBe("steer");
+    expect(saved).not.toHaveProperty("codexSendMode");
+    expect(saved).not.toHaveProperty("claudeSendMode");
   });
 
   it("returns defaults when localStorage is empty", () => {

@@ -240,7 +240,7 @@ describe("Composer: Codex queue and steer", () => {
   const running: Surface = { ...FREE, turn: "running" };
   it.each([["codex", "queue"], ["codex", "steer"], ["claude", "queue"], ["claude", "steer"]] as const)("uses the selected %s default: %s", async (agent, mode) => {
     const user = userEvent.setup();
-    const prefs = { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system" as const, rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, codexSendMode: agent === "codex" ? mode : "steer", claudeSendMode: mode, stretchText: false };
+    const prefs = { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system" as const, rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, runningSendMode: mode, stretchText: false };
     renderComposer({ agent, canSteer: true, surface: running, prefs });
     await user.type(screen.getByRole("textbox"), "guide this task");
     const primary = document.querySelector('[data-slot="composer-primary"]')!;
@@ -258,9 +258,9 @@ describe("Composer: Codex queue and steer", () => {
     await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "send", when: "steer", text: "guide now" }));
   });
 
-  it("ignores the Claude preference without native steer capability", async () => {
+  it.each([["claude", false], ["pi", true], ["omp", true]] as const)("ignores the shared preference on %s when it is unsupported or outside this setting", async (agent, canSteer) => {
     const user = userEvent.setup();
-    renderComposer({ agent: "claude", canSteer: false, surface: running, prefs: { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system", rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, stretchText: false, claudeSendMode: "steer" } });
+    renderComposer({ agent, canSteer, surface: running, prefs: { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system", rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, stretchText: false, runningSendMode: "steer" } });
     await user.type(screen.getByRole("textbox"), "wait normally");
     expect(screen.queryByRole("button", { name: "Steer now" })).not.toBeInTheDocument();
     await user.click(document.querySelector('[data-slot="composer-primary"]')!);

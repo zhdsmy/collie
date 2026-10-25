@@ -6,12 +6,12 @@ import type { Dictionary } from "./en";
 // Instructions name the translated controls (입력, 화면, 전송), not their English labels.
 
 export const ko: Dictionary = {
-  "settings.claudeSend.title": "Claude 전송 방식",
-  "settings.claudeSend.description": "Claude 작업 중 전송 동작을 선택합니다. 이 기기에만 적용되며 명령 동작은 유지됩니다. 즉시 유도하면 대기 중인 모든 메시지도 전송되며 현재 응답이 중단될 수 있습니다.",
-  "settings.codexSend.title": "Codex 전송 방식",
-  "settings.codexSend.description": "Codex 실행 중 전송 버튼의 기본 동작입니다. 이 기기에만 적용되며 명령 동작은 유지됩니다.",
-  "settings.codexSend.queue": "대기열에 추가",
-  "settings.codexSend.steer": "즉시 지시",
+  "settings.runningSend.title": "전송 방식",
+  "settings.runningSend.description": "작업 중 기본 전송 동작을 선택합니다. 이 기기에만 적용되며 명령 동작은 유지됩니다.",
+  "settings.runningSend.scope": "현재 Codex와 Claude Code에만 적용됩니다. 다른 에이전트는 이 설정에 연동되지 않았으며, 원래 클라이언트에서 대기열이나 유도를 지원하지 않는다는 뜻은 아닙니다.",
+  "settings.runningSend.claudeNote": "Claude Code: 즉시 유도하면 대기 중인 모든 메시지도 전송되며 현재 응답이 중단될 수 있습니다.",
+  "settings.runningSend.queue": "대기열에 추가",
+  "settings.runningSend.steer": "즉시 지시",
   "composer.codex.lastQueued": "대기열의 마지막 메시지",
 
   "statusline.claude.hint": "Claude 도움말",

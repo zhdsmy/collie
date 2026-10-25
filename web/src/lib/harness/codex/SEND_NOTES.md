@@ -20,10 +20,11 @@ active Codex conversation. Queue/steer defaults and command keys are unchanged.
 
 ## Queue and steering
 
-Settings → Device → Codex sending stores a per-device default (Queue initially). Ordinary
-messages use the Send Protocol's `send` (Tab) or explicit `steer` (Enter) mode. Commands keep
+Settings → Device → Sending stores one per-device default shared by Codex and Claude Code
+(Queue initially). Ordinary Codex messages use the Send Protocol's `send` (Tab), or
+`send, when: steer` (Enter). Commands keep
 the existing command route, including the queue/never-held protections during a turn.
-A one-off lightning button beside Send remains available when Queue is the default. Other harnesses ignore this pref.
+A one-off lightning button beside Send remains available when Queue is the default. Other harnesses ignore this shared pref.
 
 The native queue preview offers Steer now for its last ordinary message in both Mirror and Chat.
 `steer-queued` checks the latest queue text, empty input and modal guard under the existing

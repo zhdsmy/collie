@@ -1019,7 +1019,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const adapter = adapterFor(agent ?? undefined);
   const codexRunning = agent === "codex" && shownSurface.turn === "running" && shownSurface.modal === "none";
   const runningSendChoice = (agent === "codex" || agent === "claude") && shownSurface.turn === "running" && shownSurface.modal === "none" && canSteer === true;
-  const runningSendMode = agent === "claude" ? prefs.claudeSendMode : prefs.codexSendMode;
+  const runningSendMode = prefs.runningSendMode;
   const lastQueued = useMemo(() => {
     if (!codexRunning) return undefined;
     const rows = splitLines(parseAnsi(text));
@@ -2536,7 +2536,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         {!direct.active && codexRunning && canSteer && lastQueued !== undefined && shownSurface.composer === "empty" && (
           <div className="flex min-w-0 items-center gap-2 px-3 text-xs">
             <span className="min-w-0 flex-1 truncate text-muted-foreground" title={lastQueued}>{translate("composer.codex.lastQueued")}: {lastQueued}</span>
-            <Button variant="ghost" size="sm" className="min-h-11 shrink-0" disabled={locked || sending || offline} onClick={() => void sendThroughProtocol(lastQueued, false, "steer-queued", null, false, undefined, "steer")}>{translate("settings.codexSend.steer")}</Button>
+            <Button variant="ghost" size="sm" className="min-h-11 shrink-0" disabled={locked || sending || offline} onClick={() => void sendThroughProtocol(lastQueued, false, "steer-queued", null, false, undefined, "steer")}>{translate("settings.runningSend.steer")}</Button>
           </div>
         )}
         {/* THE SUGGESTION STRIP, directly above the box: one row, one look, one source per pane.
@@ -2774,7 +2774,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             />
           </AnchoredMenu>
           {!direct.active && runningSendChoice && runningSendMode !== "steer" && hasDraft && modeFor(composeLine(input, attachments)) === "send" && (
-            <Button variant="ghost" size="icon" className={cn(TOOLBAR_TAP_TARGET, "size-9 shrink-0 rounded-full")} disabled={locked || sending || offline} onClick={() => onSendClick("steer")} aria-label={translate("settings.codexSend.steer")} title={translate("settings.codexSend.steer")}>
+            <Button variant="ghost" size="icon" className={cn(TOOLBAR_TAP_TARGET, "size-9 shrink-0 rounded-full")} disabled={locked || sending || offline} onClick={() => onSendClick("steer")} aria-label={translate("settings.runningSend.steer")} title={translate("settings.runningSend.steer")}>
               <Zap className="size-4" aria-hidden="true" />
             </Button>
           )}
@@ -2889,7 +2889,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                   ? translate("composer.send.stopTypingAria")
                   : offline
                     ? translate("composer.send.reconnect")
-                    : runningSendChoice && modeFor(composeLine(input, attachments)) === "send" ? translate(runningSendMode === "steer" ? "settings.codexSend.steer" : "settings.codexSend.queue") : translate("composer.send.sendAria")
+                    : runningSendChoice && modeFor(composeLine(input, attachments)) === "send" ? translate(runningSendMode === "steer" ? "settings.runningSend.steer" : "settings.runningSend.queue") : translate("composer.send.sendAria")
               }
               aria-pressed={direct.active}
             >

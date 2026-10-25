@@ -9,7 +9,8 @@
         "web/src/lib/surface/queued.ts",
         "bridge/surface/protocol.ts",
         "web/src/components/composer.tsx",
-        "web/src/components/running-send-control.tsx"
+        "web/src/components/running-send-control.tsx",
+        "web/src/hooks/use-display-prefs.ts"
       ],
       "tests": [
         "bridge/surface/protocol.test.ts",
@@ -51,7 +52,8 @@
         "web/src/lib/surface/profile.ts",
         "bridge/surface/protocol.ts",
         "web/src/components/composer.tsx",
-        "web/src/components/running-send-control.tsx"
+        "web/src/components/running-send-control.tsx",
+        "web/src/hooks/use-display-prefs.ts"
       ],
       "tests": [
         "bridge/surface/protocol.test.ts",

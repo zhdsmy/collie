@@ -14,12 +14,12 @@
 // Seeded with the language-selector copy only — the full string sweep lands separately.
 
 export const en = {
-  "settings.claudeSend.title": "Claude sending",
-  "settings.claudeSend.description": "While Claude is working, choose what Send does. This device only; commands keep their native behavior. Steer now also sends all queued messages and may interrupt the current reply.",
-  "settings.codexSend.title": "Codex sending",
-  "settings.codexSend.description": "While Codex is working, choose what Send does. This device only; commands keep their native behavior.",
-  "settings.codexSend.queue": "Queue",
-  "settings.codexSend.steer": "Steer now",
+  "settings.runningSend.title": "Sending",
+  "settings.runningSend.description": "Choose the default while an agent works. This device only; commands keep their native behavior.",
+  "settings.runningSend.scope": "Currently applies only to Codex and Claude Code. Other agents are not integrated with this setting; this does not mean their native clients cannot queue or steer.",
+  "settings.runningSend.claudeNote": "Claude Code: Steer now also sends all queued messages and may interrupt the current reply.",
+  "settings.runningSend.queue": "Queue",
+  "settings.runningSend.steer": "Steer now",
   "composer.codex.lastQueued": "Last queued message",
 
   "statusline.claude.hint": "Claude hint",

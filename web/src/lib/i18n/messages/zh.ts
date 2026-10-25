@@ -4,12 +4,12 @@ import type { Dictionary } from "./en";
 // match.
 
 export const zh: Dictionary = {
-  "settings.claudeSend.title": "Claude 发送方式",
-  "settings.claudeSend.description": "Claude 运行时，选择发送按钮的默认行为。仅此设备生效；命令保持原有行为。立即引导会同时提交全部排队消息，可能中断当前回复。",
-  "settings.codexSend.title": "Codex 发送方式",
-  "settings.codexSend.description": "Codex 运行时，选择发送按钮的默认行为。仅此设备生效；命令保持原有行为。",
-  "settings.codexSend.queue": "排队",
-  "settings.codexSend.steer": "立即引导",
+  "settings.runningSend.title": "发送方式",
+  "settings.runningSend.description": "选择智能体运行时的默认发送方式。仅此设备生效；命令保持原有行为。",
+  "settings.runningSend.scope": "暂仅适配 Codex 和 Claude Code。其他智能体尚未接入此设置，不代表其原生不支持排队或引导。",
+  "settings.runningSend.claudeNote": "Claude Code：立即引导会同时提交全部排队消息，可能中断当前回复。",
+  "settings.runningSend.queue": "排队",
+  "settings.runningSend.steer": "立即引导",
   "composer.codex.lastQueued": "队列最后一条",
 
   "statusline.claude.hint": "Claude 提示",

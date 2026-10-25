@@ -4,12 +4,12 @@ import type { Dictionary } from "./en";
 // suffixes match.
 
 export const zhTW: Dictionary = {
-  "settings.claudeSend.title": "Claude 傳送方式",
-  "settings.claudeSend.description": "Claude 執行時，選擇傳送按鈕的預設行為。僅此裝置生效；命令維持原有行為。立即引導會同時提交全部排隊訊息，可能中斷目前回覆。",
-  "settings.codexSend.title": "Codex 傳送方式",
-  "settings.codexSend.description": "Codex 執行時，選擇傳送按鈕的預設行為。僅此裝置生效；命令維持原有行為。",
-  "settings.codexSend.queue": "排隊",
-  "settings.codexSend.steer": "立即引導",
+  "settings.runningSend.title": "傳送方式",
+  "settings.runningSend.description": "選擇智能體執行時的預設傳送方式。僅此裝置生效；命令維持原有行為。",
+  "settings.runningSend.scope": "暫僅適配 Codex 和 Claude Code。其他智能體尚未接入此設定，不代表其原生不支援排隊或引導。",
+  "settings.runningSend.claudeNote": "Claude Code：立即引導會同時提交全部排隊訊息，可能中斷目前回覆。",
+  "settings.runningSend.queue": "排隊",
+  "settings.runningSend.steer": "立即引導",
   "composer.codex.lastQueued": "佇列最後一則",
 
   "statusline.claude.hint": "Claude 提示",
