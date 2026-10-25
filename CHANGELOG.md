@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Antigravity slash commands, empty artifact views, and command catalog stay clean after the 1.24.0 merge.** Blank trailing ghost subcommand hints such as `reload` after `/skills` before reading the composer frame, recognize parenthesized command aliases such as `/config (settings)` in the completion popup when sending `/settings`, lift the empty `/artifact` (`No artifacts`) screen as a dismissable card instead of an unread-dialog warning, and remove duplicate `/resume` and `/model` entries from the AGY command catalog.
+
 ## [1.24.0+collie.3] - 2026-10-25
 
 ### Changed

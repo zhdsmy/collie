@@ -5,7 +5,7 @@ import { detectConversationsRegion } from "./conversations";
 import { detectAgyModalRegion } from "./modals";
 import { detectModelRegion } from "./model";
 import { detectPromptSelectRegion } from "./prompt-select";
-import { extractInputDraft, extractStatusLines, hasInputBox, stripChrome } from "./chrome";
+import { extractInputDraft, extractStatusLines, hasInputBox, normalizeAgyScreenRows, stripChrome } from "./chrome";
 import { lineText } from "./markers";
 
 export function agyBuildBlocks(lines: StyledLine[]): Block[] {
@@ -38,6 +38,7 @@ export { extractStatusLines, extractInputDraft };
 
 export const agyAdapter: HarnessAdapter = {
   agent: "agy",
+  normalizeScreenRows: normalizeAgyScreenRows,
   buildBlocks: agyBuildBlocks,
   extractStatusLines,
   extractInputDraft,
@@ -50,6 +51,7 @@ export const agyAdapter: HarnessAdapter = {
 
 export const antigravityAdapter: HarnessAdapter = {
   agent: "antigravity",
+  normalizeScreenRows: normalizeAgyScreenRows,
   buildBlocks: agyBuildBlocks,
   extractStatusLines,
   extractInputDraft,

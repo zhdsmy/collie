@@ -252,7 +252,7 @@ describe("commandsFor", () => {
     }
   });
 
-  it.each(["claude", "codex", "cursor", "pi", "opencode", "omp", "grok", "hermes", "muse"])(
+  it.each(["claude", "codex", "cursor", "pi", "opencode", "omp", "agy", "grok", "hermes", "muse"])(
     "exposes for '%s' a 'common' subset that is a proper, non-empty subset of all commands",
     (agent) => {
       const all = commandsFor(agent);
@@ -264,7 +264,7 @@ describe("commandsFor", () => {
     },
   );
 
-  it.each(["claude", "codex", "cursor", "pi", "opencode", "omp", "grok", "hermes", "muse"])(
+  it.each(["claude", "codex", "cursor", "pi", "opencode", "omp", "agy", "grok", "hermes", "muse"])(
     "'%s' entries are well-formed (slash-prefixed, unique, arg hints only when takesArg)",
     (agent) => {
       const all = commandsFor(agent);

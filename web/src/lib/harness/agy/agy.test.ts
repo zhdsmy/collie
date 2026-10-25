@@ -1114,4 +1114,85 @@ describe("AGY native Keyboard modals (1.4.7)", () => {
     const withConfirm = splitLines(parseAnsi([...rows, "Kill active subagent? [y/N]"].join("\n")));
     expect(agyAdapter.buildBlocks(withConfirm).some((b) => b.kind === "menu")).toBe(false);
   });
+
+  it("lifts the empty Artifacts view ('No artifacts') as a dismissable MenuModel card", () => {
+    const emptyArtifacts = [
+      "\x1b[1mArtifacts\x1b[0m",
+      "\x1b[38;5;8m  No artifacts\x1b[0m",
+      "",
+      "\x1b[38;5;8mKeyboard: \x1b[0m↑/↓\x1b[38;5;8m Navigate  \x1b[0mp\x1b[38;5;8m preview  \x1b[0menter\x1b[38;5;8m open  \x1b[0mctrl+g\x1b[38;5;8m open in editor  \x1b[0mesc\x1b[38;5;8m Dismiss\x1b[0m",
+      "",
+      "\x1b[38;5;4mGemini 3.8 Flash\x1b[0m \x1b[38;5;8m(High)\x1b[0m  \x1b[38;5;8midle\x1b[0m  \x1b[38;5;2mctx 100%\x1b[0m",
+    ].join("\n");
+    const lines = splitLines(parseAnsi(emptyArtifacts));
+    expect(agyAdapter.composerReady!(lines)).toBe(false);
+    expect(agyAdapter.extractStatusLines!(lines)).toHaveLength(1);
+    const blocks = buildBlocks(lines, { agent: "agy" });
+    expect(blocks.some((b) => b.kind === "unread-dialog")).toBe(false);
+    const menuBlock = blocks.find((b) => b.kind === "menu");
+    expect(menuBlock?.kind).toBe("menu");
+    if (menuBlock?.kind === "menu") {
+      expect(menuBlock.menu.title).toBe("Artifacts");
+      expect(menuBlock.menu.nav).toEqual({ upDown: false });
+      expect(menuBlock.menu.actions.map((a) => [a.label, a.keys])).toEqual([["Dismiss", ["Escape"]]]);
+    }
+  });
+
+  it("strips trailing dim or ansi-8 inline autocomplete hints (e.g. 'reload' after '/skills') while preserving placeholders", () => {
+    for (const ghostSgr of ["\x1b[2m", "\x1b[38;5;8m"]) {
+      const skillsDraft = [
+        RULE,
+        `> /skills\x1b[7m\x1b[47m\x1b[30m \x1b[0m${ghostSgr}reload                                                                                      \x1b[0m`,
+        RULE,
+        "\x1b[1m\x1b[34m> /skills\x1b[0m  \x1b[38;5;8mList available skills\x1b[0m",
+        "  \x1b[38;5;8m↑/↓ Navigate · enter Select · tab Complete\x1b[0m",
+        "\x1b[38;5;8mesc to cancel\x1b[0m  \x1b[38;5;4mGemini 3.8 Flash\x1b[0m \x1b[38;5;8m(High)\x1b[0m",
+      ].join("\n");
+      const lines = splitLines(parseAnsi(skillsDraft));
+      const normalized = agyAdapter.normalizeScreenRows!(lines);
+      expect(lineText(normalized[1]!).trim()).toBe("> /skills");
+      expect(lineText(normalized[1]!).length).toBe(lineText(lines[1]!).length);
+      expect(agyAdapter.composerReady!(lines)).toBe(true);
+      expect(agyAdapter.extractInputDraft!(lines)).toBe("/skills");
+      expect(agyAdapter.extractStatusLines!(lines)).toHaveLength(1);
+    }
+
+    const placeholderIdle = [
+      RULE,
+      "> \x1b[38;5;8mAsk anything or type / for commands\x1b[0m",
+      RULE,
+      "\x1b[38;5;4mGemini 3.8 Flash\x1b[0m \x1b[38;5;8m(High)\x1b[0m  \x1b[38;5;8midle\x1b[0m  \x1b[38;5;2mctx 100%\x1b[0m",
+    ].join("\n");
+    const idleLines = splitLines(parseAnsi(placeholderIdle));
+    expect(agyAdapter.normalizeScreenRows!(idleLines)).toBe(idleLines);
+    expect(agyAdapter.composerReady!(idleLines)).toBe(true);
+    expect(agyAdapter.extractInputDraft!(idleLines)).toBeNull();
+  });
+
+  it("recognizes parenthesized command aliases like '/config (settings)' in completion popups", () => {
+    const settingsDraft = [
+      RULE,
+      "> /settings\x1b[7m\x1b[47m\x1b[30m \x1b[0m                                                                                          ",
+      RULE,
+      "\x1b[1m\x1b[34m> /config (settings)\x1b[0m  \x1b[38;5;8mOpen settings panel\x1b[0m",
+      "  \x1b[38;5;8m↑/↓ Navigate · enter Select · tab Complete\x1b[0m",
+      "\x1b[38;5;8mesc to cancel\x1b[0m  \x1b[38;5;4mGemini 3.8 Flash\x1b[0m \x1b[38;5;8m(High)\x1b[0m",
+    ].join("\n");
+    const lines = splitLines(parseAnsi(settingsDraft));
+    const normalized = agyAdapter.normalizeScreenRows!(lines);
+    expect(lineText(normalized[3]!)).toBe("> /settings           Open settings panel");
+    expect(agyAdapter.composerReady!(lines)).toBe(true);
+    expect(agyAdapter.extractInputDraft!(lines)).toBe("/settings");
+    expect(agyAdapter.extractStatusLines!(lines)).toHaveLength(1);
+
+    const partialDraft = settingsDraft
+      .replace("> /settings", "> /co      ")
+      .replace(
+        "\x1b[1m\x1b[34m> /config (settings)\x1b[0m  \x1b[38;5;8mOpen settings panel\x1b[0m",
+        "\x1b[1m\x1b[34m> /compact\x1b[0m  \x1b[38;5;8mCompact conversation\x1b[0m\n  /config (settings)  \x1b[38;5;8mOpen settings panel\x1b[0m",
+      );
+    const partialLines = splitLines(parseAnsi(partialDraft));
+    expect(agyAdapter.composerReady!(partialLines)).toBe(true);
+    expect(agyAdapter.extractStatusLines!(partialLines)).toHaveLength(1);
+  });
 });

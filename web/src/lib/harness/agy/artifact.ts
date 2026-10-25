@@ -122,11 +122,12 @@ function detectArtifactListRegion(texts: string[]): ArtifactRegion | null {
   if (body.some((row) => PROMPTS_FOR_A_KEY.test(row) || isBoxBorder(row))) return null;
 
   const pointed = body.filter((row) => /^›\s/.test(row));
-  if (pointed.length !== 1) return null;
-  const pointedRow = pointed[0]!;
+  const emptyList = !isReview && pointed.length === 0 && body.some((row) => /^\s*No artifacts\b/i.test(row));
+  if (pointed.length !== 1 && !emptyList) return null;
+  const pointedRow = pointed[0] ?? "";
 
   let actions: MenuAction[];
-  let upDown = true;
+  let upDown = !emptyList;
 
   if (isReview) {
     if (!REVIEW_POINTER.test(pointedRow)) return null;
@@ -164,7 +165,7 @@ function detectArtifactListRegion(texts: string[]): ArtifactRegion | null {
       ];
     }
   } else {
-    if (!LIST_POINTER.test(pointedRow)) return null;
+    if (!emptyList && !LIST_POINTER.test(pointedRow)) return null;
     if (
       !footer.includes("↑/↓ Navigate") ||
       !/\bp preview\b/i.test(footer) ||
@@ -173,11 +174,13 @@ function detectArtifactListRegion(texts: string[]): ArtifactRegion | null {
     ) {
       return null;
     }
-    actions = [
-      { label: "Preview", keys: ["p"] },
-      { label: "Open", keys: ["Enter"] },
-      { label: "Dismiss", keys: ["Escape"], cancel: true },
-    ];
+    actions = emptyList
+      ? [{ label: "Dismiss", keys: ["Escape"], cancel: true }]
+      : [
+          { label: "Preview", keys: ["p"] },
+          { label: "Open", keys: ["Enter"] },
+          { label: "Dismiss", keys: ["Escape"], cancel: true },
+        ];
   }
 
   const signature = regionSignature(texts, top, last);

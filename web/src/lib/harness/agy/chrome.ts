@@ -1,4 +1,4 @@
-import { parseAnsi } from "../../ansi";
+import { parseAnsi, type AnsiSegment } from "../../ansi";
 import type { StyledLine } from "../../blocks";
 import { findInputFrame, plainRows, type RowSpan } from "../../surface/frame";
 import { requireProfile } from "../../surface/profile";
@@ -26,13 +26,148 @@ const AGY_IDLE = requireProfile("agy").idle;
 // paints. The phrase `tab Complete` alone is not enough: a modal's hint row may say `tab Complete
 // search` (review, 2026-10-15), and taking it for the popup would skip the modal check.
 const COMPLETION_FOOTER = /^\s*↑\/↓ Navigate · enter Select · tab Complete\s*$/;
-const COMPLETION_POINTED = /^>\s+(\/\S+)/;
-const COMPLETION_ROW = /^(?:> | {2})\/\S+(?:\s{2,}\S.*)?$/;
+const COMPLETION_POINTED = /^>\s+(\/\S+)(?:\s+\(([^()]+)\))?/;
+const COMPLETION_POINTED_ALIAS = /^(>\s+)(\/\S+)\s+\(([^()]+)\)(\s{2,}.*)?$/;
+const COMPLETION_ROW = /^(?:> | {2})\/\S+(?:\s+\([^()]+\))?(?:\s{2,}\S.*)?$/;
 const COMPLETION_MORE = /^\s*[↑↓] \d+ more$/;
 const COMPLETION_NONE = /^\s*No matches$/;
 // The popup's own rows on top of the status rows: five suggestions, a `↓ n more`, an `↑ n more` once
 // scrolled, the footer, with margin.
 const MAX_POPUP_LINES = 10;
+
+function parseAliases(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(/[,\s]+/)
+    .filter(Boolean)
+    .map((alias) => (alias.startsWith("/") ? alias : `/${alias}`));
+}
+
+function withSegmentText(seg: AnsiSegment, text: string): AnsiSegment {
+  return { ...seg, text };
+}
+
+function replaceRowPrefix(line: StyledLine, len: number, replacement: string): StyledLine {
+  let pos = 0;
+  const segments = line.segments.map((seg) => {
+    if (pos >= len) return seg;
+    const end = pos + seg.text.length;
+    const sliceStart = pos;
+    pos = end;
+    if (end <= len) {
+      return withSegmentText(seg, replacement.slice(sliceStart, end));
+    }
+    return withSegmentText(seg, replacement.slice(sliceStart, len) + seg.text.slice(len - sliceStart));
+  });
+  return { ...line, segments };
+}
+
+function isGhostSegment(seg: AnsiSegment): boolean {
+  return seg.dim === true || seg.fg === "var(--ansi-8)";
+}
+
+/**
+ * Normalize AGY composer decorations before reading the input frame or draft:
+ * 1. Blank trailing ghost (`dim: true` or `fg: "var(--ansi-8)"`) inline autocomplete / subcommand
+ *    hints (e.g. `reload` after `/skills`) when the prompt row already holds non-ghost typed text,
+ *    preserving placeholder detection on empty boxes and keeping exact character offsets.
+ * 2. When a slash-command completion popup highlights a canonical command with parenthesized aliases
+ *    (e.g. `> /config (settings)  Open settings panel`) and the user typed one of those aliases
+ *    (`/settings`), rewrite the pointed prefix to the typed alias padded to the same width so the
+ *    surface command-list reader recognizes the pointed match.
+ */
+export function normalizeAgyScreenRows(lines: StyledLine[]): StyledLine[] {
+  const texts = lines.map(lineText);
+  let end = lines.length;
+  while (end > 0 && isBlank(texts[end - 1]!)) end--;
+  if (end === 0) return lines;
+
+  const bot = end - 1;
+  let reach = MAX_STATUS_LINES;
+  for (let s = 0; s <= MAX_STATUS_LINES && bot - s >= 0; s++) {
+    if (COMPLETION_FOOTER.test(texts[bot - s]!)) reach = MAX_STATUS_LINES + MAX_POPUP_LINES;
+  }
+  let bottomBorder = -1;
+  for (let s = 0; s <= reach && bot - s >= 0; s++) {
+    const idx = bot - s;
+    if (isBoxBorder(texts[idx]!)) {
+      bottomBorder = idx;
+      break;
+    }
+  }
+  if (bottomBorder === -1) {
+    const frame = findInputFrame(plainRows(texts.slice(0, end)), AGY_IDLE);
+    if (frame !== null && frame.volatile.footer?.first === frame.bottom + 1 && frame.volatile.named.length > 0) {
+      bottomBorder = frame.bottom;
+    }
+  }
+  if (bottomBorder <= 1) return lines;
+
+  const prompt = bottomBorder - 1;
+  if (!PROMPT_REGEX.test(texts[prompt]!)) return lines;
+  let top = prompt - 1;
+  while (top >= 0 && isBlank(texts[top]!)) top--;
+  if (top < 0 || !isBoxBorder(texts[top]!)) return lines;
+
+  const promptLine = lines[prompt]!;
+  const holeStart = PROMPT_REGEX.exec(texts[prompt]!)?.[0].length ?? 0;
+  let offset = 0;
+  let lastTypedIdx = -1;
+  for (let i = 0; i < promptLine.segments.length; i++) {
+    const seg = promptLine.segments[i]!;
+    const inHole = seg.text.slice(Math.max(0, holeStart - offset));
+    offset += seg.text.length;
+    if (inHole.trim().length > 0 && !isGhostSegment(seg)) {
+      lastTypedIdx = i;
+    }
+  }
+
+  let normalizedPrompt = promptLine;
+  let changed = false;
+  if (
+    lastTypedIdx >= 0 &&
+    promptLine.segments.some((seg, i) => i > lastTypedIdx && isGhostSegment(seg) && seg.text.trim().length > 0)
+  ) {
+    changed = true;
+    normalizedPrompt = {
+      ...promptLine,
+      segments: promptLine.segments.map((seg, i) =>
+        i > lastTypedIdx && isGhostSegment(seg) && seg.text.trim().length > 0
+          ? withSegmentText(seg, " ".repeat(seg.text.length))
+          : seg,
+      ),
+    };
+  }
+
+  const typed = lineText(normalizedPrompt).replace(PROMPT_REGEX, "").trim();
+  const footer = completionFooter(texts, bottomBorder, end);
+  let aliasRowIdx = -1;
+  let aliasRowReplacement: StyledLine | null = null;
+  if (footer !== -1 && /^\/\S+$/.test(typed)) {
+    for (let j = bottomBorder + 1; j < footer; j++) {
+      const match = COMPLETION_POINTED_ALIAS.exec(texts[j]!.trimEnd());
+      if (match === null) continue;
+      const aliases = parseAliases(match[3]);
+      if (typed !== match[2] && aliases.includes(typed)) {
+        const oldPrefix = `${match[1]}${match[2]} (${match[3]})`;
+        const newPrefix = `${match[1]}${typed}`.padEnd(oldPrefix.length, " ");
+        if (newPrefix.length === oldPrefix.length) {
+          aliasRowIdx = j;
+          aliasRowReplacement = replaceRowPrefix(lines[j]!, oldPrefix.length, newPrefix);
+          changed = true;
+        }
+      }
+      break;
+    }
+  }
+
+  if (!changed) return lines;
+  return lines.map((line, i) => {
+    if (i === prompt) return normalizedPrompt;
+    if (i === aliasRowIdx && aliasRowReplacement !== null) return aliasRowReplacement;
+    return line;
+  });
+}
 
 /** The completion footer's row between the bottom rule and `end`, or -1 when no popup is open. */
 function completionFooter(texts: string[], bottomBorder: number, end: number): number {
@@ -181,15 +316,18 @@ function completedDraft(texts: string[], bottomBorder: number, footer: number, t
   if (rows.some((row) => COMPLETION_NONE.test(row))) return rows.length === 1 ? typed : null;
   const pointed = rows.flatMap((row) => {
     const match = COMPLETION_POINTED.exec(row);
-    return match === null ? [] : [{ row, command: match[1] }];
+    return match === null ? [] : [{ row, command: match[1]!, aliases: parseAliases(match[2]) }];
   });
   if (pointed.length > 1) return null;
   const [only] = pointed;
-  if (only !== undefined) return only.command === typed ? typed : `${typed} ${only.row}`;
+  if (only !== undefined) {
+    return only.command === typed || only.aliases.includes(typed) ? typed : `${typed} ${only.row}`;
+  }
   return rows.length === 0 ? null : `${typed} ${rows.join(" ")}`;
 }
 
-export function stripChrome(lines: StyledLine[]): StyledLine[] {
+export function stripChrome(rawLines: StyledLine[]): StyledLine[] {
+  const lines = normalizeAgyScreenRows(rawLines);
   const texts = lines.map(lineText);
   let end = lines.length;
   while (end > 0 && isBlank(texts[end - 1]!)) end--;
@@ -205,10 +343,11 @@ export function stripChrome(lines: StyledLine[]): StyledLine[] {
     while (end > 0 && isBlank(texts[end - 1]!)) end--;
   }
 
-  return end === lines.length ? lines : lines.slice(0, end);
+  return end === lines.length ? rawLines : rawLines.slice(0, end);
 }
 
-export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
+export function extractStatusLines(rawLines: StyledLine[]): StyledLine[] {
+  const lines = normalizeAgyScreenRows(rawLines);
   const texts = lines.map(lineText);
   let end = lines.length;
   while (end > 0 && isBlank(texts[end - 1]!)) end--;
@@ -238,7 +377,8 @@ export function extractStatusLines(lines: StyledLine[]): StyledLine[] {
   return rows;
 }
 
-export function extractInputDraft(lines: StyledLine[]): string | null {
+export function extractInputDraft(rawLines: StyledLine[]): string | null {
+  const lines = normalizeAgyScreenRows(rawLines);
   const texts = lines.map(lineText);
   let end = lines.length;
   while (end > 0 && isBlank(texts[end - 1]!)) end--;
@@ -251,7 +391,8 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
   return box?.draft ?? null;
 }
 
-export function hasInputBox(lines: StyledLine[]): boolean {
+export function hasInputBox(rawLines: StyledLine[]): boolean {
+  const lines = normalizeAgyScreenRows(rawLines);
   const texts = lines.map(lineText);
   let end = lines.length;
   while (end > 0 && isBlank(texts[end - 1]!)) end--;

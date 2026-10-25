@@ -288,19 +288,16 @@ const OMP: readonly AgentCommand[] = [
 
 // ── Antigravity (agy) ────────────────────────────────────────────────────────
 const AGY: readonly AgentCommand[] = [
-  { command: "/resume", description: "Open the conversation picker to resume a previous session", takesArg: false, argHint: "", common: true, dangerous: false },
+  { command: "/resume", description: "Open the conversation picker to resume a previous session", takesArg: false, argHint: "", common: true, dangerous: false }, // harness-bar
   { command: "/plan", description: "Switch into plan mode to outline steps before execution", takesArg: true, argHint: "[goal]", common: true, dangerous: false },
   { command: "/artifact", description: "View and review artifacts", takesArg: false, argHint: "", common: true, dangerous: false },
-  { command: "/model", description: "Switch active model or reasoning effort", takesArg: false, argHint: "", common: true, dangerous: false },
+  { command: "/model", description: "Switch active model or reasoning effort", takesArg: false, argHint: "", common: true, dangerous: false }, // harness-bar
   { command: "/effort", description: "Set the model reasoning effort level", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/rewind", description: "Rewind conversation to a previous message", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/grill-me", description: "Interactive interview to resolve ambiguity and align on design", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/learn", description: "Persist lessons, corrections, and project workflows", takesArg: true, argHint: "[lesson]", common: true, dangerous: false },
   { command: "/compact", description: "Summarize conversation history to free up context", takesArg: false, argHint: "", common: true, dangerous: false }, // harness-bar
-  // From agy 1.3.5's own `/` completion (2026-10-15), which opened its conversation picker on Enter.
-  { command: "/resume", description: "Browse and resume past conversations", takesArg: false, argHint: "", common: true, dangerous: false }, // harness-bar
   { command: "/clear", description: "Clear conversation history and start fresh", takesArg: false, argHint: "", common: true, dangerous: true },
-  { command: "/model", description: "Switch active model or reasoning effort", takesArg: true, argHint: "[model]", common: true, dangerous: false }, // harness-bar
   { command: "/status", description: "Show session stats, model, and connectivity status", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/subagents", description: "View and manage active background subagents", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/agents", description: "View and manage available and active subagents", takesArg: false, argHint: "", common: false, dangerous: false },
