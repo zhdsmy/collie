@@ -4,7 +4,7 @@ import { AgentIcon } from "./agent-icon";
 import { AGENT_BRANDS } from "./agent-icon-data";
 
 describe("AgentIcon", () => {
-  it.each(["claude", "codex", "cursor", "pi", "opencode", "agy", "antigravity", "omp"])(
+  it.each(["claude", "codex", "cursor", "pi", "opencode", "agy", "antigravity", "omp", "grok", "muse"])(
     "renders the %s brand logo as an inline-SVG app-icon tile",
     (agent) => {
       const { container } = render(<AgentIcon agent={agent} />);

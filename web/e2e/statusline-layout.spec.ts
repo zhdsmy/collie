@@ -84,7 +84,13 @@ for (const theme of ["light", "dark"]) for (const font of ["system", "menlo", "g
     expect(bounds.scrollHeight).toBe(bounds.height);
 
     const actions = page.locator('[data-slot="composer-actions"]');
-    expect(await actions.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+    expect(await actions.evaluate((el) => {
+      for (let node: Element | null = el; node; node = node.parentElement) {
+        const color = getComputedStyle(node).backgroundColor;
+        if (color !== "transparent" && color !== "rgba(0, 0, 0, 0)") return color;
+      }
+      return "transparent";
+    })).toBe(
       await page.locator('[data-slot="composer"]').evaluate((el) => getComputedStyle(el).backgroundColor),
     );
     const scroller = actions.locator(".overflow-x-auto");

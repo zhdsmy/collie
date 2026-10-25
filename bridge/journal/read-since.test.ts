@@ -341,11 +341,12 @@ describe("every harness answers a live read", () => {
     cursor: ["/nope/cursor"],
     muse: ["/nope/muse"],
     openclaw: ["/nope/openclaw"],
+    kiro: ["/nope/kiro"],
   });
 
   test("every shipped adapter is under test", () => {
     expect(Object.keys(registry).toSorted()).toEqual([...KNOWN_HARNESS_NAMES].toSorted());
-    expect(KNOWN_HARNESS_NAMES).toHaveLength(10);
+    expect(KNOWN_HARNESS_NAMES).toHaveLength(11);
   });
 
   test.each(Object.keys(registry))("%s reports nothing new for a key it cannot serve", async (agent) => {

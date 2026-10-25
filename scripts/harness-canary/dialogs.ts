@@ -518,7 +518,7 @@ export async function runBusy(ctx: AgentContext): Promise<CaseResult[]> {
 
     const busyScreen = await d.screen();
     d.save("busy-before", busyScreen);
-    const outcome = await ctx.readers.sendText(d.paneId, QUEUED);
+    const outcome = await ctx.readers.sendGuardedReply(d.paneId, QUEUED, agent);
     const cases: CaseResult[] = [];
     let cardAt: Screen | null = busyScreen.unread ? busyScreen : null;
     if (outcome.status !== "sent") {

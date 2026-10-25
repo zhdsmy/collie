@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { ARM_MS } from "@/lib/arm";
 import {
   lineText,
   type StyledLine,
@@ -55,7 +56,7 @@ export interface UnreadDialogBlockProps {
 // the first tap must not be able to do that. The first tap only arms: the caption changes
 // (never its size), and it disarms by itself after ARM_MS. The wording names "Dismiss" only when
 // the screen's own rows print `esc dismiss`; otherwise it names the key, never a verb.
-export const ARM_MS = 4000;
+export { ARM_MS };
 const VIEWPORT_CLASS =
   "min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain [scrollbar-gutter:stable] [scrollbar-width:thin]";
 const NAMES_A_DISMISS = /\besc\s+dismiss\b/i;

@@ -487,8 +487,8 @@ describe("the counter itself", () => {
 // An additional adapter cannot land without a tally: the canary's gate reads every registered adapter's
 // reducer, and one that answered nothing would be an agent whose drift nobody is watching.
 test("every registered journal adapter's reducer answers a tally", () => {
-  const registry = buildJournalRegistry({ claude: [], codex: [], pi: [], opencode: [], grok: [], hermes: [], cursor: [], muse: [], openclaw: [] });
-  expect(journalAgents(registry)).toHaveLength(10);
+  const registry = buildJournalRegistry({ claude: [], codex: [], pi: [], opencode: [], grok: [], hermes: [], cursor: [], muse: [], openclaw: [], kiro: [] });
+  expect(journalAgents(registry)).toHaveLength(11);
   for (const [agent, adapter] of Object.entries(registry)) {
     const tally = adapter.reducer().unknowns();
     expect(tally.rows.size, agent).toBe(0);

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { useLocale } from "@/hooks/use-locale";
 import { t } from "@/lib/i18n";
@@ -15,7 +15,9 @@ import {
   CircleArrowOutUpLeft,
   Combine,
   CornerDownLeft,
+  Eraser,
   Keyboard,
+  Loader2,
   LockKeyhole,
   Option,
   SquareFunction,
@@ -36,6 +38,7 @@ interface DirectKeyboardAccessoryProps {
   onToggleRow: () => void;
   onToggleModifier: (modifier: Modifier) => void;
   onSendKeys: (keys: string[]) => void;
+  clearBox?: { readonly available: boolean; readonly onClear: () => Promise<void> };
 }
 
 const FUNCTION_KEYS = Array.from({ length: 12 }, (_, index) => `F${index + 1}`);
@@ -112,8 +115,22 @@ export function DirectKeyboardAccessory({
   onToggleRow,
   onToggleModifier,
   onSendKeys,
+  clearBox,
 }: DirectKeyboardAccessoryProps) {
   useLocale();
+  const clearingRef = useRef(false);
+  const [clearing, setClearing] = useState(false);
+  async function runClear() {
+    if (clearBox === undefined || disabled || !clearBox.available || clearingRef.current) return;
+    clearingRef.current = true;
+    setClearing(true);
+    try {
+      await clearBox.onClear();
+    } finally {
+      clearingRef.current = false;
+      setClearing(false);
+    }
+  }
   const here = ROWS.find((r) => r.row === row)!;
   const HereIcon = here.icon;
   const activeModifiers = MODIFIER_ORDER.filter((modifier) => modifiers[modifier] !== "off");
@@ -296,6 +313,21 @@ export function DirectKeyboardAccessory({
           FUNCTION_KEYS.map((key) => keyButton(key, key, key))
         ) : (
           COMBO_KEYS.map(({ key, label, ariaLabel }) => keyButton(key, label, ariaLabel))
+        )}
+        {clearBox !== undefined && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-slot="keys-clear"
+            disabled={disabled || !clearBox.available || clearing}
+            aria-label={t("keys.clear.aria")}
+            onMouseDown={preserveTextareaFocus}
+            onClick={() => void runClear()}
+            className={cn("size-11 shrink-0 touch-manipulation px-0", RESTING_KEY_CLASS)}
+          >
+            <KeyLegend icon={clearing ? Loader2 : Eraser} label={t("keys.clear.label")} />
+          </Button>
         )}
       </div>
     </div>

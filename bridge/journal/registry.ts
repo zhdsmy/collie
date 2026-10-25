@@ -17,6 +17,7 @@ import { cursorJournal } from "./cursor.ts";
 import { durableJournal } from "./durable.ts";
 import { grokJournal } from "./grok.ts";
 import { hermesJournal } from "./hermes.ts";
+import { kiroJournal } from "./kiro.ts";
 import { museJournal } from "./muse.ts";
 import { openclawJournal } from "./openclaw.ts";
 import { opencodeJournal } from "./opencode.ts";
@@ -50,6 +51,8 @@ export interface JournalRoots {
   grok: readonly string[];
   /** Hermes' home — `state.db` at its top level, and one under each `profiles/<name>/`. */
   hermes: readonly string[];
+  /** Kiro V3's `$KIRO_HOME/sessions`, defaulting to `~/.kiro/sessions`. */
+  kiro: readonly string[];
   /** Muse's `sessions` directory — `YYYY/MM/DD/<uuid>/session.jsonl` lives under it. */
   muse: readonly string[];
   /**
@@ -79,6 +82,7 @@ export function buildJournalRegistry(roots: JournalRoots): Record<string, Journa
     opencodeJournal(roots.opencode),
     grokJournal(roots.grok),
     hermesJournal(roots.hermes),
+    kiroJournal(roots.kiro),
     museJournal(roots.muse),
     openclawJournal(roots.openclaw),
   ];
@@ -96,7 +100,7 @@ export function buildJournalRegistry(roots: JournalRoots): Record<string, Journa
  * COULD have a transcript (registry.test.ts fails when the two drift).
  *
  * An alias never adds an adapter, so it is absent from {@link KNOWN_HARNESS_NAMES}: that list
- * answers "which adapters does this build have", and the answer is still the adapters themselves.
+ * answers "which adapters does this build have", and an alias does not change the count.
  */
 export const AGENT_ALIASES = { omp: "pi", antigravity: "agy" } as const;
 
@@ -138,12 +142,13 @@ export const DRAWS_IMAGES_OFF_GRID: readonly string[] = ["omp", "pi"];
  * Herdr reports a session only for agents with an integration; Muse has none, so its panes never
  * carry a ref and the adapter discovers the log by cwd instead (`JournalAdapter.discover`). OpenClaw
  * reports through a source of its own, which Herdr drops (#401), so its adapter reads the session
- * off the pane's footer. The
+ * off the pane's footer. Herdr names no session for a Kiro pane either (kiro-cli 2.32.0, Herdr
+ * 0.9.5), so its adapter matches the pane's foreground TUI to the lock it holds. The
  * name list exists for the one consumer that works from names alone: `collie doctor`, whose
  * history section must not advise `herdr integration install` for an agent no hook could ever
  * report. Pinned against the adapters themselves in registry.test.ts, so the two cannot drift.
  */
-export const DISCOVERS_OWN_SESSIONS: readonly string[] = ["agy", "muse", "openclaw"];
+export const DISCOVERS_OWN_SESSIONS: readonly string[] = ["agy", "muse", "openclaw", "kiro"];
 
 /**
  * The same pairs as a Map, which is how {@link adapterFor} asks.
@@ -198,5 +203,6 @@ export const KNOWN_HARNESS_NAMES: readonly string[] = journalAgents(
     hermes: [],
     muse: [],
     openclaw: [],
+    kiro: [],
   }),
 );

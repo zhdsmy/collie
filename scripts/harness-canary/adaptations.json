@@ -54,7 +54,8 @@
       "tests": [
         "web/src/lib/surface/frame.test.ts",
         "web/src/lib/surface/fold.corpus.test.ts",
-        "bridge/surface/protocol.test.ts"
+        "bridge/surface/protocol.test.ts",
+        "web/src/lib/surface/fold.profiles-a.test.ts"
       ],
       "fixtures": [
         {
@@ -3580,6 +3581,100 @@
         "how": "owned native Herdr session at 119 and 50 columns in plan mode: /artifact review card, inline preview toggle (p), full-screen detail viewer (Enter/o/l/Esc), confirm-exit Submit/Dismiss state, and post-review Artifacts list; submitMenuKeys and bridge keysPane exercised; 320px Chromium/WebKit layout replay",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
+    },
+    {
+      "id": "kiro.approval",
+      "agent": "kiro",
+      "origin": "upstream",
+      "sources": [
+        "web/src/lib/harness/kiro/approval.ts",
+        "web/src/lib/harness/kiro/tool-preview.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/kiro/filesystem.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/kiro--v3-shell-args-allow-w60.txt",
+          "agent": "kiro",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/kiro--v3-read-allow-w60.txt",
+          "agent": "kiro",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/kiro--v3-replace-trusted-allow-w120.txt",
+          "agent": "kiro",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
+      "live": false,
+      "verified": null
+    },
+    {
+      "id": "kiro.trust",
+      "agent": "kiro",
+      "origin": "upstream",
+      "sources": [
+        "web/src/lib/harness/kiro/workspace-trust.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/kiro/workspace-trust.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/kiro--v3-workspace-trust-continue-w60.txt",
+          "agent": "kiro",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
+      "live": false,
+      "verified": null
+    },
+    {
+      "id": "pi.gentle-review",
+      "agent": "pi",
+      "origin": "upstream",
+      "sources": [
+        "web/src/lib/harness/pi/ask.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/pi/ask.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/pi--v130-gentle-review-consent.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v130-gentle-review-consent-moved.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        }
+      ],
+      "live": false,
+      "verified": null
     }
   ]
 }

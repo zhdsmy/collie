@@ -13,6 +13,30 @@ function currentDot(switcher: HTMLElement): number {
 }
 
 describe("DirectKeyboardAccessory", () => {
+  it("gates Clear and permits only one request until its receipt returns", async () => {
+    let finish!: () => void;
+    const onClear = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+    const props = {
+      row: "navigation" as const,
+      modifiers: ALL_OFF,
+      onToggleRow: vi.fn(),
+      onToggleModifier: vi.fn(),
+      onSendKeys: vi.fn(),
+    };
+    const { rerender } = render(<DirectKeyboardAccessory {...props} clearBox={{ available: false, onClear }} />);
+    const clear = screen.getByRole("button", { name: "Clear the input box" });
+    expect(clear).toBeDisabled();
+    fireEvent.click(clear);
+    expect(onClear).not.toHaveBeenCalled();
+    rerender(<DirectKeyboardAccessory {...props} clearBox={{ available: true, onClear }} />);
+    fireEvent.click(clear);
+    fireEvent.click(clear);
+    expect(onClear).toHaveBeenCalledTimes(1);
+    expect(clear).toBeDisabled();
+    await act(async () => finish());
+    expect(clear).toBeEnabled();
+  });
+
   it("disables unsupported keys even when modifiers are armed", () => {
     const props = {
       modifiers: { ...ALL_OFF, ctrl: "once" } satisfies DirectModifierState,

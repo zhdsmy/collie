@@ -49,12 +49,11 @@
         "maxRows": 7
       },
       "below": {
-        "maxRows": 14,
-        "footerMaxRows": 14
+        "maxRows": 2,
+        "footerMaxRows": 2
       }
     },
     "runningRows": [
-      "^☤(?: ❯)?(?: |$)",
       "^ {2}(?!❓|💻|🔐|🔑)\\S.*  \\((?: *\\d+\\.\\d+s|\\d+m\\d+s)(?: · [^()]+)?\\)$"
     ],
     "answerPrompt": "^✎(?: ❯)?(?: |$)",
@@ -90,7 +89,8 @@
         "maxDraftRows": 8,
         "maxTailRows": 16
       }
-    ]
+    ],
+    "runningPrompt": "^☤(?: ❯)?(?: |$)"
   },
   "keys": {
     "submit": [
@@ -102,6 +102,7 @@
     "interrupt": [
       "ctrl+c"
     ],
+    "interruptClearsDraft": true,
     "clear": {
       "key": "Backspace",
       "slack": 16

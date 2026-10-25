@@ -7,7 +7,7 @@ import { parseAnsi } from "@/lib/ansi";
 import { lineText, splitLines } from "@/lib/blocks";
 import { claudeHintText, extractStatusLines } from "@/lib/harness/claude/chrome";
 import { __resetLocale, setLocale, whenLocaleReady, type Locale } from "@/lib/i18n";
-import { StatuslineRow } from "./statusline-row";
+import { StatuslineRow, UsageFields } from "./statusline-row";
 
 beforeEach(() => __resetLocale());
 
@@ -813,4 +813,21 @@ it("places version fields at the end of Claude and Codex statuslines", () => {
     />,
   );
   expect(controlled.container.textContent).toBe("gpt-6-astra xhighPlanFast85%main1.2sv0.121.0");
+});
+
+
+it("fills missing usage fields with compact remaining values and preserves native readings", () => {
+  const usage: import("@/lib/types").PaneUsage = { context: 65, limits: [{ window: "5h", used: 80 }, { window: "7d", used: 40 }] };
+  const { rerender, container, getByRole } = render(<UsageFields usage={usage} rows={[]} />);
+  expect(getByRole("img", { name: "Context 35% left" })).toHaveTextContent("35%");
+  expect(getByRole("img", { name: "5h 20% left" })).toHaveTextContent("20%");
+  expect(getByRole("img", { name: "7d 60% left" })).toHaveTextContent("60%");
+  const rows = splitLines(parseAnsi("Ctx 10% left · 5h 42% left · weekly 21% left"));
+  rerender(<UsageFields usage={usage} rows={rows} />);
+  expect(container).toBeEmptyDOMElement();
+});
+
+it.each(["ctx 78%", "[████░] ~22%", "▓▓░░ 30%"])("does not duplicate native context: %s", (text) => {
+  const { container } = render(<UsageFields usage={{ context: 22 }} rows={splitLines(parseAnsi(text))} />);
+  expect(container).toBeEmptyDOMElement();
 });

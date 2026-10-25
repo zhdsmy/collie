@@ -17,7 +17,7 @@ test("the current canary loads the protocol client and refuses sends outside its
   try {
     installTransport(session, home);
     const readers = await loadReaders(join(import.meta.dirname, "../.."));
-    expect(readers.sendText).toBeInstanceOf(Function);
+    expect(readers.sendGuardedReply).toBeInstanceOf(Function);
     expect(readers.draftCarriesSend("hello", "hello")).toBe(true);
     await expect(fetch("/api/send", { method: "POST", body: JSON.stringify({
       id: "canary-ownership-check", pane: "foreign", text: "never send", mode: "send",

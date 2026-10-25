@@ -241,29 +241,30 @@ describe("Composer: Codex queue and steer", () => {
   it.each(["queue", "steer"] as const)("uses the selected Codex default: %s", async (mode) => {
     const user = userEvent.setup();
     const prefs = { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system" as const, rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, codexSendMode: mode , stretchText: false };
-    renderComposer({ agent: "codex", surface: running, prefs });
+    renderComposer({ agent: "codex", canSteer: true, surface: running, prefs });
     await user.type(screen.getByRole("textbox"), "guide this task");
     const primary = document.querySelector('[data-slot="composer-primary"]')!;
     await user.click(primary);
     await waitFor(() => expect(recordedSends()).toHaveLength(1));
-    expect(recordedSends()[0]!.mode).toBe(mode === "steer" ? "steer" : "send");
+    expect(recordedSends()[0]!.mode).toBe("send");
+    expect(recordedSends()[0]!.when).toBe(mode === "steer" ? "steer" : undefined);
   });
 
   it("offers a one-off steer while the default is queue", async () => {
     const user = userEvent.setup();
-    renderComposer({ agent: "codex", surface: running });
+    renderComposer({ agent: "codex", canSteer: true, surface: running });
     await user.type(screen.getByRole("textbox"), "guide now");
     await user.click(screen.getByRole("button", { name: "Steer now" }));
-    await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "steer", text: "guide now" }));
+    await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "send", when: "steer", text: "guide now" }));
   });
 
   it("promotes the last native queued message and preserves the phone draft", async () => {
     const user = userEvent.setup();
     const text = "• Working (4s • esc to interrupt)\n\n• Queued follow-up inputs\n  ↳ first queued\n  ↳ last queued\n    ⇧← edit last queued message\n\n› \n\n  GPT-6-Luna low · ~/project\n  tab to queue message";
-    renderComposer({ agent: "codex", surface: running, text });
+    renderComposer({ agent: "codex", canSteer: true, surface: running, text });
     await user.type(screen.getByRole("textbox"), "keep my draft");
     await user.click(screen.getAllByRole("button", { name: "Steer now" })[0]!);
-    await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "steer-queued", text: "last queued" }));
+    await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "steer-queued", when: "steer", text: "last queued" }));
     expect(screen.getByRole("textbox")).toHaveValue("keep my draft");
   });
 
@@ -273,7 +274,7 @@ describe("Composer: Codex queue and steer", () => {
     await user.type(screen.getByRole("textbox"), "hello");
     expect(screen.queryByRole("button", { name: "Steer now" })).not.toBeInTheDocument();
     cleanup();
-    renderComposer({ agent: "codex", surface: running });
+    renderComposer({ agent: "codex", canSteer: true, surface: running });
     await user.clear(screen.getByRole("textbox"));
     await user.type(screen.getByRole("textbox"), "/status");
     expect(screen.queryByRole("button", { name: "Steer now" })).not.toBeInTheDocument();
@@ -803,17 +804,17 @@ describe("Composer: password prompt", () => {
     const box = screen.getByPlaceholderText(/shell command/i);
 
     await user.type(box, "hunter2hunter2");
-    expect(localStorage.getItem("collie:draft:default:w1:p1")).toContain("hunter2hunter2");
+    expect(localStorage.getItem("collie:draft:v2:default:w1:p1")).toContain("hunter2hunter2");
 
     await user.click(screen.getByRole("button", { name: "Send" }));
     await screen.findByRole("button", { name: /use type/i });
-    expect(localStorage.getItem("collie:draft:default:w1:p1")).toBeNull();
+    expect(localStorage.getItem("collie:draft:v2:default:w1:p1")).toBeNull();
     // Through the store's own reader: the draft store has an in-memory tier too (lib/drafts.ts).
     expect(loadDraft(undefined, "w1:p1")).toBeNull();
 
     await user.click(screen.getByRole("button", { name: /dismiss password-prompt notice/i }));
     expect(box).toHaveValue("hunter2hunter2");
-    expect(localStorage.getItem("collie:draft:default:w1:p1")).toBeNull();
+    expect(localStorage.getItem("collie:draft:v2:default:w1:p1")).toBeNull();
   });
 
   it("the handoff clears the draft before arming Type", async () => {
@@ -827,7 +828,7 @@ describe("Composer: password prompt", () => {
     await user.click(await screen.findByRole("button", { name: /use type/i }));
 
     await waitFor(() => expect(screen.getByPlaceholderText(/type into the terminal/i)).toHaveValue(""));
-    expect(localStorage.getItem("collie:draft:default:w1:p1")).toBeNull();
+    expect(localStorage.getItem("collie:draft:v2:default:w1:p1")).toBeNull();
     expectLeaving(screen.queryByRole("button", { name: /use type/i }));
   });
 
@@ -2466,6 +2467,68 @@ describe("Composer — clipboard image paste", () => {
     expect(box).toHaveValue("");
     expect(screen.queryByText(/Image added/i)).not.toBeInTheDocument();
     expect(uploadCalls).toBe(0);
+  });
+
+  it("collapses a 5+ line paste into a [Pasted #1] chip, lets the sheet edit or expand it, and sends the expanded text", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const box = screen.getByPlaceholderText(/type a reply/i);
+    const longText = "line 1\nline 2\nline 3\nline 4\nline 5";
+
+    fireEvent.paste(box, {
+      clipboardData: {
+        items: [{ kind: "string", type: "text/plain", getAsFile: () => null }],
+        getData: (type: string) => (type === "text/plain" ? longText : ""),
+      },
+    });
+
+    await waitFor(() => expect(box).toHaveValue("[Pasted #1] "));
+    const chipBtn = screen.getByRole("button", { name: "Edit pasted text #1" });
+    expect(chipBtn).toHaveTextContent("5 lines · 34 chars");
+
+    // Open the sheet and edit the pasted content; scrolling inside the textarea never triggers the
+    // sheet's pull-down dismiss gesture.
+    await user.click(chipBtn);
+    const sheetEditor = screen.getByRole("textbox", { name: "Edit pasted text #1" });
+    expect(sheetEditor).toHaveValue(longText);
+    fireEvent.touchStart(sheetEditor, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(sheetEditor, { touches: [{ clientY: 250 }] });
+    fireEvent.touchEnd(sheetEditor);
+    expect(screen.getByRole("textbox", { name: "Edit pasted text #1" })).toBeInTheDocument();
+    fireEvent.change(sheetEditor, { target: { value: "edited 1\nedited 2\nedited 3\nedited 4\nedited 5" } });
+    expect(chipBtn).toHaveTextContent("5 lines · 44 chars");
+
+    // Close sheet and send with additional instructions
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.change(box, { target: { value: "[Pasted #1] please check" } });
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    await waitFor(() =>
+      expect(recordedSends().at(-1)?.text).toBe(
+        "edited 1\nedited 2\nedited 3\nedited 4\nedited 5 please check",
+      ),
+    );
+  });
+
+  it("expands a collapsed paste chip back into the input box when requested from the sheet", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+    const box = screen.getByPlaceholderText(/type a reply/i);
+    const longText = "alpha 1\nalpha 2\nalpha 3\nalpha 4\nalpha 5";
+
+    fireEvent.paste(box, {
+      clipboardData: {
+        items: [],
+        getData: (type: string) => (type === "text/plain" ? longText : ""),
+      },
+    });
+
+    await waitFor(() => expect(box).toHaveValue("[Pasted #1] "));
+    await user.click(screen.getByRole("button", { name: "Edit pasted text #1" }));
+    await user.click(screen.getByRole("button", { name: "Expand into input" }));
+
+    expect(screen.queryByRole("button", { name: "Edit pasted text #1" })).not.toBeInTheDocument();
+    expect(box).toHaveValue(`${longText} `);
   });
 });
 
@@ -4110,7 +4173,7 @@ describe("outcome at the thumb", () => {
   // Send drill 2 (Codex on Herdr, 2026-10-16): a typed_not_submitted on a pane with no frame showed the
   // typed sentence with only Take over and Open Keys. Submit and Discard show for every reason, and each
   // carries the rows hash of the answer, so the bridge acts only on the screen the person saw.
-  it.each(["mismatch", "changed", "modal_cue", "stale_token", "submit_failed"] as const)(
+  it.each(["mismatch", "changed", "modal_cue", "stale_token", "submit_failed", "dialog_open", "unreadable"] as const)(
     "typed_not_submitted %s with no frame: Submit and Discard show, and Submit carries the rows hash it was offered with",
     async (reason) => {
       const user = await send(() => sendAnswer("x", "typed_not_submitted", reason, { offers: offersFor("typed_not_submitted", reason, false), rowsHash: "0f00ba", surface: SURFACES.noMatch }));
@@ -4206,6 +4269,33 @@ describe("outcome at the thumb", () => {
     expect(screen.getByRole("textbox")).toHaveValue("hello there plus more");
   });
 
+  it("unknown, a paste chip's text is edited in the sheet, then the sent text lands: the notice retires, the edited chip stays (#511)", async () => {
+    server.use(...sendHandler(() => sendAnswer("x", "unknown", "no_evidence", { offers: ["keys"] })));
+    const user = userEvent.setup();
+    const { land } = renderComposerWithEntries();
+    const box = screen.getByRole("textbox");
+    const longText = "line 1\nline 2\nline 3\nline 4\nline 5";
+    fireEvent.paste(box, {
+      clipboardData: {
+        items: [],
+        getData: (type: string) => (type === "text/plain" ? longText : ""),
+      },
+    });
+    await waitFor(() => expect(box).toHaveValue("[Pasted #1] "));
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(refusalText()).toMatch(/read the screen, then send again/i));
+
+    await user.click(screen.getByRole("button", { name: "Edit pasted text #1" }));
+    const sheetEditor = screen.getByRole("textbox", { name: "Edit pasted text #1" });
+    fireEvent.change(sheetEditor, { target: { value: "updated 1\nupdated 2\nupdated 3\nupdated 4\nupdated 5" } });
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    land(userTurn(longText, "turn-1"));
+    await waitFor(() => expect(refusalText()).toBe(""));
+    expect(box).toHaveValue("[Pasted #1] ");
+    expect(screen.getByRole("button", { name: "Edit pasted text #1" })).toHaveTextContent("5 lines · 49 chars");
+  });
+
   it("no answer: says so at the thumb, keeps the draft and the request id, and the retry does not send twice", async () => {
     server.use(http.post("/api/send", () => new HttpResponse("down", { status: 502 })));
     const user = userEvent.setup();
@@ -4232,7 +4322,7 @@ describe("outcome at the thumb", () => {
 
   it("every closed outcome and reason lands at the thumb, and none of them puts an action in the header", async () => {
     const outcomeOf = (reason: SendReason): string =>
-      ["mismatch", "changed", "modal_cue", "stale_token", "submit_failed"].includes(reason)
+      ["mismatch", "changed", "modal_cue", "stale_token", "submit_failed", "dialog_open", "unreadable"].includes(reason)
         ? "typed_not_submitted"
         : ["crash", "lost_lock", "no_evidence"].includes(reason)
           ? "unknown"

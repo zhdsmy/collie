@@ -26,7 +26,7 @@ import {
 import type { ReactNode } from "react";
 
 import type { AnsiSegment } from "@/lib/ansi";
-import type { SessionModel } from "@/lib/types";
+import type { PaneUsage, SessionModel } from "@/lib/types";
 import { lineText, type StyledLine } from "@/lib/blocks";
 import { segmentStyle, styleFor } from "@/components/mirror-space";
 import { useLocale } from "@/hooks/use-locale";
@@ -449,6 +449,24 @@ function codexQuota(text: string): QuotaWindow | null {
   const match = /^(5h|weekly) (\d+(?:\.\d+)?%) (left|used)$/i.exec(text);
   if (!match?.[1] || !match[2] || !match[3] || Number.parseFloat(match[2]) > 100) return null;
   return { period: match[1].toLowerCase() === "weekly" ? "7d" : "5h", percent: match[2], remaining: match[3].toLowerCase() === "left" };
+}
+
+/** Native readings keep their place; account data fills only fields the statusline omitted. */
+export function UsageFields({ usage, rows }: { usage: PaneUsage | undefined; rows: readonly StyledLine[] }) {
+  const native = rows.map(lineText).join(" · ");
+  const context = usage?.context !== undefined && !/(?:\b(?:ctx|context)[: ]+\d+(?:\.\d+)?%|\d+% context (?:left|used)|\[[█░]+\]\s*~?\d+(?:\.\d+)?%|[▓░]+\s+\d+%)/i.test(native);
+  const limits = (usage?.limits ?? []).filter((limit) =>
+    (limit.window === "5h" || limit.window === "7d") &&
+    !(limit.window === "5h" ? /\b5h\s+\d+(?:\.\d+)?%/i : /\b(?:7d|weekly)\s+\d+(?:\.\d+)?%/i).test(native),
+  );
+  if (!context && limits.length === 0) return null;
+  const detail = limits.map((limit) => `${limit.window} ${limit.used}% used${limit.resetsAt === undefined ? "" : ` · ${new Date(limit.resetsAt).toLocaleString()}`}`).join("; ");
+  return (
+    <span data-slot="statusline-usage" className="inline-flex min-h-3.5 shrink-0 items-center gap-1.5">
+      {context && <ContextField value={`${usage!.context}%`} remaining={false} />}
+      {limits.length > 0 && <QuotaField text={detail} windows={limits.map((limit) => ({ period: limit.window, percent: `${limit.used}%`, remaining: false }))} />}
+    </span>
+  );
 }
 
 /**

@@ -203,6 +203,7 @@ function cfg(overrides: Partial<Config> = {}): Config {
     cacheWarnSeconds: 300,
     readLines: 200,
     transcript: true,
+    accountWindows: [],
     journalRoots: {
       claude: ["/tmp/claude-projects"],
       codex: ["/nope/codex"],
@@ -213,6 +214,7 @@ function cfg(overrides: Partial<Config> = {}): Config {
       hermes: ["/nope/hermes"],
       muse: ["/nope/muse"],
       openclaw: ["/nope/openclaw"],
+      kiro: ["/nope/kiro"],
     },
     submitKeys: ["Enter"],
     commandsFile: "/nope/commands.toml",

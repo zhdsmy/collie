@@ -15,13 +15,13 @@ test("Codex queue setting and immediate steering fit a 320px phone", async ({ pa
   });
   await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
     ...fixtureSnapshot,
-    agents: fixtureSnapshot.agents.map((agent, index) => index === 0 ? Object.assign({}, agent, { agent: "codex", status: "working", surface: { revision: 1, turn: "running", modal: "none", composer: "empty" } }) : agent),
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0 ? Object.assign({}, agent, { agent: "codex", canSteer: true, status: "working", surface: { revision: 1, turn: "running", modal: "none", composer: "empty" } }) : agent),
   } }));
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: { paneId: "w1:p1", text: queued, truncated: false, revision: 1 } }));
   const modes: string[] = [];
   await page.route("**/api/send", (route) => {
     const body = route.request().postDataJSON();
-    modes.push(body.mode);
+    modes.push(body.when === "steer" ? `${body.mode}:steer` : body.mode);
     return route.fulfill({ json: sendAnswer(body.id, "sent") });
   });
   await page.goto("/settings/device");
@@ -36,7 +36,7 @@ test("Codex queue setting and immediate steering fit a 320px phone", async ({ pa
   const box = page.getByRole("textbox").first();
   await box.fill("保留这条草稿");
   await page.getByRole("button", { name: "立即引导", exact: true }).first().click();
-  await expect.poll(() => modes).toEqual(["steer-queued"]);
+  await expect.poll(() => modes).toEqual(["steer-queued:steer"]);
   await expect(box).toHaveValue("保留这条草稿");
   const steer = page.getByRole("button", { name: "立即引导", exact: true }).last();
   const rect = await steer.boundingBox();
@@ -46,5 +46,5 @@ test("Codex queue setting and immediate steering fit a 320px phone", async ({ pa
   expect(rect!.x + rect!.width).toBeLessThanOrEqual(320);
   await page.screenshot({ path: info.outputPath("codex-queue-steer.png") });
   await steer.click();
-  await expect.poll(() => modes).toEqual(["steer-queued", "steer"]);
+  await expect.poll(() => modes).toEqual(["steer-queued:steer", "send:steer"]);
 });

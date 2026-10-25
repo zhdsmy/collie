@@ -21,6 +21,7 @@ import { agyAdapter, antigravityAdapter } from "./agy";
 import { cursorAdapter } from "./cursor";
 import { museAdapter } from "./muse";
 import { piAdapter } from "./pi";
+import { kiroAdapter } from "./kiro";
 
 // Built FROM the adapter list (not a hand-written literal) so a key can't silently drift from its
 const ADAPTERS: Record<string, HarnessAdapter> = Object.fromEntries(
@@ -36,6 +37,7 @@ const ADAPTERS: Record<string, HarnessAdapter> = Object.fromEntries(
     cursorAdapter,
     museAdapter,
     piAdapter,
+    kiroAdapter,
   ].map((a) => [a.agent, a]),
 );
 

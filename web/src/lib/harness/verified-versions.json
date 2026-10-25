@@ -156,6 +156,19 @@
         "how": "capture",
         "evidence": "bridge/journal/fixtures/openclaw/: SQLite rows re-captured on OpenClaw 2026.10.2 and on the reporter's 2026.9.8 (both schema 24) against a scripted local model, plus the 2026-10-12 lab session rebuilt from its chat.history (experiments/openclaw-401). openclaw.test.ts reads all three; no canary runs OpenClaw."
       }
+    },
+    "kiro": {
+      "version": "2.32.0",
+      "verified": "2026-10-17",
+      "how": "capture",
+      "adapter": true,
+      "evidence": "kiro-cli 2.32.0 V3 on x86_64 Linux. Herdr `pane read` captures from a throwaway Herdr session, and harmless Allow/Deny/Close probes for shell, read_file, fs_write and str_replace at 120/60/40 columns; composer drafts captured; a live Herdr and Chromium run covered native Allow and Deny, read-only History and the V2 fallback. web/src/fixtures/panes/README.md records the captures and substitutions, and web/src/lib/harness/kiro/APPROVAL_NOTES.md the keys and terminal-only limits. Generic MCP requests and incomplete or clipped file subjects deliberately have no approval buttons.",
+      "journal": {
+        "version": "2.32.0",
+        "verified": "2026-10-18",
+        "how": "capture",
+        "evidence": "Two sessions saved by kiro-cli 2.32.0 V3 in a throwaway KIRO_HOME, checked in under bridge/journal/fixtures/kiro (its README.md lists what each holds): replies, a shell call, a denied write, a failed read, an edit, a steered turn, /compact and a sub-agent. bridge/journal/kiro.test.ts reads both with no unknown rows. bridge/journal/kiro-discovery.test.ts covers the lock the running TUI holds, which moves on /clear, /rewind and a /sessions switch. A sub-agent's own history is not expanded."
+      }
     }
   }
 }
