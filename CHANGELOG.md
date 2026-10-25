@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.24.0+collie.3] - 2026-10-25
+
 ### Changed
 
-- **One sending setting now controls both Codex and Claude Code.** Replace their two device settings with a shared Queue/Steer choice, retaining the former Codex choice first or the Claude choice when no Codex choice exists. Explain that other agents have not been integrated with this default, rather than claiming their native clients cannot queue or steer; their existing behavior is retained.
+- **One sending setting now controls both Codex and Claude Code.** Replace their two device settings with a shared Queue/Steer choice, retaining the former Codex choice first or the Claude choice when no Codex choice exists. Explain that other agents have not been integrated with this default, rather than claiming their native clients cannot queue or steer; their existing behavior is retained. ([78cb4a8d](https://github.com/zhdsmy/collie/commit/78cb4a8d))
 
 ## [1.24.0+collie.2] - 2026-10-25
 
