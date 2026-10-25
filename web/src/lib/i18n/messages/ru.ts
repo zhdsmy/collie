@@ -6,7 +6,7 @@ import type { Dictionary } from "./en";
 export const ru: Dictionary = {
   "settings.runningSend.title": "Отправка",
   "settings.runningSend.description": "Выберите поведение отправки во время работы. Только на этом устройстве; команды не меняются.",
-  "settings.runningSend.scope": "Пока применяется только к Codex и Claude Code. Другие агенты не подключены к этой настройке; их собственные клиенты могут поддерживать очередь или направление.",
+  "settings.runningSend.scope": "Пока применяется только к Codex, Claude Code и Antigravity. Другие агенты не подключены к этой настройке; их собственные клиенты могут поддерживать очередь или направление.",
   "settings.runningSend.claudeNote": "Claude Code: Немедленное направление также отправляет все сообщения в очереди и может прервать текущий ответ.",
   "settings.runningSend.queue": "В очередь",
   "settings.runningSend.steer": "Направить сейчас",

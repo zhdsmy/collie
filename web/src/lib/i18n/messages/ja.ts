@@ -5,7 +5,7 @@ import type { Dictionary } from "./en";
 export const ja: Dictionary = {
   "settings.runningSend.title": "送信方法",
   "settings.runningSend.description": "実行中の既定の送信動作を選びます。この端末のみ有効で、コマンドの動作は変わりません。",
-  "settings.runningSend.scope": "現在は Codex と Claude Code のみが対象です。他のエージェントはこの設定に未対応ですが、ネイティブ機能でのキューや誘導が不可能という意味ではありません。",
+  "settings.runningSend.scope": "現在は Codex、Claude Code、Antigravity のみが対象です。他のエージェントはこの設定に未対応ですが、ネイティブ機能でのキューや誘導が不可能という意味ではありません。",
   "settings.runningSend.claudeNote": "Claude Code：今すぐ誘導すると待機中のメッセージもすべて送信され、現在の応答が中断される場合があります。",
   "settings.runningSend.queue": "キューに追加",
   "settings.runningSend.steer": "今すぐ指示",

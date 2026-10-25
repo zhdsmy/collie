@@ -150,7 +150,7 @@ message never steers, whoever sends it.
 
 | Profile | In a running turn | What happens |
 | --- | --- | --- |
-| `agy` | hold | Collie holds it and types it when the pane is free |
+| `agy` | queue | Enter queues it in the harness (or Alt+M when `queuedMessages` is `send-immediately`), and it runs after the turn |
 | `claude` | queue | Enter queues it in the harness, and it runs after the turn |
 | `codex` | queue key | Tab queues it; Enter would steer, so Collie never presses it there |
 | `cursor` | queue | Enter queues it in the harness, and it runs after the turn |

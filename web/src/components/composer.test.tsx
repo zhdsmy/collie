@@ -238,7 +238,16 @@ describe("Composer: keyboard hints on the field (issue 465)", () => {
 
 describe("Composer: Codex queue and steer", () => {
   const running: Surface = { ...FREE, turn: "running" };
-  it.each([["codex", "queue"], ["codex", "steer"], ["claude", "queue"], ["claude", "steer"]] as const)("uses the selected %s default: %s", async (agent, mode) => {
+  it.each([
+    ["codex", "queue"],
+    ["codex", "steer"],
+    ["claude", "queue"],
+    ["claude", "steer"],
+    ["agy", "queue"],
+    ["agy", "steer"],
+    ["antigravity", "queue"],
+    ["antigravity", "steer"],
+  ] as const)("uses the selected %s default: %s", async (agent, mode) => {
     const user = userEvent.setup();
     const prefs = { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system" as const, rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, runningSendMode: mode, stretchText: false };
     renderComposer({ agent, canSteer: true, surface: running, prefs });
@@ -250,7 +259,7 @@ describe("Composer: Codex queue and steer", () => {
     expect(recordedSends()[0]!.when).toBe(mode === "steer" ? "steer" : undefined);
   });
 
-  it.each(["codex", "claude"])("offers a one-off %s steer while the default is queue", async (agent) => {
+  it.each(["codex", "claude", "agy", "antigravity"])("offers a one-off %s steer while the default is queue", async (agent) => {
     const user = userEvent.setup();
     renderComposer({ agent, canSteer: true, surface: running });
     await user.type(screen.getByRole("textbox"), "guide now");
@@ -258,7 +267,7 @@ describe("Composer: Codex queue and steer", () => {
     await waitFor(() => expect(recordedSends()[0]).toMatchObject({ mode: "send", when: "steer", text: "guide now" }));
   });
 
-  it.each([["claude", false], ["pi", true], ["omp", true]] as const)("ignores the shared preference on %s when it is unsupported or outside this setting", async (agent, canSteer) => {
+  it.each([["claude", false], ["agy", false], ["pi", true], ["omp", true]] as const)("ignores the shared preference on %s when it is unsupported or outside this setting", async (agent, canSteer) => {
     const user = userEvent.setup();
     renderComposer({ agent, canSteer, surface: running, prefs: { wrap: true, fontSize: 11, draftFontSize: 14, chatFontSize: 14, fontFamily: "system", rawTerminal: false, tapToFocus: true, expandClippedReply: true, rejoinWraps: false, stretchText: false, runningSendMode: "steer" } });
     await user.type(screen.getByRole("textbox"), "wait normally");

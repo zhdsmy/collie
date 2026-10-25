@@ -13,7 +13,7 @@
   },
   "versions": [
     {
-      "range": "1.4.4 - 1.4.4",
+      "range": "1.4.0 - 1.4.7",
       "status": "provisional",
       "verifiedThrough": null,
       "verifiedOn": null
@@ -84,7 +84,28 @@
     "submit": [
       "Enter"
     ],
-    "enterWhileRunning": "native",
+    "enterWhileRunning": "queues",
+    "steer": [
+      "alt+m"
+    ],
+    "steerMinVersion": "1.4.0",
+    "steerWitness": [
+      {
+        "pattern": "^\\s*▸ (?<text>\\S.*?)\\s*$",
+        "hint": "^\\s*⎿\\s+Sending to agent\\.\\.\\.\\s*$",
+        "hintGap": 0
+      },
+      {
+        "pattern": "^> (?<text>\\S.*?)\\s*$",
+        "transcript": true
+      }
+    ],
+    "queuedRow": {
+      "pattern": "^\\s*▸ (?<text>\\S.*?)\\s*$",
+      "hint": "^[⠀-⣿]\\s+\\S",
+      "hintGap": 2,
+      "hintAbove": true
+    },
     "newline": [
       "ctrl+j"
     ],
@@ -113,7 +134,7 @@
   "probe": {
     "char": "⌁",
     "status": "provisional",
-    "note": "Local macOS verification on 1.4.4 covers boxed composers, gray Auto hints, normal sends and native mid-turn sending (Queued Messages controls Queue/Send Immediately). See harness/agy/LOCAL_VERIFICATION.md. Still provisional: attachments and approval/question interactions are not certified. Fallback ¤"
+    "note": "Local macOS verification on 1.4.7 covers boxed composers, gray Auto hints, normal sends, and mid-turn Queue/Steer (dynamically aligned with settings.json queuedMessages via Enter and alt+m). See harness/agy/LOCAL_VERIFICATION.md. Still provisional: attachments and approval/question interactions are not certified. Fallback ¤"
   },
   "paste": {
     "bracketed": true

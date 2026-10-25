@@ -250,6 +250,7 @@ import { deliverEdge, EdgeRouter, type EdgeTarget } from "./surface/edges.ts";
 import { counterWordOf, HoldBook, HoldServer, takeHold, type HoldTarget } from "./surface/hold.ts";
 import { holdSocketPath } from "./beacon/paths.ts";
 import { VersionCache } from "./surface/binary-version.ts";
+import { applyAgySendSettings } from "./agy-settings.ts";
 import { findProfile, loadProfiles, profileForPlatform, type ProfileMatch } from "../web/src/lib/surface/profile.ts";
 import { labelOf } from "./walky/address.ts";
 import {
@@ -1478,7 +1479,8 @@ const sendVersions = new VersionCache();
 async function sendProfile(harness: string): Promise<ProfileMatch | null> {
   const profile = findProfile(loadProfiles(), harness);
   if (profile === undefined) return null;
-  return profileForPlatform(profile.id, await sendVersions.versionOf(profile), HOST.platform);
+  const match = profileForPlatform(profile.id, await sendVersions.versionOf(profile), HOST.platform);
+  return applyAgySendSettings(match, cfg.journalRoots.agy);
 }
 
 const makeSession: SessionFactory = (name, endpoint, isPrimary) => {

@@ -6,7 +6,7 @@ import type { Dictionary } from "./en";
 export const zh: Dictionary = {
   "settings.runningSend.title": "发送方式",
   "settings.runningSend.description": "选择智能体运行时的默认发送方式。仅此设备生效；命令保持原有行为。",
-  "settings.runningSend.scope": "暂仅适配 Codex 和 Claude Code。其他智能体尚未接入此设置，不代表其原生不支持排队或引导。",
+  "settings.runningSend.scope": "暂仅适配 Codex、Claude Code 和 Antigravity。其他智能体尚未接入此设置，不代表其原生不支持排队或引导。",
   "settings.runningSend.claudeNote": "Claude Code：立即引导会同时提交全部排队消息，可能中断当前回复。",
   "settings.runningSend.queue": "排队",
   "settings.runningSend.steer": "立即引导",

@@ -6,7 +6,7 @@ import type { Dictionary } from "./en";
 export const tr: Dictionary = {
   "settings.runningSend.title": "Gönderim",
   "settings.runningSend.description": "Çalışma sırasındaki varsayılan davranışı seçin. Yalnızca bu cihazda geçerlidir; komutlar değişmez.",
-  "settings.runningSend.scope": "Şimdilik yalnızca Codex ve Claude Code için geçerlidir. Diğer ajanlar bu ayara entegre değildir; kendi istemcileri kuyruk veya yönlendirme sunabilir.",
+  "settings.runningSend.scope": "Şimdilik yalnızca Codex, Claude Code ve Antigravity için geçerlidir. Diğer ajanlar bu ayara entegre değildir; kendi istemcileri kuyruk veya yönlendirme sunabilir.",
   "settings.runningSend.claudeNote": "Claude Code: Şimdi yönlendir, kuyruktaki tüm mesajları da gönderir ve mevcut yanıtı kesebilir.",
   "settings.runningSend.queue": "Sıraya al",
   "settings.runningSend.steer": "Şimdi yönlendir",

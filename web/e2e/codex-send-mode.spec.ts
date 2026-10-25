@@ -74,7 +74,7 @@ test("Claude uses the shared sending choice on a 320px phone", async ({ page }, 
   await page.reload();
   await expect(choice.getByRole("radio", { name: "立即引导" })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByRole("radiogroup", { name: "发送方式" })).toHaveCount(1);
-  await expect(page.getByText(/暂仅适配 Codex 和 Claude Code/)).toBeVisible();
+  await expect(page.getByText(/暂仅适配 Codex、Claude Code 和 Antigravity/)).toBeVisible();
   await choice.getByRole("radio", { name: "排队" }).click();
   await page.screenshot({ path: info.outputPath("claude-send-settings.png") });
   await page.goto("/pane/w1:p1");

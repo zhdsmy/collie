@@ -6,7 +6,7 @@ import type { Dictionary } from "./en";
 export const de: Dictionary = {
   "settings.runningSend.title": "Senden",
   "settings.runningSend.description": "Standardverhalten während der Arbeit wählen. Nur auf diesem Gerät; Befehle bleiben unverändert.",
-  "settings.runningSend.scope": "Gilt derzeit nur für Codex und Claude Code. Andere Agenten sind nicht in diese Einstellung integriert; ihre nativen Clients können dennoch Warteschlangen oder Lenkung unterstützen.",
+  "settings.runningSend.scope": "Gilt derzeit nur für Codex, Claude Code und Antigravity. Andere Agenten sind nicht in diese Einstellung integriert; ihre nativen Clients können dennoch Warteschlangen oder Lenkung unterstützen.",
   "settings.runningSend.claudeNote": "Claude Code: Sofort lenken sendet auch alle wartenden Nachrichten und kann die aktuelle Antwort unterbrechen.",
   "settings.runningSend.queue": "Einreihen",
   "settings.runningSend.steer": "Jetzt steuern",

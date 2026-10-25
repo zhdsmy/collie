@@ -9,8 +9,9 @@
 // the send path changed, and the canary must say so rather than guess.
 
 import { join } from "node:path";
+import { applyAgySendSettings } from "../../bridge/agy-settings";
 import { AuditLog } from "../../bridge/audit";
-import { loadConfig, type Config } from "../../bridge/config";
+import { loadConfig, resolveJournalRoots, type Config } from "../../bridge/config";
 import type { StateEngine } from "../../bridge/state-engine";
 import { HOST } from "../../bridge/host";
 import { herdrMuxFactory } from "../../bridge/mux/herdr/adapter";
@@ -78,7 +79,8 @@ export function installTransport(session: TransportSession, home: string, deps: 
       profile: async (harness) => {
         const profile = findProfile(loadProfiles(), harness);
         if (profile === undefined) return null;
-        return profileForPlatform(profile.id, await sendVersions.versionOf(profile), HOST.platform);
+        const match = profileForPlatform(profile.id, await sendVersions.versionOf(profile), HOST.platform);
+        return applyAgySendSettings(match, [...(cfg.journalRoots.agy ?? []), ...(resolveJournalRoots(process.env).agy ?? [])]);
       },
       generation: (paneId) => {
         if (!session.isOwnedPane(paneId)) return null;

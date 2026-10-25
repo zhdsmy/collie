@@ -491,7 +491,7 @@ const SPEC14_CASES: readonly Spec14Case[] = [
     submit: ["Enter"],
     probeStatus: "provisional",
     rangeStatus: "provisional",
-    enterWhileRunning: "native",
+    enterWhileRunning: "queues",
   },
   {
     id: "muse",
@@ -1199,10 +1199,11 @@ describe("the steer keys (M69)", () => {
     }
     expect(loadProfiles().get("codex")!.keys.steerDelayMs).toBe(1000);
     expect(loadProfiles().get("claude")!.keys).toMatchObject({ steer: ["ctrl+x", "ctrl+s"], steerMinVersion: "2.1.275", enterWhileRunning: "queues" });
+    expect(loadProfiles().get("agy")!.keys).toMatchObject({ steer: ["alt+m"], steerMinVersion: "1.4.0", enterWhileRunning: "queues" });
     expect(loadProfiles().get("pi")!.keys.steerDelayMs).toBeUndefined();
     expect(loadProfiles().get("omp")!.keys.steerDelayMs).toBeUndefined();
     for (const [id, profile] of loadProfiles()) {
-      if (["pi", "codex", "omp", "claude"].includes(id)) continue;
+      if (["pi", "codex", "omp", "claude", "agy"].includes(id)) continue;
       expect([id, profile.keys.steer, profile.keys.steerWitness]).toEqual([id, undefined, undefined]);
     }
   });

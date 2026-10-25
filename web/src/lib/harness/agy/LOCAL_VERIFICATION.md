@@ -1,4 +1,35 @@
-# AGY 1.4.4 / 1.4.5 / 1.4.7 UI checks — 2026-10-24
+# AGY 1.4.4 / 1.4.5 / 1.4.7 UI checks — 2026-10-26
+
+## Mid-turn Sending (`Queue` / `Steer`) — AGY 1.4.7 (2026-10-26)
+
+An owned AGY 1.4.7 Herdr canary (`collie-canary`) exercised mid-turn `Queue` and
+`Steer` sends via `sendText` and `SendProtocol`:
+
+- **Native key mapping and `~/.gemini/antigravity-cli/settings.json` awareness:**
+  AGY 1.4.0+ supports both mid-turn `Queue` and `Send Immediately` (`Steer`),
+  flipping `Enter` and `Alt+M` (`\x1bm`) based on `queuedMessages` in
+  `~/.gemini/antigravity-cli/settings.json`:
+  - When `queuedMessages` is `"queue"` (or absent, AGY's default): `Enter` queues
+    and `alt+m` steers (`enterWhileRunning: "queues"`, `steer: ["alt+m"]`).
+  - When `queuedMessages` is `"send-immediately"`: `applyAgySendSettings` in
+    `bridge/agy-settings.ts` dynamically overrides the profile keys to
+    `enterWhileRunning: "steers"`, `queueKey: "alt+m"`, and `steer: ["Enter"]`.
+- **Distinct screen witnesses (`agy.json`):**
+  - Queued messages draw `▸ <text>` directly beneath the braille spinner row
+    (`^[⠀-⣿]\s+\S`) above the composer box with no sub-row (`queuedRow` with
+    `hintAbove: true`).
+  - Steered messages draw `▸ <text>` followed immediately by
+    `  ⎿  Sending to agent...` (`steerWitness[0]`, `hintGap: 0`) before landing
+    in the transcript as `> <text>` (`steerWitness[1]`, `transcript: true`).
+- **Shared Collie `Sending` preference (`runningSendMode`):**
+  `Composer` (`runningSendChoice`) now includes `agy` and `antigravity` alongside
+  `codex` and `claude`, honoring `Settings → Device → Sending (Queue / Steer)`
+  and offering the one-off `Steer now` action when `Queue` is selected.
+- Live verification in `collie-canary` confirmed `sendText` without `when`
+  produced `outcome: "sent", queued: true` (`reading.note: "queued"`) and
+  `sendText` with `when: "steer"` produced `outcome: "steered"`
+  (`reading.note: "steered"`). The owned canary session and temporary workspace
+  were removed; user sessions received no input.
 
 ## Model stability, `/effort` scale chips, wide `/resume`, and native `Keyboard:` modals — AGY 1.4.7 (2026-10-24)
 

@@ -5798,7 +5798,6 @@ describe("a profile whose probe is provisional never skips the probe (M56 spec 1
 describe("a frameless manual send in a turn is refused where Enter is not known to queue (M56 spec 14 review)", () => {
   const cases = [
     { harness: "grok", version: "1.0.46", rows: ["  Ctrl+e:expand thinking  │  Space:prompt  │  Esc:cancel  │  Ctrl+b:send to bg  │  Ctrl+.:shortcuts"] },
-    { harness: "agy", version: "1.1.17", rows: ["⣟  Generating...", "└ Tip: Use /btw to ask a question without breaking context.", "esc to cancel     accept-edits · Gemini 3.7 Flash · low"] },
   ];
   for (const c of cases) {
     test(`${c.harness}: a running sign and no box, two taps: refused turn_running, nothing typed, no Enter`, async () => {

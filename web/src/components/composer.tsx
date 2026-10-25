@@ -1018,7 +1018,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   // any agent without an adapter, which is exactly the "no idea" case those helpers already handle.
   const adapter = adapterFor(agent ?? undefined);
   const codexRunning = agent === "codex" && shownSurface.turn === "running" && shownSurface.modal === "none";
-  const runningSendChoice = (agent === "codex" || agent === "claude") && shownSurface.turn === "running" && shownSurface.modal === "none" && canSteer === true;
+  const runningSendChoice =
+    (agent === "codex" || agent === "claude" || agent === "agy" || agent === "antigravity") &&
+    shownSurface.turn === "running" &&
+    shownSurface.modal === "none" &&
+    canSteer === true;
   const runningSendMode = prefs.runningSendMode;
   const lastQueued = useMemo(() => {
     if (!codexRunning) return undefined;

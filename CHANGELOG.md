@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Added
+
+- **Antigravity joins the shared Queue / Steer sending setting.** Integrate `agy` and `antigravity` (version 1.4.0 or later) into Settings → Device → Sending alongside Codex and Claude Code, with the one-off Steer now action beside Send when Queue is selected, distinct screen witnesses for queued (`▸ <text>`) and steered (`▸ <text>` + `⎿ Sending to agent...` / transcript `> <text>`) messages, and automatic `Enter` / `alt+m` mapping from `~/.gemini/antigravity-cli/settings.json` (`queuedMessages: "queue"` vs `"send-immediately"`).
+
 ## [1.24.0+collie.4] - 2026-10-25
 
 ### Fixed

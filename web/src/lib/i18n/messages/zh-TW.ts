@@ -6,7 +6,7 @@ import type { Dictionary } from "./en";
 export const zhTW: Dictionary = {
   "settings.runningSend.title": "傳送方式",
   "settings.runningSend.description": "選擇智能體執行時的預設傳送方式。僅此裝置生效；命令維持原有行為。",
-  "settings.runningSend.scope": "暫僅適配 Codex 和 Claude Code。其他智能體尚未接入此設定，不代表其原生不支援排隊或引導。",
+  "settings.runningSend.scope": "暫僅適配 Codex、Claude Code 和 Antigravity。其他智能體尚未接入此設定，不代表其原生不支援排隊或引導。",
   "settings.runningSend.claudeNote": "Claude Code：立即引導會同時提交全部排隊訊息，可能中斷目前回覆。",
   "settings.runningSend.queue": "排隊",
   "settings.runningSend.steer": "立即引導",

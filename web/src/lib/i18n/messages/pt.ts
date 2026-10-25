@@ -6,7 +6,7 @@ import type { Dictionary } from "./en";
 export const pt: Dictionary = {
   "settings.runningSend.title": "Envio",
   "settings.runningSend.description": "Escolha o comportamento durante o trabalho. Apenas neste dispositivo; os comandos não mudam.",
-  "settings.runningSend.scope": "Por enquanto, aplica-se apenas ao Codex e Claude Code. Outros agentes não estão integrados a esta configuração; seus clientes nativos ainda podem oferecer fila ou orientação.",
+  "settings.runningSend.scope": "Por enquanto, aplica-se apenas ao Codex, Claude Code e Antigravity. Outros agentes não estão integrados a esta configuração; seus clientes nativos ainda podem oferecer fila ou orientação.",
   "settings.runningSend.claudeNote": "Claude Code: Orientar agora também envia todas as mensagens na fila e pode interromper a resposta atual.",
   "settings.runningSend.queue": "Enfileirar",
   "settings.runningSend.steer": "Orientar agora",

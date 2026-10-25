@@ -16,7 +16,7 @@
 export const en = {
   "settings.runningSend.title": "Sending",
   "settings.runningSend.description": "Choose the default while an agent works. This device only; commands keep their native behavior.",
-  "settings.runningSend.scope": "Currently applies only to Codex and Claude Code. Other agents are not integrated with this setting; this does not mean their native clients cannot queue or steer.",
+  "settings.runningSend.scope": "Currently applies only to Codex, Claude Code, and Antigravity. Other agents are not integrated with this setting; this does not mean their native clients cannot queue or steer.",
   "settings.runningSend.claudeNote": "Claude Code: Steer now also sends all queued messages and may interrupt the current reply.",
   "settings.runningSend.queue": "Queue",
   "settings.runningSend.steer": "Steer now",

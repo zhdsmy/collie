@@ -3203,7 +3203,9 @@
         "web/src/components/statusline-row.tsx",
         "web/src/lib/surface/profiles/agy.json",
         "web/src/lib/surface/profile.ts",
+        "bridge/agy-settings.ts",
         "bridge/surface/protocol.ts",
+        "web/src/components/composer.tsx",
         "bridge/journal/agy.ts",
         "bridge/journal/registry.ts",
         "web/src/lib/journal-agents.ts",
@@ -3217,7 +3219,9 @@
         "web/src/components/statusline-row.test.tsx",
         "web/e2e/agy-chrome.spec.ts",
         "web/src/lib/surface/profile.test.ts",
+        "bridge/agy-settings.test.ts",
         "bridge/surface/protocol.test.ts",
+        "web/src/components/composer.test.tsx",
         "bridge/journal/agy.test.ts",
         "bridge/journal/registry.test.ts",
         "web/src/lib/harness-bar.test.ts",
@@ -3325,9 +3329,9 @@
       ],
       "live": false,
       "verified": {
-        "version": "1.4.5",
-        "date": "2026-10-22",
-        "how": "owned native Herdr session: normal and mid-turn SendProtocol sends under Auto/Send Immediately completed; gray Auto placeholder and rich statusline captured; 38/50-column drafts and Model/Resume open/cancel checked; mobile geometry replay separately; read-only installed-session checks: SQLite 185 entries; active authenticated .pb fallback 381 entries from 464 steps (3 type-101 steps counted as unknown); compact statusline and Chat mobile replay; process-held lock prevents selecting newer test sessions; Chat/composer statusline mobile replay; native client sends for Model/Resume at 119/50 columns: one Enter, no provider inference; 1.4.5 owned startup/working/Escape-to-idle status captures and mobile replay; earlier send/history checks remain scoped to 1.4.4",
+        "version": "1.4.7",
+        "date": "2026-10-26",
+        "how": "owned native Herdr session: idle, mid-turn Queue (queued: true) and mid-turn Steer (outcome: steered) sends via SendProtocol with ~/.gemini/antigravity-cli/settings.json queuedMessages mapping; gray Auto placeholder and rich statusline captured; 38/50-column drafts and Model/Resume open/cancel checked; mobile geometry replay separately; read-only installed-session checks: SQLite 185 entries; active authenticated .pb fallback 381 entries from 464 steps (3 type-101 steps counted as unknown); compact statusline and Chat mobile replay; process-held lock prevents selecting newer test sessions; Chat/composer statusline mobile replay; native client sends for Model/Resume at 119/50 columns: one Enter, no provider inference; 1.4.5 owned startup/working/Escape-to-idle status captures and mobile replay",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },

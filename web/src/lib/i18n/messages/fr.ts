@@ -6,7 +6,7 @@ import type { Dictionary } from "./en";
 export const fr: Dictionary = {
   "settings.runningSend.title": "Envoi",
   "settings.runningSend.description": "Choisissez le comportement pendant le travail. Sur cet appareil uniquement ; les commandes restent inchangées.",
-  "settings.runningSend.scope": "S’applique actuellement à Codex et Claude Code uniquement. Les autres agents ne sont pas intégrés à ce réglage ; leurs clients natifs peuvent néanmoins gérer la file ou le guidage.",
+  "settings.runningSend.scope": "S’applique actuellement à Codex, Claude Code et Antigravity uniquement. Les autres agents ne sont pas intégrés à ce réglage ; leurs clients natifs peuvent néanmoins gérer la file ou le guidage.",
   "settings.runningSend.claudeNote": "Claude Code : Guider maintenant envoie aussi tous les messages en attente et peut interrompre la réponse en cours.",
   "settings.runningSend.queue": "Mettre en attente",
   "settings.runningSend.steer": "Guider maintenant",
