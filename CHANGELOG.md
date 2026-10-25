@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.24.0+collie.2] - 2026-10-25
+
 ### Added
 
-- **Claude gains an independent Queue or Steer sending default.** Settings → Device keeps its choice separate from Codex; Queue remains the initial default, with a one-off Steer now beside Send. Steer uses Claude's native Ctrl+X Ctrl+S through the guarded upstream sending protocol on version 2.1.275 or later. As in Claude itself, it submits all queued messages with the current draft and may interrupt the current reply; commands keep their existing behavior.
+- **Claude gains an independent Queue or Steer sending default.** Settings → Device keeps its choice separate from Codex; Queue remains the initial default, with a one-off Steer now beside Send. Steer uses Claude's native Ctrl+X Ctrl+S through the guarded upstream sending protocol on version 2.1.275 or later. As in Claude itself, it submits all queued messages with the current draft and may interrupt the current reply; commands keep their existing behavior. ([f14c8cf9](https://github.com/zhdsmy/collie/commit/f14c8cf9))
 
 ## [1.24.0+collie.1] - 2026-10-25
 
