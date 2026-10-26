@@ -4419,7 +4419,7 @@
     "cursor--working-status-sanitized.txt": {
       "harness": "cursor",
       "version": "unversioned",
-      "state": "running"
+      "state": "other"
     },
     "hermes--clarify-other.txt": {
       "harness": "hermes",
@@ -4984,6 +4984,11 @@
     "cursor--v20261016-idle-after-queued.txt": {
       "harness": "cursor",
       "version": "2026.10.16",
+      "state": "idle"
+    },
+    "cursor--v20261022-idle.txt": {
+      "harness": "cursor",
+      "version": "2026.10.22",
       "state": "idle"
     },
     "hermes--approval-long-full.txt": {

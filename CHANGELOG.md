@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **A message from the phone reaches Cursor CLI 2026.10.22.** That release draws the input box as a filled band with no block rules, so Collie read no box and refused the send. The same arrow row is read between the band's blank edges, and the older block-rule box still matches.
+
 ## [1.24.0+collie.5] - 2026-10-26
 
 ### Added

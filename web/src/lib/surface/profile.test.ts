@@ -611,7 +611,7 @@ const SPEC14_CASES: readonly Spec14Case[] = [
     binary: "cursor-agent",
     versionOutput: "2026.10.16-e3cb207\n",
     version: "2026.10.16",
-    above: "2026.10.20",
+    above: "2026.10.23",
     takes: [
       { anchor: "top", row: ` ${"▄".repeat(40)}` },
       { anchor: "prompt", row: "  → hello there", draft: "hello there" },

@@ -2995,6 +2995,7 @@ operator's own statusline. The captures back the `cursor` input profile.
 | `cursor--after-skip.txt` | Escape on that approval: a box with `→ Tell the agent what to do instead (Enter to send, empty to skip, Esc to cancel)` and no statusline under it. The profile does not list that hint, so the box reads as a draft and a send stops. Labelled `other` |
 | `cursor--shell-mode-empty.txt`, `cursor--shell-mode-draft.txt` | `!` turned the box into a shell prompt: a yellow `!` and the grey hint `Run a command — e.g., git status`, then `! echo hi`. The hint is not a placeholder of the profile, so an empty shell prompt reads as a draft and a message never goes into it. Labelled `draft` |
 | `cursor--v20261016-idle-after-queued.txt` | 2026.10.16: a send held during a turn went out when the turn ended (`queued note from collie` in the transcript), and the box is empty again. Labelled `idle` |
+| `cursor--v20261022-idle.txt` | 2026.10.22: the box is a filled band. Blank edges, `→ Add a follow-up` in grey with the cursor on the first letter, then the status row. Labelled `idle` |
 
 ## The slash list under the box, 2.1.302 (reconstructed 2026-10-17, not captured)
 
