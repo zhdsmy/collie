@@ -9,6 +9,10 @@ const submitted = readFileSync(new URL("../src/fixtures/panes/hermes--submitted-
 const modern = readFileSync(new URL("../src/fixtures/panes/hermes--v0224-modern-done.txt", import.meta.url), "utf8");
 const model = "example-model-with-a-very-long-name";
 const history = Array.from({ length: 80 }, (_, i) => `Earlier response ${i}.`).join("\n") + "\n";
+// Source-derived: top_rule_fragments fills the row with activity and _fit adds an ellipsis.
+const longActivity = ["Assistant reply remains visible", `── ⠋ Running ${"x".repeat(64)}...`,
+  "☤ ❯ \x1b[3m输入以改变本轮方向 · Tab 排到之后\x1b[0m", "─".repeat(80),
+  " ☤ lab-model · 16K/128K · [█░░░░░░░░░] 12%"].join("\n");
 
 async function tabIsVisible(tab: Locator): Promise<boolean> {
   return tab.evaluate((el) => {
@@ -21,6 +25,38 @@ async function tabIsVisible(tab: Locator): Promise<boolean> {
 test.use({ serviceWorkers: "block" });
 
 for (const width of [320, 390]) {
+  test(`Hermes full-width activity keeps fixed status: ${width}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.addInitScript(() => {
+      localStorage.setItem("collie:locale:v1", "en");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+    });
+    await installApiStub(page);
+    let text = longActivity;
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, i) => i === 0
+        ? { ...agent, agent: "hermes", status: text === longActivity ? "working" : "done" } : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+      paneId: "w1:p1", text, truncated: false, revision: text === longActivity ? 1 : 2,
+    } }));
+    await page.goto("/pane/w1:p1");
+    const status = page.getByText("lab-model", { exact: true });
+    await expect(status).toBeVisible();
+    await expect(page.getByText("Assistant reply remains visible", { exact: true })).toBeVisible();
+    await expect(page.locator("pre")).not.toContainText("输入以改变本轮方向");
+    const statusBox = await status.boundingBox();
+    const composerBox = await page.getByRole("textbox").first().boundingBox();
+    expect(statusBox!.y + statusBox!.height).toBeLessThan(composerBox!.y);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await page.screenshot({ path: testInfo.outputPath("long-activity.png"), animations: "disabled" });
+    text = modern;
+    await expect(page.getByText("deepseek-flash", { exact: true })).toBeVisible();
+    await expect(page.getByText("HERMES_UPGRADE_OK", { exact: true })).toBeVisible();
+    await expect(status).toHaveCount(0);
+  });
+
   test(`Hermes modern reply stays visible: ${width}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript(() => {

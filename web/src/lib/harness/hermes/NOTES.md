@@ -1,5 +1,28 @@
 # Hermes CLI display adaptation — 2026-09-10
 
+## Full-width activity and disappearing status — 2026-10-28
+
+Hermes 0.22.5 `cli_modern_layout.top_rule_fragments` can fill its top border with
+`── {braille spinner} {activity}`. It drops the session title and closing dash;
+`_fit` truncates overflowing activity with `...`. Requiring a final dash made the
+whole composer fail recognition, leaving its native input and status in Mirror.
+The existing five-second status hold only delayed that failure.
+
+Display and send readers now accept the native ten-frame spinner prefix without
+a closing dash. Equal-width closed frames, immediate prompts, tail checks and
+unknown-state refusals remain. Narrow send frames exclude the native status row
+(` ☤ model`, with a leading space) from the draft; the flush-left busy prompt
+still takes text containing ` · `. The profile remains provisional on 0.22.5.
+
+Source-derived tests cover all ten frames at 50/80/120 columns, ellipsis and exact
+fits, preserved replies/drafts, unknown activity and torn footers. The installed
+Python renderer independently produced the same missing-dash rows at those widths.
+An isolated loopback send through the real CLI and SendProtocol returned `sent`
+with `probe, Backspace, Enter`. The full-width busy row was not reached in that
+interactive run; its coverage is source-renderer output and replay. Owned test
+sessions and the isolated gateway were removed. These checks do not certify the
+whole CLI or provider behavior.
+
 ## Modern footer and missing replies — 2026-10-22
 
 The reported live Hermes 0.22.4 (`647bc64`) uses modern layout: a titled/activity

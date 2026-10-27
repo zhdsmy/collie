@@ -19,7 +19,7 @@
   "idle": {
     "frame": {
       "top": {
-        "pattern": "^─{2,}(?: [\\s\\S]*─)?$",
+        "pattern": "^(?:─{2,}(?: [\\s\\S]*─)?|── [⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] \\S[\\s\\S]*)$",
         "minCells": 64,
         "column": 0
       },
@@ -71,7 +71,7 @@
       {
         "walk": "interior",
         "top": {
-          "pattern": "^─{2,}(?: [\\s\\S]*─)?$",
+          "pattern": "^(?:─{2,}(?: [\\s\\S]*─)?|── [⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] \\S[\\s\\S]*)$",
           "minCells": 8,
           "column": 0
         },
@@ -84,7 +84,7 @@
           "column": 0,
           "open": true
         },
-        "rows": "^(?![╭╰│]|─{64,}$).*$",
+        "rows": "^(?![╭╰│]|─{64,}$| (?:[^│☤]{1,20} │ )?☤ \\S).*$",
         "continuationIndent": 0,
         "maxDraftRows": 8,
         "maxTailRows": 16

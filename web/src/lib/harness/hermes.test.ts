@@ -152,6 +152,37 @@ describe("Hermes modern footer", () => {
     expect(stripChrome(rows)).toEqual([]);
   });
 
+  it.each([50, 80, 120])("keeps the statusline through full-width activity at %i columns", (width) => {
+    // Hermes top_rule_fragments drops the closing rule when activity fills the row.
+    for (const spinner of "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏") for (const ending of ["...", "ing"]) {
+      const top = `── ${spinner} Running ${"x".repeat(width - 16)}${ending}`;
+      const prompt = width < 64 ? "☤ typed draft" : "☤ ❯ typed draft";
+      const rows = splitLines(parseAnsi(["Assistant reply", top, prompt,
+        ...(width < 64 ? [] : ["─".repeat(width)]), " ☤ lab-model"].join("\n")));
+      expect(locateInput(rows)?.state).toBe("running");
+      expect(hermesAdapter.extractInputDraft(rows)).toBe("typed draft");
+      expect(hermesAdapter.extractStatusLines(rows).map(lineText)).toEqual([" ☤ lab-model"]);
+      expect(rowsOf(stripChrome(rows))).toEqual(["Assistant reply"]);
+    }
+  });
+
+  it("keeps unrecognized or torn activity footers raw", () => {
+    const top = "── ⠋ Running " + "x".repeat(64) + "...";
+    const footer = [top, "☤ ❯ typed draft", "─".repeat(80), " ☤ lab-model"];
+    for (const tail of [
+      [top, footer[1]!, footer[3]!],
+      [top, footer[1]!, "─".repeat(81), footer[3]!],
+      [top.replace("⠋", "◇"), ...footer.slice(1)],
+      [top.replace("── ⠋ ", "Activity: "), ...footer.slice(1)],
+      [...footer, "Further assistant reply"],
+    ]) {
+      const rows = splitLines(parseAnsi(tail.join("\n")));
+      expect(locateInput(rows)).toBeNull();
+      expect(stripChrome(rows)).toEqual(rows);
+      expect(hermesAdapter.extractStatusLines(rows)).toEqual([]);
+    }
+  });
+
   it("keeps the modal binding complete when the status bar moves below its input", () => {
     const rows = load("hermes--clarify-choices.txt");
     const frame = locateInput(rows)!;

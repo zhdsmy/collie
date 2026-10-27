@@ -306,6 +306,12 @@ and "which kinds are there" is now three answers, not two.
 These rules cover backups and staging created by agents during manual deployments; do not change
 the application's own updater behavior as part of housekeeping.
 
+On a macOS host with folder-access grants, sign the staged binary with the established identity
+and identifier **before** replacing the installed binary. Follow `CLAUDE.local.md` for the host's
+keychain and expected designated requirement; verify that requirement before activation and again
+on the installed binary. Never replace it with a build's ad-hoc signature or recreate its certificate:
+changing that identity makes macOS request Documents access again.
+
 - **One backup location.** Put rollback bundles under the configured Collie state directory's
   `deploy-backups/`, in a unique directory named for the deployment. A bundle holds the previous
   binary, frontend, checkout SHA, and build identifier. Record the SHA instead of copying a whole

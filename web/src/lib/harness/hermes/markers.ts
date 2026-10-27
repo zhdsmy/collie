@@ -33,7 +33,8 @@ export function isRule(text: string): boolean {
 
 /** Modern chrome adds activity and/or a session title to the top input rule. */
 export function isInputRule(text: string): boolean {
-  return isRule(text) || /^─{2,} [\s\S]*─$/.test(text);
+  // Native activity can fill the row, leaving no closing dash (top_rule_fragments).
+  return isRule(text) || /^─{2,} [\s\S]*─$/.test(text) || /^── [⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] \S/.test(text);
 }
 
 /** Hermes drops the rule under the input below this width (`_use_minimal_tui_chrome`), and with it

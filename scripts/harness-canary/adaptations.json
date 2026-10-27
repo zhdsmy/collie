@@ -1967,10 +1967,13 @@
       "origin": "upstream-patched",
       "sources": [
         "web/src/lib/harness/hermes/chrome.ts",
+        "web/src/lib/harness/hermes/markers.ts",
+        "web/src/lib/surface/profiles/hermes.json",
         "web/src/components/statusline-row.tsx"
       ],
       "tests": [
         "web/src/lib/harness/hermes.test.ts",
+        "web/src/lib/surface/frame.test.ts",
         "web/src/components/statusline-row.test.tsx",
         "web/src/components/agent-chat.test.tsx",
         "web/e2e/hermes-chrome.spec.ts"

@@ -126,6 +126,17 @@ describe("Hermes bordered composer", () => {
     expect(runningSign(busy, frame, idle.runningRows, idle.runningPrompt)).toBe(true);
   });
 
+  it.each([50, 80, 120])("reads native full-width busy activity at %i columns", (columns) => {
+    const top = `── ⠋ Running ${"x".repeat(columns - 16)}...`;
+    const rows = splitLines(parseAnsi([top, columns < 64 ? "☤ typed draft · more" : "☤ ❯ typed draft · more",
+      ...(columns < 64 ? [] : ["─".repeat(columns)]), " ☤ lab-model"].join("\n")));
+    const frame = findInputFrame(rows, idle);
+    expect(frame).toMatchObject({ interior: { text: "typed draft · more" } });
+    expect(runningSign(rows, frame!, idle.runningRows, idle.runningPrompt)).toBe(true);
+    const unknown = rows.toSpliced(0, 1, ...splitLines(parseAnsi(top.replace("⠋", "◇"))));
+    expect(findInputFrame(unknown, idle)).toBeNull();
+  });
+
   it.each(["⚠", "?", "🔐", "🔑", "⚙", "●", "◉", "🎤", "⠋"])("never treats the %s state prompt as idle", (icon) => {
     const text = readFileSync(join(PANES_DIR, "hermes--v0221-zh-idle.txt"), "utf8");
     expect(findInputFrame(splitLines(parseAnsi(text.replace("❯ ", `${icon} ❯ `))), idle)).toBeNull();
