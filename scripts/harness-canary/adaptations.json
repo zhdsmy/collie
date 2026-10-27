@@ -2564,13 +2564,29 @@
             "block": "prompt-select",
             "minOptions": 1
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-12-6-ask-plan-mode--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-12-6-ask-previews--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
         }
       ],
       "live": false,
       "verified": {
-        "version": "18.10.0",
-        "date": "2026-10-13",
-        "how": "upstream captured ANSI replay; recognition only, no local live probe",
+        "version": "18.12.6",
+        "date": "2026-10-27",
+        "how": "upstream 18.6.1 and 18.12.6 captured ANSI replay; recognition only, no local live probe",
         "evidence": "web/src/lib/harness/omp/ASK_NOTES.md"
       }
     },
@@ -2594,14 +2610,38 @@
             "block": "prompt-select",
             "minOptions": 2
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-12-6-approval-bash--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-12-6-approval-task--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-6-1-approval-goal--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select",
+            "minOptions": 2
+          }
         }
       ],
       "live": false,
       "verified": {
-        "version": "18.4.10",
-        "date": "2026-10-03",
-        "how": "upstream captured ANSI replay; recognition only",
-        "evidence": "web/src/fixtures/panes/omp--v18-4-approval-bash.txt"
+        "version": "18.12.6",
+        "date": "2026-10-27",
+        "how": "upstream 18.6.1 and 18.12.6 captured ANSI replay; recognition only, no local live probe",
+        "evidence": "web/src/lib/harness/omp/APPROVAL_NOTES.md"
       }
     },
     {

@@ -69,7 +69,7 @@ import { paneSurface } from "@/lib/send-slot";
 import { answerAsk, cardHashOf, type AskTapResult } from "@/lib/dialog-ask";
 import { holdAskOfNote, screenCardMayAnswer } from "@/lib/surface/hold";
 import { askOptionFor } from "@/lib/ask-reply";
-import { cancelWalky, dropWalky, refreshNow } from "@/lib/api";
+import { cancelHeldSend, cancelWalky, dropWalky, refreshNow } from "@/lib/api";
 import { describeThrownError } from "@/lib/api-error-message";
 import { sameKeys } from "@/lib/harness/prompt-model";
 import { askOf, type Ask } from "@/lib/surface/surface";
@@ -90,7 +90,11 @@ import { paneGitHead } from "@/lib/git-head";
 import { CacheSheet } from "@/components/cache-sheet";
 import { PaneActionsSheet } from "@/components/pane-actions-sheet";
 import { CardWaitingCtx } from "@/components/chat-cards";
-import { chatStatusKey, SavedCopyRow, SessionStream, sharedFolderLine } from "@/components/session-stream";
+import { chatStatusKey, SavedCopyRow, SessionStream, sharedFolderLine, type QueuedCardAction } from "@/components/session-stream";
+import { readingRefusal } from "@/components/send-notice";
+import { sendText } from "@/lib/reply-action";
+import type { IntentId } from "@/lib/durable-control";
+import { RETURNED_CARD_DROPPED } from "@/lib/surface/send";
 import { PaneSettingsSheet } from "@/components/pane-settings-sheet";
 import { WalkyOpenProvider } from "@/components/walky-log";
 import { paneAddress, takeBackNote } from "@/lib/walky";
@@ -101,7 +105,7 @@ import { HostStaleBanner } from "@/components/host-stale-banner";
 import { useAmbientHost, useHostHealth, useCrew } from "@/components/crew-provider";
 import { HostChip } from "@/components/host-chip";
 import { MaskedHint } from "@/components/masked-hint";
-import { ModelTag } from "@/components/model-tag";
+import { hasFigure, ModelTag } from "@/components/model-tag";
 import { useModelOnScreen } from "@/hooks/use-model-on-screen";
 import { modelLabel } from "@/lib/model-label";
 import { useMaskedHintRetired } from "@/lib/masked-hint";
@@ -150,6 +154,7 @@ import { hasJournalAdapter, reportsSessionOnFirstPrompt } from "@/lib/journal-ag
 import { journalReadingOf, paneBody, type JournalReading } from "@/lib/chat-gate";
 import { paneRowKey, paneScope } from "@/lib/hosts";
 import { isLead, paneScopeKey } from "@/lib/scope";
+import { openReport } from "@/lib/report/store";
 import { answerRouteFor, textRouteFor } from "@/lib/send-path";
 import { useSessionCard, wearsExperimental } from "@/lib/session-cards";
 import { usePins } from "@/lib/pins";
@@ -919,6 +924,8 @@ export function AgentChat({
   );
   const statusLineShown = useHarnessStatusLineShown(agent?.agent);
   const usageVisible = grammarsOn && statusLineShown && (agent?.usage?.context !== undefined || agent?.usage?.limits?.some((limit) => limit.window === "5h" || limit.window === "7d"));
+  // Context and limits already live in the compact strip; cost remains in the model tag.
+  const modelTagUsage = usageVisible ? { cost: agent?.usage?.cost } : agent?.usage;
   const statuslineVisible = (statusLineShown && heldStatuslineRows.length > 0) || usageVisible || showWriteHost;
   // Claude paints its own `new task? /clear to save N tokens` tip under the statusline, and it is a
   // TIP rather than a status field: the strip drops the sentence and the actions belt carries it as a
@@ -2205,6 +2212,70 @@ export function AgentChat({
     [refuseWrite, paneId, scope, revalidator],
   );
 
+  // A tap on a receipt card (ADR 0122). Send or Discard on a returned card is a NEW request that names
+  // the card in `resendOf` with an empty text: the bridge acts on its own copy of the text, never the
+  // phone's (it may be masked), after a fresh read of the box under the pane lock. An answer that never
+  // came keeps its intent, so a second tap asks with the same request id and never sends twice. Discard
+  // on an unconfirmed card goes through the held-cancel route, which drops the card and presses nothing.
+  const returnedIntents = useRef(new Map<string, IntentId>());
+  const handleReturned = useCallback(
+    async (requestId: string, action: QueuedCardAction): Promise<boolean> => {
+      const refusal = refuseWrite();
+      if (refusal) {
+        setStatus(refusal, "error");
+        return false;
+      }
+      if (dialogPresentRef.current) {
+        setStatus(t("chat.status.screenChanged"), "warn");
+        return false;
+      }
+      if (!isLive(paneId, scope)) {
+        setStatus(t("composer.send.reconnect"), "error");
+        return false;
+      }
+      if (action === "dismiss") {
+        try {
+          const answer = await cancelHeldSend(requestId, paneId, scope);
+          if (answer.result === "refused") {
+            setStatus(t("chat.status.sendFailed"), "error");
+            return false;
+          }
+          revalidator.revalidate();
+          return true;
+        } catch (e) {
+          setStatus(describeThrownError(e), "error");
+          return false;
+        }
+      }
+      const key = `${requestId}\u0000${action}`;
+      const result = await sendText({ paneId, scope, text: "", mode: action, resendOf: requestId, held: returnedIntents.current.get(key) ?? null });
+      if (result.status === "noAnswer") {
+        returnedIntents.current.set(key, result.intent);
+        setStatus(result.error, "error");
+        return false;
+      }
+      returnedIntents.current.delete(key);
+      if (result.status === "refused") {
+        setStatus(result.error, "error");
+        return false;
+      }
+      if (result.reading.clear || result.reading.note === "discarded") {
+        setStatus(t(action === "submit" ? "chat.status.sent" : "composer.protocol.discarded"), "success");
+        revalidator.revalidate();
+        return true;
+      }
+      // Discard on a box that changed since: the bridge pressed nothing and dropped only the card.
+      if (result.reply.detail === RETURNED_CARD_DROPPED) {
+        setStatus(t("chat.status.returnedDropped"), "warn");
+        revalidator.revalidate();
+        return true;
+      }
+      setStatus(readingRefusal(result.reading).sentence, "error");
+      return false;
+    },
+    [refuseWrite, paneId, scope, revalidator],
+  );
+
   // NOTE: the composer is deliberately NOT auto-focused on open/switch — that would pop the Android
   // keyboard and cover the output. You read the pane first, then tap the input to type. (Explicit
   // actions inside the composer still focus it; the mirror tap focuses it via composerRef.)
@@ -3045,6 +3116,12 @@ export function AgentChat({
                       ? undefined
                       : handleSendQueuedNow
                   }
+                  // The same gates: a returned card acts on the input box.
+                  onReturned={
+                    readOnly || hostBlock !== undefined || actsDisabledByCache || connecting || dialogPresent || !paneLive
+                      ? undefined
+                      : handleReturned
+                  }
                 />
               </CardWaitingCtx.Provider>
               </WalkyOpenProvider>
@@ -3220,8 +3297,15 @@ export function AgentChat({
               className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-3 pb-2"
             />
             {/* The pane's model and its usage dots, small on the mirror's bottom-right corner, over both
-                bodies alike and under the notice slot above (model-tag.tsx says why there). */}
-            <ModelTag model={modelOnScreen ? undefined : agent?.model} effort={agent?.effort} />
+                bodies alike and under the notice slot above (model-tag.tsx says why there). With a
+                gauge or a cost to draw, the tag is the whole row Claude Code has, model first, whatever the
+                screen prints (Altan, 2026-10-25); a model ALONE stands down while the screen names
+                it, the duplicate `modelOnScreen` exists to avoid. */}
+            <ModelTag
+              model={modelOnScreen && !hasFigure(modelTagUsage) ? undefined : agent?.model}
+              effort={agent?.effort}
+              usage={modelTagUsage}
+            />
           </div>
 
           {/* Own a layout row, so the progress controls can never cover the picker's footer. */}
@@ -3500,6 +3584,8 @@ export function AgentChat({
                   stale={actsDisabledByCache}
                   agent={agent?.agent}
                   canSteer={agent?.canSteer}
+                  // A queued message Stop gave back stands in the box: a draft refusal points at its card (ADR 0122).
+                  returnedDraft={chatFeed.window.queuedSends.some((row) => row.state === "returned")}
                   isShell={isShell}
           externalBusy={modelSwitching || modeSwitching !== null}
           onWritingChange={setComposerWriting}
@@ -3761,6 +3847,8 @@ export function AgentChat({
           onSettings={gridless && !programReceipts ? undefined : () => setDrawer("paneSettings")}
           // The pane's walky talky messages (M62), a read row with the others. A member's pane too: the
           // lead forwards its list from that member's own log (CREW_PROTOCOL.md §21).
+          // Report a problem (ADR 0123): this machine's panes only, since the bridge reads no member's pane yet.
+          onReport={isLead(scope) ? () => openReport({ paneId, scope }) : undefined}
           onMessages={
             messagesSheet
               ? () => {
