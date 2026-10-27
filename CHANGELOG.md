@@ -23,8 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.24.1+collie.3] - 2026-10-28
+
 ### Fixed
-- **Hermes keeps its fixed statusline during long activity updates.** Recognize the native ten-frame activity prefix when its text fills the composer border, including ellipsis truncation. Keep complete-frame checks and exclude modern status fields from narrow composer drafts; do not extend the status hold timer or relax send readback guards.
+- **Hermes keeps its fixed statusline during long activity updates.** Recognize the native ten-frame activity prefix when its text fills the composer border, including ellipsis truncation. Keep complete-frame checks and exclude modern status fields from narrow composer drafts; do not extend the status hold timer or relax send readback guards. ([79ff5abcb](https://github.com/zhdsmy/collie/commit/79ff5abcb))
 
 ## [1.24.1+collie.2] - 2026-10-27
 
