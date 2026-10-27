@@ -51,14 +51,14 @@ describe("ActionsRow", () => {
   });
 
   it("draws the general actions on a pane whose harness has no bar at all", () => {
-    render(<ActionsRow general={[general()]} agent="hermes" onRun={took} />);
+    render(<ActionsRow general={[general()]} agent="kiro" onRun={took} />);
     expect(names()).toEqual(["Keys"]);
   });
 
   it("costs no height when there is neither a general action nor a harness bar", () => {
     // With nothing to carry, the row must not render an empty scroller — that would spend 12px on
     // nothing.
-    const { container } = render(<ActionsRow general={[]} agent="hermes" onRun={took} />);
+    const { container } = render(<ActionsRow general={[]} agent="kiro" onRun={took} />);
     expect(container).toBeEmptyDOMElement();
   });
 

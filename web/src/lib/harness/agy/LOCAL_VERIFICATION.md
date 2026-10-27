@@ -1,4 +1,27 @@
-# AGY 1.4.4 / 1.4.5 / 1.4.7 UI checks — 2026-10-26
+# AGY 1.4.4 / 1.4.5 / 1.4.7 / 1.4.8 UI checks — 2026-10-27
+
+## `/usage` (`Models & Quota`) and `/context` (`Context Usage`) scroll-panel cards — AGY 1.4.8 (2026-10-27)
+
+An owned AGY 1.4.8 Herdr canary (`collie-canary`) exercised `/usage`
+(`└ Models & Quota`) and `/context` (`└ Context Usage`) at 119 and 50 columns:
+
+- **`detectScrollPanelRegion` (`modals.ts`):**
+  Both `/usage` (`UsageModel`) and `/context` (`ContextModel`) render inside
+  AGY's `scrollPanel` with a top `└ <Title>` heading, an optional `(a–b of n lines)`
+  counter, and a `·`-separated footer (`↑/↓ Scroll · pgup/pgdown Page · ctrl+end Bottom · ctrl+home Top · esc Close`,
+  wrapped onto two rows at 50 columns) above the statusline. `detectAgyModalRegion`
+  lifts them into `MenuModel` cards (`title: "Models & Quota"` / `"Context Usage"`,
+  `nav: { upDown: true }`, `actions: [{ label: "Close", keys: ["Escape"], cancel: true }]`),
+  framing the native quota/context terminal output inside the card while
+  providing `[ ↑ ] [ ↓ ]` scroll buttons and one-tap `[ Close ]` (`Escape`) and
+  preserving the bottom statusline (`statusStartLine`).
+- **Composer lock (`chrome.ts`) and command catalog (`agent-commands.ts`):**
+  `dialogUnder` now also matches `\besc\s+close\b` and `^└ (?:Models & Quota|Context Usage)\s*$`
+  so `composerReady` always fails closed while a scroll panel is open. `AGY` in
+  `agent-commands.ts` adds `/usage` and `/context` as no-arg common commands.
+- Sanitized captures are checked in as `agy--v147-usage--w119.txt` and
+  `agy--v147-usage--w50.txt`. The owned canary session and temporary workspace
+  were removed; user sessions received no input.
 
 ## Mid-turn Sending (`Queue` / `Steer`) — AGY 1.4.7 (2026-10-26)
 

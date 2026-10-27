@@ -1092,6 +1092,18 @@ describe("AGY native Keyboard modals (1.4.7)", () => {
         ["Close", ["Escape"]],
       ],
     ],
+    [
+      "agy--v147-usage--w119.txt",
+      "Models & Quota",
+      { upDown: true },
+      [["Close", ["Escape"]]],
+    ],
+    [
+      "agy--v147-usage--w50.txt",
+      "Models & Quota",
+      { upDown: true },
+      [["Close", ["Escape"]]],
+    ],
   ])("%s lifts into a safe MenuModel card without unread-dialog", (name, title, nav, actions) => {
     const lines = load(name);
     for (const adapter of [agyAdapter, antigravityAdapter]) {
@@ -1135,6 +1147,34 @@ describe("AGY native Keyboard modals (1.4.7)", () => {
       expect(menuBlock.menu.title).toBe("Artifacts");
       expect(menuBlock.menu.nav).toEqual({ upDown: false });
       expect(menuBlock.menu.actions.map((a) => [a.label, a.keys])).toEqual([["Dismiss", ["Escape"]]]);
+    }
+  });
+
+  it("lifts the Context Usage scroll panel ('└ Context Usage') as a MenuModel card", () => {
+    const contextUsage = [
+      RULE,
+      ">",
+      RULE,
+      "\x1b[1m\x1b[38;5;7m└ Context Usage\x1b[0m",
+      "□ □ □ □ □ □ □ □     Gemini 4 Argon (High) · 0/1.0M tokens",
+      "□ □ □ □ □ □ □ □     Estimated usage (awaiting generation)",
+      "□ □ □ □ □ □ □ □     □ Free space: 1.0M (100.0%)",
+      "",
+      "Related: /artifact · /skill · /rewind",
+      "  ↑/↓ Scroll · pgup/pgdown Page · ctrl+end Bottom · ctrl+home Top · esc Close",
+      "Gemini 4 Argon (High)  idle  ctx 100%",
+    ].join("\n");
+    const lines = splitLines(parseAnsi(contextUsage));
+    expect(agyAdapter.composerReady!(lines)).toBe(false);
+    expect(agyAdapter.extractStatusLines!(lines)).toHaveLength(1);
+    const blocks = buildBlocks(lines, { agent: "agy" });
+    expect(blocks.some((b) => b.kind === "unread-dialog")).toBe(false);
+    const menuBlock = blocks.find((b) => b.kind === "menu");
+    expect(menuBlock?.kind).toBe("menu");
+    if (menuBlock?.kind === "menu") {
+      expect(menuBlock.menu.title).toBe("Context Usage");
+      expect(menuBlock.menu.nav).toEqual({ upDown: true });
+      expect(menuBlock.menu.actions.map((a) => [a.label, a.keys])).toEqual([["Close", ["Escape"]]]);
     }
   });
 

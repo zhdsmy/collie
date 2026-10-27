@@ -311,6 +311,16 @@
       "version": "1.4.7",
       "state": "dialog"
     },
+    "agy--v147-usage--w119.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
+    "agy--v147-usage--w50.txt": {
+      "harness": "agy",
+      "version": "1.4.7",
+      "state": "dialog"
+    },
     "claude--autocomplete-slash-clipped.txt": {
       "harness": "claude",
       "version": "unversioned",

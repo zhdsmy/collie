@@ -23,6 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.24.1+collie.2] - 2026-10-27
+
+### Added
+- **Antigravity (`agy`) `/usage` (`Models & Quota`) and `/context` (`Context Usage`) scroll panels lift into scrollable `MenuModel` cards.** `detectAgyModalRegion` in `web/src/lib/harness/agy/modals.ts` recognizes AGY's `scrollPanel` headings (`└ Models & Quota` and `└ Context Usage`) and their single- or multi-line `↑/↓ Scroll · pgup/pgdown Page · ctrl+end Bottom · ctrl+home Top · esc Close` footer across wide (119-column) and narrow (50-column) viewports, framing the native quota and context terminal view inside a card with `[ ↑ ] [ ↓ ]` scroll controls and a one-tap `[ Close ]` (`Escape`) button while preserving the bottom statusline. `dialogUnder` in `web/src/lib/harness/agy/chrome.ts` also fails `composerReady` closed on `esc Close` and `└ Models & Quota` / `└ Context Usage`, and `AGY` in `web/src/lib/agent-commands.ts` adds `/usage` and `/context` as common slash commands.
+
 ## [1.24.1+collie.1] - 2026-10-27
 
 **Urgent.** Since 1.22.0 omp panes can refuse, hold or silently lose sends, and a Claude send during a turn can be held or end "may have arrived".

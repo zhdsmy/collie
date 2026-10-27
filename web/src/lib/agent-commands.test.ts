@@ -159,6 +159,8 @@ describe("commandsFor", () => {
       "/effort",
       "/resume",
       "/rewind",
+      "/usage",
+      "/context",
       "/agents",
       "/skills",
       "/tasks",

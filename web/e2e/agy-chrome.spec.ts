@@ -378,3 +378,38 @@ test("AGY /effort scale chips and /settings stacked controls render cleanly at 3
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
   await page.screenshot({ path: testInfo.outputPath("agy-settings-w119.png") });
 });
+
+for (const cols of [119, 50]) {
+  test(`AGY /usage Models & Quota panel lifts into a scrollable card with Close: ${cols} columns`, async ({ page }, testInfo) => {
+    const text = readFileSync(new URL(`../src/fixtures/panes/agy--v147-usage--w${cols}.txt`, import.meta.url), "utf8");
+    await page.setViewportSize({ width: 320, height: 844 });
+    await page.addInitScript(() => {
+      localStorage.setItem("collie:locale:v1", "en");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+    });
+    await installApiStub(page);
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, index) => index === 0
+        ? Object.assign({}, agent, { agent: "agy", status: "idle", hasSession: false }) : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+      paneId: "w1:p1", text, revision: 1,
+    } }));
+    await page.goto("/pane/w1:p1");
+    await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
+    const card = page.getByRole("group", { name: "Models & Quota", exact: true });
+    await expect(card).toBeVisible();
+    await expect(card.getByText("GEMINI MODELS", { exact: false })).toBeVisible();
+    for (const name of ["Move up", "Move down", "Close"]) {
+      const button = card.getByRole("button", { name, exact: true });
+      await button.scrollIntoViewIfNeeded();
+      await expect(button).toBeInViewport();
+    }
+    const strip = page.locator('[data-slot="agy-statusline"]');
+    await expect(strip).toHaveCount(1);
+    await expect(strip.getByRole("img", { name: "idle", exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+    await page.screenshot({ path: testInfo.outputPath(`agy-usage-w${cols}.png`) });
+  });
+}

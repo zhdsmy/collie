@@ -3571,13 +3571,29 @@
             "block": "menu",
             "statusLinesMin": 1
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-usage--w119.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/agy--v147-usage--w50.txt",
+          "agent": "agy",
+          "expect": {
+            "block": "menu",
+            "statusLinesMin": 1
+          }
         }
       ],
       "live": false,
       "verified": {
-        "version": "1.4.7",
-        "date": "2026-10-24",
-        "how": "owned native Herdr session at 119 columns: /rewind, /agents, /skills, /tasks, /mcp, /settings, and /permissions opened, recognized as MenuModel cards with preserved statuslines, and closed via submitMenuKeys Escape; 320px Chromium/WebKit replay",
+        "version": "1.4.8",
+        "date": "2026-10-27",
+        "how": "owned native Herdr session at 119 and 50 columns: /usage (Models & Quota), /context (Context Usage), /rewind, /agents, /skills, /tasks, /mcp, /settings, and /permissions opened, recognized as MenuModel cards with preserved statuslines, scrolled via Up/Down, and closed via submitMenuKeys Escape; 320px Chromium/WebKit replay",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },

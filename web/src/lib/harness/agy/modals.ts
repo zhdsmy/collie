@@ -1,4 +1,4 @@
-// Native `Keyboard:` modals in Antigravity CLI 1.4.7 (live 2026-10-24):
+// Native `Keyboard:` and `scrollPanel` modals in Antigravity CLI 1.4.7 / 1.4.8 (live 2026-10-27):
 //
 //   - `/rewind`      (`RewindModel`      — `Rewind Conversation`)
 //   - `/agents`      (`AgentsModel`      — `Available Agents`)
@@ -7,13 +7,16 @@
 //   - `/mcp`         (`MCPModel`         — `MCP Servers`)
 //   - `/settings`    (`SettingsModel`    — `Settings`)
 //   - `/permissions` (`PermissionsModel` — `Permission Config Editor` / `Permissions — ...`)
+//   - `/usage`       (`UsageModel`       — `└ Models & Quota`)
+//   - `/context`     (`ContextModel`     — `└ Context Usage`)
 //
-// Every one of these modals paints a `Keyboard: ...` footer below the dormant composer box. Because
-// `dialogUnder` in `chrome.ts` blocks `composerReady` whenever `^Keyboard:\s` appears below the box,
-// leaving them unadapted drops the phone onto the yellow `unread-dialog` error banner. Lifting them
-// conservatively into `MenuModel` provides safe Up/Down navigation, Enter (when a pointed item and
-// safe Enter hint exist), and Escape to close/go back, while omitting destructive single-key
-// shortcuts (`k Kill Active Subagent`, `k Kill Task`, `x Remove Task From List`, `d Delete rule`).
+// Every one of these modals paints a `Keyboard: ...` or `↑/↓ Scroll · ... · esc Close` footer below
+// the dormant composer box. Because `dialogUnder` in `chrome.ts` blocks `composerReady` whenever
+// those footers appear below the box, leaving them unadapted drops the phone onto the yellow
+// `unread-dialog` error banner. Lifting them conservatively into `MenuModel` provides safe Up/Down
+// navigation, Enter (when a pointed item and safe Enter hint exist), and Escape to close/go back,
+// while omitting destructive single-key shortcuts (`k Kill Active Subagent`, `k Kill Task`,
+// `x Remove Task From List`, `d Delete rule`).
 import { lineText, type StyledLine } from "../../blocks";
 import type { MenuAction, MenuModel } from "../menu-model";
 import { isBoxBorder } from "./markers";
@@ -26,6 +29,14 @@ export interface AgyModalRegion {
 }
 
 const KEYBOARD = /^Keyboard:\s/;
+const SCROLL_PANEL_CLOSE =
+  /^\s{2,}(?:(?:↑\/↓ Scroll|pgup\/pgdown Page|ctrl\+end Bottom|ctrl\+home Top)\s*·\s*)*esc Close\s*$/i;
+const SCROLL_PANEL_CONT =
+  /^\s{2,}(?:↑\/↓ Scroll|pgup\/pgdown Page|ctrl\+end Bottom|ctrl\+home Top)(?:\s*·\s*(?:pgup\/pgdown Page|ctrl\+end Bottom|ctrl\+home Top))*\s*$/i;
+const SCROLL_PANEL_FOOTER =
+  /^(?:↑\/↓ Scroll · pgup\/pgdown Page · ctrl\+end Bottom · ctrl\+home Top · )?esc Close$/i;
+const SCROLL_PANEL_STATUS_ROWS = 2;
+const SCROLL_PANEL_FOOTER_ROWS = 3;
 const POINTER = /^>\s+\S/;
 const SEARCH_RULE = /^\s{10,}─{10,}$/;
 const PROMPTS_FOR_A_KEY = /\b(?:press|hit)\s+\S+\s+to\b|\[y\/n\]|\(y\/n\)/i;
@@ -164,6 +175,14 @@ export function detectAgyModalRegion(lines: StyledLine[]): AgyModalRegion | null
   while (end >= 0 && texts[end]!.trim() === "") end--;
   if (end < 0) return null;
 
+  return detectKeyboardModalRegion(lines, texts, end) ?? detectScrollPanelRegion(lines, texts, end);
+}
+
+function detectKeyboardModalRegion(
+  lines: StyledLine[],
+  texts: string[],
+  end: number,
+): AgyModalRegion | null {
   let keyboard = end;
   while (keyboard >= 0 && end - keyboard < 8 && !KEYBOARD.test(texts[keyboard]!)) keyboard--;
   if (keyboard < 0 || !KEYBOARD.test(texts[keyboard]!)) return null;
@@ -221,6 +240,86 @@ export function detectAgyModalRegion(lines: StyledLine[]): AgyModalRegion | null
         },
       };
     }
+  }
+
+  return null;
+}
+
+function detectScrollPanelRegion(
+  lines: StyledLine[],
+  texts: string[],
+  end: number,
+): AgyModalRegion | null {
+  let escRow = -1;
+  let seen = 0;
+  for (let i = end; i >= 0 && seen <= SCROLL_PANEL_STATUS_ROWS; i--) {
+    if (texts[i]!.trim() === "") continue;
+    if (SCROLL_PANEL_CLOSE.test(texts[i]!)) {
+      escRow = i;
+      break;
+    }
+    if (i === end && !STATUS.test(texts[i]!)) return null;
+    if (NAMES_A_KEY.test(texts[i]!)) return null;
+    seen++;
+  }
+  if (escRow < 0) return null;
+
+  let footerStart = escRow;
+  while (footerStart - 1 >= 0 && escRow - (footerStart - 1) < SCROLL_PANEL_FOOTER_ROWS) {
+    if (!SCROLL_PANEL_CONT.test(texts[footerStart - 1]!)) break;
+    footerStart--;
+  }
+
+  const footer = texts
+    .slice(footerStart, escRow + 1)
+    .map((r) => r.trim())
+    .join(" · ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!SCROLL_PANEL_FOOTER.test(footer)) return null;
+
+  let scanStart = Math.max(0, footerStart - TITLE_SCAN_ROWS);
+  for (let i = footerStart - 1; i >= scanStart; i--) {
+    if (isBoxBorder(texts[i]!) && !SEARCH_RULE.test(texts[i]!)) {
+      scanStart = i + 1;
+      break;
+    }
+  }
+
+  for (let i = scanStart; i < footerStart; i++) {
+    const trimmed = texts[i]!.trim();
+    if (trimmed !== "└ Models & Quota" && trimmed !== "└ Context Usage") continue;
+    const regionRows = texts.slice(i, footerStart);
+    if (regionRows.slice(1).some((r) => PROMPTS_FOR_A_KEY.test(r))) return null;
+    const isUsage = trimmed === "└ Models & Quota";
+    const validBody = isUsage
+      ? regionRows
+          .slice(1)
+          .some((r) =>
+            /^\s*(?:Account:\s|Models within this group:|Weekly Limit Remaining\b|Five Hour Limit Remaining\b|Quota available\b|Refreshes in\b)/.test(
+              r,
+            ),
+          )
+      : regionRows
+          .slice(1)
+          .some((r) =>
+            /(?:Estimated usage|Free space:|User messages:|Agent responses:|Tool calls:|^Related:\s)/.test(
+              r.trim(),
+            ),
+          );
+    if (!validBody) continue;
+    const signature = regionSignature(texts, i, end);
+    if (signature === "") return null;
+    return {
+      startLine: i,
+      statusStartLine: escRow + 1 < lines.length ? escRow + 1 : undefined,
+      model: {
+        title: isUsage ? "Models & Quota" : "Context Usage",
+        nav: { upDown: /↑\/↓ Scroll\b/i.test(footer) },
+        actions: [{ label: "Close", keys: ["Escape"], cancel: true }],
+        signature,
+      },
+    };
   }
 
   return null;

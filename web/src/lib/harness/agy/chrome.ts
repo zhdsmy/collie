@@ -196,7 +196,14 @@ function dialogUnder(texts: string[], bottomBorder: number, end: number, ownEsc 
   const options: { n: number }[] = [];
   for (let j = bottomBorder + 1; j < end; j++) {
     const text = texts[j]!;
-    if (classifyFooter(text) !== null || /^Keyboard:\s/.test(text)) return true;
+    if (
+      classifyFooter(text) !== null ||
+      /^Keyboard:\s/.test(text) ||
+      /\besc\s+close\b/i.test(text) ||
+      /^└ (?:Models & Quota|Context Usage)\s*$/.test(text)
+    ) {
+      return true;
+    }
     if (ESC_TO_CANCEL.test(text) && !(j === ownEsc && OWN_ESC_STATUS.test(text))) return true;
     const option = parseOptionRow(text);
     if (option !== null) options.push(option);

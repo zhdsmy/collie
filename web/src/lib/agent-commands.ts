@@ -298,6 +298,8 @@ const AGY: readonly AgentCommand[] = [
   { command: "/learn", description: "Persist lessons, corrections, and project workflows", takesArg: true, argHint: "[lesson]", common: true, dangerous: false },
   { command: "/compact", description: "Summarize conversation history to free up context", takesArg: false, argHint: "", common: true, dangerous: false }, // harness-bar
   { command: "/clear", description: "Clear conversation history and start fresh", takesArg: false, argHint: "", common: true, dangerous: true },
+  { command: "/usage", description: "View model quota usage", takesArg: false, argHint: "", common: true, dangerous: false },
+  { command: "/context", description: "Visualize context-window usage", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/status", description: "Show session stats, model, and connectivity status", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/subagents", description: "View and manage active background subagents", takesArg: false, argHint: "", common: true, dangerous: false },
   { command: "/agents", description: "View and manage available and active subagents", takesArg: false, argHint: "", common: false, dangerous: false },
