@@ -23,8 +23,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.24.2+collie.1] - 2026-10-28
+
+**Urgent.** Fix slow-disk submit timeouts and live-widget command refusals while preserving customized controls.
+
 ### Fixed
-- **Upstream reliability fixes preserve the customized Collie controls.** Merge v1.24.2 sending, history, dialog and worktree fixes plus economical recorded-stream browser tooling; retain downstream cards, Queue/Steer, compact controls and fixed-signature deployment.
+- **Upstream reliability fixes preserve the customized Collie controls.** Merge v1.24.2 sending, history, dialog and worktree fixes plus economical recorded-stream browser tooling; retain downstream cards, Queue/Steer, compact controls and fixed-signature deployment. ([7fbb76c19](https://github.com/zhdsmy/collie/commit/7fbb76c19))
 
 ## [1.24.1+collie.3] - 2026-10-28
 
