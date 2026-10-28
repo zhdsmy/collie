@@ -9,7 +9,7 @@
 // (MODAL_NOTES.md).
 
 import { lineText, trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
-import type { HarnessAdapter } from "../types";
+import type { DialogDetector, HarnessAdapter } from "../types";
 import {
   composerPrompt,
   composerReady,
@@ -35,6 +35,19 @@ import { draftCarriesSend } from "../../draft-match";
 function raw(lines: StyledLine[]): Block {
   return { kind: "raw", lines: decorateCodexDisplay(lines) };
 }
+
+/** The detectors in codexBuildBlocks order, including the downstream picker cards. */
+const CODEX_DIALOG_DETECTORS: readonly DialogDetector[] = [
+  { name: "plan", detect: detectPlanRegion },
+  { name: "review", detect: detectReviewRegion },
+  { name: "resume", detect: detectResumeRegion },
+  { name: "agents", detect: detectAgentsRegion },
+  { name: "picker", detect: detectPickerRegion },
+  { name: "ask", detect: detectAskRegion },
+  { name: "elicitation", detect: detectElicitationRegion },
+  { name: "trust", detect: detectTrustRegion },
+  { name: "approval", detect: detectApprovalRegion },
+];
 
 export function codexBuildBlocks(lines: StyledLine[]): Block[] {
   const picker = detectPlanRegion(lines) ?? detectReviewRegion(lines) ?? detectResumeRegion(lines) ??
@@ -99,6 +112,7 @@ export const codexAdapter: HarnessAdapter = {
   // The way out of a native modal, offered only where the screen itself names Esc as one.
   cancelKey: "Escape",
   modalOnScreen: escGoesBack,
+  dialogDetectors: CODEX_DIALOG_DETECTORS,
   draftCarriesSend: codexDraftCarriesSend,
   literalDraftCarriesSend: (sent, draft) => draftCarriesSend(sent, draft, { requireTail: true }),
 };

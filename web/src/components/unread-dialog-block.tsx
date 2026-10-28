@@ -1,3 +1,4 @@
+import { Bug } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -34,6 +35,8 @@ export interface UnreadDialogBlockProps {
    * the dialog can be seen, so it carries them, opened at the end, where a modal's footer sits.
    */
   screen?: StyledLine[];
+  /** Opens the existing problem report without sending anything. */
+  onReport?: () => void;
 }
 
 // The UNREAD-DIALOG CARD — one declared key over a screen Collie could not read (.adr/0053).
@@ -61,7 +64,7 @@ const VIEWPORT_CLASS =
   "min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain [scrollbar-gutter:stable] [scrollbar-width:thin]";
 const NAMES_A_DISMISS = /\besc\s+dismiss\b/i;
 
-export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled, screen, wrap }: UnreadDialogBlockProps) {
+export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled, screen, wrap, onReport }: UnreadDialogBlockProps) {
   useLocale();
   const [sending, setSending] = useState(false);
   const locked = disabled || sending;
@@ -117,9 +120,18 @@ export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled,
       className={viewport || shown ? "h-[min(20rem,calc(var(--card-dock-max-height,55dvh)-2rem))] min-h-0" : "py-0.5"}
     >
       <div className="flex shrink-0 items-center justify-between gap-3">
-        <div className="min-w-0 [&>div>span:last-child]:truncate" title={armed ? armedLabel : caption}>
+        <div className="min-w-0 flex-1 [&>div>span:last-child]:truncate" title={armed ? armedLabel : caption}>
           <OptionGroupCaption>{armed ? armedLabel : caption}</OptionGroupCaption>
         </div>
+        {onReport && <Button
+          type="button"
+          variant="ghost"
+          data-slot="unread-dialog-report"
+          aria-label={t("unreadDialog.report")}
+          title={t("unreadDialog.report")}
+          onClick={onReport}
+          className="min-h-11 min-w-11 shrink-0 p-0 text-muted-foreground"
+        ><Bug className="size-3.5" /></Button>}
         <Button
           type="button"
           variant="ghost"

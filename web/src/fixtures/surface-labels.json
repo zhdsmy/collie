@@ -6660,6 +6660,51 @@
       "harness": "omp",
       "version": "18.6.1",
       "state": "draft"
+    },
+    "oc--v211-question--single.txt": {
+      "harness": "opencode",
+      "version": "unversioned",
+      "state": "dialog"
+    },
+    "oc--v211-question--single--moved.txt": {
+      "harness": "opencode",
+      "version": "unversioned",
+      "state": "dialog"
+    },
+    "oc--v211-question--multi.txt": {
+      "harness": "opencode",
+      "version": "unversioned",
+      "state": "dialog"
+    },
+    "oc--v211-question--multi--toggled.txt": {
+      "harness": "opencode",
+      "version": "unversioned",
+      "state": "dialog"
+    },
+    "oc--v211-question--multi--review.txt": {
+      "harness": "opencode",
+      "version": "unversioned",
+      "state": "dialog"
+    },
+    "oc--v211-question--two.txt": {
+      "harness": "opencode",
+      "version": "unversioned",
+      "state": "dialog"
+    },
+    "oc--v211-question--two--answered.txt": {
+      "harness": "opencode",
+      "version": "unversioned",
+      "state": "dialog"
+    },
+    "oc--v211-question--two--review.txt": {
+      "harness": "opencode",
+      "version": "unversioned",
+      "state": "dialog"
+    },
+    "oc--v211-question--multi--free-text.txt": {
+      "harness": "opencode",
+      "version": "unversioned",
+      "state": "dialog"
     }
   },
   "knownMismatches": {

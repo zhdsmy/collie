@@ -1019,7 +1019,9 @@
       "tests": [
         "web/src/lib/harness/unread-dialog.test.ts",
         "web/src/components/unread-dialog-block.test.tsx",
-        "web/e2e/codex-warning-input.spec.ts"
+        "web/e2e/codex-warning-input.spec.ts",
+        "web/src/lib/harness/detector-verdicts.test.ts",
+        "web/src/components/report-sheet.test.tsx"
       ],
       "fixtures": [
         {
@@ -2850,6 +2852,69 @@
           "expect": {
             "block": "unread-dialog"
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--v211-question--single.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "prompt-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--v211-question--single--moved.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "prompt-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--v211-question--multi.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "multi-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--v211-question--multi--toggled.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "multi-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--v211-question--multi--review.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "multi-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--v211-question--two.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "wizard"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--v211-question--two--answered.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "wizard"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--v211-question--two--review.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "wizard"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/oc--v211-question--multi--free-text.txt",
+          "agent": "opencode",
+          "expect": {
+            "block": "unread-dialog"
+          }
         }
       ],
       "live": false,
@@ -3072,7 +3137,9 @@
       "tests": [
         "web/src/lib/harness/unread-dialog.test.ts",
         "web/src/components/unread-dialog-block.test.tsx",
-        "web/e2e/claude-settings.spec.ts"
+        "web/e2e/claude-settings.spec.ts",
+        "web/src/lib/harness/detector-verdicts.test.ts",
+        "web/src/components/report-sheet.test.tsx"
       ],
       "fixtures": [
         {

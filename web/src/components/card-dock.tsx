@@ -97,6 +97,9 @@ export interface CardDockProps {
   pickerAutomating?: boolean;
   /** Candidate original plan. Its content is displayed only after matching the native plan. */
   planEntry?: TranscriptEntry | null;
+  /** Opens Report a problem from the unread-dialog card (ADR 0123, amendment 2026-10-28). Absent, the
+   *  card offers no report. */
+  onUnreadDialogReport?: (cancel: UnreadDialogModel) => void;
   /** Disable every card's controls (read-only device, gone pane). */
   promptDisabled?: boolean;
   /** The body draws no mirror (Chat), so an unread dialog carries the screen's rows itself. */
@@ -158,6 +161,7 @@ function liftedCard({
   onPickerAction,
   pickerAutomating,
   planEntry = null,
+  onUnreadDialogReport,
   promptDisabled,
   showScreen,
   paneId,
@@ -245,6 +249,7 @@ function liftedCard({
         disabled={promptDisabled || !onUnreadDialogAction}
         wrap={wrap}
         onAction={(key) => onUnreadDialogAction?.(key, unreadBlock.cancel)}
+        onReport={onUnreadDialogReport === undefined ? undefined : () => onUnreadDialogReport(unreadBlock.cancel)}
       />
     );
   }

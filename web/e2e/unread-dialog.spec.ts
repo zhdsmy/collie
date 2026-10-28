@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 import { installApiStub } from "./fixtures/api";
 
 const SCREEN = readFileSync(
-  join(import.meta.dirname, "..", "src", "fixtures", "panes", "claude-lab--menu-status-screen--w82.txt"),
+  join(import.meta.dirname, "..", "src", "fixtures", "panes", "claude--v2283-plugin-marketplaces-add-form--w82.txt"),
   "utf8",
 );
 for (const [locale, caption, width] of [
@@ -24,10 +24,17 @@ for (const [locale, caption, width] of [
     const card = page.getByRole("group", { name: caption });
     await expect(card).toBeVisible();
     const btn = card.getByRole("button", { name: "Esc" });
+    const report = card.locator('[data-slot="unread-dialog-report"]');
+    await expect(report).toBeVisible();
     const cb = await card.boundingBox();
     const bb = await btn.boundingBox();
+    const rb = await report.boundingBox();
     const cap = await card.getByText(caption).boundingBox();
-    if (!cb || !bb || !cap) throw new Error("The card, caption, and key must be visible");
+    if (!cb || !bb || !cap || !rb) throw new Error("The card, caption, report and key must be visible");
+    expect(rb.width).toBeGreaterThanOrEqual(44);
+    expect(rb.height).toBeGreaterThanOrEqual(44);
+    expect(cap.x + cap.width).toBeLessThanOrEqual(rb.x);
+    expect(rb.x + rb.width).toBeLessThanOrEqual(bb.x);
     expect(bb.width).toBeGreaterThanOrEqual(44);
     expect(bb.height).toBeGreaterThanOrEqual(44);
     expect(cb.height).toBeLessThanOrEqual(50);
