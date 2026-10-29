@@ -23,8 +23,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.24.3+collie.1] - 2026-10-30
+
+Fixes Codex Ultra input recognition and slow release downloads; not urgent.
+
 ### Fixed
-- **Codex Ultra inputs and slow release downloads work reliably.** Merge v1.24.3 prompt-glyph support and bounded progress-based download timeouts while retaining downstream send guards and controls; extend the same glyph pair to local slash commands, paragraph and painted-particle guards.
+- **Codex Ultra inputs and slow release downloads work reliably.** Merge v1.24.3 prompt-glyph support and bounded progress-based download timeouts while retaining downstream send guards and controls; extend the same glyph pair to local slash commands, paragraph and painted-particle guards. ([c5a1b3ee1](https://github.com/zhdsmy/collie/commit/c5a1b3ee1))
 
 ## [1.24.2+collie.1] - 2026-10-28
 
