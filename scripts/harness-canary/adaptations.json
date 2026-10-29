@@ -10,14 +10,20 @@
         "bridge/surface/protocol.ts",
         "web/src/components/composer.tsx",
         "web/src/components/running-send-control.tsx",
-        "web/src/hooks/use-display-prefs.ts"
+        "web/src/hooks/use-display-prefs.ts",
+        "web/src/lib/harness/codex/chrome.ts",
+        "web/src/lib/harness/codex/markers.ts",
+        "web/src/lib/harness/codex/particles.ts"
       ],
       "tests": [
         "bridge/surface/protocol.test.ts",
         "web/src/components/composer.test.tsx",
         "web/src/lib/surface/cues.test.ts",
         "web/src/hooks/use-display-prefs.test.ts",
-        "web/e2e/codex-send-mode.spec.ts"
+        "web/e2e/codex-send-mode.spec.ts",
+        "web/src/lib/harness/codex.test.ts",
+        "web/src/lib/surface/fold.codex.test.ts",
+        "web/src/lib/harness/codex/particles.test.ts"
       ],
       "fixtures": [
         {
@@ -32,6 +38,22 @@
           "agent": "codex",
           "expect": {
             "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0165-ultra-empty--w120.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0165-ultra-draft.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
           }
         }
       ],

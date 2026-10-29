@@ -7,6 +7,38 @@ const queued = readFileSync(new URL("../src/fixtures/panes/codex--v0163-queued-s
 const claude = readFileSync(new URL("../src/fixtures/panes/claude--v2301-working-queued-message--w100.txt", import.meta.url), "utf8");
 test.use({ serviceWorkers: "block" });
 
+test("Codex Ultra prompt stays sendable on a 320px phone", async ({ page }, info) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await installApiStub(page);
+  await page.addInitScript(() => {
+    localStorage.setItem("collie:locale:v1", "en");
+    localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+  });
+  const ultra = readFileSync(new URL("../src/fixtures/panes/codex--v0165-ultra-empty--w120.txt", import.meta.url), "utf8");
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, index) => index === 0 ? { ...agent, agent: "codex", status: "idle" } : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) =>
+    route.fulfill({ json: { paneId: "w1:p1", text: ultra, truncated: false, revision: 1 } }));
+  const sent: string[] = [];
+  await page.route("**/api/send", (route) => {
+    const body = route.request().postDataJSON();
+    expect(body).toMatchObject({ pane: "w1:p1", text: "continue the checklist", mode: "send" });
+    sent.push(body.id);
+    return route.fulfill({ json: sendAnswer(body.id, "sent") });
+  });
+  await page.goto("/pane/w1:p1");
+  await expect(page.getByRole("group", { name: "Collie did not recognize this interface" })).toHaveCount(0);
+  const input = page.getByRole("textbox").first();
+  await input.fill("continue the checklist");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect.poll(() => sent.length).toBe(1);
+  await expect(input).toHaveValue("");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath("codex-ultra.png") });
+});
+
 test("Codex queue setting and immediate steering fit a 320px phone", async ({ page }, info) => {
   await page.setViewportSize({ width: 320, height: 844 });
   await installApiStub(page);

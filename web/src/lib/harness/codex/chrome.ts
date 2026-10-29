@@ -18,6 +18,8 @@ import {
   lastNonBlankIndex,
   lineText,
   PLACEHOLDER,
+  PROMPT_GLYPHS,
+  PROMPT_HEAD_LENGTH,
   promptText,
   rstrip,
   skipBlanksUp,
@@ -43,7 +45,6 @@ const MAX_DRAFT_ROWS = 100;
 // Empty paragraphs are handled separately by the bounded walk below. Column-zero output
 // (including tool/answer bullets) still cannot be crossed on the way to the live prompt.
 const CONTINUATION = /^ {2}\s*\S/;
-const PROMPT_PREFIX = "› ";
 
 function normalizeParticles(lines: StyledLine[]): StyledLine[] {
   const texts = lines.map(lineText);
@@ -72,7 +73,8 @@ function hasComposerChrome(lines: StyledLine[], promptRow: number, statusRow: nu
   const marker = prompt?.segments[0];
   if (
     prompt === undefined ||
-    marker?.text !== "›" ||
+    marker === undefined ||
+    marker.text.length !== 1 || !PROMPT_GLYPHS.includes(marker.text) ||
     marker.bold !== true ||
     marker.dim === true ||
     marker.bg === undefined
@@ -100,7 +102,7 @@ function isEmptyPlaceholder(line: StyledLine): boolean {
   const text = rstrip(lineText(line));
   if (promptText(text) !== PLACEHOLDER) return false;
 
-  const bodyStart = PROMPT_PREFIX.length;
+  const bodyStart = PROMPT_HEAD_LENGTH;
   const bodyEnd = bodyStart + PLACEHOLDER.length;
   let offset = 0;
   let sawBody = false;
@@ -140,7 +142,7 @@ function commandInput(lines: StyledLine[]): { draft: string; prompt: string } | 
   if (promptRow < 0) return null;
   const draft = promptText(texts[promptRow]!)?.trim();
   if (!draft || draft !== selected) return null;
-  const marker = lines[promptRow]!.segments.find((segment) => segment.text.startsWith("›"));
+  const marker = lines[promptRow]!.segments.find((segment) => segment.text.length > 0 && PROMPT_GLYPHS.includes(segment.text[0]!));
   if (!marker?.bold || marker.dim) return null;
   return { draft, prompt: texts.slice(promptRow, end + 1).join("\n") };
 }
@@ -173,7 +175,7 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
     const t = texts[i]!;
     if (promptText(t) !== null) {
       if (crossedBlank && !workingStatus && !customStatus) {
-        const marker = lines[i]!.segments.find((segment) => segment.text.startsWith("›"));
+        const marker = lines[i]!.segments.find((segment) => segment.text.length > 0 && PROMPT_GLYPHS.includes(segment.text[0]!));
         if (!marker?.bold || marker.dim) return null;
       }
       if (customStatus && !hasComposerChrome(lines, i, statusRow)) return null;

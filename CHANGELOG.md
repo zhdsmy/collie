@@ -23,6 +23,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+- **Codex Ultra inputs and slow release downloads work reliably.** Merge v1.24.3 prompt-glyph support and bounded progress-based download timeouts while retaining downstream send guards and controls; extend the same glyph pair to local slash commands, paragraph and painted-particle guards.
+
 ## [1.24.2+collie.1] - 2026-10-28
 
 **Urgent.** Fix slow-disk submit timeouts and live-widget command refusals while preserving customized controls.
@@ -39,6 +42,31 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ### Added
 - **Antigravity (`agy`) `/usage` (`Models & Quota`) and `/context` (`Context Usage`) scroll panels lift into scrollable `MenuModel` cards.** `detectAgyModalRegion` in `web/src/lib/harness/agy/modals.ts` recognizes AGY's `scrollPanel` headings (`└ Models & Quota` and `└ Context Usage`) and their single- or multi-line `↑/↓ Scroll · pgup/pgdown Page · ctrl+end Bottom · ctrl+home Top · esc Close` footer across wide (119-column) and narrow (50-column) viewports, framing the native quota and context terminal view inside a card with `[ ↑ ] [ ↓ ]` scroll controls and a one-tap `[ Close ]` (`Escape`) button while preserving the bottom statusline. `dialogUnder` in `web/src/lib/harness/agy/chrome.ts` also fails `composerReady` closed on `esc Close` and `└ Models & Quota` / `└ Context Usage`, and `AGY` in `web/src/lib/agent-commands.ts` adds `/usage` and `/context` as common slash commands.
+
+## [1.24.3] - 2026-10-29
+
+A bugfix release, not urgent. You need it if you update Collie over a slow link, or if you run Codex at Ultra effort.
+
+### Fixed
+
+- **Codex at Ultra effort no longer blocks sends from the phone.** Codex 0.164 and 0.165 draw the
+  composer prompt as `»` at Ultra effort and as `›` at Max. Both readers knew only `›`, so Collie
+  could not find the input box and asked you to confirm a send by hand. Both glyphs now count, in
+  the Codex profile and in the Codex reader. The reader keeps one list of the two glyphs, and a test
+  checks that the profile spells the same pair. A numbered option row is still not a prompt. (#615)
+  Thanks @Skydev0h for the diagnosis.
+- **An update no longer fails because the release download is slow.** The release download had a 20
+  second total deadline, so on a link under about 23 Mbit/s the 57 MB asset timed out and Collie said
+  it could not reach github.com. The download now stops only when no bytes arrive for 60 seconds, and
+  the error then says the download stalled, with how much had arrived. Connecting and the small release
+  lookups keep their 20 second limit. If your update already fails with "could not reach github.com",
+  run `curl -fsSL https://colliepwa.dev/install.sh | COLLIE_TAG=v1.24.3 sh` once by hand (the Stable
+  patch that carries this fix); after that updates work from the phone again, on Stable and on Edge.
+  ([#613](https://github.com/AltanS/collie/issues/613)) Thanks @mglasner for the diagnosis.
+- **A very slow release download now ends after 30 minutes instead of trickling on.** A server that
+  sends a few bytes just inside each 60 second window never counts as stalled, so the download has a
+  total cap of 30 minutes (about 32 KB/s for the 57 MB asset). The error says the download took longer
+  than 30 minutes and how much had arrived, and nothing is changed. ([#613](https://github.com/AltanS/collie/issues/613))
 
 ## [1.24.2] - 2026-10-28
 

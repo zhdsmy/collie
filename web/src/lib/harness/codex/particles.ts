@@ -1,6 +1,6 @@
 import type { AnsiSegment } from "../../ansi";
 import { lineText, type StyledLine } from "../../blocks";
-import { isComposerStatusRow, lastNonBlankIndex } from "./markers";
+import { isComposerStatusRow, lastNonBlankIndex, PROMPT_GLYPHS } from "./markers";
 
 // Codex paints single-dot Braille particles into SPACE cells, including spaces inside
 // real drafts. Each particle has its own RGB ink on the composer background. Typed Braille
@@ -35,7 +35,7 @@ export function normalizeComposerParticles(lines: StyledLine[]): StyledLine[] {
   while (top > 0 && bottom - top < 100 && hasBackground(lines[top - 1]!, background)) top--;
   if (top + 2 > bottom || !isPadding(lines[top]!, background)) return lines;
   const marker = lines[top + 1]!.segments[0];
-  if (!marker?.text.startsWith("›") || !marker.bold || marker.dim) return lines;
+  if (!marker || marker.text.length === 0 || !PROMPT_GLYPHS.includes(marker.text[0]!) || !marker.bold || marker.dim) return lines;
   let changed = false;
   const result = lines.map((line, index) => {
     if (index < top || index > bottom || !line.segments.some((s) => isParticle(s, background))) return line;
