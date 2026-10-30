@@ -16,6 +16,7 @@ import {
 // agent name can't resolve to something that isn't an adapter.
 
 const roots = {
+  agy: ["/a"],
   claude: ["/c"],
   codex: ["/x"],
   cursor: ["/u"],
@@ -24,6 +25,7 @@ const roots = {
   grok: ["/g"],
   hermes: ["/h"],
   kiro: ["/k"],
+  "dsh-tui": ["/d"],
   muse: ["/m"],
   openclaw: ["/oc"],
 };
@@ -35,6 +37,7 @@ describe("buildJournalRegistry", () => {
       "claude",
       "codex",
       "cursor",
+      "dsh-tui",
       "grok",
       "hermes",
       "kiro",
@@ -67,7 +70,7 @@ describe("sendQueuedNow", () => {
 describe("adapterFor", () => {
   const registry = buildJournalRegistry(roots);
 
-  test.each(["claude", "codex", "cursor", "pi", "opencode", "grok", "hermes", "kiro", "muse", "openclaw"])("resolves %s", (agent) => {
+  test.each(["cursor", "agy", "claude", "codex", "pi", "opencode", "grok", "hermes", "kiro", "muse", "openclaw", "dsh-tui"])("resolves %s", (agent) => {
     expect(adapterFor(registry, agent)?.agent).toBe(agent);
   });
 

@@ -55,6 +55,38 @@
             "block": "raw",
             "statusLinesMin": 1
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0165-ultra-empty--w170.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0165-ultra-draft--w170.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0166-warning-art-empty--w120.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0166-warning-typed--w120.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw",
+            "statusLinesMin": 1
+          }
         }
       ],
       "live": false,
@@ -3343,7 +3375,8 @@
         "web/src/lib/journal-agents.ts",
         "web/src/lib/harness-bar.ts",
         "web/src/lib/agent-commands.ts",
-        "web/src/lib/surface/frame.ts"
+        "web/src/lib/surface/frame.ts",
+        "bridge/journal/sqlite-read.ts"
       ],
       "tests": [
         "web/src/lib/harness/agy/agy.test.ts",
@@ -3463,7 +3496,7 @@
       "verified": {
         "version": "1.4.7",
         "date": "2026-10-26",
-        "how": "owned native Herdr session: idle, mid-turn Queue (queued: true) and mid-turn Steer (outcome: steered) sends via SendProtocol with ~/.gemini/antigravity-cli/settings.json queuedMessages mapping; gray Auto placeholder and rich statusline captured; 38/50-column drafts and Model/Resume open/cancel checked; mobile geometry replay separately; read-only installed-session checks: SQLite 185 entries; active authenticated .pb fallback 381 entries from 464 steps (3 type-101 steps counted as unknown); compact statusline and Chat mobile replay; process-held lock prevents selecting newer test sessions; Chat/composer statusline mobile replay; native client sends for Model/Resume at 119/50 columns: one Enter, no provider inference; 1.4.5 owned startup/working/Escape-to-idle status captures and mobile replay",
+        "how": "owned native Herdr session: idle, mid-turn Queue (queued: true) and mid-turn Steer (outcome: steered) sends via SendProtocol with ~/.gemini/antigravity-cli/settings.json queuedMessages mapping; gray Auto placeholder and rich statusline captured; 38/50-column drafts and Model/Resume open/cancel checked; mobile geometry replay separately; read-only installed-session checks: SQLite 185 entries; active authenticated .pb fallback 381 entries from 464 steps (3 type-101 steps counted as unknown); compact statusline and Chat mobile replay; process-held lock prevents selecting newer test sessions; Chat/composer statusline mobile replay; native client sends for Model/Resume at 119/50 columns: one Enter, no provider inference; 1.4.5 owned startup/working/Escape-to-idle status captures and mobile replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification; upstream SQLite/WAL and JSONL reader replaces local SQLite reader, retaining authenticated .pb fallback",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3533,7 +3566,7 @@
       "verified": {
         "version": "1.4.4 / 1.4.5 / 1.4.7",
         "date": "2026-10-24",
-        "how": "1.4.4/1.4.7 native 119/50-column captures; 1.4.7 owned Herdr sessions verified Switch Model navigation onto/off fixed-effort models (GPT-OSS 120B), /effort Set Effort scale chips, statusline extraction, and Escape via submitMenuKeys; 320px Chromium/WebKit layout replay",
+        "how": "1.4.4/1.4.7 native 119/50-column captures; 1.4.7 owned Herdr sessions verified Switch Model navigation onto/off fixed-effort models (GPT-OSS 120B), /effort Set Effort scale chips, statusline extraction, and Escape via submitMenuKeys; 320px Chromium/WebKit layout replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3588,7 +3621,7 @@
       "verified": {
         "version": "1.4.5 / 1.4.7",
         "date": "2026-10-24",
-        "how": "owned native Herdr sessions at 50/119 columns and wide >=134-column single-line footer test: actual client/SendProtocol opened Model and Resume with one Enter; Resume Down/Up/Escape through submitMenuKeys and bridge keysPane; 320px Chromium/WebKit replay",
+        "how": "owned native Herdr sessions at 50/119 columns and wide >=134-column single-line footer test: actual client/SendProtocol opened Model and Resume with one Enter; Resume Down/Up/Escape through submitMenuKeys and bridge keysPane; 320px Chromium/WebKit replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3685,7 +3718,7 @@
       "verified": {
         "version": "1.4.8",
         "date": "2026-10-27",
-        "how": "owned native Herdr session at 119 and 50 columns: /usage (Models & Quota), /context (Context Usage), /rewind, /agents, /skills, /tasks, /mcp, /settings, and /permissions opened, recognized as MenuModel cards with preserved statuslines, scrolled via Up/Down, and closed via submitMenuKeys Escape; 320px Chromium/WebKit replay",
+        "how": "owned native Herdr session at 119 and 50 columns: /usage (Models & Quota), /context (Context Usage), /rewind, /agents, /skills, /tasks, /mcp, /settings, and /permissions opened, recognized as MenuModel cards with preserved statuslines, scrolled via Up/Down, and closed via submitMenuKeys Escape; 320px Chromium/WebKit replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3768,7 +3801,7 @@
       "verified": {
         "version": "1.4.7",
         "date": "2026-10-24",
-        "how": "owned native Herdr session at 119 and 50 columns in plan mode: /artifact review card, inline preview toggle (p), full-screen detail viewer (Enter/o/l/Esc), confirm-exit Submit/Dismiss state, and post-review Artifacts list; submitMenuKeys and bridge keysPane exercised; 320px Chromium/WebKit layout replay",
+        "how": "owned native Herdr session at 119 and 50 columns in plan mode: /artifact review card, inline preview toggle (p), full-screen detail viewer (Enter/o/l/Esc), confirm-exit Submit/Dismiss state, and post-review Artifacts list; submitMenuKeys and bridge keysPane exercised; 320px Chromium/WebKit layout replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3865,6 +3898,35 @@
       ],
       "live": false,
       "verified": null
+    },
+    {
+      "id": "claude.authentication",
+      "agent": "claude",
+      "origin": "upstream",
+      "sources": [
+        "web/src/lib/harness/claude/auth-box.ts",
+        "web/src/lib/harness/claude/index.ts"
+      ],
+      "tests": [
+        "web/src/lib/harness/claude/auth-box.test.ts",
+        "web/src/lib/harness/detector-verdicts.test.ts"
+      ],
+      "fixtures": [
+        {
+          "path": "web/src/fixtures/panes/claude--v2309-auth-refresh-locked--w52.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "box-text"
+          }
+        }
+      ],
+      "live": false,
+      "verified": {
+        "version": "2.1.309",
+        "date": "2026-10-30",
+        "how": "upstream captured ANSI replay; recognition only, no local native login probe",
+        "evidence": "web/src/lib/harness/claude/auth-box.test.ts"
+      }
     }
   ]
 }

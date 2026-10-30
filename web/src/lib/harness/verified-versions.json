@@ -54,29 +54,29 @@
       }
     },
     "agy": {
-      "version": "1.1.17",
-      "verified": "2026-08-26",
+      "version": "1.4.8",
+      "verified": "2026-10-29",
       "how": "capture",
       "adapter": true,
-      "evidence": "web/src/fixtures/panes/README.md § \"agy corpus (captured 2026-08-26, Antigravity CLI 1.1.17, sandbox panes)\"",
+      "evidence": "web/src/lib/harness/agy/fixtures/: 1.4.4–1.4.8 captures for /usage, /context, /effort, /model, /resume, /artifact, and Keyboard: modals, plus web/src/fixtures/panes/agy--ask-multi.txt",
       "journal": {
-        "version": "1.4.4",
-        "verified": "2026-10-22",
+        "version": "1.4.8",
+        "verified": "2026-10-29",
         "how": "capture",
-        "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md: read-only live session lock and 185 native SQLite entries; reducer tests cover wire fields and incremental reads, not live model streaming."
+        "evidence": "Upstream contributor's read-only sweep (not a local live certification) (PR 619) of ~/.gemini/antigravity-cli/conversations/*.db on Antigravity CLI 1.4.8 (SQLite trajectory databases across 15 CortexStep types, 0 unknown rows or part types) plus bridge/journal/agy.test.ts."
       }
     },
     "antigravity": {
-      "version": "1.1.17",
-      "verified": "2026-08-26",
+      "version": "1.4.8",
+      "verified": "2026-10-29",
       "how": "capture",
       "adapter": true,
-      "evidence": "Same binary as agy, filed under Herdr's other name for it (agent-commands.ts CATALOG comment) — web/src/fixtures/panes/README.md § \"agy corpus (captured 2026-08-26, Antigravity CLI 1.1.17, sandbox panes)\"",
+      "evidence": "Same binary as agy, filed under Herdr's other name for it (agent-commands.ts CATALOG comment) — web/src/lib/harness/agy/fixtures/",
       "journal": {
-        "version": "1.4.4",
-        "verified": "2026-10-22",
+        "version": "1.4.8",
+        "verified": "2026-10-29",
         "how": "capture",
-        "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md: read-only live session lock and 185 native SQLite entries; reducer tests cover wire fields and incremental reads, not live model streaming."
+        "evidence": "Same binary and session store as agy, routed through agyJournal via AGENT_ALIASES; the PR 619 sweep read ~/.gemini/antigravity-cli/conversations/*.db on Antigravity CLI 1.4.8 (SQLite trajectory databases, 0 unknown rows)."
       }
     },
     "muse": {
@@ -119,11 +119,11 @@
       }
     },
     "opencode": {
-      "version": "1.19.3",
-      "verified": "2026-10-18",
+      "version": "1.19.5",
+      "verified": "2026-10-29",
       "how": "canary",
       "adapter": true,
-      "evidence": "harness lab 2026-10-18 on opencode 1.19.3: walk, Surface on 4 screens, one probed send (sent), one ask answer (sent, declined file made: false); 3 model turns",
+      "evidence": "harness lab 2026-10-29 on opencode 1.19.5: walk, Surface on 4 screens, one probed send (sent), one ask answer (sent, declined file made: false); 3 model turns",
       "journal": {
         "version": "1.18.33",
         "verified": "2026-09-30",
@@ -168,6 +168,19 @@
         "verified": "2026-10-18",
         "how": "capture",
         "evidence": "Two sessions saved by kiro-cli 2.32.0 V3 in a throwaway KIRO_HOME, checked in under bridge/journal/fixtures/kiro (its README.md lists what each holds): replies, a shell call, a denied write, a failed read, an edit, a steered turn, /compact and a sub-agent. bridge/journal/kiro.test.ts reads both with no unknown rows. bridge/journal/kiro-discovery.test.ts covers the lock the running TUI holds, which moves on /clear, /rewind and a /sessions switch. A sub-agent's own history is not expanded."
+      }
+    },
+    "dsh-tui": {
+      "version": "0.0.0",
+      "verified": "2026-10-27",
+      "how": "unverified",
+      "adapter": false,
+      "evidence": "No block grammar: a dsh-tui pane keeps the raw mirror. The entry exists for the journal reader beside it, and 0.0.0 is the floor, so the first install reads as NEWER.",
+      "journal": {
+        "version": "0.17.0",
+        "verified": "2026-10-27",
+        "how": "capture",
+        "evidence": "bridge/journal/fixtures/dsh/: a dsh-tui 0.17.0 session (DeepSeek Harness format v4) captured on Linux on 2026-10-27 — slash commands, a shell call, a rejected escalation, a background job, /compact and a Unicode turn — read with 0 unrecognised rows or content kinds. The same day the adapter read a live 1,847-row session (248 turns, 262 of 262 tool calls joined to a result) and found it by its session lock from inside a systemd user service. No canary runs dsh-tui."
       }
     }
   }

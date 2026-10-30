@@ -65,20 +65,26 @@ async function listSettled(page: Page) {
   );
 }
 
-// EXPERIMENT (operator, 2026-09-23): the entry is a pill on the belt's pinned block, immediately
-// left of the switcher mark, no longer a row in the pane menu.
+// EXPERIMENT (operator, 2026-09-23): the entry is a pill on the belt's pinned block, left of the
+// switcher mark, no longer a row in the pane menu. The pinned order is Files, Zoom, Switch (the
+// Zoom pill joined between them in PR 536).
 test("the belt's Files pill opens Files, the list groups by repo, and a diff wraps", async ({ page }) => {
   await page.goto(`/pane/${encodeURIComponent(PANE.paneId)}`);
   const pill = page.getByRole("button", { name: en["chat.changes.label"] });
+  const zoom = page.getByRole("button", { name: en["zoom.open"] });
   const switcher = page.getByRole("button", { name: en["chat.switcher.aria"] });
   await expect(pill).toBeVisible();
-  const [p, s] = [(await pill.boundingBox())!, (await switcher.boundingBox())!];
-  // Same box as the mark, on the same line, directly to its left: 32px at the default scale.
+  const [p, z, s] = [(await pill.boundingBox())!, (await zoom.boundingBox())!, (await switcher.boundingBox())!];
+  // Same box as the mark, on the same line: 32px square at the local compact default scale. Files ends next to Zoom, and Zoom next to Switch.
   expect(p.width).toBe(32);
   expect(p.height).toBe(s.height);
+  expect(z.height).toBe(s.height);
   expect(p.y).toBe(s.y);
-  expect(p.x + p.width).toBeLessThanOrEqual(s.x);
-  expect(s.x - (p.x + p.width)).toBeLessThanOrEqual(8);
+  expect(z.y).toBe(s.y);
+  expect(p.x + p.width).toBeLessThanOrEqual(z.x);
+  expect(z.x - (p.x + p.width)).toBeLessThanOrEqual(8);
+  expect(z.x + z.width).toBeLessThanOrEqual(s.x);
+  expect(s.x - (z.x + z.width)).toBeLessThanOrEqual(8);
   expect(p.height).toBe(32);
   // The pane menu no longer carries it.
   await page.getByRole("button", { name: en["chat.paneMenu.aria"] }).click();
@@ -100,14 +106,14 @@ test("the belt's Files pill opens Files, the list groups by repo, and a diff wra
   await row.click();
   await expect(page).toHaveURL(/\?repo=\.&path=src%2Froutes%2Fcheckout\.tsx$/);
   const long = page
-    .locator('[data-slot="diff"] > div')
+    .locator('[data-slot="diff"] > div > button')
     .filter({ hasText: "including shipping to" })
     .locator(":scope > span:last-child");
   await expect(long).toBeVisible();
   // The long line wraps inside the column rather than widening the page. The ROW is measured, not the
   // matched text: once syntax colour lands the text splits into token spans, and under WebKit the one
   // that holds these words can be a single 14 px line of a row that wraps over two (1 run in 8).
-  const line = await page.locator("[data-slot='diff'] > div").filter({ hasText: /including shipping to/ }).boundingBox();
+  const line = await page.locator("[data-slot='diff'] > div > button").filter({ hasText: /including shipping to/ }).boundingBox();
   expect(line!.x + line!.width).toBeLessThanOrEqual(375);
   expect(line!.height).toBeGreaterThan(20);
   await noSidewaysScroll(page);

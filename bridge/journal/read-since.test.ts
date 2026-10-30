@@ -332,6 +332,7 @@ describe("readSinceFile", () => {
 // accept, and their answer to it is the same sentence: nothing new, hold what you have.
 describe("every harness answers a live read", () => {
   const registry = buildJournalRegistry({
+    agy: ["/nope/agy"],
     claude: ["/nope/claude"],
     codex: ["/nope/codex"],
     pi: ["/nope/pi"],
@@ -342,6 +343,7 @@ describe("every harness answers a live read", () => {
     muse: ["/nope/muse"],
     openclaw: ["/nope/openclaw"],
     kiro: ["/nope/kiro"],
+    "dsh-tui": ["/nope/dsh"],
   });
 
   test("every shipped adapter is under test", () => {

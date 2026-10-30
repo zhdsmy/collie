@@ -13,7 +13,7 @@
   },
   "versions": [
     {
-      "range": "1.4.0 - 1.4.7",
+      "range": "1.4.0 - 1.4.8",
       "status": "provisional",
       "verifiedThrough": null,
       "verifiedOn": null
@@ -64,12 +64,14 @@
           }
         ],
         "commandList": {
-          "sides": ["under"],
+          "sides": [
+            "under"
+          ],
           "pointer": "^> (?<command>/\\S+)(?: +\\S.*)?$",
           "entry": "^ {2}(?<command>/\\S+)(?: +\\S.*)?$",
           "wrapped": "^ {4,}\\S",
           "footer": {
-            "pattern": "^\\s*↑/↓ Navigate · enter Select · tab Complete$",
+            "pattern": "^\\s*↑/↓ Navigate · enter Select · tab Complete\\s*$",
             "maxRows": 2
           }
         }

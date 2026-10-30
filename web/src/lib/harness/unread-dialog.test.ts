@@ -333,6 +333,8 @@ const CARD_FIXTURES = {
   // README: the `/resume` Conversations picker after a search that matched nothing, a real dialog
   // with no row to select, so the menu grammar declines it and Escape is the way out, and a checkbox
   // question, which no recipe here ticks. Every other AGY dialog fixture is one its grammars read.
+  // `agy--working.txt` keeps its composer live (`OWN_ESC_STATUS` in `agy/chrome.ts`), so no card shows
+  // on a busy pane.
   agy: { modals: ["agy--ask-multi.txt", "agy--resume-picker-nomatch.txt"], notModals: [] },
   antigravity: { modals: ["agy--ask-multi.txt", "agy--resume-picker-nomatch.txt"], notModals: [] },
   // Every opencode picker: composerReady refuses it (the picker shape) and no grammar reads it, so

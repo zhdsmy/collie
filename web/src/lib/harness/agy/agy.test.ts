@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -12,6 +12,9 @@ import { findInputFrame } from "../../surface/frame";
 import { requireProfile } from "../../surface/profile";
 
 const PANES_DIR = join(import.meta.dirname, "..", "..", "..", "fixtures", "panes");
+const LOCAL_FIXTURES_DIR = join(import.meta.dirname, "fixtures");
+const fixtureFile = (name: string) =>
+  existsSync(join(LOCAL_FIXTURES_DIR, name)) ? join(LOCAL_FIXTURES_DIR, name) : join(PANES_DIR, name);
 
 /** AGY paints its composer between two full-width rules; 60 columns clears isBoxBorder. */
 const RULE = "────────────────────────────────────────────────────────────";
@@ -88,7 +91,7 @@ describeAdapterConformance(antigravityAdapter, {
 describe("agy: the named foreign claims are still claimed (delete the entry when one is not)", () => {
   for (const name of KNOWN_FOREIGN_CLAIMS) {
     it(`${name} is still lifted by agy, so it stays on the KNOWN_FOREIGN_CLAIMS list`, () => {
-      const lines = splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8")));
+      const lines = splitLines(parseAnsi(readFileSync(fixtureFile(name), "utf8")));
       expect(agyAdapter.buildBlocks(lines).some((b) => b.kind !== "raw")).toBe(true);
     });
   }
@@ -96,7 +99,7 @@ describe("agy: the named foreign claims are still claimed (delete the entry when
 
 describe("the card starts at the question row, so the mirror above it does not repeat it", () => {
   const blocksOf = (name: string) =>
-    agyAdapter.buildBlocks(splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8"))));
+    agyAdapter.buildBlocks(splitLines(parseAnsi(readFileSync(fixtureFile(name), "utf8"))));
 
   it.each([
     ["agy--permission-bash.txt", "Do you want to proceed?"],
@@ -114,7 +117,7 @@ describe("the card starts at the question row, so the mirror above it does not r
   });
 
   it("shares the native Auto hint's paint with the send reader, while retaining typed text", () => {
-    const lines = splitLines(parseAnsi(readFileSync(join(PANES_DIR, "agy--v144-auto-placeholder--w119.txt"), "utf8")));
+    const lines = splitLines(parseAnsi(readFileSync(fixtureFile("agy--v144-auto-placeholder--w119.txt"), "utf8")));
     const idle = requireProfile("agy").idle;
     const frame = findInputFrame(lines, idle)!;
     expect(frame.placeholder).toBe(true);
@@ -162,7 +165,7 @@ describe("agyAdapter unit & footer safety", () => {
   // alone, so this fixture must keep lifting exactly what it lifted before that decision.
   it("lifts agy--trust-prompt.txt as the trust family with digit-alone keys", () => {
     const lines = splitLines(
-      parseAnsi(readFileSync(join(PANES_DIR, "agy--trust-prompt.txt"), "utf8")),
+      parseAnsi(readFileSync(fixtureFile("agy--trust-prompt.txt"), "utf8")),
     );
     const model = detectPromptSelect(lines);
     expect(model).not.toBeNull();
@@ -303,7 +306,7 @@ describe("agyAdapter unit & footer safety", () => {
   });
 
   it("correctly locates the input box and extracts statusline on agy--fresh-idle.txt", () => {
-    const raw = readFileSync(join(PANES_DIR, "agy--fresh-idle.txt"), "utf8");
+    const raw = readFileSync(fixtureFile("agy--fresh-idle.txt"), "utf8");
     const lines = splitLines(parseAnsi(raw));
 
     expect(agyAdapter.extractInputDraft!(lines)).toBeNull();
@@ -324,7 +327,7 @@ describe("agyAdapter unit & footer safety", () => {
   });
 
   it("extracts no spurious draft and extracts statusline on agy--done.txt", () => {
-    const raw = readFileSync(join(PANES_DIR, "agy--done.txt"), "utf8");
+    const raw = readFileSync(fixtureFile("agy--done.txt"), "utf8");
     const lines = splitLines(parseAnsi(raw));
 
     expect(agyAdapter.extractInputDraft!(lines)).toBeNull();
@@ -337,7 +340,7 @@ describe("agyAdapter unit & footer safety", () => {
   });
 
   it("extracts the statusline on agy--after-plan-idle.txt", () => {
-    const raw = readFileSync(join(PANES_DIR, "agy--after-plan-idle.txt"), "utf8");
+    const raw = readFileSync(fixtureFile("agy--after-plan-idle.txt"), "utf8");
     const lines = splitLines(parseAnsi(raw));
 
     expect(agyAdapter.extractInputDraft!(lines)).toBeNull();
@@ -348,7 +351,7 @@ describe("agyAdapter unit & footer safety", () => {
   });
 
   it("strips the working box and extracts statusline on agy--working.txt and narrow wrapped working screens without raising unread-dialog", () => {
-    const raw = readFileSync(join(PANES_DIR, "agy--working.txt"), "utf8");
+    const raw = readFileSync(fixtureFile("agy--working.txt"), "utf8");
     const lines = splitLines(parseAnsi(raw));
 
     expect(agyAdapter.composerReady!(lines)).toBe(true);
@@ -414,7 +417,7 @@ describe("agyAdapter unit & footer safety", () => {
 
 
 describe("agy: background task rail", () => {
-  const captured = readFileSync(join(PANES_DIR, "agy--v145-background-task--w80.txt"), "utf8");
+  const captured = readFileSync(fixtureFile("agy--v145-background-task--w80.txt"), "utf8");
   const rows = () => splitLines(parseAnsi(captured));
 
   it.each([agyAdapter, antigravityAdapter])("keeps task progress and finds the composer for $agent", (adapter) => {
@@ -449,7 +452,7 @@ describe("agy: background task rail", () => {
 
 describe("agy: the input-box search window never reads a dialog's rule as a composer", () => {
   const rowsOf = (name: string): string[] =>
-    splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8"))).map(lineText);
+    splitLines(parseAnsi(readFileSync(fixtureFile(name), "utf8"))).map(lineText);
   const linesOf = (rows: string[]) => splitLines(parseAnsi(rows.join("\n")));
 
   // `agy--select-menu.txt` with the Red / Green / Blue rows cut to Red alone and the write-in
@@ -507,7 +510,7 @@ describe("agy: the input-box search window never reads a dialog's rule as a comp
 });
 
 describe("the slash-command completion popup is the live box, not a dialog (agy 1.3.5)", () => {
-  const read = (name: string) => splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8")));
+  const read = (name: string) => splitLines(parseAnsi(readFileSync(fixtureFile(name), "utf8")));
 
   it("reads `/model` over its own highlighted suggestion, with no card and no popup in the status", () => {
     const lines = read("agy--slash-exact.txt");
@@ -594,7 +597,7 @@ describe("the slash-command completion popup is the live box, not a dialog (agy 
 });
 
 describe("agy: the /resume Conversations picker lifts as a menu (1.3.5)", () => {
-  const read = (name: string) => splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8")));
+  const read = (name: string) => splitLines(parseAnsi(readFileSync(fixtureFile(name), "utf8")));
   const menuOf = (name: string) => {
     const block = buildBlocks(read(name), { agent: "agy" }).find((b) => b.kind === "menu");
     return block?.kind === "menu" ? block.menu : null;
@@ -613,7 +616,7 @@ describe("agy: the /resume Conversations picker lifts as a menu (1.3.5)", () => 
       expect(agyAdapter.composerReady!(read(name))).toBe(false);
       expect(buildBlocks(read(name), { agent: "agy" }).some((b) => b.kind === "unread-dialog")).toBe(false);
       if (name.includes("v145")) {
-        const raw = readFileSync(join(PANES_DIR, name), "utf8").replace(/auto {2}idle {2}(Gemini 4 Argon \([^)]+\))/, "$1  auto  idle");
+        const raw = readFileSync(fixtureFile(name), "utf8").replace(/auto {2}idle {2}(Gemini 4 Argon \([^)]+\))/, "$1  auto  idle");
         expect(buildBlocks(splitLines(parseAnsi(raw)), { agent: "agy" }).some((b) => b.kind === "menu")).toBe(true);
       }
     },
@@ -721,7 +724,7 @@ describe("agy: a question takes its digit alone (1.3.5)", () => {
   // Measured live 2026-10-15: the digit answers on its own. On a one-question call it submitted; on
   // the first of two it answered and moved to the second; on the last it submitted the set. An Enter
   // sent after it answered the NEXT question with whatever row its pointer stood on.
-  const read = (name: string) => splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8")));
+  const read = (name: string) => splitLines(parseAnsi(readFileSync(fixtureFile(name), "utf8")));
   const promptOf = (lines: ReturnType<typeof read>) => {
     const block = buildBlocks(lines, { agent: "agy" }).find((b) => b.kind === "prompt-select");
     return block?.kind === "prompt-select" ? block.prompt : null;
@@ -798,7 +801,7 @@ describe("agy: a question takes its digit alone (1.3.5)", () => {
 });
 
 describe("AGY permission context and status boundary", () => {
-  const capture = readFileSync(join(PANES_DIR, "agy--permission-bash.txt"), "utf8");
+  const capture = readFileSync(fixtureFile("agy--permission-bash.txt"), "utf8");
   it.each(["Codex", "Grok", "Codex and Hermes"])("does not treat a discussion of %s as another agent", (name) => {
     const lines = splitLines(parseAnsi(`Comparing ${name} status icons.\n${capture}`));
     const prompt = detectPromptSelect(lines)!;
@@ -826,8 +829,36 @@ describe("AGY permission context and status boundary", () => {
   });
 });
 
+describe("agy: background task rail", () => {
+  const captured = readFileSync(fixtureFile("agy--v145-background-task--w80.txt"), "utf8");
+  const rows = () => splitLines(parseAnsi(captured));
+
+  it.each([agyAdapter, antigravityAdapter])("keeps task progress and finds the composer for $agent", (adapter) => {
+    const lines = rows();
+    expect(adapter.composerReady!(lines)).toBe(true);
+    expect(adapter.extractInputDraft!(lines)).toBeNull();
+    expect(adapter.extractStatusLines!(lines).map(lineText)).toEqual([lineText(lines[5]!)]);
+    const blocks = buildBlocks(lines, { agent: adapter.agent });
+    expect(blocks.map((block) => block.kind)).toEqual(["raw"]);
+    expect(blocks[0]!.lines.map(lineText)).toEqual(["", "", "", lineText(lines[3]!), lineText(lines[4]!)]);
+  });
+
+  it("reads a real draft without including task progress", () => {
+    const lines = rows();
+    lines[1] = splitLines(parseAnsi("> typed draft"))[0]!;
+    expect(agyAdapter.extractInputDraft!(lines)).toBe("typed draft");
+  });
+
+  it.each(["unexpected task row", "enter Confirm · esc Cancel", "  1. Allow\n  2. Deny"])("refuses unknown or modal rows: %s", (extra) => {
+    const lines = rows();
+    lines.splice(4, 0, ...splitLines(parseAnsi(extra)));
+    expect(agyAdapter.composerReady!(lines)).toBe(false);
+    expect(agyAdapter.extractInputDraft!(lines)).toBeNull();
+  });
+});
+
 describe("AGY /artifact review and detail viewer (1.4.7)", () => {
-  const load = (name: string) => splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8")));
+  const load = (name: string) => splitLines(parseAnsi(readFileSync(fixtureFile(name), "utf8")));
 
   it("extracts the reviewing statusline when the composer is idle awaiting artifact review", () => {
     const lines = load("agy--v147-reviewing-idle--w119.txt");
@@ -930,9 +961,9 @@ describe("AGY /artifact review and detail viewer (1.4.7)", () => {
   });
 
   it("switches the Submit action to Tab+Enter when Dismiss is focused in confirm-exit mode", () => {
-    const raw = readFileSync(join(PANES_DIR, "agy--v147-artifact-review-submit--w50.txt"), "utf8").replace(
-      "  \x1b[0m\x1b[7m\x1b[38;5;2m Submit \x1b[0m \x1b[0m\x1b[38;5;8mDismiss\x1b[0m",
-      "  \x1b[0m\x1b[1m\x1b[38;5;2mSubmit\x1b[0m \x1b[0m\x1b[1m\x1b[38;5;3mDismiss\x1b[0m",
+    const raw = readFileSync(fixtureFile("agy--v147-artifact-review-submit--w50.txt"), "utf8").replace(
+      "  \u001b[0m\u001b[7m\u001b[38;5;2m Submit \u001b[0m \u001b[0m\u001b[38;5;8mDismiss\u001b[0m",
+      "  \u001b[0m\u001b[1m\u001b[38;5;2mSubmit\u001b[0m \u001b[0m\u001b[1m\u001b[38;5;3mDismiss\u001b[0m",
     );
     const blocks = agyAdapter.buildBlocks(splitLines(parseAnsi(raw)));
     const menuBlock = blocks.find((b) => b.kind === "menu");
@@ -1031,8 +1062,8 @@ describe("AGY /artifact review and detail viewer (1.4.7)", () => {
   });
 });
 
-describe("AGY native Keyboard modals (1.4.7)", () => {
-  const load = (name: string) => splitLines(parseAnsi(readFileSync(join(PANES_DIR, name), "utf8")));
+describe("AGY native Keyboard & scrollPanel modals (1.4.7 / 1.4.8)", () => {
+  const load = (name: string) => splitLines(parseAnsi(readFileSync(fixtureFile(name), "utf8")));
 
   it.each([
     [
@@ -1155,7 +1186,7 @@ describe("AGY native Keyboard modals (1.4.7)", () => {
       RULE,
       ">",
       RULE,
-      "\x1b[1m\x1b[38;5;7m└ Context Usage\x1b[0m",
+      "\u001b[1m\u001b[38;5;7m└ Context Usage\u001b[0m",
       "□ □ □ □ □ □ □ □     Gemini 4 Argon (High) · 0/1.0M tokens",
       "□ □ □ □ □ □ □ □     Estimated usage (awaiting generation)",
       "□ □ □ □ □ □ □ □     □ Free space: 1.0M (100.0%)",

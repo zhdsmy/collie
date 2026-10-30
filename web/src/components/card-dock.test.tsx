@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import modelScreen from "@/fixtures/panes/codex--v0158-picker-model.txt?raw";
 import { parseAnsi } from "@/lib/ansi";
 import { splitLines } from "@/lib/blocks";
@@ -87,5 +87,37 @@ describe("CardDock: a wizard that moves on under the open answer editor", () => 
       screen.getByText(`The terminal moved on to another question: “${q2}”. Nothing was sent. Send again to answer this one.`),
     ).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Answer text" })).toHaveValue("Step one words");
+  });
+});
+
+describe("CardDock: the Authentication box", () => {
+  const blocks = (name: string) => claudeBuildBlocks(fixtureRows(name));
+  const FILLED = "claude--v2307-auth-refresh-output--w61.txt";
+  const DEVICE = "https://example.awsapps.com/start/#/device";
+
+  it("docks the box's text as a card of links with no button, and the card answers no dialog", () => {
+    const filled = blocks(FILLED);
+    render(<CardDock blocks={filled} />);
+    const card = screen.getByRole("group", { name: "Login output" });
+    expect(within(card).getByText("Authentication")).toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: DEVICE })).toHaveAttribute("href", DEVICE);
+    expect(within(card).queryAllByRole("button")).toEqual([]);
+    expect(hasDialogCard(filled)).toBe(false);
+  });
+
+  it("keeps the link enabled on a read-only device, a stale copy and a gone pane", () => {
+    render(<CardDock blocks={blocks(FILLED)} promptDisabled stale />);
+    const link = screen.getByRole("link", { name: DEVICE });
+    expect(link).toHaveAttribute("href", DEVICE);
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).not.toHaveAttribute("aria-disabled");
+    expect(screen.queryAllByRole("button")).toEqual([]);
+  });
+
+  it("docks the lock message with no link", () => {
+    render(<CardDock blocks={blocks("claude--v2309-auth-refresh-locked--w52.txt")} />);
+    const card = screen.getByRole("group", { name: "Login output" });
+    expect(within(card).getByText(/Another Claude Code process is running your/u)).toBeInTheDocument();
+    expect(within(card).queryAllByRole("link")).toEqual([]);
   });
 });

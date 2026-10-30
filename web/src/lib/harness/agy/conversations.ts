@@ -1,4 +1,4 @@
-// The CONVERSATIONS picker agy 1.3.5 paints for `/resume` (live 2026-10-15): a `CLI  Other` tab row, a
+// The CONVERSATIONS picker agy 1.3.5–1.4.8 paints for `/resume` (live 2026-10-15): a `CLI  Other` tab row, a
 // `Conversations` title, a search row, one row per conversation with `> ` at column 0 on the
 // highlighted one, an `[a-b of n items]` pager, and a two-row footer of `<key> <verb>` hints:
 //
@@ -6,7 +6,7 @@
 //     esc Go back / Clear search
 //
 // It lifts as a generic `menu` (menu-model.ts) carrying only keys the footer printed and a phone may
-// fire safely: Up and Down, Enter to select, Escape to go back. Measured on that build: Enter resumed
+// fire safely: Up and Down, Enter to select, Escape to go back. Measured on 1.3.5: Enter resumed
 // the highlighted conversation, a first Escape cleared a typed search and a second closed the picker.
 // `f4 Delete` takes a conversation away and `f2 Rename` opens an editor, so neither becomes a button;
 // the page arrows, the grouped view and the tab switch stay keyboard-only. The composer box above

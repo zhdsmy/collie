@@ -1,12 +1,12 @@
 import { trimTrailingBlank, type Block, type StyledLine } from "../../blocks";
 import type { DialogDetector, HarnessAdapter } from "../types";
 import { detectArtifactRegion } from "./artifact";
+import { extractInputDraft, extractStatusLines, hasInputBox, normalizeAgyScreenRows, stripChrome } from "./chrome";
 import { detectConversationsRegion } from "./conversations";
+import { lineText } from "./markers";
 import { detectAgyModalRegion } from "./modals";
 import { detectModelRegion } from "./model";
 import { detectPromptSelectRegion } from "./prompt-select";
-import { extractInputDraft, extractStatusLines, hasInputBox, normalizeAgyScreenRows, stripChrome } from "./chrome";
-import { lineText } from "./markers";
 
 /** The conversations picker, read off the rows' text. */
 function conversationsRegion(lines: StyledLine[]) {
@@ -28,7 +28,7 @@ export function agyBuildBlocks(lines: StyledLine[]): Block[] {
     const before = trimTrailingBlank(lines.slice(0, region.startLine));
     const blocks: Block[] = [];
     if (before.length > 0) blocks.push({ kind: "raw", lines: before });
-    blocks.push({ kind: "prompt-select", prompt: region.model, lines: lines.slice(region.startLine) });
+    blocks.push({ kind: "prompt-select", prompt: region.model, lines: lines.slice(region.startLine, region.statusStartLine) });
     return blocks;
   }
 
@@ -41,14 +41,14 @@ export function agyBuildBlocks(lines: StyledLine[]): Block[] {
     const before = trimTrailingBlank(lines.slice(0, picker.startLine));
     const blocks: Block[] = [];
     if (before.length > 0) blocks.push({ kind: "raw", lines: before });
-    blocks.push({ kind: "menu", menu: picker.model, lines: lines.slice(picker.startLine) });
+    blocks.push({ kind: "menu", menu: picker.model, lines: lines.slice(picker.startLine, picker.statusStartLine) });
     return blocks;
   }
 
   return [{ kind: "raw", lines: stripChrome(lines) }];
 }
 
-export { extractStatusLines, extractInputDraft };
+export { extractStatusLines, extractInputDraft, normalizeAgyScreenRows };
 
 export const agyAdapter: HarnessAdapter = {
   agent: "agy",
