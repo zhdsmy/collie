@@ -22,9 +22,9 @@ Running a crew? Update the lead first; members follow on their own. Details:
 `docs/crew.md` → *Updating from 1.7.0*.
 
 ## [Unreleased]
+## [1.25.1+collie.1] - 2026-10-31
 ### Fixed
-- **Multi-instance Walky routing and Claude empty-input recognition retain customized controls.** Merge upstream v1.25.1 message-holder fallback, machine counts, plain-text hint recognition and replay portability fixes; preserve downstream cards, send settings and AGY 1.4.11 startup protection.
-
+- **Multi-instance Walky routing and Claude empty-input recognition retain customized controls.** Merge upstream v1.25.1 message-holder fallback, machine counts, plain-text hint recognition and replay portability fixes; preserve downstream cards, send settings and AGY 1.4.11 startup protection. ([cc3031cd6](https://github.com/zhdsmy/collie/commit/cc3031cd6))
 ## [1.25.0+collie.2] - 2026-10-30
 
 ### Fixed
