@@ -23,8 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.1+collie.2] - 2026-10-31
+
 ### Fixed
-- **Codex 0.166.0 model pickers with scroll indicators, bare `default` statusline fields, and rollout bookkeeping rows parse cleanly.** Accept `↑` and `↓` scroll markers in single-select Codex `/model` pickers without altering card identity, recognize bare `default` effort suffixes on the statusline, register 0.156–0.166 rollout bookkeeping row and part types in the journal reducer, and align the Codex E2E and canary card suites with the Send Protocol and ImageEditor preview flows.
+- **Codex 0.166.0 model pickers with scroll indicators, bare `default` statusline fields, and rollout bookkeeping rows parse cleanly.** Accept `↑` and `↓` scroll markers in single-select Codex `/model` pickers without altering card identity, recognize bare `default` effort suffixes on the statusline, register 0.156–0.166 rollout bookkeeping row and part types in the journal reducer, and align the Codex E2E and canary card suites with the Send Protocol and ImageEditor preview flows. ([a37ee6a74](https://github.com/zhdsmy/collie/commit/a37ee6a74))
 
 ## [1.25.1+collie.1] - 2026-10-31
 ### Fixed
