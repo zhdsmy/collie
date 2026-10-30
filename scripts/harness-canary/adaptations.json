@@ -103,6 +103,7 @@
       "origin": "downstream",
       "sources": [
         "web/src/lib/surface/profiles/claude.json",
+        "web/src/lib/surface/frame.ts",
         "web/src/lib/surface/profile.ts",
         "bridge/surface/protocol.ts",
         "web/src/components/composer.tsx",
@@ -112,6 +113,7 @@
       "tests": [
         "bridge/surface/protocol.test.ts",
         "bridge/surface/shadow.test.ts",
+        "web/src/lib/surface/frame.test.ts",
         "web/src/lib/surface/profile.test.ts",
         "web/src/components/composer.test.tsx",
         "web/src/hooks/use-display-prefs.test.ts",
@@ -120,6 +122,13 @@
       "fixtures": [
         {
           "path": "web/src/fixtures/panes/claude--v2301-working-queued-message--w100.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/surface/claude--v2-1-314-placeholder-plain--w120.txt",
           "agent": "claude",
           "expect": {
             "block": "raw"

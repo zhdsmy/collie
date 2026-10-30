@@ -22,6 +22,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 `docs/crew.md` → *Updating from 1.7.0*.
 
 ## [Unreleased]
+### Fixed
+- **Multi-instance Walky routing and Claude empty-input recognition retain customized controls.** Merge upstream v1.25.1 message-holder fallback, machine counts, plain-text hint recognition and replay portability fixes; preserve downstream cards, send settings and AGY 1.4.11 startup protection.
 
 ## [1.25.0+collie.2] - 2026-10-30
 
@@ -56,6 +58,17 @@ Fixes Codex Ultra input recognition and slow release downloads; not urgent.
 
 ### Added
 - **Antigravity (`agy`) `/usage` (`Models & Quota`) and `/context` (`Context Usage`) scroll panels lift into scrollable `MenuModel` cards.** `detectAgyModalRegion` in `web/src/lib/harness/agy/modals.ts` recognizes AGY's `scrollPanel` headings (`└ Models & Quota` and `└ Context Usage`) and their single- or multi-line `↑/↓ Scroll · pgup/pgdown Page · ctrl+end Bottom · ctrl+home Top · esc Close` footer across wide (119-column) and narrow (50-column) viewports, framing the native quota and context terminal view inside a card with `[ ↑ ] [ ↓ ]` scroll controls and a one-tap `[ Close ]` (`Escape`) button while preserving the bottom statusline. `dialogUnder` in `web/src/lib/harness/agy/chrome.ts` also fails `composerReady` closed on `esc Close` and `└ Models & Quota` / `└ Context Usage`, and `AGY` in `web/src/lib/agent-commands.ts` adds `/usage` and `/context` as common slash commands.
+
+## [1.25.1] - 2026-10-30
+
+A bugfix release, not urgent. You need it if you run two Collies on one machine, such as the Herdr TUI and the Herdr core, or if you send walky talky messages to Claude Code on herdr-core.
+
+### Fixed
+
+- **`walky inbox`, `status` and `reply` no longer stop at an older bridge that knows the pane but not the message.** On a machine that runs two Collies on one multiplexer the first bridge asked could answer "no message for this pane" for a message the other bridge held; such a bridge now answers not here and the CLI asks the next one. ([15fb80a](https://github.com/AltanS/collie/commit/15fb80a))
+- **The home footer and the welcome sheet count machines, not members, and a pane row keeps its member name.** With two Collies on one machine the footer said four machines for two; it now says two machines and how many of the four instances answer, the first-run sheet says the same, and the row chip no longer clips a two-part label at phone width. ([28a9306](https://github.com/AltanS/collie/commit/28a9306))
+- **Claude Code's grey hint in an empty box no longer counts as a draft.** On a herdr-core pane the screen comes as plain text, so the placeholder `Try "refactor <filepath>"` read as typed text and a walky talky delivery to that pane stayed held as "draft present" although nothing was typed; the Claude reader now knows the hint's shape and reads such a box as empty. ([4a4aa50](https://github.com/AltanS/collie/commit/4a4aa50))
+- **A typed `Try "…"` on a coloured multiplexer stays a draft.** The hint shape that marks Claude Code's empty box on a plain-text read counts only when the read carries no styling; on tmux, zellij and the Herdr TUI the faint attribute decides, so a person's own `Try "…"` is typed text. ([54605a4](https://github.com/AltanS/collie/commit/54605a4))
 
 ## [1.25.0] - 2026-10-30
 

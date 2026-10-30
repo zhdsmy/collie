@@ -91,10 +91,10 @@ describe("flake.nix and MIN_BUN", () => {
 });
 
 describe("the Windows suite skip budget", () => {
-  test("windows-suites.ps1 gives each suite its own skip budget, 174 in all, each skip named", () => {
+  test("windows-suites.ps1 gives each suite its own skip budget, 180 in all, each skip named", () => {
     const script = readFileSync(join(ROOT, "scripts", "windows-suites.ps1"), "utf8");
     const budget = (suite: string): number => Number(new RegExp(`\\[int\\]\\$MaxSkips${suite} = (\\d+)`).exec(script)?.[1] ?? Number.NaN);
-    expect([budget("Bridge"), budget("Cli"), budget("Scripts")]).toEqual([98, 51, 25]);
+    expect([budget("Bridge"), budget("Cli"), budget("Scripts")]).toEqual([98, 57, 25]);
     // The bridge allowance is the local-cli tests that stay POSIX-only, the one real-engine Whistle
     // case that needs the uncommitted model, the one scan of real links to /etc, the 5 hold socket tests, the 6
     // walky mode and socket tests, the 30 durable example tests, the 10 durable-harness adapter skips and the 36 durable socket tests; the comment
@@ -128,13 +128,17 @@ describe("the Windows suite skip budget", () => {
     expect(script).toContain("two copies of one harness");
     expect(budget("Bridge")).toBe(posixOnly.length + 1 + etcLinks.length + holdSocket.length + walkySkips.length + 30 + 10 + 36 + boundedRunSkips.length + 1 + 2);
     // The cli allowance adds the three real runs of the POSIX install leg a crew member runs, and the
-    // 31 tests of cli/walky.test.ts that talk to a real walky socket (`socketTest`).
+    // 36 tests of cli/walky.test.ts that talk to a real walky socket (`socketTest`).
     const walkySocketTests = readFileSync(join(ROOT, "cli", "walky.test.ts"), "utf8").match(/^ {2}socketTest\(/gm) ?? [];
-    expect(walkySocketTests).toHaveLength(31);
+    expect(walkySocketTests).toHaveLength(36);
     // The statusLine wrapper's "runShell stops the whole command" block (3 tests) is skipped off Linux.
     expect(readFileSync(join(ROOT, "cli", "statusline.test.ts"), "utf8")).toContain('describe.skipIf(process.platform !== "linux")("runShell stops the whole command"');
     expect(script).toContain("runShell stops the whole command");
-    expect(budget("Cli")).toBe(2 + 12 + 3 + walkySocketTests.length + 3);
+    // cli/sys.test.ts: two tests start POSIX children (`sh -c`, a signal), both `test.skipIf` on win32.
+    const sysSkips = [...readFileSync(join(ROOT, "cli", "sys.test.ts"), "utf8").matchAll(/test\.skipIf\(process\.platform === "win32"\)\("([^"]+)"/g)].map((m) => m[1]!);
+    expect(sysSkips).toHaveLength(2);
+    for (const name of sysSkips) expect(script).toContain(name);
+    expect(budget("Cli")).toBe(sysSkips.length + 1 + 12 + 3 + walkySocketTests.length + 3);
     for (const name of posixOnly) expect(script).toContain(name);
     expect(script).toContain("a 13 s WAV becomes text through a real child of this Collie");
     expect(script).toContain("a child of this checkout's CLI turns 10.4 s of speech into text");
