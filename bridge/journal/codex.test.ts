@@ -8,10 +8,12 @@ import {
   codexJournal,
   codexToolOutput,
   CodexTranscriptSource,
+  createCodexReducer,
   isCodexSessionId,
   parseCodexTranscript,
   parseCodexFirstTokenMs,
 } from "./codex.ts";
+import { parseWith, unknownCount } from "./reduce.ts";
 
 /**
  * Any JSON document — what a row of an agent's on-disk log actually is, before the adapter parses
@@ -131,8 +133,40 @@ describe("parseCodexTranscript", () => {
   test.each([
     ["world_state", { type: "world_state", state: {} }],
     ["turn_context", { type: "turn_context", cwd: "/repo" }],
-  ])("the 0.145 row type %s renders nothing", (_label, payload) => {
-    expect(parseCodexTranscript(item(payload))).toEqual([]);
+    ["additional_tools", { type: "additional_tools", id: "at_1", role: "developer", tools: [] }],
+    ["compaction", { type: "compaction", id: "cmp_1", encrypted_content: "gAAAAA…" }],
+    ["configuration_update", { type: "configuration_update", reasoning: { effort: "high" } }],
+    ["agent_message", {
+      type: "agent_message",
+      id: "am_1",
+      author: "/root/worker",
+      recipient: "/root",
+      content: [{ type: "input_text", text: "done" }, { type: "encrypted_content", encrypted_content: "gAAAAA…" }],
+    }],
+  ])("the bookkeeping response_item type %s renders nothing and counts zero unknowns", (_label, payload) => {
+    const reducer = createCodexReducer();
+    expect(parseWith(reducer, item(payload))).toEqual([]);
+    expect(unknownCount(reducer.unknowns())).toBe(0);
+  });
+
+  test("0.156–0.166 envelope rows and input_image content parts count zero unknowns", () => {
+    const reducer = createCodexReducer();
+    const lines = [
+      JSON.stringify({ timestamp: "2026-10-01T00:00:00.000Z", type: "retained_context", payload: { type: "verified_answer" } }),
+      JSON.stringify({ timestamp: "2026-10-01T00:00:00.000Z", type: "inter_agent_communication_metadata", payload: { trigger_turn: true } }),
+      item({
+        type: "message",
+        role: "user",
+        content: [
+          { type: "input_image", image_url: "data:image/png;base64,AAA", detail: null },
+          { type: "input_text", text: "inspect this screenshot" },
+        ],
+      }),
+    ].join("\n");
+    const entries = parseWith(reducer, lines);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.parts).toEqual([{ kind: "text", text: "inspect this screenshot" }]);
+    expect(unknownCount(reducer.unknowns())).toBe(0);
   });
 
   test("a reasoning summary becomes a thinking part (unlike Claude, this one has text)", () => {

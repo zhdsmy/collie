@@ -355,6 +355,8 @@ const CODEX_KNOWN: KnownTypes = {
     "turn_context",
     "session_meta",
     "world_state",
+    "retained_context",
+    "inter_agent_communication_metadata",
     // Codex 0.159's context compaction (harness canary 2026-10-12): the hand-off text for the next
     // window and the history it keeps. The turns it summarises stay on screen from their own rows.
     "compacted",
@@ -365,9 +367,15 @@ const CODEX_KNOWN: KnownTypes = {
     "function_call_output",
     "custom_tool_call",
     "custom_tool_call_output",
+    // Codex 0.156–0.166 bookkeeping items inside `response_item` (developer tool declarations,
+    // encrypted session-start compaction, reasoning config updates, and subagent bus messages).
+    "additional_tools",
+    "compaction",
+    "configuration_update",
+    "agent_message",
   ],
   roles: ["user", "assistant", "developer"],
-  parts: ["input_text", "output_text", "text", "summary_text"],
+  parts: ["input_text", "output_text", "text", "summary_text", "input_image", "encrypted_content"],
 };
 
 /**

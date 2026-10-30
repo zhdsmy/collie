@@ -122,6 +122,9 @@ test("Codex warning return keeps image, mixed, and long replies sendable", async
         await page.getByTestId("attach-photos").setInputFiles(Array.from({ length: sample.uploads }, (_, photoIndex) => ({
           name: `photo-${photoIndex + 1}.png`, mimeType: "image/png", buffer: png,
         })));
+        for (let i = 0; i < sample.uploads; i++) {
+          await page.getByRole("button", { name: "Attach", exact: true }).click();
+        }
         await expect(input).toHaveValue(new RegExp(`\\[Image #${sample.uploads}\\]`));
       }
       await input.fill(sample.draft);

@@ -235,7 +235,7 @@ export async function runCards(ctx: AgentContext): Promise<CaseResult[]> {
     const trustDir = mkdtempSync(join(tmpdir(), "collie-canary-trust-"));
     try {
       const quoted = "'" + trustDir.replaceAll("'", "'\\''") + "'";
-      ctx.session.sendText(trust.paneId, launchLine(ctx.options.cols, `codex --no-daemon -C ${quoted}`));
+      ctx.session.sendText(trust.paneId, launchLine(ctx.options.cols, `command codex --no-daemon -C ${quoted}`));
       await Bun.sleep(POLL_MS);
       trust.keys(["Enter"]);
       const spec = { id: "codex.trust", native: /^\s*Trust this folder\?/m, kind: "prompt-select" };
@@ -262,7 +262,7 @@ export async function runCards(ctx: AgentContext): Promise<CaseResult[]> {
         fork.keys(["Enter"]);
         const screen = await nativeScreen(fork, FORK);
         cases.push(screen ? judged(fork, screen, FORK, "open") : notReachedCase(`${FORK.id}.open`, "native fork picker was not reached"));
-        const quit = screen?.texts.some((t) => /\bctrl\+c quit\b/.test(t));
+        const quit = screen?.texts.some((t) => /(?:\bctrl\+c|⌃c) quit\b/.test(t));
         fork.keys(quit ? ["ctrl+c"] : ["Escape"]);
         const deadline = Date.now() + 10_000;
         let stopped = false;

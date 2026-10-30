@@ -62,6 +62,25 @@ describe("Codex native picker parsing", () => {
     expect(navigated.options.find((option) => option.pointed)?.label).toBe("GPT-6-Luna");
   });
 
+  it("accepts Codex 0.166 single-select scroll markers (↑ / ↓) without altering picker identity", () => {
+    const base = parse(v0158("model"));
+    const firstOpt = base.findIndex((line) => lineText(line).includes("1. GPT-6-Astra"));
+    const tail = base.findLastIndex((line) => lineText(line).trim().length > 0);
+    const downArrow: StyledLine = { segments: [{ text: "↓", style: {}, muted: false }] };
+    const upArrow: StyledLine = { segments: [{ text: "↑", style: {}, muted: false }] };
+
+    const withBottomArrow = [...base.slice(0, tail), downArrow, ...base.slice(tail)];
+    const topModel = detectPickerRegion(withBottomArrow)?.model;
+    expect(topModel).toBeDefined();
+    expect(topModel!.options).toHaveLength(detectPickerRegion(base)!.model.options.length);
+
+    const withTopArrow = [...base.slice(0, firstOpt), upArrow, ...base.slice(firstOpt + 1)];
+    const scrolledModel = detectPickerRegion(withTopArrow)?.model;
+    expect(scrolledModel).toBeDefined();
+    expect(scrolledModel!.identity).toBe(topModel!.identity);
+    expect(scrolledModel!.options[0]!.id).toBe("2");
+  });
+
   it("recognizes the captured Codex 0.158 reasoning picker footer", () => {
     const lines = parse(v0158("effort"));
     const picker = detectPickerRegion(lines)!.model;

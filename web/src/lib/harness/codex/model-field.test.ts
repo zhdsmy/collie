@@ -55,6 +55,11 @@ describe("parseCodexModelField", () => {
       model: "gpt-5.6",
       effort: null,
     });
+    expect(parseCodexModelField("GPT-6.1-Sol default")).toEqual({ model: "GPT-6.1-Sol", effort: null });
+    expect(parseCodexModelField("GPT-6.1-Sol default Plan mode")).toEqual({
+      model: "GPT-6.1-Sol",
+      effort: null,
+    });
   });
 
   it("accepts custom models only when the caller knows them", () => {

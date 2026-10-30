@@ -13,6 +13,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) for (cons
     await page.addInitScript((preferences) => {
       localStorage.setItem("collie:theme:v1", preferences.theme);
       localStorage.setItem("collie:locale:v1", preferences.locale);
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
     }, { theme, locale });
     await installApiStub(page);
     let text = working;

@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 import { zh } from "@/lib/i18n/messages/zh";
 import { parseAnsi } from "@/lib/ansi";
 import { lineText, splitLines } from "@/lib/blocks";
-import { fixtureSnapshot } from "@/test/handlers";
+import { fixtureSnapshot, sendAnswer } from "@/test/handlers";
 import { installApiStub } from "./fixtures/api";
 
 const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}`, import.meta.url), "utf8");
@@ -30,6 +30,12 @@ for (const theme of ["light", "dark"]) {
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1",
       (route) => route.fulfill({ json: { paneId: "w1:p1", text: state === "closed" ? "Permission test completed."
         : fixture(`codex--v0162-tool-approval-${state}.txt`), truncated: false, revision: 1 } }));
+    await page.route("**/api/send", (route) => {
+      const id = String(route.request().postDataJSON()?.id ?? "send-1");
+      return route.fulfill({ json: sendAnswer(id, "refused", "not_free", {
+        surface: { revision: 1, turn: "unknown", modal: { ask: { id: "ask-perm", kind: "permission", options: [], channel: "keys", hash: "0" } }, composer: "unknown" },
+      }) });
+    });
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
       // SAFETY: own client's payload; transitions were captured against an inert local MCP server.
       const body = route.request().postDataJSON() as { keys: string[]; expected_prompt: string };
@@ -51,7 +57,7 @@ for (const theme of ["light", "dark"]) {
     await page.screenshot({ path: testInfo.outputPath(`computer-use-${theme}.png`), fullPage: true });
     await page.getByRole("textbox").fill("Keep this draft until after the permission dialog.");
     await page.getByRole("button", { name: zh["composer.send.sendAria"], exact: true }).click();
-    await expect(page.getByText(zh["composer.status.dialogWaiting"], { exact: true })).toBeVisible();
+    await expect(page.getByText(zh["composer.protocol.notFree"], { exact: false })).toBeVisible();
     expect(writes).toEqual([]);
     await expect(page.getByRole("textbox")).toHaveValue("Keep this draft until after the permission dialog.");
     await panel.getByRole("button", { name: /^Allow for this session / }).click();

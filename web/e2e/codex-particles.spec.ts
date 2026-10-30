@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { test, expect } from "@playwright/test";
 import { installApiStub } from "./fixtures/api";
-import { fixtureSnapshot } from "@/test/handlers";
+import { fixtureSnapshot, sendAnswer } from "@/test/handlers";
 
 // The API is page.route-backed; WebKit's active service worker bypasses those handlers on reload.
 // Service-worker behavior has its own spec; keep this input/animation check on the mocked API.
@@ -21,8 +21,7 @@ for (const theme of ["light", "dark"]) {
     }, theme);
     await installApiStub(page);
     const completion = readFileSync(new URL("../src/fixtures/panes/codex--v0154-command-status.txt", import.meta.url), "utf8");
-    const calls: { text: string; submit: boolean; expected_prompt?: string }[] = [];
-    let typed = false;
+    const calls: { id: string; pane: string; text: string; mode: string }[] = [];
     let submitted = false;
     await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
       ...fixtureSnapshot,
@@ -30,15 +29,14 @@ for (const theme of ["light", "dark"]) {
         ? Object.assign({}, agent, { agent: "codex", status: "working", hasSession: true }) : agent),
     } }));
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
-      paneId: "w1:p1", text: typed && !submitted ? completion : empty, revision: 1, truncated: false,
+      paneId: "w1:p1", text: submitted ? completion : empty, revision: 1, truncated: false,
     } }));
-    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/reply", (route) => {
-      // SAFETY: the app under test produces this reply body.
+    await page.route("**/api/send", (route) => {
+      // SAFETY: the app under test produces this Send Protocol request body.
       const body = route.request().postDataJSON() as typeof calls[number];
       calls.push(body);
-      if (!body.submit) typed = true;
-      else submitted = true;
-      return route.fulfill({ json: { ok: true } });
+      submitted = true;
+      return route.fulfill({ json: sendAnswer(body.id, "sent") });
     });
     await page.goto("/pane/w1:p1");
     await page.getByRole("button", { name: "Agent", exact: true }).click();
@@ -47,10 +45,8 @@ for (const theme of ["light", "dark"]) {
     await command.click();
     await expect.poll(() => submitted).toBe(true);
     expect(calls).toEqual([
-      { text: "/status", submit: false },
-      { text: "", submit: true, expected_prompt: expect.stringMatching(/^› \/status\n/) },
+      expect.objectContaining({ pane: "w1:p1", text: "/status", mode: "command" }),
     ]);
-    expect(calls[1]!.expected_prompt).toContain("/statusline");
   });
 
   test(`Codex waits through partial paste frames: ${theme}`, async ({ page }) => {
@@ -61,10 +57,8 @@ for (const theme of ["light", "dark"]) {
     }, theme);
     await installApiStub(page);
     const message = "请检查这个输入问题，再完整核对 fork 中的所有内容";
-    const prefix = "请检查这个输入问题";
-    let readyAt = 0;
     let submitted = false;
-    const calls: { text: string; submit: boolean; expected_prompt?: string }[] = [];
+    const calls: { id: string; pane: string; text: string; mode: string }[] = [];
     await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
       ...fixtureSnapshot,
       agents: fixtureSnapshot.agents.map((agent, i) => i === 0
@@ -73,24 +67,17 @@ for (const theme of ["light", "dark"]) {
     await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => {
       const paint = "\u001b[0m\u001b[48;2;57;57;71m";
       const particle = "\u001b[0m\u001b[38;2;110;114;134m\u001b[48;2;57;57;71m⠄" + paint;
-      const visibleDraft = Date.now() < readyAt ? prefix : message;
-      const text = !readyAt || submitted ? empty : empty.replace(
-        "\u001b[2m\u001b[48;2;57;57;71mAsk Codex to do anything", paint + visibleDraft.replaceAll(" ", particle),
+      const text = submitted ? empty : empty.replace(
+        "\u001b[2m\u001b[48;2;57;57;71mAsk Codex to do anything", paint + message.replaceAll(" ", particle),
       );
       return route.fulfill({ json: { paneId: "w1:p1", text, revision: 1, truncated: false } });
     });
-    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/reply", (route) => {
-      // SAFETY: this request is produced by the app under test, whose reply body has this shape.
+    await page.route("**/api/send", (route) => {
+      // SAFETY: this request is produced by the app under test, whose Send Protocol body has this shape.
       const body = route.request().postDataJSON() as typeof calls[number];
       calls.push(body);
-      if (!body.submit) readyAt = Date.now() + 600;
-      else {
-        if (body.expected_prompt !== `› ${message}`) return route.fulfill({
-          status: 409, json: { ok: false, code: "prompt_changed", error: "prompt changed" },
-        });
-        submitted = true;
-      }
-      return route.fulfill({ json: { ok: true } });
+      submitted = true;
+      return route.fulfill({ json: sendAnswer(body.id, "sent") });
     });
     await page.goto("/pane/w1:p1");
     await page.getByRole("textbox").first().fill(message);
@@ -98,8 +85,7 @@ for (const theme of ["light", "dark"]) {
     await expect(page.getByRole("textbox").first()).toHaveValue("");
     expect(submitted).toBe(true);
     expect(calls).toEqual([
-      { text: message, submit: false },
-      { text: "", submit: true, expected_prompt: `› ${message}` },
+      expect.objectContaining({ pane: "w1:p1", text: message, mode: "send" }),
     ]);
   });
 }
@@ -110,6 +96,7 @@ for (const width of [320, 390]) for (const theme of ["light", "dark"]) {
     await page.addInitScript((selected) => {
       localStorage.setItem("collie:theme:v1", selected);
       localStorage.setItem("collie:locale:v1", "en");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
     }, theme);
     await installApiStub(page);
     let text = empty;

@@ -58,7 +58,12 @@ function readOptions(
   const options: PickerOption[] = [];
   for (let i = start; i < end; i++) {
     const text = texts[i]!;
-    if (!text.trim()) continue;
+    const trimmed = text.trim();
+    if (!trimmed) continue;
+    if ((options.length === 0 && trimmed === "↑") ||
+        (options.length > 0 && trimmed === "↓" && texts.slice(i + 1, end).every((row) => !row.trim()))) {
+      continue;
+    }
     if (multiple && /^ {2}─+$/.test(text)) {
       // The fixed theme row can scroll above the viewport while its separator
       // remains visible. Accept that separator only before any visible option;
@@ -166,7 +171,7 @@ export function detectPickerRegion(lines: StyledLine[]): PickerRegion | null {
   } else {
     while (optionsStart < tail && !NUMBERED.test(texts[optionsStart]!)) {
       const text = texts[optionsStart]!.trim();
-      if (text) description.push(text);
+      if (text && text !== "↑") description.push(text);
       optionsStart++;
     }
   }

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { test, expect } from "@playwright/test";
 import { installApiStub } from "./fixtures/api";
-import { fixtureSnapshot } from "../src/test/handlers";
+import { fixtureSnapshot, sendAnswer } from "../src/test/handlers";
 import { en } from "../src/lib/i18n/messages/en";
 
 const fixture = (name: string) => readFileSync(new URL(`../src/fixtures/panes/${name}.txt`, import.meta.url), "utf8");
@@ -24,6 +24,12 @@ test("Codex command center selects and cancels safely at 320px", async ({ page }
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({
     json: { paneId: "w1:p1", text, truncated: false, revision: 1 },
   }));
+  await page.route("**/api/send", (route) => {
+    const id = String(route.request().postDataJSON()?.id ?? "send-1");
+    return route.fulfill({ json: sendAnswer(id, "refused", "not_free", {
+      surface: { revision: 1, turn: "unknown", modal: { ask: { id: "ask-agents", kind: "menu", options: [], channel: "keys", hash: "0" } }, composer: "unknown" },
+    }) });
+  });
   await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1/keys", (route) => {
     // SAFETY: the app's native key payload is bound to the visible command center before every write.
     const body = route.request().postDataJSON() as { keys: string[]; expected_prompt: string };
@@ -50,7 +56,7 @@ test("Codex command center selects and cancels safely at 320px", async ({ page }
   const input = page.getByRole("textbox").first();
   await input.fill("Fixture draft");
   await page.getByRole("button", { name: "Send", exact: true }).click();
-  await expect(page.getByText(en["composer.status.dialogWaiting"], { exact: true })).toBeVisible();
+  await expect(page.getByText(en["composer.protocol.notFree"], { exact: false })).toBeVisible();
   await expect(input).toHaveValue("Fixture draft");
   await input.fill("");
   await panel.getByRole("button", { name: /^Fixture beta / }).click();

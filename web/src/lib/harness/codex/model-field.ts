@@ -42,11 +42,12 @@ const EFFORTS: ReadonlyMap<string, CodexReasoningEffort> = new Map([
 ]);
 
 /**
- * A codex level no switch may name: `minimal` is in the CLI's config enum, but the picker Collie
- * drives never offers it (`codex--v0154-picker-effort.txt`). Set outside Collie it can still reach a
- * statusline, and that line must still parse AS the model — it just names no effort here.
+ * A codex level no switch may name: `minimal` is in the CLI's config enum, and 0.166.0 prints bare
+ * `default` before a level is resolved or when the model's default is left unnamed, but the picker
+ * Collie drives never offers either (`codex--v0154-picker-effort.txt`). Set outside Collie they can
+ * still reach a statusline, and that line must still parse AS the model — it just names no effort here.
  */
-const UNNAMEABLE_EFFORTS: ReadonlySet<string> = new Set(["minimal"]);
+const UNNAMEABLE_EFFORTS: ReadonlySet<string> = new Set(["minimal", "default"]);
 
 const MODEL_SUFFIX = /\s+\((?:default|current)\)$/i;
 const PLAN_SUFFIX = /^plan mode(?:\s|$)/i;
@@ -83,7 +84,7 @@ function effortSuffix(text: string): CodexReasoningEffort | null | undefined {
   if (UNNAMEABLE_EFFORTS.has(suffix.toLowerCase())) return null;
   // Older Codex statuslines append the Plan-mode hint directly to the model field.
   if (PLAN_SUFFIX.test(suffix)) return null;
-  const withPlan = /^(minimal|low|medium|high|xhigh|max|ultra|extra high)\s+plan mode(?:\s|$)/i.exec(suffix);
+  const withPlan = /^(minimal|default|low|medium|high|xhigh|max|ultra|extra high)\s+plan mode(?:\s|$)/i.exec(suffix);
   if (!withPlan) return undefined;
   // The regex only matches real codex levels, so a miss here is the unnameable case, never garbage.
   return EFFORTS.get(withPlan[1]!.toLowerCase()) ?? null;
