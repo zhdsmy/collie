@@ -23,9 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
-### Added
-- **Upstream tools and reliability improvements retain customized Collie controls.** Merge v1.25.0 terminal-host support, photo and diff tools, diagnostics, agent compatibility and crew fixes; preserve local input guards, compact controls and signed deployment.
+## [1.25.0+collie.1] - 2026-10-30
 
+### Added
+- **Upstream tools and reliability improvements retain customized Collie controls.** Merge v1.25.0 terminal-host support, photo and diff tools, diagnostics, agent compatibility and crew fixes; preserve local input guards, compact controls and signed deployment. ([449554518](https://github.com/zhdsmy/collie/commit/449554518))
 
 ## [1.24.3+collie.1] - 2026-10-30
 
