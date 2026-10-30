@@ -13,7 +13,7 @@
   },
   "versions": [
     {
-      "range": "1.4.0 - 1.4.8",
+      "range": "1.4.0 - 1.4.11",
       "status": "provisional",
       "verifiedThrough": null,
       "verifiedOn": null

@@ -1,4 +1,15 @@
-# AGY 1.4.4 / 1.4.5 / 1.4.7 / 1.4.8 UI checks — 2026-10-27
+# AGY 1.4.4 / 1.4.5 / 1.4.7 / 1.4.8 / 1.4.11 UI checks — 2026-10-30
+
+## Full AGY customization regression & `modalOnScreen` startup/exit guard — AGY 1.4.11 (2026-10-30)
+
+An owned AGY 1.4.11 Herdr canary (`collie-canary`) exercised all AGY customizations at 119 and 50 columns without touching user sessions:
+
+- **Profile range & startup/exit unread-card guard (`agy/index.ts`, `agy.json`):**
+  Extended `agy.json` range to `1.4.0 - 1.4.11` and added `modalOnScreen: agyModalOnScreen` on `agyAdapter` and `antigravityAdapter` so transient startup frames (`Welcome to the Antigravity CLI... ⣷ Signing in...`) and post-exit shell prompts do not flash an `unread-dialog` card while unmodelled modals (`agy--ask-multi.txt`, `agy--resume-picker-nomatch.txt`, `esc to cancel` notices) still lift `unread-dialog`.
+- **Canary scenarios (`scripts/harness-canary/run.ts`):**
+  Restored `transport.onLiveRead(readers.markLive)` in `run.ts` and ran `--agent agy --scenario idle,drafts,narrow,bar,options,start-exit`: `idle` pass, `drafts` 15/15 pass, `narrow` 3/3 pass, `start-exit` 4/4 pass, `options` 3/3 pass, `bar` 2/2 pass.
+- **Interactive modal & completion sweep (41/41 live checks):**
+  Verified inline ghost hint stripping (`/skills reload` → `/skills`), parenthesized completion alias normalization (`/config (settings)` → `/settings`), `SendProtocol` + `sendGuardedReply` + `submitMenuKeys` (`Down` / `Escape`) across `/model` (including 5× `Down` across fixed-effort models with `menusSameIdentity`), `/effort`, `/resume`, `/usage`, `/context`, `/artifact`, `/rewind`, `/agents`, `/skills`, `/tasks`, `/mcp`, `/settings` (`leftRight: true`), and `/permissions`, plus `lsof` presence-lock journal discovery and read-only SQLite / `.pb` / `transcript.jsonl` parsing (0 unknown steps).
 
 ## `/usage` (`Models & Quota`) and `/context` (`Context Usage`) scroll-panel cards — AGY 1.4.8 (2026-10-27)
 

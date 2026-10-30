@@ -3494,9 +3494,9 @@
       ],
       "live": false,
       "verified": {
-        "version": "1.4.7",
-        "date": "2026-10-26",
-        "how": "owned native Herdr session: idle, mid-turn Queue (queued: true) and mid-turn Steer (outcome: steered) sends via SendProtocol with ~/.gemini/antigravity-cli/settings.json queuedMessages mapping; gray Auto placeholder and rich statusline captured; 38/50-column drafts and Model/Resume open/cancel checked; mobile geometry replay separately; read-only installed-session checks: SQLite 185 entries; active authenticated .pb fallback 381 entries from 464 steps (3 type-101 steps counted as unknown); compact statusline and Chat mobile replay; process-held lock prevents selecting newer test sessions; Chat/composer statusline mobile replay; native client sends for Model/Resume at 119/50 columns: one Enter, no provider inference; 1.4.5 owned startup/working/Escape-to-idle status captures and mobile replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification; upstream SQLite/WAL and JSONL reader replaces local SQLite reader, retaining authenticated .pb fallback",
+        "version": "1.4.11",
+        "date": "2026-10-30",
+        "how": "owned native Herdr session on AGY 1.4.11: idle, drafts (15/15), narrow (3/3), start-exit (4/4 with modalOnScreen startup/exit guard), options (3/3), bar (2/2), inline ghost stripping (/skills), alias completion (/settings), lsof presence lock discovery, and read-only SQLite/.pb/jsonl journal checks (0 unknowns); mid-turn Queue/Steer verified on 1.4.7; 320px/390px Chromium & WebKit E2E",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3564,9 +3564,9 @@
       ],
       "live": false,
       "verified": {
-        "version": "1.4.4 / 1.4.5 / 1.4.7",
-        "date": "2026-10-24",
-        "how": "1.4.4/1.4.7 native 119/50-column captures; 1.4.7 owned Herdr sessions verified Switch Model navigation onto/off fixed-effort models (GPT-OSS 120B), /effort Set Effort scale chips, statusline extraction, and Escape via submitMenuKeys; 320px Chromium/WebKit layout replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification",
+        "version": "1.4.11",
+        "date": "2026-10-30",
+        "how": "owned native Herdr session at 119/50 columns on AGY 1.4.11: Switch Model navigation across 5 rows (including fixed-effort models with menusSameIdentity), /effort Set Effort scale chips, statusline extraction, and Escape via submitMenuKeys; 320px/390px Chromium/WebKit E2E",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3619,9 +3619,9 @@
       ],
       "live": false,
       "verified": {
-        "version": "1.4.5 / 1.4.7",
-        "date": "2026-10-24",
-        "how": "owned native Herdr sessions at 50/119 columns and wide >=134-column single-line footer test: actual client/SendProtocol opened Model and Resume with one Enter; Resume Down/Up/Escape through submitMenuKeys and bridge keysPane; 320px Chromium/WebKit replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification",
+        "version": "1.4.11",
+        "date": "2026-10-30",
+        "how": "owned native Herdr session at 119/50 columns on AGY 1.4.11: SendProtocol and bar按钮 opened Model and Resume with one Enter; Resume Down/Escape through submitMenuKeys and bridge keysPane; 320px/390px Chromium/WebKit E2E",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3716,9 +3716,9 @@
       ],
       "live": false,
       "verified": {
-        "version": "1.4.8",
-        "date": "2026-10-27",
-        "how": "owned native Herdr session at 119 and 50 columns: /usage (Models & Quota), /context (Context Usage), /rewind, /agents, /skills, /tasks, /mcp, /settings, and /permissions opened, recognized as MenuModel cards with preserved statuslines, scrolled via Up/Down, and closed via submitMenuKeys Escape; 320px Chromium/WebKit replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification",
+        "version": "1.4.11",
+        "date": "2026-10-30",
+        "how": "owned native Herdr session at 119 and 50 columns on AGY 1.4.11: /usage (Models & Quota), /context (Context Usage), /rewind, /agents, /skills, /tasks, /mcp, /settings, and /permissions opened, recognized as MenuModel cards with preserved statuslines, navigated via Down, and closed via submitMenuKeys Escape; 320px/390px Chromium/WebKit E2E",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },
@@ -3799,9 +3799,9 @@
       ],
       "live": false,
       "verified": {
-        "version": "1.4.7",
-        "date": "2026-10-24",
-        "how": "owned native Herdr session at 119 and 50 columns in plan mode: /artifact review card, inline preview toggle (p), full-screen detail viewer (Enter/o/l/Esc), confirm-exit Submit/Dismiss state, and post-review Artifacts list; submitMenuKeys and bridge keysPane exercised; 320px Chromium/WebKit layout replay; v1.25.0 adopts upstream 1.4.8 compatibility with saved-capture replay only; no new local 1.4.8 certification",
+        "version": "1.4.11",
+        "date": "2026-10-30",
+        "how": "owned native Herdr session on AGY 1.4.11 (/artifact Artifacts modal open and Escape via submitMenuKeys) plus 1.4.7 plan-mode review/preview/detail/confirm-exit captures; 320px/390px Chromium/WebKit E2E",
         "evidence": "web/src/lib/harness/agy/LOCAL_VERIFICATION.md"
       }
     },

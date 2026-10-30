@@ -390,7 +390,7 @@ describe("AGY native fallback storage", () => {
     const adapter = agyJournal(root, async () => `p42\nn${lock}\n`);
     const ref = await adapter.discover!("/cwd", { processes: [{ pid: 42, argv: ["agy"] }] });
     expect(ref).toEqual({ kind: "id", value: ID });
-    expect(await adapter.source.resolve(ref!)).toBe(pb);
+    expect(await adapter.source.resolve(ref!)).toBe(await realpath(pb));
     const history = adapter.parse((await adapter.source.load(pb)).text);
     expect(history.map((entry) => entry.role)).toEqual(["user", "assistant", "assistant"]);
     expect(adapter.parse((await adapter.source.readSince(pb, NO_CURSOR)).lines.join("\n"))).toEqual(history);
@@ -398,7 +398,7 @@ describe("AGY native fallback storage", () => {
     expect(adapter.parse((await adapter.source.readSince(pb, NO_CURSOR)).lines.join("\n"))).toHaveLength(4);
     const migrated = new Database(path);
     migrated.run("insert into steps values (0,14,0,?)", [user]); migrated.close();
-    expect(await adapter.source.resolve(ref!)).toBe(path);
+    expect(await adapter.source.resolve(ref!)).toBe(await realpath(path));
   });
 
   test("authenticates the file and its conversation identity before publishing any text", async () => {

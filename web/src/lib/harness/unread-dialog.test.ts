@@ -552,6 +552,8 @@ describe("the card stays off the shell an agent exits to, and off its first fram
     ["muse", screen("  Muse Code 1.4.6")],
     // hermes--exited, with the session id and the shell prompt replaced.
     ["hermes", screen("Resume this session with:", "  hermes --resume 0000-session", "", "Session:        0000-session", SHELL)],
+    ["agy", screen(" Welcome to the Antigravity CLI. You are currently", " not signed in.", "", " ⣷  Signing in...")],
+    ["agy", screen("Agent execution terminated.", SHELL)],
   ])("%s: no card on %#", (agent, lines) => {
     expect(adapterFor(agent)!.composerReady!(lines)).toBe(false);
     expect(adapterFor(agent)!.modalOnScreen!(lines)).toBe(false);

@@ -3,7 +3,7 @@ import type { DialogDetector, HarnessAdapter } from "../types";
 import { detectArtifactRegion } from "./artifact";
 import { extractInputDraft, extractStatusLines, hasInputBox, normalizeAgyScreenRows, stripChrome } from "./chrome";
 import { detectConversationsRegion } from "./conversations";
-import { lineText } from "./markers";
+import { classifyFooter, lineText } from "./markers";
 import { detectAgyModalRegion } from "./modals";
 import { detectModelRegion } from "./model";
 import { detectPromptSelectRegion } from "./prompt-select";
@@ -50,6 +50,20 @@ export function agyBuildBlocks(lines: StyledLine[]): Block[] {
 
 export { extractStatusLines, extractInputDraft, normalizeAgyScreenRows };
 
+const MODAL_HINT_ROWS = 6;
+const AGY_MODAL_CUE =
+  /^\s*Keyboard:\s|\besc(?:ape)?(?:\s+to)?\s+(?:cancel|close|exit|dismiss|skip|go back|clear)\b|^└ (?:Models & Quota|Context Usage)\s*$|^\s*[❯›>]\s*\d+\.\s+\S/i;
+
+/** Whether the screen's last non-blank rows show an AGY modal rather than a startup/signing-in or shell screen. */
+function agyModalOnScreen(lines: StyledLine[]): boolean {
+  const rows: string[] = [];
+  for (let i = lines.length - 1; i >= 0 && rows.length < MODAL_HINT_ROWS; i--) {
+    const text = lineText(lines[i]!);
+    if (text.trim() !== "") rows.push(text);
+  }
+  return rows.some((t) => classifyFooter(t) !== null || AGY_MODAL_CUE.test(t));
+}
+
 export const agyAdapter: HarnessAdapter = {
   agent: "agy",
   normalizeScreenRows: normalizeAgyScreenRows,
@@ -61,6 +75,7 @@ export const agyAdapter: HarnessAdapter = {
   // Claude-style footer: `fixtures/panes/agy--permission-bash.txt`, `agy--permission-edit.txt`,
   // `agy--plan-approval.txt` and `agy--select-menu.txt` all print `esc to cancel`.
   cancelKey: "Escape",
+  modalOnScreen: agyModalOnScreen,
   dialogDetectors: AGY_DIALOG_DETECTORS,
 };
 
@@ -73,5 +88,6 @@ export const antigravityAdapter: HarnessAdapter = {
   composerReady: hasInputBox,
   // Same harness, same registration, same declaration — see `agyAdapter` above.
   cancelKey: "Escape",
+  modalOnScreen: agyModalOnScreen,
   dialogDetectors: AGY_DIALOG_DETECTORS,
 };
