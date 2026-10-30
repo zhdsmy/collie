@@ -23,8 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.0+collie.2] - 2026-10-30
+
 ### Fixed
-- **Antigravity CLI 1.4.11 startup frames no longer flash an unread dialog card.** Extend the AGY surface profile range through 1.4.11, gate `agy` and `antigravity` unread-dialog fallback on positive modal footer/cue evidence (`modalOnScreen`), wire `markLive` in the Herdr canary runner, and resolve macOS symlink paths in the AGY `.pb` fallback test.
+- **Antigravity CLI 1.4.11 startup frames no longer flash an unread dialog card.** Extend the AGY surface profile range through 1.4.11, gate `agy` and `antigravity` unread-dialog fallback on positive modal footer/cue evidence (`modalOnScreen`), wire `markLive` in the Herdr canary runner, and resolve macOS symlink paths in the AGY `.pb` fallback test. ([8e02e1b53](https://github.com/zhdsmy/collie/commit/8e02e1b53))
 
 ## [1.25.0+collie.1] - 2026-10-30
 
