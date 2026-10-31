@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.2+collie.1] - 2026-10-31
+
 ### Fixed
 
-- **Merge upstream 1.25.2 while preserving Collie customizations.** Fix herdr-core input, dialog and history-read handling; retain downstream cards, Queue/Steer and signed deployment safeguards.
+- **Merge upstream 1.25.2 while preserving Collie customizations.** Fix herdr-core input, dialog and history-read handling; retain downstream cards, Queue/Steer and signed deployment safeguards. ([976051f95](https://github.com/zhdsmy/collie/commit/976051f95))
 
 
 ## [1.25.1+collie.2] - 2026-10-31
