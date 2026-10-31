@@ -76,6 +76,7 @@ export interface WireStatus {
 export interface WireForeground {
   readonly name: string;
   readonly cwd: string;
+  readonly argv?: readonly string[];
 }
 
 /** One terminal record, read for the fields the adapter maps and no others. */
@@ -254,7 +255,10 @@ function parseStatus(value: JsonValue | undefined): WireStatus | null {
 function parseForeground(value: JsonValue | undefined): WireForeground | null {
   if (value === null || value === undefined) return null;
   const record = asObject(value);
-  return { name: str(record, "name"), cwd: str(record, "cwd") };
+  const argv = asArray(record.argv);
+  const foreground = { name: str(record, "name"), cwd: str(record, "cwd") };
+  if (argv.length > 0 && argv.every((word) => typeof word === "string")) return { ...foreground, argv };
+  return foreground;
 }
 
 /** One terminal record. Exported for the fake core, which builds its answers from the same shape. */

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { asJsonObject, asJsonString, parseJsonObject } from "../../../web/src/lib/json.ts";
 import type { JsonObject, JsonValue } from "../../json.ts";
-import { defaultHcSocket, HcClient, HcError, HcTimeout, readHcCore, type WireEvent } from "./client.ts";
+import { defaultHcSocket, HcClient, HcError, HcTimeout, parseTerminal, readHcCore, type WireEvent } from "./client.ts";
 
 // A unix-socket stand-in for the core, speaking the two modes HC_API.md records: plain JSON-RPC
 // lines, and framed mode after `hello {framed:true}`. Enough of each to prove the client's wire.
@@ -96,6 +96,20 @@ function stand(onPlain: Handler, size = { cols: 70, rows: 30 }): Stand {
   opened.push(made);
   return made;
 }
+
+describe("the foreground command", () => {
+  test("keeps argv for interpreter-launched agents", () => {
+    const foreground = { name: "python3.14", cwd: "/project", argv: ["/tools/bin/python3", "-I", "-c", "bootstrap"] };
+    expect(parseTerminal({ foreground }).foreground).toEqual(foreground);
+  });
+
+  test("ignores malformed argv", () => {
+    for (const argv of [null, "python3", ["python3", 4]]) {
+      expect(parseTerminal({ foreground: { name: "python3", cwd: "/project", argv } }).foreground)
+        .toEqual({ name: "python3", cwd: "/project" });
+    }
+  });
+});
 
 describe("HcClient over a unix socket", () => {
   test("a plain call resolves its result, and an error carries the core's kind", async () => {

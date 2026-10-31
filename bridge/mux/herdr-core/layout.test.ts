@@ -129,6 +129,31 @@ describe("the herdr-core snapshot mapping", () => {
     ]);
   });
 
+  test("recognises Hermes's Python bootstrap without overriding the program's report", () => {
+    // Reduced from the live Hermes launcher: imports and entry call, with private recovery paths removed.
+    const code = "import sys\nfrom hermes_cli.main import main\nsys.argv[0] = 'hermes'\nsys.exit(main())\n";
+    const foreground = { name: "python3.14", cwd: "/project", argv: ["/tools/bin/python3", "-I", "-c", code, "--resume", "session"] };
+    const panes = toSnapshot([
+      terminal({ address: "t1", foreground }),
+      terminal({ address: "t2", foreground, status: { app: "other-tool", state: "idle", kind: "" } }),
+    ], null, "/home/dev").panes;
+    expect(panes.map((p) => [p.agent, p.status])).toEqual([["hermes", "unknown"], ["shell", "unknown"]]);
+  });
+
+  test("Python, shell commands and incidental Hermes mentions stay shells", () => {
+    const bootstrap = "from hermes_cli.main import main\nsys.exit(main())";
+    const commands = [
+      { name: "python3.14", argv: ["python3", "-c", "print('hermes_cli.main')"] },
+      { name: "python3", argv: ["python3", "-c", "from hermes_cli.main import main"] },
+      { name: "python3", argv: ["python3", "-c", "print('hello')", bootstrap] },
+      { name: "zsh", argv: ["zsh", "-c", bootstrap] },
+    ];
+    for (const foreground of commands) {
+      const [pane] = toSnapshot([terminal({ address: "t1", foreground: { ...foreground, cwd: "/project" } })], null, "/home/dev").panes;
+      expect(pane?.agent).toBe("shell");
+    }
+  });
+
   test("the start name is the pane's label, a printed title is its terminal title, a shell locator is dropped", () => {
     const snapshot = toSnapshot(
       [

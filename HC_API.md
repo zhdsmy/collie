@@ -358,7 +358,8 @@ it. This section has two parts: what Collie now handles itself, and what stays a
   sends `shift+g`.
 - **No agent name without a report.** A program that sends no OSC 7501 report (omp 18.6.1) has
   `status: null`. The adapter names its agent from `foreground.name` through the table a report uses,
-  and the pane has no status until the program reports.
+  and recognizes Hermes's isolated Python bootstrap from `foreground.argv`. The pane has no status
+  until the program reports; the bootstrap fallback does not invent one.
 - **No session id.** The core keeps the program's status, not the agent's conversation id. Collie
   gets it from the agent's own hook through `HC_TERMINAL_ID` (see above), so a Claude pane has
   History once `collie hooks install claude` is done, and not before. pi and omp have no such hook,

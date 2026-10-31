@@ -84,8 +84,8 @@ interface PaneAgent {
 /**
  * The pane's agent and status. The program's own OSC 7501 report wins. A program that sends none
  * (omp 18.6.1), or whose report names no app, is named from the foreground process, through the same table as a report: a shell,
- * or any process Collie has no harness for, stays a shell. A name taken from the process carries no
- * status, because only a report says what the program is doing.
+ * or any process Collie has no harness for, stays a shell. Hermes also matches its Python bootstrap.
+ * Process identity carries no status, because only a report says what the program is doing.
  */
 function agentOf(status: WireStatus | null, foreground: WireForeground | null): PaneAgent {
   if (status !== null && status.app.trim() !== "") {
@@ -96,6 +96,15 @@ function agentOf(status: WireStatus | null, foreground: WireForeground | null): 
   }
   const running = foreground === null ? null : agentForApp(foreground.name);
   if (running !== null) return { agent: running, status: "unknown" };
+  // Hermes's isolated launcher leaves Python as the process name; match its actual bootstrap, not incidental mentions.
+  if (foreground !== null && /^python(?:\d+(?:\.\d+)*)?$/iu.test(foreground.name)) {
+    const argv = foreground.argv ?? [];
+    const at = argv.indexOf("-c");
+    const code = at > 0 ? argv[at + 1] ?? "" : "";
+    if (/^from hermes_cli\.main import main\s*$/mu.test(code) && /^sys\.exit\(main\(\)\)\s*$/mu.test(code)) {
+      return { agent: "hermes", status: "unknown" };
+    }
+  }
   return { agent: MUX_SHELL_AGENT, status: "unknown" };
 }
 
