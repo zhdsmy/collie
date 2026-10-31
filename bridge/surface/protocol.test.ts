@@ -1843,6 +1843,50 @@ describe("codex: Tab sends every text, Enter steers a running turn (M56 spec 13)
     expect(pane.keysSeen).not.toContain("Enter");
   });
 
+  test("Codex waits for a partial paste to finish before submitting", async () => {
+    const { pane, send, clock } = codex({ version: "0.166.0" });
+    const message = "请检查这个输入问题，再完整核对 fork 中的所有内容";
+    let readyAt: number | null = null;
+    let partialReads = 0;
+    pane.afterInput = (p, what) => {
+      if (!what.startsWith("paste:")) return;
+      p.box = "请检查这个输入问题";
+      readyAt = clock.now + 600;
+    };
+    pane.beforeRead = (p) => {
+      if (readyAt === null) return;
+      expect(p.keysSeen).not.toContain("Tab");
+      expect(p.keysSeen).not.toContain("Enter");
+      if (clock.now < readyAt) partialReads++;
+      else {
+        p.box = message;
+        readyAt = null;
+      }
+    };
+
+    const answer = await send(message);
+    expect(partialReads).toBeGreaterThan(0);
+    expect(answer.receipt).toMatchObject({ outcome: "sent" });
+    expect(pane.keysSeen.at(-1)).toBe("Tab");
+    expect(pane.transcript.at(-1)).toBe(`› ${message}`);
+    expect(pane.calls.filter((call) => call.startsWith("paste:"))).toEqual([`paste:${message}`]);
+  });
+
+  test("Codex never submits a paste that stays incomplete", async () => {
+    const { pane, send } = codex({ version: "0.166.0" });
+    const prefix = "请检查这个输入问题";
+    pane.afterInput = (p, what) => {
+      if (what.startsWith("paste:")) p.box = prefix;
+    };
+
+    const answer = await send(`${prefix}，再完整核对 fork 中的所有内容`);
+    expect(answer.receipt).toMatchObject({ outcome: "typed_not_submitted", reason: "mismatch" });
+    expect(pane.keysSeen).not.toContain("Tab");
+    expect(pane.keysSeen).not.toContain("Enter");
+    expect(pane.box).toBe(prefix);
+    expect(answer.offers).toEqual(["submit", "discard", "keys"]);
+  });
+
   test("a provisional Codex: the probe passes though the hint row under the box hides at the first character (lab screens of 0.163.0, on 0.164.0)", async () => {
     const { pane, send } = codex({ version: "0.164.0" });
     const answer = await send("please list the files in this folder");

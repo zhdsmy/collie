@@ -49,7 +49,7 @@ for (const theme of ["light", "dark"]) {
     ]);
   });
 
-  test(`Codex waits through partial paste frames: ${theme}`, async ({ page }) => {
+  test(`Codex dispatches a message from the animated composer: ${theme}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.addInitScript((selected) => {
       localStorage.setItem("collie:theme:v1", selected);
