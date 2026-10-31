@@ -23,9 +23,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.2+collie.2] - 2026-11-01
+
+
 ### Fixed
 
-- **Recognize Hermes launched through Python on herdr-core.** Preserve foreground argv and match the Hermes bootstrap while keeping native agent reports authoritative and unrelated Python programs as shells.
+- **Recognize Hermes launched through Python on herdr-core.** Preserve foreground argv and match the Hermes bootstrap while keeping native agent reports authoritative and unrelated Python programs as shells. ([5eeb64bcb](https://github.com/zhdsmy/collie/commit/5eeb64bcb))
 
 
 ## [1.25.2+collie.1] - 2026-10-31
