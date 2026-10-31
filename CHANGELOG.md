@@ -23,6 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Load older terminal rows even when a transcript exists.** Keep herdr-core's screen-only polling to protect input; let every agent expand the terminal mirror without leaving for full conversation history.
+
+
 ## [1.25.3+collie.1] - 2026-11-01
 
 ### Fixed

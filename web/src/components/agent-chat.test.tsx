@@ -1718,7 +1718,7 @@ describe("AgentChat \u2014 the pane menu in the header", () => {
 // The top-of-mirror affordance. This block previously rendered on NO pane at all: it was gated on
 // `truncated`, which Herdr never sets true even when a read demonstrably cut scrollback off. The
 // working signal is `readableLines` (scrollback depth + viewport), and which button appears is
-// decided by what the pane can actually offer — the two are never simultaneously possible.
+// decided by whether more terminal rows can be loaded, independently of the session log.
 describe("AgentChat — top-of-mirror history affordance", () => {
   // These cases are about the terminal mirror, and Chat is the default body now (ADR 0082), so the
   // device is pinned to the terminal the way an operator who chose it is.
@@ -1799,11 +1799,11 @@ describe("AgentChat — top-of-mirror history affordance", () => {
     expect(showHistory()).not.toBeInTheDocument();
   });
 
-  it("a transcript wins even when the pane also reports scrollback", () => {
+  it("terminal scrollback takes priority over opening the transcript", () => {
     const agent = { ...fixtureAgents[0]!, hasSession: true, readableLines: 6946 };
     renderChat({ agent, agents: [agent], requestedLines: 600 });
-    expect(showHistory()).toBeInTheDocument();
-    expect(loadOlder()).not.toBeInTheDocument();
+    expect(showHistory()).not.toBeInTheDocument();
+    expect(loadOlder()).toBeInTheDocument();
   });
 
   // herdr-core (M79 spec 01): no scrollback depth, and its poll reads the screen alone, marked
@@ -1831,6 +1831,21 @@ describe("AgentChat — top-of-mirror history affordance", () => {
       render(<RouterProvider router={router} />);
       return { land: (next: Partial<ComponentProps<typeof AgentChat>>) => act(() => land(next)) };
     }
+
+    it.each(["hermes", "codex", "claude", "antigravity"])("%s can load terminal rows despite having a transcript", async (harness) => {
+      const user = userEvent.setup();
+      const agent = { ...fixtureAgents[0]!, agent: harness, hasSession: true };
+      const { land } = renderSwappable({ agent, agents: [agent], requestedLines: 600, truncated: true });
+      expect(showHistory()).not.toBeInTheDocument();
+      await user.click(loadOlder()!);
+      land({ agent, agents: [agent], requestedLines: 1000, truncated: true, olderRead: true, olderNote: NOTE, text: SCREEN });
+      expect(await screen.findByText(NOTE)).toBeInTheDocument();
+      await user.click(loadOlder()!);
+      land({ agent, agents: [agent], requestedLines: 1000, truncated: false, olderRead: true, text: OLDER_ROWS });
+      expect(await screen.findByText(/an older row above the screen/)).toBeInTheDocument();
+      expect(loadOlder()).not.toBeInTheDocument();
+      expect(showHistory()).toBeInTheDocument();
+    });
 
     it("offers Load older while the text is cut, and nothing on a whole read", () => {
       renderChat({ agent: shell, agents: [shell], requestedLines: 600, truncated: true });

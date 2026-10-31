@@ -3200,27 +3200,12 @@ export function AgentChat({
             >
               {display ? (
                 <>
-                  {/* Top-of-buffer affordance, reached by scrolling up. WHICH button appears is decided
-                      by what the pane can actually offer, because the two are never both possible:
-
-                        • an agent pane with a transcript → "Show entire history". Its terminal runs on
-                          the alternate screen, which keeps no scrollback ring, so the mirror can never
-                          show more than the viewport — the agent's own session log is the only history
-                          that exists (see bridge/transcript.ts).
-                        • a pane with real scrollback (a shell, on the primary screen) → "Load older",
-                          which grows the requested window.
-                        • neither → nothing.
-
-                      This used to be gated on `truncated`, which Herdr never sets true — so the button
-                      rendered on no pane at all. `readableLines` (scrollback depth + viewport) is the
-                      signal that actually works.
-
-                      A SAVED COPY takes the slot instead of either button (M46 specs 09 and 10):
-                      both reach the bridge, and there is no bridge. The dated sentence says so here,
-                      at the top of the text it dates, rather than in a bar above the mirror. */}
+                  {/* A cut terminal buffer offers Load older before the transcript link; a session
+                      log does not mean the multiplexer has no scrollback (herdr-core). Full history
+                      remains in Pane actions. A saved copy has no bridge, so it offers neither. */}
                   {savedCopyLine !== null ? (
                     <SavedCopyRow text={savedCopyLine} />
-                  ) : historyAvailable ? (
+                  ) : historyAvailable && !moreScrollback ? (
                     <button
                       type="button"
                       onClick={() => nav.down(historyPath(paneId, scope))}
@@ -3247,7 +3232,7 @@ export function AgentChat({
                   {/* Why the last Load older brought no older rows, in the multiplexer's own words
                       (herdr-core: the agent waits on you, or the core still reads them). The button
                       above stays, so a second tap asks again. */}
-                  {savedCopyLine === null && !historyAvailable && moreScrollback && olderHeld !== null ? (
+                  {savedCopyLine === null && moreScrollback && olderHeld !== null ? (
                     <p data-slot="older-note" className="mb-2 px-2 text-center text-xs text-muted-foreground">
                       {olderHeld}
                     </p>
