@@ -23,9 +23,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.3+collie.2] - 2026-11-01
+
+
 ### Fixed
 
-- **Load older terminal rows even when a transcript exists.** Keep herdr-core's screen-only polling to protect input; let every agent expand the terminal mirror without leaving for full conversation history.
+- **Load older terminal rows even when a transcript exists.** Keep herdr-core's screen-only polling to protect input; let every agent expand the terminal mirror without leaving for full conversation history. ([bb9edbca8](https://github.com/zhdsmy/collie/commit/bb9edbca8))
 
 
 ## [1.25.3+collie.1] - 2026-11-01
