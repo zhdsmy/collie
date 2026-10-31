@@ -23,6 +23,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.3+collie.1] - 2026-11-01
+
+### Fixed
+
+- **Merge upstream 1.25.3 and adapt Codex, Claude Code, Antigravity, and Hermes for herdr-core.** Expose foreground `pid` and `foregroundProcesses` in `HerdrCoreMux`, add journal session discovery for Codex (`lsof` thread-writer locks and rollout files + `--resume`), Claude Code (`~/.claude/sessions/<pid>.json` + `--resume`/`--session-id`), and Hermes (screen `Session:`/`会话:` banner + `--resume`/`--session`) so Chat and History load without `agent_session`, and add plain-text (`readIsUnstyled`) placeholder and statusline recognition across Codex, Hermes, and Antigravity so empty input hints are no longer misread as terminal drafts. ([6d0addff3](https://github.com/zhdsmy/collie/commit/6d0addff3))
+
 ## [1.25.3] - 2026-10-31
 
 **Urgent.** Claude Code's session rating blocks every send from the phone until you dismiss it on the desktop.
