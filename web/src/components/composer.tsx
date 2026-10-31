@@ -1073,6 +1073,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const adapter = adapterFor(agent ?? undefined);
   const codexRunning = agent === "codex" && shownSurface.turn === "running" && shownSurface.modal === "none";
   const runningSendChoice =
+    !starting &&
     (agent === "codex" || agent === "claude" || agent === "agy" || agent === "antigravity") &&
     shownSurface.turn === "running" &&
     shownSurface.modal === "none" &&

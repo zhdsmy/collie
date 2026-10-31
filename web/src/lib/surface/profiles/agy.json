@@ -47,6 +47,11 @@
     },
     "placeholders": {
       "texts": [],
+      "patterns": [
+        "^Ask anything or type / for commands(?:\\.\\.\\.)?$",
+        "^Auto mode: edits & safe commands auto-(?:approved(?: \\(shift\\+tab to cycle\\))?|approv\\.\\.\\.)\\s*$",
+        "^Type your message or @path/to/file"
+      ],
       "sgr": 2,
       "fg": ["var(--ansi-8)"]
     },

@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { NO_CURSOR } from "./cursor.ts";
 import { FIRST_TAIL_ROWS } from "./files.ts";
 import {
+  hermesJournal,
   HermesTranscriptSource,
   isHermesSessionId,
   parseHermesTranscript,
@@ -431,5 +432,46 @@ describe("parseHermesTranscript: the structured tool call", () => {
       JSON.stringify({ id: 4, role: "tool", tool_name: "terminal", content: "done", timestamp: 4 }),
     );
     expect(rows[0]?.parts).toEqual([{ kind: "tool", name: "terminal", summary: "", result: { text: "done" } }]);
+  });
+});
+
+describe("hermesJournal discover", () => {
+  test("discovers session from screen Session:/会话: lines or foreground --resume argv when verified in state.db", async () => {
+    const root = await mkdtemp(join(tmpdir(), "collie-hermes-discover-"));
+    const db = new Database(join(root, "state.db"));
+    db.run("create table sessions (id text primary key, source text, started_at real, parent_session_id text)");
+    db.run("create table messages (id integer primary key, session_id text, role text, content text, tool_call_id text, tool_calls text, tool_name text, timestamp real, reasoning text, reasoning_content text, active integer default 1, compacted integer default 0, display_kind text)");
+    db.run("insert into sessions (id, source, started_at, parent_session_id) values (?, 'tui', 1, null)", [SID]);
+    db.run("insert into messages (id, session_id, role, content, timestamp) values (1, ?, 'user', 'hello hermes', 1)", [SID]);
+    db.close();
+    const adapter = hermesJournal(root);
+
+    // 1. Screen banner (English / Chinese)
+    expect(
+      await adapter.discover!("/cwd", {
+        screen: async () => `╭─ Hermes Agent\nSession: ${SID}\n❯ `,
+      }),
+    ).toEqual({ kind: "id", value: SID });
+    expect(
+      await adapter.discover!("/cwd", {
+        screen: async () => `╭─ Hermes Agent\n会话: ${SID}\n❯ `,
+      }),
+    ).toEqual({ kind: "id", value: SID });
+
+    // 2. Foreground argv (--resume / -r)
+    expect(
+      await adapter.discover!("/cwd", {
+        processes: [{ pid: 35882, argv: ["/Users/dev/.hermes/hermes-agent/venv/bin/python", "-m", "hermes_cli.main", "--resume", SID] }],
+      }),
+    ).toEqual({ kind: "id", value: SID });
+
+    // 3. Unknown session id refuses to resolve
+    expect(
+      await adapter.discover!("/cwd", {
+        processes: [{ pid: 35882, argv: ["hermes", "--resume", "20990101_000000_aaaaaa"] }],
+      }),
+    ).toBeNull();
+
+    await rm(root, { recursive: true, force: true });
   });
 });

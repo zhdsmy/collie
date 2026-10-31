@@ -38,6 +38,25 @@ describe("HerdrCoreMux over a fake core", () => {
     expect(agentOf(reported)).toBe("claude");
   });
 
+  test("a pane's cwd is absolute: the foreground's cwd when reported, else the terminal's, ~ as the bridge's home", async () => {
+    // The core shortens the home folder to `~` (HC_API.md); a journal keyed on the folder needs it whole.
+    const { fake, adapter } = build();
+    const inForeground = fake.add({ status: null, cwd: "~", foreground: { name: "pi", cwd: "~/x" } });
+    const startFolder = fake.add({ status: null, cwd: "~/start", foreground: { name: "bash", cwd: "" } });
+    const home = fake.add({ status: null, cwd: "/srv", foreground: { name: "omp", cwd: "~" } });
+    const absolute = fake.add({ status: null, cwd: "~", foreground: { name: "bash", cwd: "/tmp/lab" } });
+    const unknown = fake.add({ status: null, cwd: "", foreground: { name: "bash", cwd: "" } });
+    const relative = fake.add({ status: null, cwd: "", foreground: { name: "bash", cwd: "~other/x" } });
+    const snapshot = await adapter.snapshot();
+    const cwdOf = (id: string) => snapshot.panes.find((p) => p.paneId === id)?.cwd;
+    expect(cwdOf(inForeground)).toBe("/home/dev/x");
+    expect(cwdOf(startFolder)).toBe("/home/dev/start");
+    expect(cwdOf(home)).toBe("/home/dev");
+    expect(cwdOf(absolute)).toBe("/tmp/lab");
+    expect(cwdOf(unknown)).toBe("");
+    expect(cwdOf(relative)).toBe("");
+  });
+
   test("a core at another generation is unreachable, and the snapshot says what to update", async () => {
     const { fake, adapter } = build();
     fake.generation = 2;
@@ -107,7 +126,7 @@ describe("HerdrCoreMux over a fake core", () => {
   test("the derived revision moves with one view's text and not across views", async () => {
     const { fake, adapter } = build();
     const viewport = () => adapter.readGrid("t1", { scope: "viewport", lines: 40, styling: "preserve" });
-    const recent = () => adapter.readGrid("t1", { scope: "recent", lines: 200, styling: "preserve" });
+    const recent = () => adapter.readGrid("t1", { scope: "recent", lines: 200, styling: "preserve", purpose: "older" });
     const first = await viewport();
     const history = await recent();
     const second = await viewport();
@@ -129,7 +148,7 @@ describe("HerdrCoreMux over a fake core", () => {
         adapter.readGrid("t1", { scope: "recent", lines: 40, styling: "preserve" }),
         adapter.readGrid("t1", { scope: "recent", lines: 80, styling: "preserve" }),
         adapter.readGrid("t1", { scope: "viewport", lines: 40, styling: "preserve" }),
-        adapter.readGrid("t1", { scope: "recent", lines: 600, styling: "preserve" }),
+        adapter.readGrid("t1", { scope: "recent", lines: 600, styling: "preserve", purpose: "older" }),
       ]);
       return outcomes.map((outcome) => {
         if (!outcome.ok) throw new Error("a read failed");
@@ -184,5 +203,23 @@ describe("HerdrCoreMux over a fake core", () => {
     fake.setStatus("t3", { state: "working", app: "codex", kind: "" });
     expect(topology).toBe(2);
     watch.close();
+  });
+
+  test("foregroundProcesses returns the terminal's foreground pid and argv, and maps remote/missing panes to gone", async () => {
+    const { fake, adapter } = build();
+    const id = fake.add({
+      cwd: "/home/dev/repo",
+      foreground: { name: "codex", cwd: "/home/dev/repo", pid: 35346, argv: ["codex", "resume", "01a0cef7-ed97-7720-845b-66ef1215e285"] },
+    });
+    expect(await adapter.foregroundProcesses(id)).toEqual({
+      ok: true,
+      value: [{ pid: 35346, argv: ["codex", "resume", "01a0cef7-ed97-7720-845b-66ef1215e285"] }],
+    });
+    expect(await adapter.foregroundProcesses("box/t1")).toEqual({
+      ok: false,
+      reason: "gone",
+      detail: "box/t1 is a terminal on another machine; its own Collie shows it",
+    });
+    expect(await adapter.foregroundProcesses("t999")).toMatchObject({ ok: false, reason: "gone" });
   });
 });

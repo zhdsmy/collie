@@ -30,6 +30,8 @@
 // "no input here". Pure; no pane access, no network.
 
 import { trimTrailingBlank, type StyledLine } from "../../blocks";
+import { readIsUnstyled } from "../../surface/frame";
+import { requireProfile } from "../../surface/profile";
 import { DEFAULT_TAIL_LINES } from "../../tail-lines";
 import { displayWidth } from "../../text-width";
 import {
@@ -238,6 +240,18 @@ export function stripChrome(lines: StyledLine[]): StyledLine[] {
   return trimTrailingBlank(lines.slice(0, Math.min(frame.statusRow ?? frame.topRule, frame.topRule)));
 }
 
+const HERMES_IDLE = requireProfile("hermes").idle;
+const HERMES_PLACEHOLDER_PATTERNS = (HERMES_IDLE.placeholders.patterns ?? []).map(
+  (source) => new RegExp(source, "u"),
+);
+
+function isHermesPlaceholderText(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed === "") return false;
+  if (HERMES_IDLE.placeholders.texts.includes(trimmed)) return true;
+  return HERMES_PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(trimmed));
+}
+
 // One input row's draft: the characters after `skip`, minus the italic placeholder Hermes paints in
 // an empty input (`placeholder_*` in locales/en.yaml), as runs of [text, foreground].
 function draftRuns(line: StyledLine, skip: number): { text: string; fg: string | undefined }[] {
@@ -284,7 +298,9 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
     draft += text;
   }
   draft = rstrip(draft);
-  return draft.trim() === "" ? null : draft;
+  if (draft.trim() === "") return null;
+  if (readIsUnstyled(lines) && isHermesPlaceholderText(draft)) return null;
+  return draft;
 }
 
 /**

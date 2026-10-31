@@ -97,7 +97,7 @@ describe("AgentChat: a launch's startup gate", () => {
     view.update({ stale: false, text: "$ kiro", agent: { ...known, sendProtocol: undefined } });
     expect(screen.getByRole("textbox")).toBeDisabled();
     expect(screen.getByText("Starting…").closest('[data-slot="collapse"]')).toHaveAttribute("data-state", "closed");
-    expect(screen.getByRole("button", { name: "Keys" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Type into terminal" })).not.toBeDisabled();
   });
 
   it.each([known, shell])("a pane opened without a launch keeps today's Send ($kind)", async (agent) => {

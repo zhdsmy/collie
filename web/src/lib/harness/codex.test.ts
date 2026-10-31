@@ -538,13 +538,26 @@ describe("chrome", () => {
         [
           "some output",
           "",
-          `\u203a ${PLACEHOLDER}`,
+          `\u001b[1m\u203a\u001b[0m ${PLACEHOLDER}`,
           "",
           "  model-example · demo-project · Context 99% left",
         ].join("\n"),
       ),
     );
     expect(codexAdapter.extractInputDraft(typed)).toBe(PLACEHOLDER);
+
+    const unstyledIdle = splitLines(
+      parseAnsi(
+        [
+          "some output",
+          "",
+          `\u203a ${PLACEHOLDER}`,
+          "",
+          "  model-example · demo-project · Context 99% left",
+        ].join("\n"),
+      ),
+    );
+    expect(codexAdapter.extractInputDraft(unstyledIdle)).toBeNull();
   });
 
   it("joins a wrapped draft back into the typed sentence", () => {

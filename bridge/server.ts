@@ -32,7 +32,7 @@ import {
 import { apiError, type ApiErrorBody, type ApiErrorDetail, type ErrorCode } from "./error-codes.ts";
 import { keysDeliverable, MUX_CAPABILITIES, supportsCapability, type MuxCapability, type MuxCapabilityDeclaration } from "./mux/capabilities.ts";
 import { muxUnsupported } from "./mux/types.ts";
-import type { MuxAdapter, MuxAck, MuxGrid, MuxGridRequest, MuxHistoryPage, MuxReadHint, MuxStarters, MuxWorktreeCreateRequest } from "./mux/types.ts";
+import type { MuxAdapter, MuxAck, MuxGrid, MuxGridRequest, MuxHistoryPage, MuxReadHint, MuxReadPurpose, MuxStarters, MuxWorktreeCreateRequest } from "./mux/types.ts";
 import { allCacheRules } from "./cache/rules/index.ts";
 import type { CacheOverride } from "./cache/engine.ts";
 import type { GitHeadSurface } from "./git-head.ts";
@@ -152,7 +152,7 @@ import {
 import { type ReleaseLine, type UpdateLineRecord, withLine } from "./update-line.ts";
 import { REPORT_SCREEN_ROWS, reportDoctorRows, reportScreen, type DoctorRowSource, type ReportContext, type ReportDoctorRow } from "./report.ts";
 import type { StateEngine } from "./state-engine.ts";
-import { adapterFor, buildJournalRegistry } from "./journal/registry.ts";
+import { adapterFor, buildJournalRegistry, journalAgentName } from "./journal/registry.ts";
 import { readClaudeSubagent } from "./journal/claude.ts";
 import { chatParams, LiveWindows } from "./journal/live.ts";
 import { JournalSubagents } from "./subagents-journal.ts";
@@ -4130,10 +4130,22 @@ export function paneReadHint(
   return pane?.status === "blocked" ? { blocked: true } : undefined;
 }
 
-/** A `recent` read in the mirror's shape (styling kept), carrying the bridge's hint when it has one. */
-function recentRead(lines: number, hint: MuxReadHint | undefined): MuxGridRequest {
-  return hint === undefined ? { scope: "recent", lines, styling: "preserve" } : { scope: "recent", lines, styling: "preserve", hint };
+/**
+ * A `recent` read in the mirror's shape (styling kept), carrying the bridge's hint when it has one
+ * and the purpose when it is `older`. A request without `purpose` is a `poll` (mux/types.ts
+ * `MuxGridRequest.purpose`), so the mirror's refresh and the bridge's own checks leave it out.
+ */
+function recentRead(lines: number, hint: MuxReadHint | undefined, purpose: MuxReadPurpose = "poll"): MuxGridRequest {
+  const base = { scope: "recent", lines, styling: "preserve" } as const;
+  const hinted: MuxGridRequest = hint === undefined ? base : { ...base, hint };
+  return purpose === "older" ? { ...hinted, purpose } : hinted;
 }
+
+/**
+ * The query word with which the phone's Load older asks for the rows above the screen:
+ * `GET /api/pane/:id?lines=N&purpose=older`. Any other value, or none, is the mirror's poll.
+ */
+export const PANE_READ_PURPOSE_PARAM = "purpose";
 
 export async function readPane(
   herdr: MuxAdapter,
@@ -4141,8 +4153,8 @@ export async function readPane(
   paneId: string,
   url: URL,
   req: Request,
-  journals: Record<string, JournalAdapter> | null,
-  engine: StateEngine,
+  journals: Record<string, JournalAdapter> | null = null,
+  engine?: StateEngine,
 ): Promise<Response> {
   const linesParam = Number.parseInt(url.searchParams.get("lines") ?? "", 10);
   // Clamp to a sane ceiling — don't trust the client (or Herdr) to bound an enormous read.
@@ -4157,8 +4169,12 @@ export async function readPane(
     // web app asked for (600 for the history view), well past any pane's height, so switching this
     // to `strip` would move someone's screen on every revalidate — see the adapter's `readGrid`.
     // `hint` is the state engine's word on the pane (paneReadHint): a pane it reads as blocked gets
-    // no history read on herdr-core, whose history reads hold the terminal's keys.
-    const read = await herdr.readGrid(paneId, recentRead(lines, paneReadHint(engine, paneId)));
+    // no history read on herdr-core, whose history reads hold the terminal's keys. `purpose=older`
+    // is the phone's Load older; every other read is the mirror's poll, which herdr-core answers from
+    // the screen alone.
+    const hint = engine === undefined ? undefined : paneReadHint(engine, paneId);
+    const purpose: MuxReadPurpose = url.searchParams.get(PANE_READ_PURPOSE_PARAM) === "older" ? "older" : "poll";
+    const read = await herdr.readGrid(paneId, recentRead(lines, hint, purpose));
     if (!read.ok) return text(`${herdr.mux} read failed: ${read.detail}`, 502);
     // Read logical rows only when the terminal grid contains a URL split by a soft wrap.
     const logical =
@@ -4173,14 +4189,24 @@ export async function readPane(
     );
     // Only the matching live agent's journal can name its model. Missing metadata never breaks
     // the terminal read, and disabled transcripts perform no filesystem lookup.
-    const pane = engine.current().agents.find((a) => a.paneId === paneId);
-    const codexKey = codexSessionKeyFor(pane?.agent, pane?.agentSession);
+    const allPanes = engine?.current().agents ?? [];
+    const pane = allPanes.find((a) => a.paneId === paneId);
+    const adapter = journals !== null && pane ? adapterFor(journals, pane.agent) : undefined;
+    const sessionRef =
+      pane?.agentSession ??
+      (pane && adapter?.discover !== undefined
+        ? await journalRefOf(adapter, pane, allPanes, {
+            screen: async () => stripSgr(read.value.text),
+            processes: await discoverProcesses(herdr, paneId),
+          }).catch(() => null)
+        : null) ??
+      undefined;
+    const codexKey = codexSessionKeyFor(pane?.agent, sessionRef);
     if (codexKey !== undefined) data.codexSessionKey = codexKey;
-    if (journals !== null && pane?.agentSession) {
-      const adapter = adapterFor(journals, pane.agent);
-      const model = await adapter?.sessionModel?.(pane.agentSession).catch(() => null);
+    if (adapter && sessionRef) {
+      const model = await adapter.sessionModel?.(sessionRef).catch(() => null);
       if (model) data.sessionModel = model;
-      const firstTokenMs = await adapter?.lastTurnFirstTokenMs?.(pane.agentSession).catch(() => null);
+      const firstTokenMs = await adapter.lastTurnFirstTokenMs?.(sessionRef).catch(() => null);
       if (firstTokenMs !== undefined && firstTokenMs !== null) data.lastTurnFirstTokenMs = firstTokenMs;
     }
     // ETag is derived from the serialised body — if content hasn't changed the client gets a 304
@@ -4236,6 +4262,8 @@ export function paneReadResponse(
   // Absent, never empty, when there is nothing to repair: the ETag is computed over this body, so an
   // always-present key would invalidate every client's cached copy once for no gain.
   if (logicalText !== undefined) body.logicalText = logicalText;
+  // Same rule: only a Load older the multiplexer answered without older rows carries it.
+  if (read.olderNote !== undefined) body.olderNote = read.olderNote;
   // The same mask a crew lead puts on a member's mirror (bridge/answer-mask.ts).
   return redact ? maskPaneRead(body) : body;
 }
@@ -4319,10 +4347,14 @@ export async function discoveryHints(
   return { screen: paneScreen(mux, paneId), processes: await discoverProcesses(mux, paneId) };
 }
 
-/** Another pane running `adapter`'s harness sits in `pane`'s folder. */
+/**
+ * Another pane running `adapter`'s harness sits in `pane`'s folder. A harness counts under any name
+ * its adapter answers to (`AGENT_ALIASES`): an `omp` pane and a `pi` pane write the same log format,
+ * and one adapter's folder walk would find either's session.
+ */
 function sharesFolder(adapter: JournalAdapter, pane: AgentView, panes: readonly AgentView[]): boolean {
   return panes.some(
-    (other) => other.paneId !== pane.paneId && other.agent === adapter.agent && other.cwd === pane.cwd,
+    (other) => other.paneId !== pane.paneId && journalAgentName(other.agent) === adapter.agent && other.cwd === pane.cwd,
   );
 }
 

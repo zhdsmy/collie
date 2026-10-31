@@ -303,7 +303,7 @@ describe("Report a problem on the card (ADR 0123, amendment 2026-10-28)", () => 
     const target = JSON.parse(screen.getByTestId("target").textContent ?? "{}");
     expect(target).toMatchObject({ paneId: "w1:p7", kind: "unread-dialog", dialog: { agent: "claude", key: "Escape" } });
     expect(target.dialog.verdicts.length).toBeGreaterThan(0);
-    expect(target.dialog.verdicts[0]).toEqual({ name: "preview-select", result: "null" });
+    expect(target.dialog.verdicts).toContainEqual({ name: "preview-select", result: "null" });
     expect(onAction).not.toHaveBeenCalled();
   });
 

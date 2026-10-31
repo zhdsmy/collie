@@ -2,7 +2,7 @@
 // spool that hands each file over once, and the herdr matcher that places an edge on a herdr pane.
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -17,7 +17,7 @@ import { EDGE_SCHEMA_VERSION, type EdgeRecord } from "./types.ts";
 
 let dir = "";
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "collie-edges-"));
+  dir = mkdtempSync(join(realpathSync(tmpdir()), "collie-edges-"));
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 

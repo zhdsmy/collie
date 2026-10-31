@@ -411,11 +411,11 @@ describe("the history section", () => {
   });
 
   test("a Kiro pane beside a hook-backed pane with no session is not counted as a fault", async () => {
-    // Given: a Kiro pane and a Claude pane, neither with a Herdr session ref.
-    const snapshot = wireSnapshotOf([{ paneId: "w1:p1", agent: "kiro" }, { paneId: "w2:p1", agent: "claude" }]);
+    // Given: a Kiro pane and an OpenCode pane, neither with a Herdr session ref.
+    const snapshot = wireSnapshotOf([{ paneId: "w1:p1", agent: "kiro" }, { paneId: "w2:p1", agent: "opencode" }]);
     // When: doctor reads the panes.
     const sessions = (await run({ snapshot })).get("agent-sessions");
-    // Then: only the Claude pane is named, because only its History link is hidden.
+    // Then: only the OpenCode pane is named, because only its History link is hidden.
     expect(sessions?.status).toBe("error");
     expect(sessions?.detail).toContain("1 report NO session: w2:p1");
     expect(sessions?.detail).not.toContain("w1:p1");

@@ -660,10 +660,11 @@ const KNOWN_PAINT_GAPS: { composer: string; paint: RepaintName; frames: string[]
     // line of prose, and the styled acceptor refuses that ON PURPOSE (codex.test.ts, "refuses the
     // same text with no styling at all"). #294 fixed the real headless screen, whose fields keep
     // their colours ("no client attached" above passes); this stronger repaint stays refused by
-    // design, no issue filed.
+    // design when the rows above the composer still carry SGR, whereas codex--v0163-agents-hint-warnings.txt
+    // has only blank rows above the band and becomes a fully unstyled herdr-core read.
     composer: "codex",
     paint: "no paint at all",
-    frames: CODEX_READ_BY_PAINT,
+    frames: CODEX_READ_BY_PAINT.filter((name) => name !== "codex--v0163-agents-hint-warnings.txt"),
     why: "a status row with no paint is prose by design, no issue filed",
   },
   {

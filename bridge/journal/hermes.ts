@@ -41,6 +41,7 @@ import { clamp, MAX_TEXT_CHARS, stripAnsi, summarizeToolInput } from "./text.ts"
 import { classifyToolCall } from "./tool-call.ts";
 import type {
   AgentSessionRef,
+  DiscoverHints,
   JournalAdapter,
   SessionModel,
   TranscriptEntry,
@@ -503,6 +504,35 @@ export class HermesTranscriptSource implements TranscriptSource {
       }) ?? held
     );
   }
+
+  async discoverSession(_cwd: string, hints?: DiscoverHints): Promise<AgentSessionRef | null> {
+    const candidates: string[] = [];
+    const screen = await hints?.screen?.().catch(() => null);
+    if (typeof screen === "string" && screen !== "") {
+      for (const line of screen.split("\n").toReversed()) {
+        const match = /(?:Session|会话|Resumed session|已恢复会话)[:\s]+(\d{8}_\d{6}_[A-Za-z0-9]+|local-[a-f0-9]{64})\b/iu.exec(line);
+        if (match?.[1] !== undefined) candidates.push(match[1]);
+      }
+    }
+    for (const proc of hints?.processes ?? []) {
+      const argv = proc.argv;
+      for (let i = 0; i < argv.length; i += 1) {
+        const word = argv[i] ?? "";
+        if (word === "--resume" || word === "-r" || word === "--session") {
+          const next = argv[i + 1];
+          if (next !== undefined && isHermesSessionId(next)) candidates.push(next);
+        } else {
+          const eq = /^(?:--resume|-r|--session)=(.+)$/u.exec(word)?.[1];
+          if (eq !== undefined && isHermesSessionId(eq)) candidates.push(eq);
+        }
+      }
+    }
+    for (const id of candidates) {
+      const ref: AgentSessionRef = { kind: "id", value: id };
+      if ((await this.resolve(ref)) !== null) return ref;
+    }
+    return null;
+  }
 }
 
 export function hermesJournal(roots: string | readonly string[]): JournalAdapter {
@@ -510,6 +540,7 @@ export function hermesJournal(roots: string | readonly string[]): JournalAdapter
   return {
     agent: "hermes",
     source,
+    discover: (cwd, hints) => source.discoverSession(cwd, hints),
     parse: parseHermesTranscript,
     reducer: createHermesReducer,
     sessionModel: (ref) => source.sessionModel(ref),

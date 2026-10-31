@@ -5,8 +5,10 @@
 // composer; it uses the local normalization proof rather than classifying typed Braille by glyph.
 
 import type { StyledLine } from "../../blocks";
-import { normalizeComposerParticles } from "./particles";
 import { trimTrailingBlank } from "../../blocks";
+import { readIsUnstyled } from "../../surface/frame";
+import { requireProfile } from "../../surface/profile";
+import { normalizeComposerParticles } from "./particles";
 import {
   isBlank,
   isComposerStatusRow,
@@ -45,6 +47,19 @@ const MAX_DRAFT_ROWS = 100;
 // Empty paragraphs are handled separately by the bounded walk below. Column-zero output
 // (including tool/answer bullets) still cannot be crossed on the way to the live prompt.
 const CONTINUATION = /^ {2}\s*\S/;
+const PLAIN_STATUS_ROW = new RegExp(requireProfile("codex").idle.frame.bottom.pattern, "u");
+const DIALOG_FOOTER =
+  /\b(?:press\s+\S+\s+to\b|(?:enter|esc|escape|tab|space)\s+(?:to\s+)?(?:continue|select|quit|back|cancel|submit|confirm|interrupt|dismiss|close|skip|add|toggle|clear)\b|↑\/↓\s+to\s+navigate)/i;
+
+function isPlainComposerStatusRow(text: string): boolean {
+  const row = rstrip(text);
+  if (!PLAIN_STATUS_ROW.test(row) || DIALOG_FOOTER.test(row)) return false;
+  if (/\bContext \d+% (?:left|used)\b/.test(row) && !isStatusRow(row)) {
+    return false;
+  }
+  if (/^ {2}model · \/dir · [⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]$/u.test(row)) return false;
+  return true;
+}
 
 function normalizeParticles(lines: StyledLine[]): StyledLine[] {
   const texts = lines.map(lineText);
@@ -98,9 +113,10 @@ function hasComposerChrome(lines: StyledLine[], promptRow: number, statusRow: nu
 /** The exact placeholder text is still a valid thing an operator might deliberately type. Codex
  * distinguishes its empty hint by painting the whole body dim, so extraction should use that
  * renderer evidence too instead of discarding an ordinary non-dim draft with those words. */
-function isEmptyPlaceholder(line: StyledLine): boolean {
+function isEmptyPlaceholder(line: StyledLine, unstyled = false): boolean {
   const text = rstrip(lineText(line));
   if (promptText(text) !== PLACEHOLDER) return false;
+  if (unstyled) return true;
 
   const bodyStart = PROMPT_HEAD_LENGTH;
   const bodyEnd = bodyStart + PLACEHOLDER.length;
@@ -123,13 +139,16 @@ function isEmptyPlaceholder(line: StyledLine): boolean {
  * an incomplete search, arguments, transcript echo or a different dialog cannot authorize Enter.
  * Keep the whole region for the bridge binding, including the suggestions below the input. */
 function commandInput(lines: StyledLine[]): { draft: string; prompt: string } | null {
+  const unstyled = readIsUnstyled(lines);
   const texts = lines.map((line) => rstrip(lineText(line)));
   const end = lastNonBlankIndex(texts);
   let selected: string | null = null;
+  let firstCommand: string | null = null;
   let i = end;
   for (; i >= 0 && end - i < MAX_DRAFT_ROWS; i--) {
     const command = /^ {2}(\/[a-z][a-z0-9_-]*) {2,}\S/.exec(texts[i]!);
     if (!command) break;
+    firstCommand = command[1]!;
     // Codex paints the selected row bold throughout; an unselected row only bolds search
     // matches within its name and dims its description. Enter acts on that selected row.
     if (lines[i]!.segments.filter((s) => s.text.trim()).every((s) => s.bold && !s.dim)) {
@@ -137,27 +156,32 @@ function commandInput(lines: StyledLine[]): { draft: string; prompt: string } | 
       selected = command[1]!;
     }
   }
+  if (selected === null && unstyled) selected = firstCommand;
   if (selected === null) return null;
   const promptRow = skipBlanksUp(texts, i);
   if (promptRow < 0) return null;
   const draft = promptText(texts[promptRow]!)?.trim();
   if (!draft || draft !== selected) return null;
-  const marker = lines[promptRow]!.segments.find((segment) => segment.text.length > 0 && PROMPT_GLYPHS.includes(segment.text[0]!));
-  if (!marker?.bold || marker.dim) return null;
+  if (!unstyled) {
+    const marker = lines[promptRow]!.segments.find((segment) => segment.text.length > 0 && PROMPT_GLYPHS.includes(segment.text[0]!));
+    if (!marker?.bold || marker.dim) return null;
+  }
   return { draft, prompt: texts.slice(promptRow, end + 1).join("\n") };
 }
 
 /** The composer with a status footer. Command completion is recognized separately below. */
 export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   const original = lines;
+  const unstyled = readIsUnstyled(lines);
   lines = normalizeParticles(lines);
   const texts = lines.map((l) => rstrip(lineText(l)));
-  const statusRow = locateStatusRow(texts, lines);
+  const statusRow = locateStatusRow(texts, lines, unstyled);
   if (statusRow < 0) return null;
-  const regularStatus = isComposerStatusRow(texts[statusRow]!, lines[statusRow]);
+  const plainStatus = unstyled && isPlainComposerStatusRow(texts[statusRow]!);
+  const regularStatus = isComposerStatusRow(texts[statusRow]!, lines[statusRow]) || plainStatus;
   const workingStatus = isWorkingContextRow(texts[statusRow]!);
   const customStatus =
-    !workingStatus && !isStatusRow(texts[statusRow]!, lines[statusRow]);
+    !workingStatus && !plainStatus && !isStatusRow(texts[statusRow]!, lines[statusRow]);
   if (!regularStatus && !workingStatus) return null;
 
   // Separate layout padding from the draft. Internal empty paragraphs are valid, but crossing one
@@ -186,22 +210,22 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
       continue;
     }
     if (workingStatus && i === top && isWorkingQueueRow(t)) continue;
-    if (!CONTINUATION.test(t) || isStatusRow(t, lines[i])) return null;
+    if (!CONTINUATION.test(t) || isStatusRow(t, lines[i]) || (unstyled && isPlainComposerStatusRow(t))) return null;
   }
   return null;
 }
 
 /** The status row is at the buffer tail, or directly above the 0.157.0 key-hint row. */
-function locateStatusRow(texts: string[], clean: StyledLine[]): number {
+function locateStatusRow(texts: string[], clean: StyledLine[], unstyled = false): number {
   const last = lastNonBlankIndex(texts);
   if (last < 0) return -1;
+  const isCandidate = (row: number): boolean =>
+    isComposerStatusRow(texts[row]!, clean[row]) ||
+    isWorkingContextRow(texts[row]!) ||
+    (unstyled && isPlainComposerStatusRow(texts[row]!));
   const above = last - 1;
-  if (
-    above >= 0 &&
-    isHintRow(texts[last]!, clean[last]) &&
-    (isComposerStatusRow(texts[above]!, clean[above]) || isWorkingContextRow(texts[above]!))
-  ) return above;
-  return isComposerStatusRow(texts[last]!, clean[last]) || isWorkingContextRow(texts[last]!) ? last : -1;
+  if (above >= 0 && isHintRow(texts[last]!, clean[last]) && isCandidate(above)) return above;
+  return isCandidate(last) ? last : -1;
 }
 
 /** Starfield rows directly above the prompt belong to the composer band and leave with it. */
@@ -259,6 +283,7 @@ function draftEnd(lines: StyledLine[], box: ComposerBox): number {
  * type-then-verify, and THIS is the verify half.
  */
 export function extractInputDraft(lines: StyledLine[]): string | null {
+  const unstyled = readIsUnstyled(lines);
   lines = normalizeParticles(lines);
   const box = locateComposer(lines);
   if (box === null) return commandInput(lines)?.draft ?? null;
@@ -270,7 +295,7 @@ export function extractInputDraft(lines: StyledLine[]): string | null {
     parts.push(texts[i]!.trim());
   }
   const draft = parts.filter((p) => p !== "").join(" ");
-  if (draft === "" || (draft === PLACEHOLDER && isEmptyPlaceholder(lines[box.promptRow]!))) {
+  if (draft === "" || (draft === PLACEHOLDER && isEmptyPlaceholder(lines[box.promptRow]!, unstyled))) {
     return null;
   }
   return draft;

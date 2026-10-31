@@ -36,8 +36,10 @@
 // prompt is submitted, so a Codex pane with no turn yet has no session either
 // (`REPORTS_SESSION_ON_FIRST_PROMPT` in `registry.ts`).
 
+import { execFile } from "node:child_process";
 import { readdir } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { promisify } from "node:util";
 
 import type { CacheProbe } from "../cache/engine.ts";
 import type { JsonObject, JsonValue } from "../json.ts";
@@ -72,6 +74,7 @@ import { clamp, MAX_RESULT_CHARS, MAX_TEXT_CHARS, oneLine, stripAnsi, summarizeT
 import { classifyToolCall, type ToolCall } from "./tool-call.ts";
 import type {
   AgentSessionRef,
+  DiscoverHints,
   JournalAdapter,
   TranscriptEntry,
   TranscriptPart,
@@ -632,7 +635,7 @@ export function codexHistoryBase(firstLine: string): HistoryBase | null {
 export class CodexTranscriptSource implements TranscriptSource {
   private readonly pathCache = new Map<string, { path: string; at: number }>();
 
-  private readonly roots: string[];
+  readonly roots: string[];
 
   /** One sessions directory or several (a second `CODEX_HOME`), searched in order. */
   constructor(
@@ -821,12 +824,90 @@ async function descending(dir: string): Promise<string[]> {
   }
 }
 
+type OpenFiles = (pid: number) => Promise<string>;
+const exec = promisify(execFile);
+const openFiles: OpenFiles = async (pid) =>
+  (
+    await exec("lsof", ["-nP", "-a", "-p", String(pid), "-Fn"], {
+      timeout: 1000,
+      maxBuffer: 1024 * 1024,
+      windowsHide: true,
+    })
+  ).stdout;
+
+function codexResumeArg(argv: readonly string[]): string | null {
+  for (let i = 0; i < argv.length; i += 1) {
+    const word = argv[i] ?? "";
+    if (word === "resume" || word === "--resume" || word === "-r") {
+      const next = argv[i + 1];
+      if (next !== undefined && isCodexSessionId(next)) return next.toLowerCase();
+    } else {
+      const eq = /^(?:--resume|-r)=(.+)$/u.exec(word)?.[1];
+      if (eq !== undefined && isCodexSessionId(eq)) return eq.toLowerCase();
+    }
+  }
+  return null;
+}
+
 /** Codex's journal adapter. `agent` matches the Herdr snapshot's `agent` string. */
-export function codexJournal(roots: string | readonly string[]): JournalAdapter {
+export function codexJournal(roots: string | readonly string[], files: OpenFiles = openFiles): JournalAdapter {
   const source = new CodexTranscriptSource(roots);
+  const cache = new Map<number, { at: number; paths: string[] }>();
+
+  async function discover(_cwd: string, hints?: DiscoverHints): Promise<AgentSessionRef | null> {
+    for (const proc of hints?.processes ?? []) {
+      const name = proc.argv[0]?.split(/[/\\]/).pop()?.replace(/\.exe$/i, "");
+      if (name !== "codex") continue;
+      if (proc.pid !== undefined && Number.isSafeInteger(proc.pid) && proc.pid > 0) {
+        try {
+          let held = cache.get(proc.pid);
+          if (!held || Date.now() - held.at > 1000) {
+            held = {
+              at: Date.now(),
+              paths: (await files(proc.pid))
+                .split("\n")
+                .filter((line) => line.startsWith("n"))
+                .map((line) => line.slice(1)),
+            };
+            if (cache.size >= 64) cache.clear();
+            cache.set(proc.pid, held);
+          }
+          for (const root of source.roots) {
+            const ids = new Set<string>();
+            const locksRoot = join(dirname(root), "thread-writer-locks");
+            for (const path of held.paths) {
+              const base = path.split(/[/\\]/).pop() ?? "";
+              if (base.endsWith(".lock")) {
+                const id = base.slice(0, -5);
+                if (isCodexSessionId(id) && (await containedRealpath(path, locksRoot))) ids.add(id.toLowerCase());
+              } else if (base.endsWith(".jsonl")) {
+                const match = /-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:_[0-9a-f-]{36})?\.jsonl$/i.exec(base);
+                if (match?.[1] && (await containedRealpath(path, root))) ids.add(match[1].toLowerCase());
+              }
+            }
+            if (ids.size === 1) {
+              const [id] = ids;
+              const ref: AgentSessionRef = { kind: "id", value: id! };
+              if (await source.resolve(ref)) return ref;
+            }
+          }
+        } catch {
+          // Fall back to argv when lsof is unavailable or fails.
+        }
+      }
+      const arg = codexResumeArg(proc.argv);
+      if (arg !== null) {
+        const ref: AgentSessionRef = { kind: "id", value: arg };
+        if (await source.resolve(ref)) return ref;
+      }
+    }
+    return null;
+  }
+
   return {
     agent: "codex",
     source,
+    discover,
     parse: parseCodexTranscript,
     reducer: createCodexReducer,
     cacheProbe: (ref) => codexCacheProbe(source, ref),

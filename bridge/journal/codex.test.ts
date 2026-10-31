@@ -752,3 +752,40 @@ describe("the codex probe — no cost", () => {
     expect(probe?.costUsd).toBeUndefined();
   });
 });
+
+describe("codexJournal discover", () => {
+  const SID = "01a0cef7-ed97-7720-845b-66ef1215e285";
+  const OTHER = "01a0cef8-74ca-7cd1-817f-e65b28e0d8c6";
+
+  test("binds the process's open thread-writer lock or rollout file, and falls back to resume argv", async () => {
+    const home = `${tmpdir()}/collie-codex-discover-${Math.floor(performance.now() * 1000)}`;
+    const sessions = join(home, "sessions");
+    const day = join(sessions, "2026", "10", "31");
+    await mkdir(day, { recursive: true });
+    const rollout = join(day, `rollout-2026-10-31T16-43-17-${SID}.jsonl`);
+    const otherRollout = join(day, `rollout-2026-10-31T16-44-31-${OTHER}.jsonl`);
+    await Bun.write(rollout, `${message("user", "hi")}\n`);
+    await Bun.write(otherRollout, `${message("user", "other")}\n`);
+    const lockDir = join(home, "tmp", "thread-writer-locks");
+    await mkdir(lockDir, { recursive: true });
+    const lockPath = join(lockDir, `${SID}.lock`);
+    await Bun.write(lockPath, "");
+
+    const adapter = codexJournal(sessions, async () => `p35346\nn${lockPath}\nn${rollout}\n`);
+    expect(
+      await adapter.discover!("/cwd", {
+        processes: [{ pid: 35346, argv: ["codex", "resume", OTHER] }],
+      }),
+    ).toEqual({ kind: "id", value: SID });
+
+    // Without lsof (or when no lock is held), falls back to resume <uuid> argv.
+    const noLsof = codexJournal(sessions, async () => Promise.reject(new Error("no lsof")));
+    expect(
+      await noLsof.discover!("/cwd", {
+        processes: [{ pid: 35346, argv: ["codex", "resume", OTHER] }],
+      }),
+    ).toEqual({ kind: "id", value: OTHER });
+
+    await rm(home, { recursive: true, force: true });
+  });
+});

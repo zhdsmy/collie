@@ -66,6 +66,7 @@ import { clamp, type Clamped, MAX_RESULT_CHARS, MAX_TEXT_CHARS, stripAnsi, summa
 import { classifyToolCall, type Hunk, type ToolCall } from "./tool-call.ts";
 import type {
   AgentSessionRef,
+  DiscoverHints,
   JournalAdapter,
   TranscriptEntry,
   TranscriptPart,
@@ -1378,6 +1379,45 @@ export class ClaudeTranscriptSource implements TranscriptSource {
    * turns in the old one. No hand-over code lives in this method, and none should.
    */
   readSince = readSinceFile;
+
+  async discoverSession(_cwd: string, hints?: DiscoverHints): Promise<AgentSessionRef | null> {
+    for (const proc of hints?.processes ?? []) {
+      const name = proc.argv[0]?.split(/[/\\]/).pop()?.replace(/\.exe$/i, "");
+      if (name !== "claude" && name !== "claude-code") continue;
+      if (proc.pid !== undefined && Number.isSafeInteger(proc.pid) && proc.pid > 0) {
+        for (const root of this.roots) {
+          const sessionsDir = join(dirname(root), "sessions");
+          const real = await containedRealpath(join(sessionsDir, `${String(proc.pid)}.json`), sessionsDir);
+          if (real === null) continue;
+          try {
+            // SAFETY: JSON.parse returns any; asRecord narrows the parsed JSON value to JsonRecord | undefined.
+            const row = asRecord(JSON.parse(await head(real, 4096)) as JsonValue);
+            const sessionId = row?.pid === proc.pid ? asText(row.sessionId) : undefined;
+            if (sessionId !== undefined && isSessionId(sessionId)) {
+              const ref: AgentSessionRef = { kind: "id", value: sessionId };
+              if ((await this.resolve(ref)) !== null) return ref;
+            }
+          } catch {
+            // Fall through to argv when the session file is unreadable.
+          }
+        }
+      }
+      for (let i = 0; i < proc.argv.length; i += 1) {
+        const word = proc.argv[i] ?? "";
+        let candidate: string | undefined;
+        if (word === "--resume" || word === "-r" || word === "--session-id") {
+          candidate = proc.argv[i + 1];
+        } else {
+          candidate = /^(?:--resume|-r|--session-id)=(.+)$/u.exec(word)?.[1];
+        }
+        if (candidate !== undefined && isSessionId(candidate)) {
+          const ref: AgentSessionRef = { kind: "id", value: candidate };
+          if ((await this.resolve(ref)) !== null) return ref;
+        }
+      }
+    }
+    return null;
+  }
 }
 
 /**
@@ -1391,6 +1431,7 @@ export function claudeJournal(roots: string | readonly string[]): JournalAdapter
   return {
     agent: "claude",
     source,
+    discover: (cwd, hints) => source.discoverSession(cwd, hints),
     parse: (text) => parseClaudeTranscript(text),
     reducer: () => createClaudeReducer(),
     cacheProbe: (ref) => claudeCacheProbe(source, ref),

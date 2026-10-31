@@ -141,9 +141,9 @@ import type { PreviewBlockAction } from "@/components/preview-select-block";
 import type { MenuBlockAction } from "@/components/menu-block";
 import { locateReply } from "@/lib/latest-reply";
 import { proseSource } from "@/lib/wrap-join";
-import { canGrowRequestedLines, growRequestedLines } from "@/lib/loaders";
+import { askOlderRows, canGrowRequestedLines, getRequestedLines, growRequestedLines } from "@/lib/loaders";
 import { paneName, panePlaceParts } from "@/lib/pane-name";
-import { keysSendable, useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux-capability";
+import { keysSendable, paneSessionLog, useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux-capability";
 import { runClaudeModeSwitch } from "@/lib/claude-mode-switch";
 import { readClaudeModeState } from "@/lib/harness/claude/mode";
 import { claudeHintText } from "@/lib/harness/claude/chrome";
@@ -201,6 +201,15 @@ interface AgentChatProps {
   logicalText?: string;
   /** The scrollback window `text` was fetched with — tells a grown fetch from a stale in-flight poll. */
   requestedLines?: number;
+  /**
+   * The multiplexer cut the scrollback above `text`. Only herdr-core sets it: its poll reads the
+   * screen alone, and Load older is how its rows above the screen are asked for (M79 spec 01).
+   */
+  truncated?: boolean;
+  /** `text` answers a Load older tap, not the poll (`PaneData.olderRead`). Only such a result is adopted after a tap. */
+  olderRead?: boolean;
+  /** Why that Load older came back without older rows, in the multiplexer's words. */
+  olderNote?: string | undefined;
   /** The pane's `revision` for `text` — the race guard checks a tapped menu against this. */
   revision?: number;
   /** Per-device auth from the snapshot; an unauthorised device drops the composer to read-only. */
@@ -299,6 +308,9 @@ export function AgentChat({
   sessionModel,
   lastTurnFirstTokenMs,
   codexSessionKey,
+  truncated = false,
+  olderRead = false,
+  olderNote,
   revision = 0,
   device,
   bridge = "connected",
@@ -894,17 +906,19 @@ export function AgentChat({
   // Leaving the pane hands the flag back to its "nothing is open" value. Without this, closing a
   // pane you had scrolled up in would leave the poller believing nobody is following anything.
   useEffect(() => () => publishFollowing(true), []);
-  const [shown, setShown] = useState({ text, revision, logicalText });
+  // `truncated` rides along: it says whether the text on display has its scrollback cut, which is
+  // what offers Load older on a multiplexer that cannot say how deep its scrollback is (herdr-core).
+  const [shown, setShown] = useState({ text, revision, logicalText, truncated });
   useEffect(() => {
     if (!following) return;
     // Functional update that returns the previous object when nothing changed keeps React's
     // Object.is bailout — no re-render per poll while the pane is quiet.
     setShown((prev) =>
-      prev.text === text && prev.revision === revision && prev.logicalText === logicalText
+      prev.text === text && prev.revision === revision && prev.logicalText === logicalText && prev.truncated === truncated
         ? prev
-        : { text, revision, logicalText },
+        : { text, revision, logicalText, truncated },
     );
-  }, [text, revision, logicalText, following]);
+  }, [text, revision, logicalText, truncated, following]);
   const display = modelSwitching ? modelProgress?.text ?? modelSwitchBase : shown.text;
   const hasNew = !following && display !== text;
 
@@ -1223,7 +1237,7 @@ export function AgentChat({
         setModelSwitchMessage(result.error || t(messages[result.status]));
       }
       const fresh = await fetchPane(paneId, requestedLines, scope);
-        if (!controller.signal.aborted) setShown({ text: fresh.text, revision: fresh.revision, logicalText: fresh.logicalText });
+        if (!controller.signal.aborted) setShown({ text: fresh.text, revision: fresh.revision, logicalText: fresh.logicalText, truncated: fresh.truncated });
       setDrawer(null);
     } catch (switchError) {
       if (!controller.signal.aborted) setModelSwitchMessage(describeThrownError(switchError));
@@ -1255,7 +1269,7 @@ export function AgentChat({
       if (result.status === "switched") {
         setLastModeState((previous) => ({ ...previous, sessionKey: codexSessionKey, [mode]: enabled }));
         setFollowing(true);
-        setShown({ text: result.text, revision: result.revision, logicalText: undefined });
+        setShown((prev) => ({ text: result.text, revision: result.revision, logicalText: undefined, truncated: prev.truncated }));
         setStatus(t(`${messages}.${enabled ? "successOn" : "successOff"}`), "success");
       } else if (result.status !== "cancelled") {
         setStatus(result.status === "error" ? result.error : t(`${messages}.${result.status}`), "error");
@@ -1304,7 +1318,7 @@ export function AgentChat({
       if (controller.signal.aborted) return;
       if (result.status === "switched") {
         setFollowing(true);
-        setShown({ text: result.text, revision: result.revision, logicalText: undefined });
+        setShown((prev) => ({ text: result.text, revision: result.revision, logicalText: undefined, truncated: prev.truncated }));
         setStatus(t("claudeMode.success", { mode: result.mode }), "success");
       } else if (result.status !== "cancelled") {
         setStatus(result.status === "error" ? result.error : t(`claudeMode.${result.status}`), "error");
@@ -1371,7 +1385,9 @@ export function AgentChat({
   // session", which is a per-pane answer an operator can act on by starting an agent; this one says
   // "nothing here will ever name one", which is a property of the multiplexer and needs saying out
   // loud. Hiding it is what leaves someone wondering whether Collie is broken.
-  const sessionLog = useMuxCapability("agentSessionRef", scope);
+  // A pane that already has a session (a harness that finds its own by folder) reads its log whatever
+  // the multiplexer names (lib/mux-capability.ts paneSessionLog).
+  const sessionLog = paneSessionLog(useMuxCapability("agentSessionRef", scope), agent?.hasSession);
   const historyAvailable = Boolean(agent?.hasSession) && sessionLog.capable;
   // A FOURTH state, and the per-pane sibling of the third (#137). `hasSession` folds two facts into
   // one flag bridge-side — "this pane named a session" AND "this agent has a journal adapter" — so
@@ -1593,12 +1609,17 @@ export function AgentChat({
   // Scrollback has its own capability, and it is a genuinely different one: a multiplexer can keep
   // screen history while knowing nothing about agents. Hidden rather than explained when absent —
   // "there is nothing older to load" is not a fact anyone comes looking for.
+  //
+  // Two ways to know there is more. A multiplexer that reports `readableLines` says how deep the
+  // scrollback is, and the window grows toward it. herdr-core reports no depth, and its poll reads
+  // the screen alone (`truncated`), so there Load older stands while the text on display is cut, and
+  // each tap is one read of the rows above the screen.
   const scrollback = useMuxCapability("gridScrollback", scope);
   const moreScrollback =
     scrollback.capable &&
-    agent?.readableLines !== undefined &&
-    requestedLines < agent.readableLines &&
-    canGrowRequestedLines(paneId, scope);
+    (agent?.readableLines !== undefined
+      ? requestedLines < agent.readableLines && canGrowRequestedLines(paneId, scope)
+      : shown.truncated);
 
   // The newest reply, REPLACING the mirror rows that could only hold its end.
   //
@@ -1659,31 +1680,41 @@ export function AgentChat({
   const olderAnchor = useRef<{ height: number; top: number } | null>(null);
   const adoptTarget = useRef<number | null>(null); // the requestedLines a pending grow is waiting on
   const pendingRestore = useRef(false); // re-anchor scroll after the enlarged display paints
+  // Why the last Load older brought no older rows (herdr-core: the agent waits on you, or the core
+  // still reads them). Shown under the button until the next tap.
+  const [olderHeld, setOlderHeld] = useState<string | null>(null);
   function loadOlder() {
-    if (loadingOlder || !canGrowRequestedLines(paneId, scope)) return;
+    if (loadingOlder) return;
+    const grows = canGrowRequestedLines(paneId, scope);
+    if (!grows && !shown.truncated) return;
     const el = listRef.current?.getScrollElement();
     olderAnchor.current = el ? { height: el.scrollHeight, top: el.scrollTop } : null;
     setLoadingOlder(true);
+    setOlderHeld(null);
     setFollowing(false); // stay put in history rather than snapping to the tail
-    adoptTarget.current = growRequestedLines(paneId, scope);
+    adoptTarget.current = grows ? growRequestedLines(paneId, scope) : getRequestedLines(paneId, scope);
+    // The next read asks for the rows above the screen (`?purpose=older`); every other read is the
+    // poll, which herdr-core answers from the screen alone.
+    askOlderRows(paneId, scope);
     revalidator.revalidate();
   }
-  // Adopt the enlarged buffer into the frozen display once the *grown* fetch lands — keyed on the
-  // requested line count so a stale in-flight poll (still on the old window) can't adopt early.
+  // Adopt the enlarged buffer into the frozen display once the Load older read lands — keyed on the
+  // requested line count and on `olderRead`, so a stale in-flight poll can't adopt early.
   // Adopts the whole {text, revision} pair (props from the same loader result) so the frozen
   // snapshot stays coherent for the race guard.
   useEffect(() => {
     const target = adoptTarget.current;
-    if (target === null || requestedLines < target) return;
+    if (target === null || requestedLines < target || !olderRead) return;
     adoptTarget.current = null;
     setLoadingOlder(false);
+    setOlderHeld(olderNote ?? null);
     if (text === display) {
       olderAnchor.current = null; // nothing new arrived (buffer shorter than the window)
       return;
     }
     pendingRestore.current = true;
-    setShown({ text, revision, logicalText });
-  }, [requestedLines, text, revision, logicalText, display]);
+    setShown({ text, revision, logicalText, truncated });
+  }, [requestedLines, text, revision, logicalText, truncated, olderRead, olderNote, display]);
   // After the enlarged display paints, keep the previously-visible content anchored (content grew at
   // the top, so push scrollTop down by the height delta).
   useLayoutEffect(() => {
@@ -2152,7 +2183,7 @@ export function AgentChat({
       if (result.status === "sent") setModelSwitchMessage("");
       try {
         const fresh = await fetchPane(paneId, requestedLines, scope);
-        setShown({ text: fresh.text, revision: fresh.revision, logicalText: fresh.logicalText });
+        setShown({ text: fresh.text, revision: fresh.revision, logicalText: fresh.logicalText, truncated: fresh.truncated });
       } catch (refreshError) {
         setStatus(describeThrownError(refreshError), "error");
       }
@@ -3212,6 +3243,14 @@ export function AgentChat({
                       )}
                       {loadingOlder ? t("chat.scrollback.loading") : t("chat.scrollback.loadOlder")}
                     </button>
+                  ) : null}
+                  {/* Why the last Load older brought no older rows, in the multiplexer's own words
+                      (herdr-core: the agent waits on you, or the core still reads them). The button
+                      above stays, so a second tap asks again. */}
+                  {savedCopyLine === null && !historyAvailable && moreScrollback && olderHeld !== null ? (
+                    <p data-slot="older-note" className="mb-2 px-2 text-center text-xs text-muted-foreground">
+                      {olderHeld}
+                    </p>
                   ) : null}
                   {/* EXPLAIN, don't hide (M10/06): on a multiplexer that keeps no agent session log,
                       "Show entire history" is not merely unavailable — it can never appear, and a

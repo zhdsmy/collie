@@ -77,7 +77,10 @@ export interface WireForeground {
   readonly name: string;
   readonly cwd: string;
   readonly argv?: readonly string[];
+  readonly pid?: number;
 }
+
+type MutableForeground = { -readonly [K in keyof WireForeground]: WireForeground[K] };
 
 /** One terminal record, read for the fields the adapter maps and no others. */
 export interface WireTerminal {
@@ -256,8 +259,17 @@ function parseForeground(value: JsonValue | undefined): WireForeground | null {
   if (value === null || value === undefined) return null;
   const record = asObject(value);
   const argv = asArray(record.argv);
-  const foreground = { name: str(record, "name"), cwd: str(record, "cwd") };
-  if (argv.length > 0 && argv.every((word) => typeof word === "string")) return { ...foreground, argv };
+  const rawPid = record.pid;
+  const foreground: MutableForeground = {
+    name: str(record, "name"),
+    cwd: str(record, "cwd"),
+  };
+  if (argv.length > 0 && argv.every((word): word is string => typeof word === "string")) {
+    foreground.argv = argv;
+  }
+  if (typeof rawPid === "number" && Number.isInteger(rawPid) && rawPid > 0) {
+    foreground.pid = rawPid;
+  }
   return foreground;
 }
 

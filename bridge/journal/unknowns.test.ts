@@ -134,9 +134,9 @@ describe("codex", () => {
   });
 
   test("a role and a content block are counted where they appear", () => {
-    const tally = tallyOf(createCodexReducer(), [item({ type: "message", role: "tool", content: [{ type: "input_image", url: "x" }] })]);
+    const tally = tallyOf(createCodexReducer(), [item({ type: "message", role: "tool", content: [{ type: "input_audio", url: "x" }] })]);
     expect(names(tally.rows)).toEqual(["role:tool"]);
-    expect(names(tally.parts)).toEqual(["input_image"]);
+    expect(names(tally.parts)).toEqual(["input_audio"]);
   });
 });
 

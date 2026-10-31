@@ -104,13 +104,6 @@
     "propose": "Upstream: the cursor column (a suggestion sits after the cursor, a draft ends at it), or a dim flag per row. Claude side: a hook that reports the suggestion. Text only: none, the suggestion is free prose.",
     "effect": "HOTFIX: empty box reads as a draft, so a send is refused(draft_present) and a walky delivery stays held"
   },
-  "hermes--idle-w60.txt": {
-    "why": "hermes draws a rotating example question in italic as its placeholder. The text is free prose, so there is no fixed string to match; a plain read shows it as a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts:323 holeIsFaint (profile hermes.json idle.placeholders.sgr 3)",
-    "propose": "Take the placeholder list from hermes's source and add each as idle.placeholders.texts, or a pattern if the list has a shape. Not added: the corpus holds one sample and the list is not known.",
-    "effect": "HOTFIX: empty box reads as a draft, so a send is refused(draft_present) and a walky delivery stays held"
-  },
   "muse--palette-hint-skills.txt": {
     "why": "muse's command list marks the pointed command in bold (pointerBold). A plain read finds no pointer, the list does not walk, and the frame is lost: composer unknown, modal unreadable.",
     "class": "colour-needed",
@@ -629,26 +622,6 @@
     "propose": "Upstream: per-row attributes (a dim or fg flag per row) in terminal.read. Text only: none; with no rules and no status rows, numbered rows over a key-hint line are also what agent prose quoting the screen looks like.",
     "effect": "ask card lost: no tap answer from the phone; the pane is not free, so a send is refused, which is correct"
   },
-  "agy--v144-auto-placeholder--w119.txt": {
-    "why": "This downstream Auto-mode hint is an SGR placeholder; its wording is not a plain-text placeholder pattern, so stripping SGR makes it a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/agy.json"
-  },
-  "agy--v145-status-startup--w120.txt": {
-    "why": "This downstream Auto-mode hint is an SGR placeholder; its wording is not a plain-text placeholder pattern, so stripping SGR makes it a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/agy.json"
-  },
-  "agy--v147-effort--w119.txt": {
-    "why": "This downstream Auto-mode hint is an SGR placeholder; its wording is not a plain-text placeholder pattern, so stripping SGR makes it a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/agy.json"
-  },
-  "agy--v147-effort--w50.txt": {
-    "why": "This downstream Auto-mode hint is an SGR placeholder; its wording is not a plain-text placeholder pattern, so stripping SGR makes it a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/agy.json"
-  },
   "claude--v21284-agents-canary-navigate.txt": {
     "why": "The downstream Agents or Config card uses native SGR title and selection styling to distinguish the live panel from transcript text; without it the modal and answer contract differ.",
     "class": "colour-needed",
@@ -1063,45 +1036,5 @@
     "why": "Downstream Codex cards require native SGR heading or selection styling to distinguish an active dialog from transcript text; removing it changes the modal and answer contract.",
     "class": "colour-needed",
     "rule": "web/src/lib/harness/codex/index.ts guarded card detectors"
-  },
-  "hermes--legacy-done.txt": {
-    "why": "This downstream Hermes capture uses SGR to mark its localized or historical input hint; plain-text placeholder patterns do not cover this wording, so it becomes a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/hermes.json"
-  },
-  "hermes--resume-fragments-restored.txt": {
-    "why": "This downstream Hermes capture uses SGR to mark its localized or historical input hint; plain-text placeholder patterns do not cover this wording, so it becomes a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/hermes.json"
-  },
-  "hermes--resume-fragments.txt": {
-    "why": "This downstream Hermes capture uses SGR to mark its localized or historical input hint; plain-text placeholder patterns do not cover this wording, so it becomes a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/hermes.json"
-  },
-  "hermes--v0213-done.txt": {
-    "why": "This downstream Hermes capture uses SGR to mark its localized or historical input hint; plain-text placeholder patterns do not cover this wording, so it becomes a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/hermes.json"
-  },
-  "hermes--v0216-zh-working.txt": {
-    "why": "This downstream Hermes capture uses SGR to mark its localized or historical input hint; plain-text placeholder patterns do not cover this wording, so it becomes a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/hermes.json"
-  },
-  "hermes--v0221-zh-idle.txt": {
-    "why": "This downstream Hermes capture uses SGR to mark its localized or historical input hint; plain-text placeholder patterns do not cover this wording, so it becomes a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/hermes.json"
-  },
-  "hermes--v0221-zh-send-running.txt": {
-    "why": "This downstream Hermes capture uses SGR to mark its localized or historical input hint; plain-text placeholder patterns do not cover this wording, so it becomes a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/hermes.json"
-  },
-  "hermes--v0224-modern-done.txt": {
-    "why": "This downstream Hermes capture uses SGR to mark its localized or historical input hint; plain-text placeholder patterns do not cover this wording, so it becomes a draft.",
-    "class": "text-rule-possible",
-    "rule": "web/src/lib/surface/frame.ts placeholder matching; web/src/lib/surface/profiles/hermes.json"
   }
 }

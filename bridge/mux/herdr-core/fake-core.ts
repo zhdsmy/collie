@@ -135,7 +135,7 @@ interface FakeTerminal {
   cwd: string;
   title: string;
   status: WireStatus | null;
-  foreground: { name: string; cwd: string } | null;
+  foreground: { name: string; cwd: string; pid?: number; argv?: readonly string[] } | null;
   screen: string[];
   history: string[];
   cols: number;
@@ -332,7 +332,7 @@ export class FakeHcCore implements HcRpc {
   }
 
   /** The terminal as the fake holds it, for a test that derives a generation from it. */
-  peek(address: string): { readonly foreground: { name: string; cwd: string } | null; readonly status: WireStatus | null; readonly state: string } | undefined {
+  peek(address: string): { readonly foreground: { name: string; cwd: string; pid?: number; argv?: readonly string[] } | null; readonly status: WireStatus | null; readonly state: string } | undefined {
     return this.find(address);
   }
 
