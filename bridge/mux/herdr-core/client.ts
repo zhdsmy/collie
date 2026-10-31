@@ -1,4 +1,6 @@
+import { existsSync } from "node:fs";
 import { createConnection, type Socket } from "node:net";
+import { homedir } from "node:os";
 import type { JsonObject, JsonValue } from "../../json.ts";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -98,7 +100,13 @@ export interface WireRead {
   readonly text: string;
   /** `false` when part of what was asked for may be missing. */
   readonly complete: boolean;
+  /** How the core read it: `screen`, `history` or `stitched` (HC_API.md § terminal.read). Absent when the core said none. */
+  readonly how?: string;
+  /** Why a read is incomplete, for example `working`. Absent when the core said none. */
+  readonly why?: string;
 }
+
+type MutableRead = { -readonly [K in keyof WireRead]: WireRead[K] };
 
 /** One tab of herdr-app's layout document. `name` is empty when herdr-app derives one. */
 export interface WireLayoutTab {
@@ -164,20 +172,45 @@ export class HcError extends Error {
 }
 
 /**
+ * A call the core did not answer within the client's limit. The request had left: the core may still
+ * be running it, and a write may still land (hc 0.1.14 holds a terminal's keys behind its slow
+ * history reads, then delivers them). A plain `Error` subclass, so a caller that does not care reads it
+ * as the transport failure it always was; the adapter's key path tells it apart.
+ */
+export class HcTimeout extends Error {
+  constructor(method: string, timeoutMs: number) {
+    super(`herdr-core ${method}: timed out after ${String(timeoutMs)}ms`);
+    this.name = "HcTimeout";
+  }
+}
+
+/**
  * The client socket an `hc` in this environment would dial, when the operator named none.
  *
  * The core's own rule (herdr-core docs/security.md § State and endpoints): `HC_SOCKET`, else
- * `$XDG_RUNTIME_DIR/herdr-core/<session>.sock`, else `/run/user/<uid>/herdr-core/<session>.sock`,
- * with the session from `HC_SESSION` or `default`. The core's last fallback, its state directory,
- * and a `socket` setting in its config file are not followed: a bridge that cannot find the socket
- * here says where it looked, and `COLLIE_MUX_ENDPOINT_HERDR_CORE` names any other path.
+ * `$XDG_RUNTIME_DIR/herdr-core/<session>.sock`, else `/run/user/<uid>/herdr-core/<session>.sock`
+ * when `/run/user/<uid>` exists, else the session's state directory,
+ * `${XDG_STATE_HOME:-~/.local/state}/herdr-core/<session>/<session>.sock`, with the session from
+ * `HC_SESSION` or `default`. macOS has neither `XDG_RUNTIME_DIR` nor `/run`, so its core sits in the
+ * state directory. A `socket` setting in the core's config file is not followed: a bridge that
+ * cannot find the socket here says where it looked, and `COLLIE_MUX_ENDPOINT_HERDR_CORE` names any
+ * other path.
  */
-export function defaultHcSocket(env: Readonly<Record<string, string | undefined>>, uid: number): string {
+export function defaultHcSocket(
+  env: Readonly<Record<string, string | undefined>>,
+  uid: number,
+  dirExists: (path: string) => boolean = existsSync,
+  home: string = homedir(),
+): string {
   const named = (env.HC_SOCKET ?? "").trim();
   if (named.length > 0) return named;
   const session = (env.HC_SESSION ?? "").trim() || "default";
-  const runtime = (env.XDG_RUNTIME_DIR ?? "").trim() || `/run/user/${String(uid)}`;
-  return `${runtime}/herdr-core/${session}.sock`;
+  const runtime = (env.XDG_RUNTIME_DIR ?? "").trim();
+  if (runtime.length > 0) return `${runtime}/herdr-core/${session}.sock`;
+  const userRun = `/run/user/${String(uid)}`;
+  if (dirExists(userRun)) return `${userRun}/herdr-core/${session}.sock`;
+  const stateHome = (env.XDG_STATE_HOME ?? "").trim() || `${home}/.local/state`;
+  return `${stateHome}/herdr-core/${session}/${session}.sock`;
 }
 
 // ── Field readers, the parse. Every `typeof` in this file sits in one of these. ──
@@ -365,7 +398,7 @@ export class HcClient {
         fn();
       };
       const timer = setTimeout(
-        () => finish(() => reject(new Error(`herdr-core ${method}: timed out after ${String(this.timeoutMs)}ms`))),
+        () => finish(() => reject(new HcTimeout(method, this.timeoutMs))),
         this.timeoutMs,
       );
       socket.setEncoding("utf8");
@@ -432,7 +465,12 @@ export class HcClient {
   /** The screen, plus up to `lines` lines of history above it, as plain text. */
   async readTerminal(address: string, lines: number): Promise<WireRead> {
     const result = asObject(await this.call("terminal.read", { terminal: address, lines: Math.max(0, Math.floor(lines)) }));
-    return { text: str(result, "text"), complete: result.complete !== false };
+    const read: MutableRead = { text: str(result, "text"), complete: result.complete !== false };
+    const how = str(result, "how");
+    const why = str(result, "why");
+    if (how !== "") read.how = how;
+    if (why !== "") read.why = why;
+    return read;
   }
 
   /** Named keys, in order, encoded by the core for the program's keyboard mode. */
@@ -486,7 +524,7 @@ export class HcClient {
         fn();
       };
       const timer = setTimeout(
-        () => finish(() => reject(new Error(`herdr-core terminal.attach: timed out after ${String(this.timeoutMs)}ms`))),
+        () => finish(() => reject(new HcTimeout("terminal.attach", this.timeoutMs))),
         this.timeoutMs,
       );
       const sendRpc = (id: number, method: string, params: JsonObject) => {

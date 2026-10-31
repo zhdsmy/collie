@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { asJsonObject, asJsonString, parseJsonObject } from "../../../web/src/lib/json.ts";
 import type { JsonObject, JsonValue } from "../../json.ts";
-import { defaultHcSocket, HcClient, HcError, readHcCore, type WireEvent } from "./client.ts";
+import { defaultHcSocket, HcClient, HcError, HcTimeout, readHcCore, type WireEvent } from "./client.ts";
 
 // A unix-socket stand-in for the core, speaking the two modes HC_API.md records: plain JSON-RPC
 // lines, and framed mode after `hello {framed:true}`. Enough of each to prove the client's wire.
@@ -200,9 +200,21 @@ describe("the doctor dial (M74 spec 04)", () => {
     }
     expect(said).toContain("timed out");
   });
+
+  test("a key call the core never answers is an HcTimeout, which the adapter reads as not confirmed", async () => {
+    const core = stand(() => undefined);
+    let caught = "";
+    try {
+      await new HcClient(core.path, 100).pressKeys("t1", ["down"]);
+    } catch (err) {
+      caught = err instanceof HcTimeout ? err.message : `not an HcTimeout: ${String(err)}`;
+    }
+    expect(caught).toBe("herdr-core terminal.keys: timed out after 100ms");
+  });
 });
 
 describe("the default socket", () => {
+  const runUserExists = (path: string) => path === "/run/user/1000";
   test.each([
     [{ HC_SOCKET: "/x/y.sock", HC_SESSION: "lab", XDG_RUNTIME_DIR: "/run/user/7" }, "/x/y.sock"],
     [{ HC_SESSION: "lab", XDG_RUNTIME_DIR: "/run/user/7" }, "/run/user/7/herdr-core/lab.sock"],
@@ -210,6 +222,15 @@ describe("the default socket", () => {
     [{}, "/run/user/1000/herdr-core/default.sock"],
     [{ HERDR_SOCKET_PATH: "/home/u/.config/herdr/herdr.sock" }, "/run/user/1000/herdr-core/default.sock"],
   ])("%j dials %s", (env, path) => {
-    expect(defaultHcSocket(env, 1000)).toBe(path);
+    expect(defaultHcSocket(env, 1000, runUserExists, "/home/u")).toBe(path);
+  });
+
+  test.each([
+    [{}, "/Users/u/.local/state/herdr-core/default/default.sock"],
+    [{ HC_SESSION: "lab" }, "/Users/u/.local/state/herdr-core/lab/lab.sock"],
+    [{ XDG_STATE_HOME: "/s" }, "/s/herdr-core/default/default.sock"],
+    [{ XDG_RUNTIME_DIR: "/r" }, "/r/herdr-core/default.sock"],
+  ])("with no /run/user/<uid> (macOS), %j dials %s", (env, path) => {
+    expect(defaultHcSocket(env, 501, () => false, "/Users/u")).toBe(path);
   });
 });

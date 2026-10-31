@@ -32,7 +32,7 @@ import {
 import { apiError, type ApiErrorBody, type ApiErrorDetail, type ErrorCode } from "./error-codes.ts";
 import { keysDeliverable, MUX_CAPABILITIES, supportsCapability, type MuxCapability, type MuxCapabilityDeclaration } from "./mux/capabilities.ts";
 import { muxUnsupported } from "./mux/types.ts";
-import type { MuxAdapter, MuxAck, MuxGrid, MuxHistoryPage, MuxStarters, MuxWorktreeCreateRequest } from "./mux/types.ts";
+import type { MuxAdapter, MuxAck, MuxGrid, MuxGridRequest, MuxHistoryPage, MuxReadHint, MuxStarters, MuxWorktreeCreateRequest } from "./mux/types.ts";
 import { allCacheRules } from "./cache/rules/index.ts";
 import type { CacheOverride } from "./cache/engine.ts";
 import type { GitHeadSurface } from "./git-head.ts";
@@ -2246,9 +2246,9 @@ export function startServer(opts: {
       // A reply that submits text runs this session's Send Protocol (M56 spec 06), on any terminal
       // pane: an agent's (its string picks the profile) or a bare shell's (no profile, typed and Entered blind).
       if (action === "reply" && req.method === "POST")
-        return afterPaneInput(rt.engine, await replyPane(herdr, cfg, paneId, req, audit_, device, session, replySendOf(rt)));
+        return afterPaneInput(rt.engine, await replyPane(herdr, cfg, paneId, req, audit_, device, session, { ...replySendOf(rt), readHint: paneReadHint(rt.engine, paneId) }));
       if (action === "keys" && req.method === "POST")
-        return afterPaneInput(rt.engine, await keysPane(herdr, cfg, paneId, req, audit_, device, session));
+        return afterPaneInput(rt.engine, await keysPane(herdr, cfg, paneId, req, audit_, device, session, paneReadHint(rt.engine, paneId)));
       if (action === "upload" && req.method === "POST") return uploadPane(cfg, paneId, req, audit_, device, session);
       if (action === "close" && req.method === "POST") return closePane(herdr, rt.engine, paneId, req, audit_, device, session);
       if (action === "rename" && req.method === "POST") return renamePane(herdr, rt.engine, paneId, req, audit_, device, session);
@@ -4115,6 +4115,26 @@ export function hasSplitUrl(ansiText: string): boolean {
   );
 }
 
+/**
+ * What the bridge knows about a pane that its multiplexer may not, for a `recent` read of it
+ * (mux/types.ts `MuxReadHint`): `blocked` when the state engine reads the pane as waiting on a
+ * person. The engine lifts a pane whose screen shows an ask to `blocked` even when the multiplexer
+ * reports `working` (state-engine.ts `liftScreenAsks`), which is the case herdr-core cannot see on
+ * its own: pi under a dialog. `undefined` when the engine knows nothing to add.
+ */
+export function paneReadHint(
+  engine: { current(): { readonly agents: readonly Pick<AgentView, "paneId" | "status">[] } },
+  paneId: string,
+): MuxReadHint | undefined {
+  const pane = engine.current().agents.find((agent) => agent.paneId === paneId);
+  return pane?.status === "blocked" ? { blocked: true } : undefined;
+}
+
+/** A `recent` read in the mirror's shape (styling kept), carrying the bridge's hint when it has one. */
+function recentRead(lines: number, hint: MuxReadHint | undefined): MuxGridRequest {
+  return hint === undefined ? { scope: "recent", lines, styling: "preserve" } : { scope: "recent", lines, styling: "preserve", hint };
+}
+
 export async function readPane(
   herdr: MuxAdapter,
   cfg: Config,
@@ -4136,7 +4156,9 @@ export async function readPane(
     // an alt-screen pane — scrolling it up and back — in `text` format. `lines` here is whatever the
     // web app asked for (600 for the history view), well past any pane's height, so switching this
     // to `strip` would move someone's screen on every revalidate — see the adapter's `readGrid`.
-    const read = await herdr.readGrid(paneId, { scope: "recent", lines, styling: "preserve" });
+    // `hint` is the state engine's word on the pane (paneReadHint): a pane it reads as blocked gets
+    // no history read on herdr-core, whose history reads hold the terminal's keys.
+    const read = await herdr.readGrid(paneId, recentRead(lines, paneReadHint(engine, paneId)));
     if (!read.ok) return text(`${herdr.mux} read failed: ${read.detail}`, 502);
     // Read logical rows only when the terminal grid contains a URL split by a soft wrap.
     const logical =
@@ -5181,6 +5203,8 @@ export async function typeIntoFreshShell(
 export interface ReplySendContext {
   readonly protocol: SendProtocol | undefined;
   readonly harnessOf: (paneId: string) => string | null;
+  /** The state engine's hint for the binding read of this pane (paneReadHint). Absent: none. */
+  readonly readHint?: MuxReadHint;
 }
 
 /** What a reply that ran the Send Protocol answers: the old shape for an old reader, and the protocol's answer beside it. */
@@ -5314,7 +5338,7 @@ export async function replyPane(
     return json(refusal, ae);
   }
   const binding = expected.present
-    ? await checkPromptBinding(herdr, cfg, paneId, expected.value, styled.value, columns.value, tail.value)
+    ? await checkPromptBinding(herdr, cfg, paneId, expected.value, styled.value, columns.value, tail.value, send.readHint)
     : null;
   if (binding && !binding.ok) {
     audit.record({
@@ -5377,6 +5401,7 @@ export async function keysPane(
   audit: AuditLog,
   device: string | null,
   session: string,
+  hint?: MuxReadHint,
 ): Promise<Response> {
   let body: JsonValue;
   try {
@@ -5400,7 +5425,7 @@ export async function keysPane(
   if (keys.length === 0) return text("no keys", 400);
   const ae = req.headers.get("accept-encoding");
   const binding = expected.present
-    ? await checkPromptBinding(herdr, cfg, paneId, expected.value, styled.value, columns.value, tail.value)
+    ? await checkPromptBinding(herdr, cfg, paneId, expected.value, styled.value, columns.value, tail.value, hint)
     : null;
   if (binding && !binding.ok) {
     audit.record({
@@ -5427,6 +5452,14 @@ export async function keysPane(
       detail: keysDetail,
     });
     return json({ ok: true } satisfies ActionResponse, ae);
+  }
+  if (!sent.ok && sent.reason === "unconfirmed") {
+    // The keys left and the multiplexer did not confirm them in time: they may still land (MuxRefusal,
+    // `unconfirmed`). Recorded as sent-unconfirmed, and answered as "not confirmed", never "failed",
+    // so nobody sends them twice on a wrong word.
+    keysDetail.sent = "unconfirmed";
+    audit.record({ action: "keys", paneId, session, device, detail: keysDetail });
+    return json({ ok: false, ...apiError("keys.unconfirmed", { reason: sent.detail }) } satisfies ActionResponse, ae);
   }
   if (binding) {
     audit.record({
@@ -5586,6 +5619,7 @@ async function checkPromptBinding(
   expectedStyledLines?: string,
   columns?: ColumnRange,
   tailLines?: number,
+  hint?: MuxReadHint,
 ): Promise<PromptBindingCheck> {
   const tailWindow = tailLines ?? DEFAULT_PROMPT_TAIL_LINES;
   let fresh: MuxGrid;
@@ -5602,11 +5636,7 @@ async function checkPromptBinding(
     // verifies the same kind of pane data the GET handler serves. The line count deliberately does
     // not follow cfg.readLines alone because a small legal setting may not contain the expected
     // region; include room for the accepted tail and for blank separator lines normalization drops.
-    const read = await herdr.readGrid(paneId, {
-      scope: "recent",
-      lines: bindingReadLines,
-      styling: "preserve",
-    });
+    const read = await herdr.readGrid(paneId, recentRead(bindingReadLines, hint));
     if (!read.ok) return readFailed(herdr, expected, read.detail);
     fresh = read.value;
   } catch (err) {

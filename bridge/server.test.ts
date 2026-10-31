@@ -54,6 +54,7 @@ import {
   paneChat,
   paneHistory,
   readPane,
+  paneReadHint,
   parsePairRequest,
   parseSnoozeRequest,
   parseNotifyPrefsPatch,
@@ -117,6 +118,7 @@ import {
   muxGone,
   muxOk,
   muxRefused,
+  muxUnconfirmed,
   muxUnreachable,
   type MuxConversationItems,
   type MuxConversationPage,
@@ -968,6 +970,29 @@ describe("pane write prompt binding", () => {
       code: "keys.send_failed",
       detail: { reason: "no such pane" },
     });
+  });
+
+  test("a key batch the multiplexer did not confirm in time answers keys.unconfirmed, never send_failed, and is audited as sent", async () => {
+    // herdr-core held a terminal's keys behind its slow history reads and delivered them after the
+    // client gave up (M78 report 10, case 2). "Couldn't be sent" was wrong and invited a second send.
+    const mux = asMux(new FakePaneClient());
+    let calls = 0;
+    mux.writeKeys = () => {
+      calls++;
+      return Promise.resolve(muxUnconfirmed("herdr-core did not confirm the keys in time"));
+    };
+    const { audit, entries } = auditEntries();
+    const res = await keysPane(mux, cfg(), "w1:p1", request({ keys: ["Down"] }), audit, null, "default");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      ok: false,
+      error: "the keys were not confirmed in time and may still arrive: check the pane before you send them again",
+      code: "keys.unconfirmed",
+      detail: { reason: "herdr-core did not confirm the keys in time" },
+    });
+    expect(calls).toBe(1);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ action: "keys", paneId: "w1:p1", detail: { keys: ["Down"], sent: "unconfirmed" } });
   });
 
   test("rejects oversized and non-string expected_prompt before a keys write", async () => {
@@ -5031,6 +5056,39 @@ describe("readPane — the logical read is asked for only when it can repair som
   });
 });
 
+describe("the state engine's blocked hint reaches the pane's recent reads (herdr-core history reads hold keys)", () => {
+  test("a pane the engine reads as blocked passes hint.blocked to the mirror read and the binding read; a working pane passes none", async () => {
+    // The engine lifts pi to `blocked` from the screen's ask while herdr-core reports `working`.
+    // SAFETY: this read only inspects current().agents; the stub supplies its pane and status fields.
+    const engine = { current: () => ({ agents: [{ paneId: "w1:p1", status: "blocked" as const }, { paneId: "w1:p2", status: "working" as const }] }) } as StateEngine;
+    const requests: Array<[string, MuxGridRequest]> = [];
+    const stub: Partial<MuxAdapter> = {
+      mux: "herdr-core",
+      readGrid: (paneId: string, request: MuxGridRequest) => {
+        requests.push([paneId, request]);
+        return Promise.resolve(muxOk({ paneId, text: "Allow edit to src/x.ts?\n1. Yes\n2. No", truncated: true, revision: 3 }));
+      },
+      writeKeys: () => Promise.resolve(muxAck()),
+    };
+    // SAFETY: readPane and keysPane reach `mux`, `readGrid` and the key write, all present above.
+    const adapter = stub as MuxAdapter;
+    expect(paneReadHint(engine, "w1:p1")).toEqual({ blocked: true });
+    expect(paneReadHint(engine, "w1:p2")).toBeUndefined();
+    expect(paneReadHint(engine, "w9:p9")).toBeUndefined();
+    const get = (paneId: string) => readPane(adapter, cfg(), paneId, new URL(`http://x/api/pane/${paneId}`), new Request(`http://x/api/pane/${paneId}`), null, engine);
+    expect((await get("w1:p1")).status).toBe(200);
+    expect((await get("w1:p2")).status).toBe(200);
+    const keys = new Request("http://x/api/pane/w1:p1/keys", { method: "POST", body: JSON.stringify({ keys: ["1"], expected_prompt: "Allow edit to src/x.ts?" }) });
+    await keysPane(adapter, cfg(), "w1:p1", keys, new AuditLog(() => undefined), "phone", "default", paneReadHint(engine, "w1:p1"));
+    expect(requests.map(([paneId, request]) => [paneId, request.scope, request.hint])).toEqual([
+      ["w1:p1", "recent", { blocked: true }],
+      ["w1:p2", "recent", undefined],
+      ["w1:p1", "recent", { blocked: true }],
+    ]);
+    expect("hint" in (requests[1]?.[1] ?? {})).toBe(false);
+  });
+});
+
 // ── The hot intent after an input (state-engine.ts § noteInput) ─────────────────────────────────
 //
 // Herdr announces nothing when an agent reports its session, so a bridge relaxed to its 12 s idle
@@ -5494,8 +5552,8 @@ describe("the send and abort routes", () => {
     // The refusal sits in front of both raw routes, so neither handler is reached for such a pane.
     const refusal = src.indexOf("const refusal = rawInputRefusal(herdr);");
     expect(refusal).toBeGreaterThan(0);
-    expect(refusal).toBeLessThan(src.indexOf("await replyPane(herdr, cfg, paneId, req, audit_, device, session, replySendOf(rt))"));
-    expect(refusal).toBeLessThan(src.indexOf("await keysPane(herdr, cfg, paneId, req, audit_, device, session)"));
+    expect(refusal).toBeLessThan(src.indexOf("await replyPane(herdr, cfg, paneId, req, audit_, device, session, { ...replySendOf(rt)"));
+    expect(refusal).toBeLessThan(src.indexOf("await keysPane(herdr, cfg, paneId, req, audit_, device, session, paneReadHint(rt.engine, paneId))"));
   });
 
   test("turnId: no existing pane gains one; the durable adapter names none before the program was read", () => {
