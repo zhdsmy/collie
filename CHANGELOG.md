@@ -23,9 +23,12 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.3+collie.3] - 2026-11-01
+
+
 ### Fixed
 
-- **Keep the latest 1000 terminal lines by default.** Restore automatic herdr-core mirror history while keeping send checks screen-only, skipping dialogs, sharing pending reads and pausing automatic retries after slow reads.
+- **Keep the latest 1000 terminal lines by default.** Restore automatic herdr-core mirror history while keeping send checks screen-only, skipping dialogs, sharing pending reads and pausing automatic retries after slow reads. ([655f3e180](https://github.com/zhdsmy/collie/commit/655f3e180))
 
 
 ## [1.25.3+collie.2] - 2026-11-01
