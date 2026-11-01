@@ -332,16 +332,15 @@ describe("paneLoader", () => {
 
 describe("requested-lines bookkeeping (Load older)", () => {
   // The cap is 1000 because HERDR clamps `pane.read` there (live-probed: 2000 and 6000 both return
-  // 1001 lines against a 6895-line buffer). With a 600-line base window that means exactly ONE
-  // useful tap — which is the honest ceiling, not a shortfall in the stepping.
-  it("defaults to the base window and grows to Herdr's real ceiling in one tap", async () => {
+  // 1001 lines against a 6895-line buffer). The default already reaches that ceiling.
+  it("defaults to 1000 lines and keeps explicit requests within the ceiling", async () => {
     const { getRequestedLines, growRequestedLines, canGrowRequestedLines, DETAIL_HISTORY_MAX } =
       await import("./loaders");
     expect(DETAIL_HISTORY_MAX).toBe(1000);
-    expect(getRequestedLines("w1:p1")).toBe(600);
-    expect(canGrowRequestedLines("w1:p1")).toBe(true);
+    expect(getRequestedLines("w1:p1")).toBe(1000);
+    expect(canGrowRequestedLines("w1:p1")).toBe(false);
 
-    // A 600 step would overshoot the cap, so the first tap lands exactly on it.
+    // Requesting older rows again stays at the ceiling.
     expect(growRequestedLines("w1:p1")).toBe(DETAIL_HISTORY_MAX);
     expect(getRequestedLines("w1:p1")).toBe(DETAIL_HISTORY_MAX);
 
@@ -354,12 +353,12 @@ describe("requested-lines bookkeeping (Load older)", () => {
     const { getRequestedLines, growRequestedLines } = await import("./loaders");
     growRequestedLines("w1:p1");
     expect(getRequestedLines("w1:p1")).toBe(1000);
-    expect(getRequestedLines("w2:p1")).toBe(600); // untouched
+    expect(getRequestedLines("w2:p1")).toBe(1000); // untouched
   });
 
   it("the loader fetches with (and reports) the pane's requested window", async () => {
     const { paneLoader, growRequestedLines } = await import("./loaders");
-    growRequestedLines("w1:p1"); // 600 → 1000 (the cap)
+    growRequestedLines("w1:p1"); // stays at the default cap
     const data = await paneLoader({ params: { paneId: "w1:p1" } });
     expect(data.requestedLines).toBe(1000);
   });
@@ -368,7 +367,7 @@ describe("requested-lines bookkeeping (Load older)", () => {
     const { getRequestedLines, growRequestedLines, resetRequestedLines } = await import("./loaders");
     growRequestedLines("w1:p1");
     resetRequestedLines("w1:p1");
-    expect(getRequestedLines("w1:p1")).toBe(600);
+    expect(getRequestedLines("w1:p1")).toBe(1000);
   });
 });
 
@@ -439,11 +438,11 @@ describe("loaders — session scoping", () => {
     const { getRequestedLines, growRequestedLines } = await import("./loaders");
     growRequestedLines("w1:p1", { session: "collie-demo" });
     expect(getRequestedLines("w1:p1", { session: "collie-demo" })).toBe(1000);
-    expect(getRequestedLines("w1:p1")).toBe(600); // the lead's primary session, same id, untouched
+    expect(getRequestedLines("w1:p1")).toBe(1000); // the lead's primary session, same id, untouched
     growRequestedLines("w1:p1", { host: "badger" });
     expect(getRequestedLines("w1:p1", { host: "badger" })).toBe(1000);
-    expect(getRequestedLines("w1:p1")).toBe(600); // still untouched — a different machine entirely
-    expect(getRequestedLines("w1:p1", { host: "badger", session: "collie-demo" })).toBe(600);
+    expect(getRequestedLines("w1:p1")).toBe(1000); // still untouched — a different machine entirely
+    expect(getRequestedLines("w1:p1", { host: "badger", session: "collie-demo" })).toBe(1000);
   });
 
   // The host dimension, end to end through a loader: the wire param, the per-scope stale cache, and

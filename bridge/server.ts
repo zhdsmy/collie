@@ -4132,18 +4132,19 @@ export function paneReadHint(
 
 /**
  * A `recent` read in the mirror's shape (styling kept), carrying the bridge's hint when it has one
- * and the purpose when it is `older`. A request without `purpose` is a `poll` (mux/types.ts
- * `MuxGridRequest.purpose`), so the mirror's refresh and the bridge's own checks leave it out.
+ * and the purpose for mirror/history reads. Internal send checks omit it and stay screen-only
+ * on herdr-core.
  */
 function recentRead(lines: number, hint: MuxReadHint | undefined, purpose: MuxReadPurpose = "poll"): MuxGridRequest {
   const base = { scope: "recent", lines, styling: "preserve" } as const;
   const hinted: MuxGridRequest = hint === undefined ? base : { ...base, hint };
-  return purpose === "older" ? { ...hinted, purpose } : hinted;
+  return purpose === "poll" ? hinted : { ...hinted, purpose };
 }
 
 /**
  * The query word with which the phone's Load older asks for the rows above the screen:
- * `GET /api/pane/:id?lines=N&purpose=older`. Any other value, or none, is the mirror's poll.
+ * `GET /api/pane/:id?lines=N&purpose=older`. `mirror` enables automatic history; absent or
+ * unknown values keep the lightweight read used by action guards and prefetches.
  */
 export const PANE_READ_PURPOSE_PARAM = "purpose";
 
@@ -4166,14 +4167,14 @@ export async function readPane(
     // "ansi" so the client can render a faithful, colored terminal mirror. It is also, as far as we
     // have probed, why this read leaves the operator's terminal alone: a `recent` read only harvests
     // an alt-screen pane — scrolling it up and back — in `text` format. `lines` here is whatever the
-    // web app asked for (600 for the history view), well past any pane's height, so switching this
+    // web app asked for (1000 for the terminal view), well past any pane's height, so switching this
     // to `strip` would move someone's screen on every revalidate — see the adapter's `readGrid`.
     // `hint` is the state engine's word on the pane (paneReadHint): a pane it reads as blocked gets
-    // no history read on herdr-core, whose history reads hold the terminal's keys. `purpose=older`
-    // is the phone's Load older; every other read is the mirror's poll, which herdr-core answers from
-    // the screen alone.
+    // no history read on herdr-core, whose history reads hold the terminal's keys. Terminal-view
+    // reads carry `mirror`; internal send checks keep the screen-only `poll` default.
     const hint = engine === undefined ? undefined : paneReadHint(engine, paneId);
-    const purpose: MuxReadPurpose = url.searchParams.get(PANE_READ_PURPOSE_PARAM) === "older" ? "older" : "poll";
+    const askedPurpose = url.searchParams.get(PANE_READ_PURPOSE_PARAM);
+    const purpose: MuxReadPurpose = askedPurpose === "older" || askedPurpose === "mirror" ? askedPurpose : "poll";
     const read = await herdr.readGrid(paneId, recentRead(lines, hint, purpose));
     if (!read.ok) return text(`${herdr.mux} read failed: ${read.detail}`, 502);
     // Read logical rows only when the terminal grid contains a URL split by a soft wrap.

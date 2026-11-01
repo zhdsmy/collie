@@ -141,7 +141,7 @@ import type { PreviewBlockAction } from "@/components/preview-select-block";
 import type { MenuBlockAction } from "@/components/menu-block";
 import { locateReply } from "@/lib/latest-reply";
 import { proseSource } from "@/lib/wrap-join";
-import { askOlderRows, canGrowRequestedLines, getRequestedLines, growRequestedLines } from "@/lib/loaders";
+import { askOlderRows, DETAIL_HISTORY_MAX, canGrowRequestedLines, getRequestedLines, growRequestedLines } from "@/lib/loaders";
 import { paneName, panePlaceParts } from "@/lib/pane-name";
 import { keysSendable, paneSessionLog, useMuxCapability, useMuxUnsupportedKeys } from "@/lib/mux-capability";
 import { runClaudeModeSwitch } from "@/lib/claude-mode-switch";
@@ -1618,7 +1618,7 @@ export function AgentChat({
   const moreScrollback =
     scrollback.capable &&
     (agent?.readableLines !== undefined
-      ? requestedLines < agent.readableLines && canGrowRequestedLines(paneId, scope)
+      ? requestedLines < agent.readableLines && requestedLines < DETAIL_HISTORY_MAX
       : shown.truncated);
 
   // The newest reply, REPLACING the mirror rows that could only hold its end.

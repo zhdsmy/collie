@@ -1878,7 +1878,7 @@ describe("AgentChat — top-of-mirror history affordance", () => {
       expect(loadOlder()).not.toBeInTheDocument();
       // The read after it is the poll again.
       await paneLoader({ params: { paneId: shell.paneId } });
-      expect(asked[1]).toBe("?lines=1000");
+      expect(asked[1]).toBe("?lines=1000&purpose=mirror");
     });
 
     it("a Load older that brought no older rows says why, and the button stays for another tap", async () => {

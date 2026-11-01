@@ -386,14 +386,13 @@ Each line is a thing the core could do that would close a gap Collie cannot clos
   after the read ended. A read the client gave up on still runs to its end. Another terminal in the
   same core answered keys and history reads in 0.1 s, so the hold is per terminal. The effect: a key
   call timed out at the client's 5 s and still reached pi later, and with a phone polling the pane
-  every 1.5 s the terminal's keys stayed held for over nine minutes. Collie now reads history on
-  demand only (M79 spec 01): the phone's poll, and every read of the bridge's own, reads the screen
-  (`lines: 0`) and marks the scrollback as cut. A history read starts only when a person taps Load
-  older, at most one per terminal, none while the program reports `blocked` or while Collie reads an
-  ask on the screen (the phone then says that Load older waits), and past a 2 s budget the screen
-  answers while the core finishes the read. A key call that timed out is reported as not confirmed
-  instead of failed. The 1.25.2 backoff (one read per terminal, then screen-only reads for 30 s to
-  5 min) is gone: it still let the one read hold the keys for up to 25 s after a dialog appeared. The
+  every 1.5 s the terminal's keys stayed held for over nine minutes. Collie's send checks still read only the screen
+  (`lines: 0`). The downstream terminal mirror requests the latest 1000 lines by default through
+  `purpose=mirror`; concurrent requests share one native history read. Reported or screen-detected
+  dialogs skip history. Past a 2 s budget, the screen answers while the core finishes; automatic
+  history retries pause until 30 s after that read ends. Explicit Load older can retry sooner.
+  This cannot cancel a read already running on the core: that one read may still hold a key. A key
+  call that times out is therefore not confirmed, rather than failed. The
   asks: a history read must not wait 25 s on a program that shows a dialog; `terminal.keys` must not
   wait behind pending reads on the same terminal; and a read whose client gave up (closed the
   connection) should be cancelled on the core. With those, the poll could read history again.

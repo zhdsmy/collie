@@ -3,9 +3,9 @@
 // "Pinned" means the behaviour was there before the test and the test keeps it; "fixed" names the
 // test that failed before the change beside it.
 
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { STATUS_RANK } from "../../types.ts";
-import { HerdrCoreMux, HISTORY_READ_BUDGET_MS, OLDER_NOTE_BLOCKED, OLDER_NOTE_READING } from "./adapter.ts";
+import { HerdrCoreMux, HISTORY_READ_BUDGET_MS, HISTORY_READ_COOLDOWN_MS, OLDER_NOTE_BLOCKED, OLDER_NOTE_READING } from "./adapter.ts";
 import { DEFAULT_HC_TIMEOUT_MS, type WireRead } from "./client.ts";
 import { FakeHcCore, KEY_HOLD_MS, ManualClock } from "./fake-core.ts";
 
@@ -163,6 +163,54 @@ describe("the poll reads the screen; history is read on demand (M79 spec 01)", (
     // One screen, one revision: the older rows do not move it.
     expect(older.value.revision).toBe(poll.value.revision);
     expect(fake.historyReads("t1")).toBe(1);
+  });
+});
+
+describe("automatic terminal history", () => {
+  const MIRROR = { ...RECENT, lines: 1000, purpose: "mirror" } as const;
+
+  test("the mirror reads history while internal checks stay screen-only", async () => {
+    const { fake, adapter } = build();
+    const [mirror, concurrent] = await Promise.all([adapter.readGrid("t1", MIRROR), adapter.readGrid("t1", MIRROR)]);
+    expect(concurrent).toMatchObject({ ok: true, value: { truncated: false } });
+    expect(mirror).toMatchObject({ ok: true, value: { truncated: false } });
+    if (!mirror.ok) throw new Error(mirror.detail);
+    expect(mirror.value.text).toContain("earlier line 1");
+    for (let i = 0; i < 3; i++) await adapter.readGrid("t1", RECENT);
+    expect(fake.historyReads("t1")).toBe(1);
+  });
+
+  test("blocked reports and hints start no automatic history read", async () => {
+    const { fake, adapter } = build();
+    await adapter.readGrid("t1", { ...MIRROR, hint: { blocked: true } });
+    await adapter.snapshot();
+    await adapter.readGrid("t1", MIRROR);
+    expect(fake.historyReads("t1")).toBe(0);
+    expect((await adapter.writeKeys("t1", ["Down"])).ok).toBe(true);
+  });
+
+  test("a slow automatic read stays single-flight and pauses after it finishes", async () => {
+    let now = 100;
+    const clock = spyOn(Date, "now").mockImplementation(() => now);
+    try {
+      const fake = new FakeHcCore();
+      const adapter = new HerdrCoreMux(fake, "/home/dev", { historyBudgetMs: 10, log: () => undefined });
+      fake.hangHistoryReads("t1");
+      expect(await adapter.readGrid("t1", MIRROR)).toMatchObject({ ok: true, value: { truncated: true } });
+      for (let i = 0; i < 10; i++) await adapter.readGrid("t1", MIRROR);
+      expect(fake.historyReads("t1")).toBe(1);
+      fake.hangHistoryReads("t1", false);
+      fake.answerHungReads();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      now += HISTORY_READ_COOLDOWN_MS - 1;
+      await adapter.readGrid("t1", MIRROR);
+      expect(fake.historyReads("t1")).toBe(1);
+      now += 2;
+      expect(await adapter.readGrid("t1", MIRROR)).toMatchObject({ ok: true, value: { truncated: false } });
+      expect(fake.historyReads("t1")).toBe(2);
+    } finally {
+      clock.mockRestore();
+    }
   });
 });
 

@@ -41,3 +41,27 @@ for (const harness of ["hermes", "codex", "claude", "antigravity"]) {
     await expect(page.getByRole("button", { name: "Conversation history", exact: true })).toBeVisible();
   });
 }
+
+
+test("the terminal opens with 1000 retained rows without a Load older tap", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.addInitScript(() => localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" })));
+  await installApiStub(page);
+  const retained = Array.from({ length: 1000 }, (_, i) => `Retained terminal row ${i + 1}`).join("\n");
+  const purposes: (string | null)[] = [];
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    purposes.push(query.get("purpose"));
+    expect(query.get("lines")).toBe("1000");
+    return route.fulfill({ json: { paneId: "w1:p1", text: retained, truncated: false, revision: 1 } });
+  });
+  await page.goto("/pane/w1:p1");
+  await expect(page.getByText("Retained terminal row 1000", { exact: true })).toBeVisible();
+  const first = page.getByText("Retained terminal row 1", { exact: true });
+  await first.scrollIntoViewIfNeeded();
+  await expect(first).toBeVisible();
+  expect(purposes).toContain("mirror");
+  expect(purposes).not.toContain("older");
+  await expect(page.getByRole("button", { name: "Load older", exact: true })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("terminal-default-1000.png"), animations: "disabled" });
+});

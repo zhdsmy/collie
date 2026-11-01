@@ -5091,7 +5091,7 @@ describe("the state engine's blocked hint reaches the pane's recent reads (herdr
 });
 
 describe("the read's purpose: the mirror's poll, or Load older (M79 spec 01)", () => {
-  test("`?purpose=older` reaches the adapter as purpose older with its note on the body; any other read carries no purpose and no note", async () => {
+  test("mirror reads carry a distinct purpose while key guards remain screen-only", async () => {
     const requests: MuxGridRequest[] = [];
     const stub: Partial<MuxAdapter> = {
       mux: "herdr-core",
@@ -5112,10 +5112,12 @@ describe("the read's purpose: the mirror's poll, or Load older (M79 spec 01)", (
     const older = await read("?lines=1000&purpose=older");
     const poll = await read("?lines=1000");
     const other = await read("?lines=1000&purpose=history");
+    const mirror = await read("?lines=1000&purpose=mirror");
     const keys = new Request("http://x/api/pane/w1:p1/keys", { method: "POST", body: JSON.stringify({ keys: ["1"], expected_prompt: "$ ls" }) });
     await keysPane(adapter, cfg(), "w1:p1", keys, new AuditLog(() => undefined), "phone", "default");
-    expect(requests.map((request) => request.purpose)).toEqual(["older", undefined, undefined, undefined]);
-    expect(requests.slice(1).every((request) => !("purpose" in request))).toBe(true);
+    expect(requests.map((request) => request.purpose)).toEqual(["older", undefined, undefined, "mirror", undefined]);
+    expect("purpose" in requests[4]!).toBe(false);
+    expect("olderNote" in mirror).toBe(false);
     expect(older.olderNote).toBe("wait");
     expect("olderNote" in poll).toBe(false);
     expect("olderNote" in other).toBe(false);

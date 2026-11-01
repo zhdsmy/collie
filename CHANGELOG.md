@@ -23,6 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Keep the latest 1000 terminal lines by default.** Restore automatic herdr-core mirror history while keeping send checks screen-only, skipping dialogs, sharing pending reads and pausing automatic retries after slow reads.
+
+
 ## [1.25.3+collie.2] - 2026-11-01
 
 

@@ -539,8 +539,8 @@ function rememberPaneText(key: string, text: string, at: number = Date.now()): v
 
 // The detail view pulls a deeper window than the home snapshot's status reads, so you can scroll
 // back through a long exchange. The live tail still follows; scrolling up freezes it (see
-// AgentChat). Larger = more scrollback but more bytes per poll — 600 holds several exchanges.
-const DETAIL_HISTORY_LINES = 600;
+// AgentChat). Keep the latest 1000 lines available by default.
+const DETAIL_HISTORY_LINES = 1000;
 // "Load older" raises the requested window by a step per tap, up to a cap.
 //
 // The cap is 1000 because HERDR clamps `pane.read` there — silently, and without setting `truncated`.
@@ -588,10 +588,8 @@ export function resetRequestedLines(paneId?: string, scope?: Scope): void {
   olderAsked.delete(paneKey(paneId, scope));
 }
 
-// Panes whose next read is a person's Load older (`?purpose=older`). Every other read is the mirror's
-// poll, which herdr-core answers from the screen alone: a history read there can hold the pane's keys
-// for 25 s, so it reads one only when a person asks (M79 spec 01). The mark stays until a read
-// answers, so a revalidation that a newer one superseded does not lose the tap.
+// Explicit retries bypass herdr-core's automatic-history cooldown. Keep the mark until a read
+// answers so a superseded revalidation does not lose the tap.
 const olderAsked = new Set<string>();
 
 /** The pane's next read asks for the rows above the screen: a Load older tap. */
@@ -822,7 +820,7 @@ export async function paneLoader({
       const markSeen = () => fetchPane(paneId, lines, scope).catch(() => {});
       void prefetched.then(markSeen, markSeen);
     }
-    const reading = prefetched ?? fetchPane(paneId, lines, scope, request?.signal, { older });
+    const reading = prefetched ?? fetchPane(paneId, lines, scope, request?.signal, { purpose: older ? "older" : "mirror" });
     let read: PaneReadResponse;
     if (isNavigation && !answeredLive) {
       // The cold open, as in rootLoader: a pane opened straight from a killed PWA draws its saved

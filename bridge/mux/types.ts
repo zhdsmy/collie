@@ -411,19 +411,19 @@ export interface MuxGridRequest {
   /**
    * Why the bridge reads, for a `recent` read. OPTIONAL, and absent means `poll`.
    *
-   * - `poll`: the mirror's refresh, every 1.5 s while a phone looks at the pane, and the bridge's own
-   *   checks of a send.
+   * - `poll`: the bridge's own checks of a send; herdr-core reads the screen alone.
+   * - `mirror`: the phone's terminal view, including recent scrollback when safe to read.
    * - `older`: a person tapped Load older and asks for the rows above the screen.
    *
-   * An adapter that reads its scrollback at no cost answers both alike and may ignore the field.
-   * herdr-core reads history only on `older`: its history read can hold the terminal's keys for 25 s
-   * (herdr-core/adapter.ts, `readGrid`), so a `poll` there reads the screen alone, marked `truncated`.
+   * Other adapters may answer all alike. herdr-core skips automatic history during dialogs,
+   * and the cooldown after a slow read, because history can hold its keys. Concurrent reads share
+   * one native history request.
    */
   readonly purpose?: MuxReadPurpose;
 }
 
 /** Why the bridge reads a pane's scrollback. See {@link MuxGridRequest.purpose}. */
-export type MuxReadPurpose = "poll" | "older";
+export type MuxReadPurpose = "poll" | "mirror" | "older";
 
 /**
  * What the bridge knows about the pane that the multiplexer may not; an adapter may ignore it.
@@ -459,7 +459,7 @@ export interface MuxGrid {
    */
   readonly partial?: true;
   /**
-   * A sentence for the person, set only on an `older` read ({@link MuxGridRequest.purpose}) that
+   * A sentence for the person, set on a history read ({@link MuxGridRequest.purpose}) that
    * answered without the rows above the screen, and saying why: on herdr-core, the agent waits on a
    * person, or the core still runs an earlier history read. Absent on every other read and adapter.
    */

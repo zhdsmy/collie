@@ -153,6 +153,8 @@ interface PaneRevision {
  * past this budget its rows answer, marked `truncated`, with {@link OLDER_NOTE_READING}.
  */
 export const HISTORY_READ_BUDGET_MS = 2000;
+/** Automatic reads pause for 30 s after a slow native history read finishes. */
+export const HISTORY_READ_COOLDOWN_MS = 30_000;
 
 /**
  * What an `older` read on a pane that waits on a person answers beside the screen's rows. The bridge's
@@ -181,6 +183,7 @@ export class HerdrCoreMux implements MuxAdapter {
 
   /** Per pane, the history read the core still runs, until it settles; Collie's budget does not end it. */
   private readonly historyPending = new Map<string, Promise<WireRead>>();
+  private readonly historyRetryAfter = new Map<string, number>();
   /** Panes whose program reported `blocked` in the last snapshot: a dialog is up. */
   private readonly blockedPanes = new Set<string>();
   private readonly historyBudgetMs: number;
@@ -240,10 +243,9 @@ export class HerdrCoreMux implements MuxAdapter {
    * missing while a full-screen app works) is handed over with `partial` set, on any read: the mirror
    * shows it, and the Send Protocol takes it as no read and decides nothing on it.
    *
-   * A `recent` read reads history on demand only. A `poll` (the default, MuxGridRequest.purpose)
-   * reads the screen alone and answers its rows marked `truncated`: the scrollback above them is cut.
-   * An `older` read, a person's Load older, asks for `lines` lines of history and keeps the last
-   * `lines` of what comes back (see {@link olderRows}).
+   * Internal `poll` reads stay screen-only. The phone's `mirror` reads recent history, except
+   * during dialogs and a cooldown after a slow one. Explicit `older` reads may retry.
+   * All history reads share the existing single-flight, blocked hint and 2 s fallback budget.
    *
    * WHY: hc 0.1.14 runs a terminal's history reads and key presses one at a time, and under pi's
    * permission dialog one history read took 25 s and answered `complete: false, how: screen`; every
@@ -262,7 +264,9 @@ export class HerdrCoreMux implements MuxAdapter {
         const screen = await this.rpc.readTerminal(paneId, 0);
         return muxOk(this.gridOf(paneId, screen, screen, { keep: null, truncated: false }));
       }
-      if (request.purpose !== "older") {
+      const automatic = request.purpose === "mirror";
+      if ((request.purpose !== "older" && !automatic) || (automatic &&
+          Date.now() < (this.historyRetryAfter.get(paneId) ?? 0))) {
         const screen = await this.rpc.readTerminal(paneId, 0);
         return muxOk(this.gridOf(paneId, screen, screen, { keep: lines, truncated: true }));
       }
@@ -297,10 +301,15 @@ export class HerdrCoreMux implements MuxAdapter {
     });
     try {
       const read = await Promise.race([history, late]);
-      if (read !== null) return { read, screen: await screen };
+      if (read !== null) {
+        this.historyRetryAfter.delete(paneId);
+        return { read, screen: await screen };
+      }
     } finally {
       clearTimeout(timer);
     }
+    this.historyRetryAfter.set(paneId, this.historyPending.get(paneId) === history
+      ? Number.POSITIVE_INFINITY : Date.now() + HISTORY_READ_COOLDOWN_MS);
     this.log(`[herdr-core] pane ${paneId}: history read slow (no answer in ${String(this.historyBudgetMs)} ms), Load older answered the screen alone`);
     const shown = await screen;
     return { read: shown, screen: shown, note: OLDER_NOTE_READING };
@@ -311,7 +320,11 @@ export class HerdrCoreMux implements MuxAdapter {
     const history = this.rpc.readTerminal(paneId, lines);
     this.historyPending.set(paneId, history);
     const settled = () => {
-      if (this.historyPending.get(paneId) === history) this.historyPending.delete(paneId);
+      if (this.historyPending.get(paneId) !== history) return;
+      this.historyPending.delete(paneId);
+      if (this.historyRetryAfter.get(paneId) === Number.POSITIVE_INFINITY) {
+        this.historyRetryAfter.set(paneId, Date.now() + HISTORY_READ_COOLDOWN_MS);
+      }
     };
     history.then(settled, settled);
     return history;
@@ -578,8 +591,10 @@ export class HerdrCoreMux implements MuxAdapter {
 
   /** Drop the revision of every pane the core no longer lists. The map's only shrink path. */
   private forgetGonePanes(snapshot: MuxSnapshot): void {
-    if (this.revisions.size === 0) return;
     const live = new Set(snapshot.panes.map((pane) => pane.paneId));
+    for (const paneId of this.historyRetryAfter.keys()) {
+      if (!live.has(paneId)) this.historyRetryAfter.delete(paneId);
+    }
     for (const paneId of this.revisions.keys()) {
       if (!live.has(paneId)) this.revisions.delete(paneId);
     }
