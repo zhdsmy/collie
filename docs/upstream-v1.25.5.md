@@ -30,7 +30,7 @@
 - 菜单、输入框边界、notice、全样本 Surface/纯文本对照：1654 项通过；相关 Claude 问答变体 218 项通过。
 - Report/menu 组件 40 项、报告正文 32 项通过；两端类型检查、lint、版本检查与正式构建通过后部署。
 - 本机只读原生探针确认 emitter、reader 和 hook-target 对同一进程的启动时间一致；未改现有 hooks，也未向用户会话发送探针或消息。
-- 手机浏览器检查报告入口、Claude Settings/问答和单个 Fast 控件，结果见最终交付。浏览器样本 API 不等于用户真实 CLI 原生交互认证。
+- 浏览器检查报告卡、Claude Settings/问答和单个 Fast 控件：18 项中 17 项通过，桌面 Chromium 1280px 的 Settings 滚动几何断言失败。失败在已部署旧版 `v1.25.4+collie.2` 上也复现，两次均失败；当前版两次定向复现为一通过一失败。字体等待没有解决旧版失败，已撤掉无效改动。此为既有桌面布局时序/几何问题，未修复，不宣称整组全绿；320px 手机和 WebKit 桌面均通过。首次失败、带 trace 复现及旧版对照分别保存于 `/private/tmp/collie-v1255-e2e`、`/private/tmp/collie-v1255-settings-recheck`、`/private/tmp/collie-v1255-settings-baseline`。浏览器样本 API 不等于用户真实 CLI 原生交互认证。
 
 部署维持固定签名，替换前和重启前验证 designated requirement；只重启 Collie，验收 localhost 构建、鉴权 API、snapshot、Documents 实际读取和其他服务不变。按约定仅从本机验证，公网域名前置 OAuth 不作验收。
 
