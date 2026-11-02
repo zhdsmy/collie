@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.4+collie.1] - 2026-11-02
+
 ### Fixed
 
-- **Merge upstream 1.25.4 and retain core history customizations.** Adopt raw key pacing, delayed-key feedback, command recovery and journal/chat fixes while preserving downstream cards, sending settings and 1000-line mirror history.
+- **Merge upstream 1.25.4 and retain core history customizations.** Adopt raw key pacing, delayed-key feedback, command recovery and journal/chat fixes while preserving downstream cards, sending settings and 1000-line mirror history. ([c5cb8640e](https://github.com/zhdsmy/collie/commit/c5cb8640e))
 
 
 ## [1.25.3+collie.3] - 2026-11-01
