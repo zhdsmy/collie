@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.5+collie.1] - 2026-11-02
+
 ### Fixed
 
-- **Merge upstream 1.25.5 and retain downstream core controls.** Adopt delayed-probe recovery, macOS beacons, Claude permissions and report fixes while preserving guarded Fast controls, session discovery and 1000-line mirror history.
+- **Merge upstream 1.25.5 and retain downstream core controls.** Adopt delayed-probe recovery, macOS beacons, Claude permissions and report fixes while preserving guarded Fast controls, session discovery and 1000-line mirror history. ([cd367ddf3](https://github.com/zhdsmy/collie/commit/cd367ddf3))
 
 
 ## [1.25.4+collie.2] - 2026-11-02
