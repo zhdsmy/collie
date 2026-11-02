@@ -1614,7 +1614,8 @@
         "web/src/lib/harness/claude/markers.test.ts",
         "web/src/lib/harness/claude/task-checklist.test.ts",
         "web/src/lib/task-checklist.test.ts",
-        "bridge/prompt-binding.test.ts"
+        "bridge/prompt-binding.test.ts",
+        "bridge/surface/ask.test.ts"
       ],
       "fixtures": [
         {
@@ -1813,7 +1814,7 @@
       "verified": {
         "version": "2.1.304",
         "date": "2026-10-22",
-        "how": "upstream v1.23.2 capture replay and regression tests; no new local native probe; v1.25.2 adds upstream Claude 2.1.314 herdr-core permission captures (replay only)",
+        "how": "upstream v1.23.2 capture replay and regression tests; no new local native probe; v1.25.2 adds upstream Claude 2.1.314 herdr-core permission captures (replay only); v1.25.5 countdown signature binding regression, no new local CLI certification",
         "evidence": "web/src/fixtures/panes/README.md"
       }
     },
@@ -1872,7 +1873,8 @@
       "tests": [
         "web/src/lib/harness/claude/above-prompt-notice.test.ts",
         "bridge/prompt-binding.test.ts",
-        "bridge/surface/protocol.test.ts"
+        "bridge/surface/protocol.test.ts",
+        "web/src/lib/surface/notice.test.ts"
       ],
       "fixtures": [
         {
@@ -3136,10 +3138,13 @@
       "origin": "shared",
       "sources": [
         "web/src/components/menu-block.tsx",
-        "web/src/lib/harness/menu-model.ts"
+        "web/src/lib/harness/menu-model.ts",
+        "web/src/lib/harness/claude/menu.ts",
+        "web/src/lib/harness/claude/region-top.ts"
       ],
       "tests": [
-        "web/src/components/menu-block.test.tsx"
+        "web/src/components/menu-block.test.tsx",
+        "web/src/lib/harness/claude/menu.test.ts"
       ],
       "fixtures": [
         {
