@@ -2,7 +2,10 @@
   "id": "cursor",
   "identity": {
     "binary": "cursor-agent",
-    "versionCommand": ["cursor-agent", "--version"],
+    "versionCommand": [
+      "cursor-agent",
+      "--version"
+    ],
     "versionRegex": "\\d+\\.\\d+\\.\\d+"
   },
   "versions": [
@@ -15,29 +18,58 @@
   ],
   "idle": {
     "frame": {
-      "top": { "pattern": "^ ▄+$", "minCells": 8, "column": 1 },
-      "prompt": { "pattern": "^  (?:→|!(?= |$))(?: (?<draft>.*?))?(?: {2,}ctrl\\+c to stop)?$", "column": 2 },
-      "bottom": { "pattern": "^ ▀+$", "minCells": 8, "column": 1 },
+      "top": {
+        "pattern": "^ ▄+$",
+        "minCells": 8,
+        "column": 1
+      },
+      "prompt": {
+        "pattern": "^  (?:→|!(?= |$))(?: (?<draft>.*?))?(?: {2,}ctrl\\+c to stop)?$",
+        "column": 2
+      },
+      "bottom": {
+        "pattern": "^ ▀+$",
+        "minCells": 8,
+        "column": 1
+      },
       "continuationIndent": 4,
       "maxDraftRows": 100,
       "maxTailRows": 14
     },
     "frameAlternates": [
       {
-        "top": { "pattern": "^$", "column": 0, "blank": true },
-        "prompt": { "pattern": "^  (?:→|!(?= |$))(?: (?<draft>.*?))?(?: {2,}ctrl\\+c to stop)?$", "column": 2 },
-        "bottom": { "pattern": "^$", "column": 0, "blank": true },
+        "top": {
+          "pattern": "^$",
+          "column": 0,
+          "blank": true
+        },
+        "prompt": {
+          "pattern": "^  (?:→|!(?= |$))(?: (?<draft>.*?))?(?: {2,}ctrl\\+c to stop)?$",
+          "column": 2
+        },
+        "bottom": {
+          "pattern": "^$",
+          "column": 0,
+          "blank": true
+        },
         "continuationIndent": 4,
         "maxDraftRows": 100,
         "maxTailRows": 14
       }
     ],
     "placeholders": {
-      "texts": ["Plan, search, build anything", "Add a follow-up"],
+      "texts": [
+        "Plan, search, build anything",
+        "Add a follow-up",
+        "Tell the agent what to do instead (Enter to send, empty to skip, Esc to cancel)"
+      ],
+      "textsNote": "Issue 640, Cursor 2026.10.22: Escape on the shell approval leaves a free composer whose placeholder is the third text (typing replaces it, Enter sends), with no statusline under it. Fixture cursor--after-skip.",
       "sgr": 2
     },
     "volatile": {
-      "above": { "maxRows": 8 },
+      "above": {
+        "maxRows": 8
+      },
       "below": {
         "maxRows": 4,
         "footerMaxRows": 2,
@@ -48,14 +80,25 @@
         }
       }
     },
-    "runningRows": ["^\\s*[⠀-⣿]{1,2} [A-Z][a-z]+\\b"]
+    "runningRows": [
+      "^\\s*[⠀-⣿]{1,2} [A-Z][a-z]+\\b"
+    ]
   },
   "keys": {
-    "submit": ["Enter"],
-    "newline": ["ctrl+j"],
-    "interrupt": ["ctrl+c"],
+    "submit": [
+      "Enter"
+    ],
+    "newline": [
+      "ctrl+j"
+    ],
+    "interrupt": [
+      "ctrl+c"
+    ],
     "interruptClearsDraft": true,
-    "clear": { "key": "Backspace", "slack": 16 },
+    "clear": {
+      "key": "Backspace",
+      "slack": 16
+    },
     "navigation": {
       "up": "Up",
       "down": "Down",
@@ -63,7 +106,15 @@
       "cancel": "Escape"
     },
     "enterWhileRunning": "queues",
-    "neverHeld": ["/clear", "/exit", "/quit", "/logout", "/resume", "/fork", "!"],
+    "neverHeld": [
+      "/clear",
+      "/exit",
+      "/quit",
+      "/logout",
+      "/resume",
+      "/fork",
+      "!"
+    ],
     "queuedRow": {
       "pattern": "^ │ ○ (?<text>\\S.*?)\\s*│\\s*$",
       "hint": "^ │ enter steer · ↑ select/edit · esc cancel\\s*│\\s*$",
@@ -73,7 +124,11 @@
   "collapse": {
     "pattern": "\\[Pasted text #(?<n>\\d+)(?: \\+(?<lines>\\d+) lines)?\\]"
   },
-  "reservedLeads": ["/", "!", "@"],
+  "reservedLeads": [
+    "/",
+    "!",
+    "@"
+  ],
   "probe": {
     "char": "⌁",
     "status": "verified",
