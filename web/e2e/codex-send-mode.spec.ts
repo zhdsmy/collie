@@ -146,7 +146,8 @@ for (const speed of ["Standard", "Fast"]) {
       localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
     });
     const source = readFileSync(new URL("../src/fixtures/panes/codex--v0165-ultra-empty--w120.txt", import.meta.url), "utf8");
-    const text = source.replace("GPT-6-Luna medium ·", `GPT-6-Luna medium · ${speed} ·`);
+    const text = source.replace("GPT-6-Luna medium", `GPT-6-Luna medium · ${speed}`);
+    expect(text).toContain(` · ${speed}`);
     await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
       ...fixtureSnapshot,
       agents: fixtureSnapshot.agents.map((agent, index) => index === 0 ? Object.assign({}, agent, { agent: "codex", status: "idle" }) : agent),
