@@ -29,14 +29,22 @@ export function stripCodexPlanHint(segments: AnsiSegment[]): AnsiSegment[] {
   });
 }
 
+/** Native speed labels, including the newer Standard/Fast spelling; whole fields only. */
+export function parseCodexFastField(text: string): boolean | null {
+  if (/^Standard$/i.test(text)) return false;
+  if (/^Fast$/i.test(text)) return true;
+  const match = /^Fast[ :](on|off)$/i.exec(text);
+  return match ? match[1]!.toLowerCase() === "on" : null;
+}
+
 /** A Fast status item is a complete field, never a substring of another status item. */
 function readFastField(segments: readonly AnsiSegment[]): boolean | null {
   // Codex can append its coloured Plan hint directly after Fast without a middle-dot separator.
   // Remove that independently recognised segment before tokenising the remaining status fields.
   const text = segments.filter((segment) => !isCodexPlanHint(segment)).map((segment) => segment.text).join("");
   for (const field of text.trim().split(/\s*·\s*/)) {
-    const match = /^Fast[ :]((?:on)|(?:off))$/i.exec(field.trim());
-    if (match) return match[1]!.toLowerCase() === "on";
+    const fast = parseCodexFastField(field.trim());
+    if (fast !== null) return fast;
   }
   return null;
 }

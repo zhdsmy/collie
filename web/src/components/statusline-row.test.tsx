@@ -831,3 +831,19 @@ it.each(["ctx 78%", "[████░] ~22%", "▓▓░░ 30%"])("does not dup
   const { container } = render(<UsageFields usage={{ context: 22 }} rows={splitLines(parseAnsi(text))} />);
   expect(container).toBeEmptyDOMElement();
 });
+
+it.each(["Standard", "Fast"])("merges native %s into the existing Fast toggle", (speed) => {
+  const row = splitLines(parseAnsi(`gpt-6-astra xhigh · Ready · ${speed} · main`))[0]!;
+  const onClick = vi.fn();
+  const view = render(<StatuslineRow agent="codex" row={row} codexControls={{
+    plan: { enabled: false, busy: false, onClick: vi.fn() },
+    fast: { enabled: speed === "Fast", busy: false, onClick },
+  }} />);
+  const strip = view.container.querySelector('[data-slot="codex-statusline"]')!;
+  expect(strip.textContent).not.toContain("Standard");
+  expect(strip.textContent?.match(/Fast/g)).toHaveLength(1);
+  const button = view.getByRole("button", { name: `Fast mode: ${speed === "Fast" ? "ON" : "OFF"}` });
+  expect(button).not.toBeDisabled();
+  fireEvent.click(button);
+  expect(onClick).toHaveBeenCalledOnce();
+});

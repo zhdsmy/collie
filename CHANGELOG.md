@@ -23,6 +23,10 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+### Fixed
+
+- **Merge native Codex speed labels into the Fast control.** Recognize Standard/Fast alongside Fast on/off, keeping one guarded speed toggle instead of a duplicate status field.
+
 ## [1.25.4+collie.1] - 2026-11-02
 
 ### Fixed

@@ -37,7 +37,7 @@ import { CodexModeToggle, type CodexModeToggleProps } from "@/components/codex-m
 import { parseCodexModelField, parseCodexStatuslineField } from "@/lib/harness/codex/model-field";
 import { modeFieldOf, type ClaudeModeField } from "@/lib/harness/claude/mode";
 import { CLAUDE_NEW_TASK_HINT, isClaudeAsideRow } from "@/lib/harness/claude/chrome";
-import { stripCodexPlanHint } from "@/lib/codex-mode-switch";
+import { parseCodexFastField, stripCodexPlanHint } from "@/lib/codex-mode-switch";
 import { codexWarningCount } from "@/lib/codex-warning-action";
 
 const CODEX_VERSION_RE = /^(v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/;
@@ -771,7 +771,7 @@ function HermesStatusline({ row, leading, sessionModel }: { row: StyledLine; lea
 type CodexStatuslineField = { index: number; text: string; start: number };
 
 function isNativeCodexControlField(text: string): boolean {
-  return /^Fast[ :](?:on|off)$/i.test(text) || /^Plan mode(?: \([^)]*\))?$/i.test(text);
+  return parseCodexFastField(text) !== null || /^Plan mode(?: \([^)]*\))?$/i.test(text);
 }
 
 function CodexControlledStatusline({

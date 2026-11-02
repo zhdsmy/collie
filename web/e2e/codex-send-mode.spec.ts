@@ -136,3 +136,30 @@ test("Claude uses the shared sending choice on a 320px phone", async ({ page }, 
   await primary.click();
   await expect.poll(() => modes).toEqual(["send", "send:steer", "send:steer", "command"]);
 });
+
+for (const speed of ["Standard", "Fast"]) {
+  test(`native ${speed} merges into one actionable Fast control`, async ({ page }, info) => {
+    await page.setViewportSize({ width: 320, height: 844 });
+    await installApiStub(page);
+    await page.addInitScript(() => {
+      localStorage.setItem("collie:locale:v1", "en");
+      localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+    });
+    const source = readFileSync(new URL("../src/fixtures/panes/codex--v0165-ultra-empty--w120.txt", import.meta.url), "utf8");
+    const text = source.replace("GPT-6-Luna medium ·", `GPT-6-Luna medium · ${speed} ·`);
+    await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+      ...fixtureSnapshot,
+      agents: fixtureSnapshot.agents.map((agent, index) => index === 0 ? Object.assign({}, agent, { agent: "codex", status: "idle" }) : agent),
+    } }));
+    await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) =>
+      route.fulfill({ json: { paneId: "w1:p1", text, truncated: false, revision: 1 } }));
+    await page.goto("/pane/w1:p1");
+    const strip = page.locator('[data-slot="codex-statusline"]').last();
+    const toggle = strip.getByRole("button", { name: `Fast mode: ${speed === "Fast" ? "ON" : "OFF"}` });
+    await expect(toggle).toBeEnabled();
+    await expect(strip).not.toContainText("Standard");
+    await expect(strip.locator('[data-mode="fast"]')).toHaveCount(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: info.outputPath(`speed-${speed}.png`) });
+  });
+}

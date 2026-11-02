@@ -83,6 +83,12 @@ describe("live Codex mode state", () => {
     expect(readCodexModeState(fastOn)).toMatchObject({ plan: false, fast: true });
   });
 
+  it("reads Standard and Fast speed labels without accepting prose", () => {
+    expect(readCodexModeState(fastOff.replace("Fast off", "Standard"))?.fast).toBe(false);
+    expect(readCodexModeState(fastOff.replace("Fast off", "Fast"))?.fast).toBe(true);
+    expect(readCodexModeState(fastOff.replace("Fast off", "Standard model"))?.fast).toBeNull();
+  });
+
   it("keeps Fast unknown when the native field is absent", () => {
     expect(readCodexModeState(planOn)?.fast).toBeNull();
     expect(readCodexModeState(modal)).toBeNull();
@@ -149,13 +155,15 @@ describe("guarded Codex mode switch", () => {
     );
   });
 
-  it.each([true, false])("switches Fast %s through /fast and submits once", async (enabled) => {
+  it.each([[true, false], [false, false], [true, true], [false, true]])("switches Fast %s with new labels %s through /fast once", async (enabled, modern) => {
+    const off = modern ? fastOff.replace("Fast off", "Standard") : fastOff;
+    const on = modern ? fastOn.replace("Fast on", "Fast") : fastOn;
     vi.mocked(fetchPane)
-      .mockResolvedValueOnce(pane(enabled ? fastOff : fastOn))
-      .mockResolvedValueOnce(pane(enabled ? fastOff : fastOn))
-      .mockResolvedValueOnce(pane(enabled ? fastOff : fastOn))
+      .mockResolvedValueOnce(pane(enabled ? off : on))
+      .mockResolvedValueOnce(pane(enabled ? off : on))
+      .mockResolvedValueOnce(pane(enabled ? off : on))
 
-      .mockResolvedValue(pane(enabled ? fastOn : fastOff));
+      .mockResolvedValue(pane(enabled ? on : off));
 
     expect((await runCodexModeSwitch(args("fast", enabled))).status).toBe("switched");
     expect(sendKeys).not.toHaveBeenCalled();

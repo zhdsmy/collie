@@ -726,13 +726,16 @@
       "sources": [
         "web/src/lib/harness/codex/chrome.ts",
         "web/src/components/statusline-row.tsx",
-        "web/src/lib/harness/codex/markers.ts"
+        "web/src/lib/harness/codex/markers.ts",
+        "web/src/lib/codex-mode-switch.ts"
       ],
       "tests": [
         "web/src/lib/harness/codex/statusline-chrome.test.ts",
         "web/src/lib/harness/codex.test.ts",
         "web/src/lib/reply-action.test.ts",
-        "web/src/components/statusline-row.test.tsx"
+        "web/src/components/statusline-row.test.tsx",
+        "web/src/lib/codex-mode-switch.test.ts",
+        "web/e2e/codex-send-mode.spec.ts"
       ],
       "fixtures": [
         {
