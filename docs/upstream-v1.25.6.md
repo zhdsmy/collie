@@ -1,6 +1,6 @@
 # 跟进上游 v1.25.6
 
-采用 [v1.25.6 正式标签](https://github.com/AltanS/collie/releases/tag/v1.25.6)，发布为 `1.25.6+collie.1`。已交叉核对发行说明、CHANGELOG 和 [v1.25.5…v1.25.6 全部差异](https://github.com/AltanS/collie/compare/v1.25.5...v1.25.6)，覆盖正式标签的全部 14 个提交。
+采用 [v1.25.6 正式标签](https://github.com/AltanS/collie/releases/tag/v1.25.6)，发布为 `1.25.6+collie.1`。已交叉核对发行说明、CHANGELOG 和 [v1.25.5…v1.25.6 全部差异](https://github.com/AltanS/collie/compare/v1.25.5...v1.25.6)，覆盖正式标签的全部 15 个提交。
 
 ## 上游完整变化
 
