@@ -23,9 +23,11 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.25.6+collie.1] - 2026-11-03
+
 ### Fixed
 
-- **Merge upstream v1.25.6 while preserving downstream behavior.** Fix titled Hermes input and Chat detection, AGY sub-agent rails, browser spellchecking and Herdr foreground folders; retain modern localized Hermes chrome, compact cards, send preferences and herdr-core integration.
+- **Merge upstream v1.25.6 while preserving downstream behavior.** Fix titled Hermes input and Chat detection, AGY sub-agent rails, browser spellchecking and Herdr foreground folders; retain modern localized Hermes chrome, compact cards, send preferences and herdr-core integration. ([8eb977fc2](https://github.com/zhdsmy/collie/commit/8eb977fc2))
 
 ## [1.25.5+collie.1] - 2026-11-02
 
