@@ -25,10 +25,12 @@ AGY 保留本地下游现有的 named-footer 同宽校验，只增加子智能�
 
 - Herdr adapter、发送协议及适配目录：899 项通过。
 - Hermes／AGY adapter、卡片回退、输入框边界与全样本 Surface：11 个文件、9676 项通过，22 项既有 todo；另对 Hermes／AGY profile 定向回归通过。
-- Composer／Update 组件：364 项通过。两端类型检查、lint、版本一致性及正式构建在交付前检查。
+- Composer／Update 组件：364 项通过；79 项适配回放全部通过。两端类型检查、lint、版本一致性及干净标签上的正式构建通过。
 - 扩大的 profile 检查发现 Cursor `cursor--idle-bottom-docked.txt` 的 frame 断言失败，已在升级前 HEAD 的隔离副本复现，相关 profile、frame、样本均未被本次修改；这项既有问题未修复，不宣称全套检查全绿。
-- 手机浏览器验证、构建和部署结果在完成后补记。
+- 手机尺寸 Chromium／WebKit：18 项通过，覆盖 Hermes 短标题、现代回复与整行活动动画、AGY 后台任务及子智能体区域；校验正文可见、无误报／假草稿、状态栏位置和页面宽度。截图保存在 `/private/tmp/collie-v1256-e2e`；已目视检查 [Hermes 标题输入](/private/tmp/collie-v1256-hermes-titled.png) 和 [AGY 子智能体区域](/private/tmp/collie-v1256-agy-rail.png)。这些是隔离样本页面，截图中的无 session 提示来自 stub，并非部署诊断。
 
 部署维持固定签名，替换前和重启前检查 designated requirement；只重启 Collie，核验 localhost 构建、鉴权 API、snapshot、Documents 实际读取及其他服务不变。按约定仅从本机验收，公网域名有 OAuth 前置。
+
+部署验收已通过：`1.25.6+collie.1+f8e7fd146b.1793710470`，新监听进程 6310；匿名 config 返回 403，认证 config／health／snapshot 正常，herdr-core 已连接，6 个工作区／11 个智能体。实际读取 Documents 中 README 成功；镜像 1000 行、发送保护读取 42 行。Herdr-core、Herdr、Headroom 及采样到的智能体进程 PID 未变，临时验收设备已撤销。安装目录与暂存路径已清理，仅保留完整 `v1.25.5-collie.1.ed9ixbu9` 回滚包。
 
 未新增模型调用、定时巡检、Windows／跨机 Crew 或真机 iOS／Android 验证；样本回放与浏览器 stub 不等于 Hermes 0.22.5／AGY 1.4.12 的完整原生交互认证。既有 core ANSI 样式和 Hermes 完成状态缺口不在本次升级修改范围。
