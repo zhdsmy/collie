@@ -6940,6 +6940,21 @@
       "harness": "pi",
       "version": "1.4.0",
       "state": "popup"
+    },
+    "agy--v1412-subagent-band-idle.txt": {
+      "harness": "agy",
+      "version": "1.4.12",
+      "state": "idle"
+    },
+    "agy--v1412-subagent-band-permission.txt": {
+      "harness": "agy",
+      "version": "1.4.12",
+      "state": "dialog"
+    },
+    "hermes--v0225-title-idle.txt": {
+      "harness": "hermes",
+      "version": "0.22.5",
+      "state": "idle"
     }
   },
   "knownMismatches": {

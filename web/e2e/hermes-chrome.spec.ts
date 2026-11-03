@@ -24,6 +24,31 @@ async function tabIsVisible(tab: Locator): Promise<boolean> {
 
 test.use({ serviceWorkers: "block" });
 
+test("Hermes 0.22.5 titled input stays out of the mirror", async ({ page }, testInfo) => {
+  const text = readFileSync(new URL("../src/fixtures/panes/hermes--v0225-title-idle.txt", import.meta.url), "utf8");
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("collie:locale:v1", "en");
+    localStorage.setItem("collie:dash-prefs:v1", JSON.stringify({ paneView: "terminal" }));
+  });
+  await installApiStub(page);
+  await page.route("**/api/snapshot*", (route) => route.fulfill({ json: {
+    ...fixtureSnapshot,
+    agents: fixtureSnapshot.agents.map((agent, i) => i === 0 ? { ...agent, agent: "hermes", status: "idle" } : agent),
+  } }));
+  await page.route((url) => decodeURIComponent(url.pathname) === "/api/pane/w1:p1", (route) => route.fulfill({ json: {
+    paneId: "w1:p1", text: `Assistant reply remains visible\n${text}`, revision: 1,
+  } }));
+  await page.goto("/pane/w1:p1");
+  await expect(page.getByText("Assistant reply remains visible", { exact: true })).toBeVisible();
+  await expect(page.locator("pre")).not.toContainText("Session Title");
+  await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Dismiss the terminal draft notice" })).toHaveCount(0);
+  await expect(page.getByRole("textbox").first()).toHaveAttribute("spellcheck", "false");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await page.screenshot({ path: testInfo.outputPath("hermes-titled-input.png") });
+});
+
 for (const width of [320, 390]) {
   test(`Hermes full-width activity keeps fixed status: ${width}`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 844 });

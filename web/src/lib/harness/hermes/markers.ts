@@ -7,6 +7,7 @@
 // Pure helpers over StyledLine; no pane access.
 
 import { isBlank, lineText, type StyledLine } from "../../blocks";
+import { displayWidth } from "../../text-width";
 
 export { isBlank, lineText };
 
@@ -31,10 +32,17 @@ export function isRule(text: string): boolean {
   return /^─{8,}$/.test(text);
 }
 
-/** Modern chrome adds activity and/or a session title to the top input rule. */
-export function isInputRule(text: string): boolean {
-  // Native activity can fill the row, leaving no closing dash (top_rule_fragments).
-  return isRule(text) || /^─{2,} [\s\S]*─$/.test(text) || /^── [⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] \S/.test(text);
+// The rule above the input as Hermes 0.22.5 draws it once the session has a title: the title sits in
+// the rule, `── Session Title ─` (issue 657). The same pattern as the top anchor of the surface
+// profile (surface/profiles/hermes.json), so the two cannot read the rule differently. Only the top
+// rule carries a title; the rule under the input stays bare (`isRule`).
+const TITLED_RULE = /^─+(?:\s+(?<label>.*[^\s─-╿▁-▔‒-―])\s+─{1,3})?$/;
+
+/** The rule above the input: a bare rule, or one that carries the session title. */
+export function isTopRule(text: string): boolean {
+  // Modern activity can fill the row without leaving a closing dash.
+  return isRule(text) || (displayWidth(text) >= 8 && TITLED_RULE.test(text)) ||
+    /^── [⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] \S/.test(text);
 }
 
 /** Hermes drops the rule under the input below this width (`_use_minimal_tui_chrome`), and with it

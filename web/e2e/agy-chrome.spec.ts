@@ -12,9 +12,12 @@ const quota = capturedQuota.replace(/auto[^\r\n]*/, "Gemini 4 Argon (High)  auto
 
 test.use({ serviceWorkers: "block" });
 
-for (const width of [320, 390]) {
-  test(`AGY background tasks keep the composer recognized: ${width}`, async ({ page }, testInfo) => {
-    const text = readFileSync(new URL("../src/fixtures/panes/agy--v145-background-task--w80.txt", import.meta.url), "utf8");
+for (const [name, fixture, progress, model] of [
+  ["background tasks", "agy--v145-background-task--w80.txt", "[00:10:50]", "Gemini 4 Argon"],
+  ["sub-agent rail", "agy--v1412-subagent-band-idle.txt", "Agent(research:", "gemini-4-argon"],
+]) for (const width of [320, 390]) {
+  test(`AGY ${name} keep the composer recognized: ${width}`, async ({ page }, testInfo) => {
+    const text = readFileSync(new URL(`../src/fixtures/panes/${fixture}`, import.meta.url), "utf8");
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript(() => {
       localStorage.setItem("collie:locale:v1", "en");
@@ -35,8 +38,8 @@ for (const width of [320, 390]) {
     } }));
     await page.goto("/pane/w1:p1");
     await expect(page.getByText("Collie did not recognize this interface", { exact: false })).toHaveCount(0);
-    await expect(page.getByText("[00:10:50]", { exact: false })).toBeVisible();
-    await expect(page.getByText("Gemini 4 Argon", { exact: false })).toBeVisible();
+    await expect(page.getByText(progress!, { exact: false })).toBeVisible();
+    await expect(page.getByText(model!, { exact: false })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
     expect(writes).toBe(0);
     await page.screenshot({ path: testInfo.outputPath("agy-background-tasks.png") });
