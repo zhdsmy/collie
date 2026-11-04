@@ -23,6 +23,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.26.0+collie.1] - 2026-11-04
+
 ### Added
 
 - **The lead's launcher rows are the crew's rows.** The New page now offers the rows of the lead's `launchers.toml`, and the rows a phone added there, whichever machine is picked. Each row is checked on the machine it would run on: an agent that machine lacks, or a pinned folder it does not have, marks the row unavailable, and a folder under the lead's home is read under that machine's home. A machine's own rows stay as its additions, and its own row wins over a lead row with the same command. A member that runs an older Collie still lists the lead's rows, without the folder check (ADR 0127). ([e9f7f98](https://github.com/AltanS/collie/commit/e9f7f98))
@@ -35,7 +37,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ### Changed
 
-- **Merge upstream v1.26.0 while preserving downstream interaction safeguards.** Add shared Crew launchers, portable worktrees, journal tasks and jobs; improve connection recovery, dialog sizing, session discovery and usage backoff while retaining compact controls, localized harness cards and default mirror history.
+- **Merge upstream v1.26.0 while preserving downstream interaction safeguards.** Add shared Crew launchers, portable worktrees, journal tasks and jobs; improve connection recovery, dialog sizing, session discovery and usage backoff while retaining compact controls, localized harness cards and default mirror history. ([d2882397b](https://github.com/zhdsmy/collie/commit/d2882397b))
 
 - **A walky talky message on the phone names sessions by name.** The Chat card, the Messages sheet and the Crew page's receipts now call a session by its pane name, the same name every other screen shows, so a renamed session shows its new name on an old message. A sent row reads "Sent to plumbing" or "Sent to docs on workshop". An address in a message body that names a live pane reads as that pane's name, and in the sheet it is a button that opens the pane; a bare pane id counts only when one live pane carries it, and an address no live pane holds stays text. A reply names its sender and time instead of the message id, and the bridge's hold reasons read "that session has unsent text" and "that session is busy". The address and the message id stay on the wire, in the agent's terminal, in `who` and in the CLI. ([b04a211](https://github.com/AltanS/collie/commit/b04a211))
 - **The walky talky skill asks agents to write a session's full address in a message.** When a message names another session, the skill now says to write its address as `collie walky who` prints it, never a bare pane id, a window id or a label alone, so the phone can show the session's name in its place. An install that moves through `collie update` syncs the skill itself. A build installed another way sees `collie doctor` report the skill stale once; `collie skill sync` refreshes it. ([4da218b](https://github.com/AltanS/collie/commit/4da218b))
