@@ -4426,18 +4426,22 @@ describe("real screens from the fixture corpus", () => {
 
   // Seen live on 2026-10-17: Claude Code's usage row in the blank row between the key row and the box
   // for about ten seconds after a turn. The profile names it (`idle.noticeGaps`), so the box stays free.
-  test("on a heads-up notice with the usage row under its keys: hello goes on one tap", async () => {
-    const { pane, send } = rig();
-    pane.over = [
-      "✦ Heads up · One of the notes says a nightly cleanup task",
-      "  deletes everything on your X: drive at 03:00. All your repos",
-      "  live on that drive.",
-      "  1: Learn more   2: Knew this already   0: Dismiss",
-      "  You've used 87% of your weekly limit · resets Oct 22, 1am (Ameri…",
-    ];
-    const answer = await send("hello");
-    expect(answer.receipt).toMatchObject({ outcome: "sent" });
-    expect(pane.transcript.at(-1)).toBe("> hello");
+  // Seen live on 2026-11-03, Claude Code 2.1.317 with `verbose` on: the session's token count in the
+  // same place, right-aligned, for as long as the notice stays.
+  test("on a heads-up notice with the usage row or the verbose token count under its keys: hello goes on one tap", async () => {
+    for (const gap of ["  You've used 87% of your weekly limit · resets Oct 22, 1am (Ameri…", `${" ".repeat(60)}230267 tokens`]) {
+      const { pane, send } = rig();
+      pane.over = [
+        "✦ Heads up · One of the notes says a nightly cleanup task",
+        "  deletes everything on your X: drive at 03:00. All your repos",
+        "  live on that drive.",
+        "  1: Learn more   2: Knew this already   0: Dismiss",
+        gap,
+      ];
+      const answer = await send("hello");
+      expect(answer.receipt, gap.trim()).toMatchObject({ outcome: "sent" });
+      expect(pane.transcript.at(-1)).toBe("> hello");
+    }
   });
 
   // Lane 8788, 2026-10-19: Claude Code's rating survey stood on the update row right over the box, and
@@ -11550,7 +11554,7 @@ describe("the late-probe window: a probe drawn late on an idle pane (M80 spec 09
 
 // #655: agy 1.4.12 lists a running sub-agent in a rail between the box's bottom rule and a closing
 // rule, and that rail row ends in the sub-agent's elapsed time. The profile's rail shape (agy.json,
-// frameAlternates) puts the rail inside the frame, so a draft's two-read compare would see the time
+// named footer) keeps the rail outside the frame, so a draft's two-read compare ignores the time
 // tick. An EMPTY box compares by its two edges alone: its top rule and the rail's closing rule. The
 // screen is the report's own (agy--v1412-subagent-band-idle.txt), its elapsed time set per read.
 describe("agy 1.4.12, the empty box over a sub-agent rail, replayed from the report's screen (#655)", () => {
@@ -11581,11 +11585,11 @@ describe("agy 1.4.12, the empty box over a sub-agent rail, replayed from the rep
     expect(pane.keysSeen.at(-1)).toBe("Enter");
   });
 
-  test("the control: the box's top rule changes between the two reads, and S0 refuses not_free", async () => {
+  test("the control: a torn top rule persists through the settle read, and S0 refuses before typing", async () => {
     const pane = new FakePane("claude");
     pane.beforeRead = (p, n) => {
       const drawn = draw(`${String(11 + n)}s`, p.box);
-      p.fixed = n === 2 ? drawn.replace(/^(─+)\n>$/mu, (_all, rule: string) => `${rule.slice(0, -10)}\n>`) : drawn;
+      p.fixed = n >= 2 ? drawn.replace(/^(─+)\n>$/mu, (_all, rule: string) => `${rule.slice(0, -10)}\n>`) : drawn;
     };
     const answer = await rig({ pane, harness: "agy", version: "1.4.12" }).send("hello agy");
     expect(answer.receipt).toMatchObject({ outcome: "refused" });

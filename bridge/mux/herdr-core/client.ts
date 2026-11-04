@@ -76,11 +76,11 @@ export interface WireStatus {
 export interface WireForeground {
   readonly name: string;
   readonly cwd: string;
-  readonly argv?: readonly string[];
+  /** The leader's process id. Optional: an older core may omit it. */
   readonly pid?: number;
+  /** The leader's command line. Optional: an older core may omit it. */
+  readonly argv?: readonly string[];
 }
-
-type MutableForeground = { -readonly [K in keyof WireForeground]: WireForeground[K] };
 
 /** One terminal record, read for the fields the adapter maps and no others. */
 export interface WireTerminal {
@@ -258,19 +258,11 @@ function parseStatus(value: JsonValue | undefined): WireStatus | null {
 function parseForeground(value: JsonValue | undefined): WireForeground | null {
   if (value === null || value === undefined) return null;
   const record = asObject(value);
-  const argv = asArray(record.argv);
-  const rawPid = record.pid;
-  const foreground: MutableForeground = {
-    name: str(record, "name"),
-    cwd: str(record, "cwd"),
-  };
-  if (argv.length > 0 && argv.every((word): word is string => typeof word === "string")) {
-    foreground.argv = argv;
-  }
-  if (typeof rawPid === "number" && Number.isInteger(rawPid) && rawPid > 0) {
-    foreground.pid = rawPid;
-  }
-  return foreground;
+  const pid = record.pid;
+  const argv = record.argv;
+  const goodPid = typeof pid === "number" && Number.isInteger(pid) && pid > 0 ? { pid } : {};
+  const goodArgv = Array.isArray(argv) && argv.every((word): word is string => typeof word === "string") ? { argv } : {};
+  return { name: str(record, "name"), cwd: str(record, "cwd"), ...goodPid, ...goodArgv };
 }
 
 /** One terminal record. Exported for the fake core, which builds its answers from the same shape. */

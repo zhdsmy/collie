@@ -25,8 +25,8 @@
 // Declared, each from a probe: the grid (plain text, a derived revision), scrollback, agent
 // detection (the program's own OSC 7501 report; where a program sends none, an exact, known foreground
 // program name from the same table is a provisional identity with status `unknown`, never a status word), typing (a framed attach, see client.ts), keys,
-// closing a pane, a new tab (a shell carrying herdr-app's labels), and both push channels.
-// Declined: focus, every rename, closing a tab, a new space, worktrees, sessions, and an agent
+// closing a pane, a new tab and a new space (a shell carrying herdr-app's labels), and both push channels.
+// Declined: focus, every rename, closing a tab, sessions, and an agent
 // session ref. The core has no verb for any of them, and the layout belongs to herdr-app, which
 // says to change it through its own commands. M74 spec 05 plans a herdr-app mod for those.
 
@@ -58,18 +58,13 @@ import {
   type MuxSubscription,
   type MuxTabRequest,
   type MuxWatchOptions,
-  type MuxWorktree,
-  type MuxWorktreeCreateRequest,
-  type MuxWorktreeOpenRequest,
-  type MuxWorktreeOpened,
-  type MuxWorktreeScope,
 } from "../types.ts";
-import { DEFAULT_HC_TIMEOUT_MS, defaultHcSocket, HC_GENERATION, HcClient, HcError, HcTimeout, type HcRpc, type WireLayout, type WireRead, type WireTerminal } from "./client.ts";
+import { DEFAULT_HC_TIMEOUT_MS, defaultHcSocket, HC_GENERATION, HcClient, HcError, HcTimeout, type HcRpc, type WireForeground, type WireLayout, type WireRead, type WireTerminal } from "./client.ts";
 import { routeEvent } from "./events.ts";
 import { herdrCoreBeaconMatcher } from "./markers.ts";
 import { HERDR_CORE_LOGO_SVG } from "./logo.ts";
 import { HC_UNSENDABLE_KEYS, isRawKeyText, toHcKey, type HcKey } from "./keys.ts";
-import { IMPLICIT_SPACE_ID, isLocalAddress, SPACE_LABEL, TAB_LABEL, toSnapshot } from "./layout.ts";
+import { folderName, IMPLICIT_SPACE_ID, isLocalAddress, SPACE_LABEL, TAB_LABEL, toSnapshot } from "./layout.ts";
 
 type MutableGrid = { -readonly [K in keyof MuxGrid]: MuxGrid[K] };
 
@@ -85,6 +80,7 @@ const HERDR_CORE_CAPABILITIES = declareCapabilities({
     "sendKeys",
     "closePane",
     "createTab",
+    "createSpace",
     "pushTopologyEvents",
     "pushPaneEvents",
   ],
@@ -106,10 +102,8 @@ const HERDR_CORE_CAPABILITIES = declareCapabilities({
     renameTab: "Tab names belong to herdr-app, and Collie does not change its layout.",
     renameSpace: "Space names belong to herdr-app, and Collie does not change its layout.",
     closeTab: "Tabs belong to herdr-app, and Collie does not change its layout.",
-    createSpace: "Spaces belong to herdr-app, and Collie does not change its layout.",
-    listWorktrees: "Worktrees are not part of the herdr-core adapter.",
-    createWorktree: "Worktrees are not part of the herdr-core adapter.",
-    openWorktree: "Worktrees are not part of the herdr-core adapter.",
+    createSpace:
+      "A new space is a new shell with fresh herdr.space and herdr.tab labels, which herdr-app shows as a new space and names after its folder. A space name cannot be set from the phone yet.",
     listSessions:
       "Each herdr-core session has its own socket. One collie drives one session; point a second collie at another with HC_SESSION.",
   },
@@ -208,6 +202,14 @@ export class HerdrCoreMux implements MuxAdapter {
 
   private readonly revisions = new Map<string, PaneRevision>();
 
+  /**
+   * Per terminal, the foreground record of the last read of it: the snapshot's list, replaced whole on
+   * each snapshot, and a terminal this adapter started. `foregroundProcesses` answers from it, so the
+   * argv costs no call of its own. The core reads the foreground about twice a second (HC_API.md), and
+   * the snapshot is as fresh as the last poll.
+   */
+  private foregrounds = new Map<string, WireForeground | null>();
+
   /** Whether the core on the socket was last seen speaking our generation. `null`: not asked yet. */
   private compatible: boolean | null = null;
 
@@ -259,9 +261,33 @@ export class HerdrCoreMux implements MuxAdapter {
       throw err;
     }
     const snapshot = toSnapshot(read[0], read[1], this.home);
+    this.foregrounds = new Map(read[0].map((terminal) => [terminal.address, terminal.foreground]));
     this.forgetGonePanes(snapshot);
     this.noteHistoryState(snapshot);
     return snapshot;
+  }
+
+  /**
+   * The pane's foreground process as argv, for a journal that names its session there (#675). One entry
+   * (the core reports the foreground group's leader): `pid` only when the core sent a positive integer,
+   * `argv` as sent or `[]`, as the Herdr adapter does. No foreground is an empty list. A terminal the
+   * last snapshot did not list is asked for once, so an unknown one is the core's own refusal.
+   */
+  async foregroundProcesses(paneId: string): Promise<MuxOutcome<readonly ForegroundProcess[]>> {
+    const remote = remoteRefusal(paneId);
+    if (remote !== null) return remote;
+    try {
+      let foreground = this.foregrounds.get(paneId);
+      if (foreground === undefined) {
+        foreground = (await this.rpc.getTerminal(paneId)).foreground;
+        this.foregrounds.set(paneId, foreground);
+      }
+      if (foreground === null) return muxOk([]);
+      const argv = foreground.argv ?? [];
+      return muxOk([foreground.pid === undefined ? { argv } : { argv, pid: foreground.pid }]);
+    } catch (err) {
+      return refusalFor(err);
+    }
   }
 
   /** A no-op that resolves, as Herdr's is: every snapshot is a fresh read, and the watch pushes. */
@@ -488,6 +514,7 @@ export class HerdrCoreMux implements MuxAdapter {
     const asked = requestedCwd(request.cwd) ?? space.folder;
     try {
       const created = await this.rpc.runShell(asked === undefined ? { labels } : { labels, cwd: asked });
+      this.foregrounds.set(created.address, created.foreground);
       return muxOk({ paneId: created.address, spaceId: space.spaceId, spaceLabel: space.label, tabId, cwd: created.cwd });
     } catch (err) {
       return refusalFor(err);
@@ -495,19 +522,24 @@ export class HerdrCoreMux implements MuxAdapter {
   }
 
   /**
-   * The pane's foreground process from `terminal.get`, for journal session discovery and version reads.
+   * A new space: a shell started with a fresh `herdr.space` and a fresh `herdr.tab` label, the way
+   * {@link createTab} starts one for a known space. herdr-app shows an id it does not know as a new
+   * space and tab, and its adoption turns core keep on ("an id Herdr doesn't know becomes a new
+   * space or tab", AGENTS.md). Collie writes no layout document and no `where` label (that one is
+   * herdr-app's). `request.label` is accepted but cannot be applied: the core has no name for a
+   * space and herdr-app names it itself, after the folder. So the label returned is the one the next
+   * snapshot shows for this space (see `toSnapshot`), which is that folder's name.
    */
-  async foregroundProcesses(paneId: string): Promise<MuxOutcome<readonly ForegroundProcess[]>> {
-    const remote = remoteRefusal(paneId);
-    if (remote !== null) return remote;
+  async createSpace(request: MuxSpaceRequest): Promise<MuxOutcome<MuxCreatedPane>> {
+    const spaceId = `sp${randomUUID().replaceAll("-", "")}`;
+    const tabId = `tb${randomUUID().replaceAll("-", "")}`;
+    const labels = { [SPACE_LABEL]: spaceId, [TAB_LABEL]: tabId };
+    const asked = requestedCwd(request.cwd);
     try {
-      const terminal = await this.rpc.getTerminal(paneId);
-      if (terminal.state !== "live") return muxGone(`${paneId} has already ended`);
-      const fg = terminal.foreground;
-      if (fg === null) return muxOk([]);
-      const argv = fg.argv && fg.argv.length > 0 ? fg.argv : fg.name !== "" ? [fg.name] : [];
-      if (argv.length === 0 && fg.pid === undefined) return muxOk([]);
-      return muxOk([fg.pid !== undefined ? { argv, pid: fg.pid } : { argv }]);
+      const created = await this.rpc.runShell(asked === undefined ? { labels } : { labels, cwd: asked });
+      this.foregrounds.set(created.address, created.foreground);
+      const spaceLabel = folderName(created.foreground?.cwd || created.cwd, this.home) || spaceId;
+      return muxOk({ paneId: created.address, spaceId, spaceLabel, tabId, cwd: created.cwd });
     } catch (err) {
       return refusalFor(err);
     }
@@ -529,22 +561,6 @@ export class HerdrCoreMux implements MuxAdapter {
 
   closeTab(_tabId: string): Promise<MuxAck> {
     return Promise.resolve(muxUnsupported("closeTab", "tabs belong to herdr-app"));
-  }
-
-  createSpace(_request: MuxSpaceRequest): Promise<MuxOutcome<MuxCreatedPane>> {
-    return Promise.resolve(muxUnsupported("createSpace", "spaces belong to herdr-app"));
-  }
-
-  listWorktrees(_scope: MuxWorktreeScope): Promise<MuxOutcome<readonly MuxWorktree[]>> {
-    return Promise.resolve(muxUnsupported("listWorktrees", "worktrees are not part of the herdr-core adapter"));
-  }
-
-  createWorktree(_request: MuxWorktreeCreateRequest): Promise<MuxOutcome<MuxCreatedPane>> {
-    return Promise.resolve(muxUnsupported("createWorktree", "worktrees are not part of the herdr-core adapter"));
-  }
-
-  openWorktree(_request: MuxWorktreeOpenRequest): Promise<MuxOutcome<MuxWorktreeOpened>> {
-    return Promise.resolve(muxUnsupported("openWorktree", "worktrees are not part of the herdr-core adapter"));
   }
 
   listSessions(): Promise<MuxOutcome<readonly MuxSession[]>> {

@@ -433,14 +433,17 @@
         "web/src/lib/reply-action.ts",
         "web/src/lib/harness/pi/panel.ts",
         "bridge/surface/protocol.ts",
-        "web/src/lib/surface/profile.ts"
+        "web/src/lib/surface/profile.ts",
+        "web/src/lib/surface/profiles/pi.json",
+        "web/src/lib/surface/frame.ts"
       ],
       "tests": [
         "web/src/lib/harness/pi.test.ts",
         "web/src/lib/harness/pi/composer.test.ts",
         "web/src/lib/reply-action.test.ts",
         "web/src/lib/harness/pi/panel.test.ts",
-        "bridge/surface/protocol.test.ts"
+        "bridge/surface/protocol.test.ts",
+        "web/src/lib/surface/fold.gentle.test.ts"
       ],
       "live": false,
       "verified": {
@@ -610,6 +613,27 @@
         },
         {
           "path": "web/src/fixtures/panes/pi--v140-slash-s-fuzzy--w120.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v140-gentle-float-idle--w100.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v140-gentle-float-draft--w100.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v140-gentle-float-multiline--w100.txt",
           "agent": "pi",
           "expect": {
             "block": "raw"
@@ -1948,6 +1972,14 @@
             "block": "menu",
             "minOptions": 2
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2317-verbose-tokens-notice-idle--w154.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu",
+            "minOptions": 3
+          }
         }
       ],
       "live": false,
@@ -3280,7 +3312,9 @@
         "web/src/components/unread-dialog-block.test.tsx",
         "web/e2e/claude-settings.spec.ts",
         "web/src/lib/harness/detector-verdicts.test.ts",
-        "web/src/components/report-sheet.test.tsx"
+        "web/src/components/report-sheet.test.tsx",
+        "web/src/components/card-dock.test.tsx",
+        "web/src/components/raw-mirror.test.tsx"
       ],
       "fixtures": [
         {

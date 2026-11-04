@@ -1,5 +1,5 @@
 import { Bug } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { ARM_MS } from "@/lib/arm";
@@ -77,15 +77,8 @@ export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled,
   const caption = viewport?.title ?? t("unreadDialog.caption");
   const dismissWording = lines.some((l) => NAMES_A_DISMISS.test(lineText(l)));
   const shown = viewport ? undefined : screen;
-  const shownText = shown?.map(lineText).join("\n");
-  const screenRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => () => clearTimeout(timer.current), []);
-  // Pinned to the end when the screen changes, not on every poll, so a reader scrolled up stays put.
-  useLayoutEffect(() => {
-    const el = screenRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [shownText]);
   // A changed dialog or a card that stops being pressable also stops being armed.
   useEffect(() => {
     clearTimeout(timer.current);
@@ -152,7 +145,7 @@ export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled,
         tabIndex={0}
         className={VIEWPORT_CLASS}
       />}
-      {shown && <RawMirror ref={screenRef} lines={shown} wrap={wrap} tabIndex={0} className={VIEWPORT_CLASS} />}
+      {shown && <RawMirror anchor="bottom" lines={shown} wrap={wrap} tabIndex={0} className={VIEWPORT_CLASS} />}
       <span role="status" className="sr-only">
         {armed ? armedLabel : ""}
       </span>

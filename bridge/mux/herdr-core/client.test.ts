@@ -248,3 +248,22 @@ describe("the default socket", () => {
     expect(defaultHcSocket(env, 501, () => false, "/Users/u")).toBe(path);
   });
 });
+
+describe("the foreground record of a terminal (#675)", () => {
+  const foregroundOf = (foreground: JsonValue) => parseTerminal({ address: "t1", foreground }).foreground;
+
+  test("pid and argv are read when the core sends them", () => {
+    expect(foregroundOf({ argv: ["omp", "--resume", "/x.jsonl"], cwd: "~", name: "omp", pid: 60190 })).toEqual({
+      name: "omp",
+      cwd: "~",
+      pid: 60190,
+      argv: ["omp", "--resume", "/x.jsonl"],
+    });
+  });
+
+  test("an older core that sends neither leaves both absent, and a pid that is not positive or an argv that is not words is dropped", () => {
+    expect(foregroundOf({ cwd: "~", name: "bash" })).toEqual({ name: "bash", cwd: "~" });
+    expect(foregroundOf({ cwd: "~", name: "bash", pid: 0, argv: ["a", 1] })).toEqual({ name: "bash", cwd: "~" });
+    expect(foregroundOf({ cwd: "~", name: "bash", pid: 1.5, argv: "bash" })).toEqual({ name: "bash", cwd: "~" });
+  });
+});
