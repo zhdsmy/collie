@@ -62,6 +62,10 @@ Claude 2.1.317、OMP 18.6.1、pi 1.3.0 的 rig cassette 随新版 Walky skill �
 - 320px Chromium／WebKit 共 16 项通过：Claude 四类固定滚动卡片和未知界面小 Esc、Codex／Claude Queue／Steer、中文命令面板默认五项、Jobs 数量／长命令折行／退出码／关闭后输入框位置。新 Jobs 截图快进入场动画，避免保存空白中间态；未改变生产动画。已目视检查 [Jobs 面板](/private/tmp/collie-v1260-jobs-320.png)。这些 API stub 的无 session 提示不代表部署故障。
 - 两端类型检查、lint、版本一致性通过；干净 annotated tag `v1.26.0+collie.1` 的构建成功，构建标识 `1.26.0+collie.1+1d126e81c0.1793790391`。后续只有报告／E2E 断言提交，不改变部署产物。
 
-部署验收待完成：保持固定签名，替换前及重启前核验指定要求；只重启 Collie，按约定仅从 localhost 检查构建、鉴权 API、snapshot、实际 Documents 文件读取、镜像／发送保护分流及其他服务 PID，清理临时验收设备和过期自建备份。
+部署验收通过：运行构建 `1.26.0+collie.1+1d126e81c0.1793790391`，监听进程 93008。替换前和重启前均通过固定签名及指定要求检查；只重启 LaunchAgent `herdr.collie`，Herdr、herdr-core、Headroom 和采样智能体进程 PID 均未改变。按约定仅从 localhost 验收，匿名 config 为 403，认证 config／health／snapshot 正常；2 个工作区、6 个智能体，现有 Codex／Claude／AGY 均有 session。实际读取 Documents 内本仓库 README 成功；镜像 1000 行，发送保护读取 40 行。当前没有活跃 Hermes pane，旧验收脚本的 t8 已失效，未把它当作 Hermes 原生验证。
+
+临时验收设备已撤销，原有设备和待配对信息保留；安装目录干净，暂存及旧回滚包已清理，只保留完整且签名正确的 `v1.25.6-collie.1.xbumdf88`。预检查曾将 Surge 的 LAN 8788 监听计入 Collie，现已限定到 `127.0.0.1:8788` 并写入本机部署约定，未改动 Surge。fork main 与 annotated tag 的解引用提交已远端回读匹配。
+
+Walky skill 状态仅作读取：本机没有可更新的有效副本，Claude 路径是指向不存在目标的既有软链接，其他 harness 的 block 未安装；没有借本次升级新建全局规则或改动该软链接。新 skill 内容已随二进制提供，但本机 agent 的完整地址引用行为未认证。
 
 未新增模型调用、定时巡检或完整 CLI 原生发送认证；未做 Windows、跨机 Crew、真实 Gentle Shell 后台任务或真机 iOS／Android 验证。既有 core ANSI 样式、Hermes 完成状态及 Cursor 输入框旧失败不在本次升级修复范围。
