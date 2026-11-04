@@ -23,7 +23,8 @@ test("background jobs sheet fits a 320px phone and leaves the composer in place"
   const mark = page.locator('[data-slot="belt-jobs"]');
   await expect(mark).toBeInViewport();
   await expect(mark.locator('[data-slot="belt-jobs-count"]')).toHaveText("1");
-  const before = await mark.boundingBox();
+  const input = page.getByRole("textbox", { name: "Type a reply…", exact: true });
+  const before = await input.boundingBox();
   await mark.click();
   const sheet = page.getByRole("dialog");
   await expect(sheet).toBeVisible();
@@ -32,8 +33,8 @@ test("background jobs sheet fits a 320px phone and leaves the composer in place"
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const longCommand = sheet.locator('[data-slot="belt-job-command"]').first();
   expect(await longCommand.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
-  await page.screenshot({ path: testInfo.outputPath("jobs-320.png") });
+  await page.screenshot({ path: testInfo.outputPath("jobs-320.png"), animations: "disabled" });
   await sheet.getByRole("button", { name: "Close", exact: true }).click();
   await expect(sheet).toHaveCount(0);
-  expect(await mark.boundingBox()).toEqual(before);
+  expect(await input.boundingBox()).toEqual(before);
 });

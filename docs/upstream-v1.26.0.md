@@ -1,6 +1,6 @@
 # 跟进上游 v1.26.0
 
-采用 [v1.26.0 正式标签](https://github.com/AltanS/collie/releases/tag/v1.26.0)，计划发布 `1.26.0+collie.1`。已核对发行说明、CHANGELOG 和 [v1.25.6…v1.26.0 实际标签差异](https://github.com/AltanS/collie/compare/v1.25.6...v1.26.0)，共 306 个文件；其中包含此前修复分支的重复合并，下面区分新增行为与已经拥有的修复。
+采用 [v1.26.0 正式标签](https://github.com/AltanS/collie/releases/tag/v1.26.0)，发布 `1.26.0+collie.1`。已核对发行说明、CHANGELOG 和 [v1.25.6…v1.26.0 实际标签差异](https://github.com/AltanS/collie/compare/v1.25.6...v1.26.0)，共 306 个文件；其中包含此前修复分支的重复合并，下面区分新增行为与已经拥有的修复。
 
 ## 新功能
 
@@ -27,7 +27,7 @@
 - **herdr-core 新空间**：`createSpace` 用新 UUID 的 `herdr.space`／`herdr.tab` 标签启动 shell，空 core 同样可用，随后由 app 接管；仍不支持自定义空间标签。[实现](https://github.com/AltanS/collie/commit/cf420be)
 - **单 pane tab 重命名同步**：从手机重命名 agent 同时更新只有一个 pane 的 tab，多 pane tab 不受影响。[实现](https://github.com/AltanS/collie/commit/bc1d532)
 - **断连恢复**：网络失败在任意时刻只保留一个未应答 strike；八秒内仍无健康回答的后续失败才锁存断连，成功回答或唤醒后重新计时。Chat／pane 读失败等待 herd 的统一锁存后再展示保存副本，既有 5xx 规则保留。[实现](https://github.com/AltanS/collie/commit/482e3c8)
-- **Gentle Shell 浮动输入框**：pi 支持 `│` 侧边框的 float editor、带草稿及多行输入，增加 `.gentle` 等 bundled journal 目录。引用文本伪造的侧边框不认作输入框；pi 1.4.0 仍为 provisional。
+- **Gentle Shell 浮动输入框**：pi 支持 `│` 侧边框的 float editor、带草稿及多行输入，增加 `.gentle-shell/agent/sessions` 等 bundled journal 目录。NORMAL／SELECT 模式和引用文本伪造的侧边框仍不认作可发送输入框；pi 1.4.0 仍为 provisional。
 - **长时间静默的 Claude 会话**：herdr-core 上 beacon 超时后，如果 PID 和进程开始时间仍匹配，保留 Chat／History 的 session 关联；不借旧 beacon 恢复状态灯，进程结束则移除关联。[#663](https://github.com/AltanS/collie/pull/663)
 - **Claude 2.1.317 verbose**：容纳 Heads-up 提示下方的 verbose token 行空隙，避免普通发送退化成二次确认；新增真实及衍生样本。[#668](https://github.com/AltanS/collie/pull/668)
 - **光标下的灰色建议**：灰色补全文本首格为反色光标时仍视为 ghost suggestion，单字符真实草稿仍保护。Cursor 对该规则选择退出，避免把 shell 提示误认为空输入；ANSI parser 增加 inverse 信息。[#659](https://github.com/AltanS/collie/pull/659)
@@ -56,4 +56,12 @@ Claude 2.1.317、OMP 18.6.1、pi 1.3.0 的 rig cassette 随新版 Walky skill �
 
 ## 验证与部署
 
-待写入本次定向验证、浏览器与部署验收结果。
+- 受影响后端首轮覆盖 42 个文件、3223 项通过；两处断言分别为 Cursor 下游 journal 根计数和上述 AGY 持续撕裂反例，修正后相关 908 项定向重跑通过。额外 herdr-core／unstyled 协议检查 209 项通过、3 项平台跳过。Unix socket 检查在允许本地 socket 的环境运行。
+- 受影响 logic 覆盖 15 个文件；新增四条 Claude frame golden 补齐后，该文件 785 项通过。保留一条 Cursor `cursor--idle-bottom-docked` 既有失败，上版已隔离复现，不宣称全套全绿。30 条既有 todo 未作为认证。
+- 受影响 DOM 首轮覆盖 39 个文件、2032 项通过；紧凑第六按钮宽度和未知卡片显式正文断言调整后，相关子集均通过。79 项适配目录回放全部通过。
+- 320px Chromium／WebKit 共 16 项通过：Claude 四类固定滚动卡片和未知界面小 Esc、Codex／Claude Queue／Steer、中文命令面板默认五项、Jobs 数量／长命令折行／退出码／关闭后输入框位置。新 Jobs 截图快进入场动画，避免保存空白中间态；未改变生产动画。已目视检查 [Jobs 面板](/private/tmp/collie-v1260-jobs-320.png)。这些 API stub 的无 session 提示不代表部署故障。
+- 两端类型检查、lint、版本一致性通过；干净 annotated tag `v1.26.0+collie.1` 的构建成功，构建标识 `1.26.0+collie.1+1d126e81c0.1793790391`。后续只有报告／E2E 断言提交，不改变部署产物。
+
+部署验收待完成：保持固定签名，替换前及重启前核验指定要求；只重启 Collie，按约定仅从 localhost 检查构建、鉴权 API、snapshot、实际 Documents 文件读取、镜像／发送保护分流及其他服务 PID，清理临时验收设备和过期自建备份。
+
+未新增模型调用、定时巡检或完整 CLI 原生发送认证；未做 Windows、跨机 Crew、真实 Gentle Shell 后台任务或真机 iOS／Android 验证。既有 core ANSI 样式、Hermes 完成状态及 Cursor 输入框旧失败不在本次升级修复范围。
