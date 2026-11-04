@@ -24,6 +24,10 @@
 
 320px Chromium／WebKit 共 4 项通过，覆盖默认 inbox-only、显式 wake、人数变化、二次确认前不发送、最终 API 的 wake 字段、回执和页面不横向溢出。采用既有 Crew API stub；最初 solo stub 没有群发入口，修正的是 E2E 环境，没有更改生产代码。已保存并目视检查 [手机群发面板](/private/tmp/collie-v1261-walky-320.png)；不代表真实跨机唤醒。
 
-干净标签构建通过，构建标识 `1.26.1+collie.1+d296269be5.1793802375`。标签后仅有 E2E 测试环境及报告提交，未改变运行产物。固定签名部署验收结果待补充。
+干净标签构建通过，构建标识 `1.26.1+collie.1+d296269be5.1793802375`。标签后仅有 E2E 测试环境及报告提交，未改变运行产物。main 和 annotated tag 均已推送，远端解引用提交与本地一致。
+
+部署已完成：替换前及重启前均验证固定 `Collie Local Signing` 签名及 `dev.collie.bridge` 指定要求，只重启 LaunchAgent `herdr.collie`，新监听进程 24574。localhost build-info／响应头／config.build 一致，匿名 config 为 403，认证 health／config／snapshot 正常；3 个工作区、7 个智能体，现有 Codex／Claude／AGY 均有 session。Documents 内本仓库 README 实际读取成功；空闲 Codex 的镜像读取 1000 行，发送保护读取 35 行。没有活跃 Hermes pane，未做其原生会话验证。
+
+Herdr、herdr-core、Headroom 及仍存活的采样 agent PID／执行路径不变；采样中的一个 Claude 进程在验收期间结束，单独记录，不把结果表述为全部 agent PID 都未变。本次没有向用户会话发键、终止或重启操作。临时验收设备已撤销，原有配对信息保留；安装目录干净，暂存和旧回滚已清理，仅保留完整签名的 `v1.26.0-collie.1.wj8s5cuc` 回滚包。按约定仅从本机验收，未绕过公网 OAuth。
 
 未新增模型调用、全量测试或定时巡检；不宣称跨机混合版本 Crew、真实 agent 唤醒或真机验证。既有 Cursor 输入框旧失败、core ANSI 样式和 Hermes 完成状态缺口不在本次修改范围。
