@@ -20,6 +20,10 @@
 
 ## 验证与部署
 
-定向 Walky 后端、CLI socket、skill 和工具检查 400 项通过；群发面板、发送 hook 和 Walky logic 共 100 项通过。两端类型检查、lint 通过。手机浏览器、正式构建及固定签名部署验收结果待补充。
+定向 Walky 后端、CLI socket、skill 和工具检查 400 项通过；群发面板、发送 hook 和 Walky logic 共 100 项通过。两端类型检查、lint、版本一致性通过。
+
+320px Chromium／WebKit 共 4 项通过，覆盖默认 inbox-only、显式 wake、人数变化、二次确认前不发送、最终 API 的 wake 字段、回执和页面不横向溢出。采用既有 Crew API stub；最初 solo stub 没有群发入口，修正的是 E2E 环境，没有更改生产代码。已保存并目视检查 [手机群发面板](/private/tmp/collie-v1261-walky-320.png)；不代表真实跨机唤醒。
+
+干净标签构建通过，构建标识 `1.26.1+collie.1+d296269be5.1793802375`。标签后仅有 E2E 测试环境及报告提交，未改变运行产物。固定签名部署验收结果待补充。
 
 未新增模型调用、全量测试或定时巡检；不宣称跨机混合版本 Crew、真实 agent 唤醒或真机验证。既有 Cursor 输入框旧失败、core ANSI 样式和 Hermes 完成状态缺口不在本次修改范围。

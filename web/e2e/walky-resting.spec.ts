@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installApiStub } from "./fixtures/api";
+import { installApiStub, installCrewWorld } from "./fixtures/api";
 
 test.use({ serviceWorkers: "block" });
 
@@ -8,6 +8,7 @@ for (const wake of [false, true]) {
     await page.setViewportSize({ width: 320, height: 844 });
     await page.addInitScript(() => localStorage.setItem("collie:locale:v1", "en"));
     await installApiStub(page);
+    await installCrewWorld(page);
     const resting = { address: "workshop/w2:p1", memberId: "workshop", machine: "workshop", harness: "codex", label: "resting-session", state: "done" };
     await page.route("**/api/walky/who", (route) => route.fulfill({ json: {
       targets: [{ address: "bluefin/w1:p1", memberId: "bluefin", machine: "bluefin", harness: "claude", label: "active-session", state: "idle" }, resting],
