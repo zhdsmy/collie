@@ -5,6 +5,7 @@ import type { ChangesLayout } from "@/lib/changes-tree";
 import { coerceDashView, isLegacyDashView, wasFocusView, type DashView } from "@/lib/dash-view";
 import { coercePaneOrder, type PaneOrder } from "@/lib/pane-order";
 import { coercePaneView, type PaneView } from "@/lib/pane-view";
+import { coerceZoomPill, type ZoomPill } from "@/lib/zoom-pill";
 import type { RecentDir } from "@/lib/triage";
 
 // Dashboard layout preferences, persisted in localStorage. Deliberately separate from
@@ -124,6 +125,12 @@ export interface DashPrefs {
    * actually turns it on per device (`DisplayPrefs.rejoinWraps`); off, that row does not exist.
    */
   rejoinExperiment: boolean;
+  /**
+   * Whether the belt's Zoom pill is drawn in the Screen view (`screen`) or never (`off`). `null` is
+   * "never chosen": the active theme's `zoom` word decides, and without one the pill shows in the
+   * Screen view. A choice made here always wins over the theme (lib/zoom-pill.ts).
+   */
+  zoomPill: ZoomPill | null;
 }
 
 const STORAGE_KEY = "collie:dash-prefs:v1";
@@ -158,6 +165,7 @@ const DEFAULTS: DashPrefs = {
   paneOrder: "place",
   paneView: "chat",
   rejoinExperiment: false,
+  zoomPill: null,
 };
 
 function coerceDepth(raw: JsonValue | undefined): number {
@@ -237,6 +245,7 @@ export function coerceDashPrefs(raw: JsonValue | undefined): DashPrefs {
     paneOrder: coercePaneOrder(p.paneOrder),
     paneView: coercePaneView(p.paneView),
     rejoinExperiment: asJsonBoolean(p.rejoinExperiment) ?? DEFAULTS.rejoinExperiment,
+    zoomPill: coerceZoomPill(p.zoomPill),
   };
 }
 
@@ -287,6 +296,7 @@ export interface UseDashPrefsReturn {
   setPaneOrder: (order: PaneOrder) => void;
   setPaneView: (view: PaneView) => void;
   setRejoinExperiment: (on: boolean) => void;
+  setZoomPill: (choice: ZoomPill) => void;
 }
 
 export function useDashPrefs(): UseDashPrefsReturn {
@@ -319,6 +329,7 @@ export function useDashPrefs(): UseDashPrefsReturn {
   const setPaneOrder = useCallback((paneOrder: PaneOrder) => update({ paneOrder }), [update]);
   const setPaneView = useCallback((paneView: PaneView) => update({ paneView }), [update]);
   const setRejoinExperiment = useCallback((rejoinExperiment: boolean) => update({ rejoinExperiment }), [update]);
+  const setZoomPill = useCallback((zoomPill: ZoomPill) => update({ zoomPill }), [update]);
 
   const setBeltScale = useCallback(
     (scale: number) => update({ beltScale: coerceBeltScale(scale) }),
@@ -364,5 +375,6 @@ export function useDashPrefs(): UseDashPrefsReturn {
     setPaneOrder,
     setPaneView,
     setRejoinExperiment,
+    setZoomPill,
   };
 }

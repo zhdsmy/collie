@@ -47,6 +47,7 @@ describe("coerceDashPrefs", () => {
       paneOrder: "place",
       paneView: "chat",
       rejoinExperiment: false,
+      zoomPill: null,
     });
   });
 
@@ -71,6 +72,7 @@ describe("coerceDashPrefs", () => {
         paneOrder: "activity",
         paneView: "terminal",
         rejoinExperiment: true,
+        zoomPill: "off",
       }),
     ).toEqual({
       spacesOpen: false,
@@ -92,7 +94,13 @@ describe("coerceDashPrefs", () => {
       paneOrder: "activity",
       paneView: "terminal",
       rejoinExperiment: true,
+      zoomPill: "off",
     });
+  });
+
+  it("reads an unknown stored zoomPill as never chosen", () => {
+    expect(coerceDashPrefs({ zoomPill: "none" }).zoomPill).toBeNull();
+    expect(coerceDashPrefs({ zoomPill: "screen" }).zoomPill).toBe("screen");
   });
 
   it("ignores a stored chatExperiment, whatever it holds (Chat is the default, ADR 0082)", () => {
@@ -210,6 +218,7 @@ describe("coerceDashPrefs", () => {
       paneOrder: "place",
       paneView: "chat",
       rejoinExperiment: false,
+      zoomPill: null,
     });
   });
 });
@@ -239,6 +248,7 @@ describe("useDashPrefs", () => {
       paneOrder: "place",
       paneView: "chat",
       rejoinExperiment: false,
+      zoomPill: null,
     });
   });
 
@@ -264,6 +274,7 @@ describe("useDashPrefs", () => {
     act(() => first.result.current.setPaneOrder("activity"));
     act(() => first.result.current.setPaneView("terminal"));
     act(() => first.result.current.setRejoinExperiment(true));
+    act(() => first.result.current.setZoomPill("off"));
 
     const second = renderHook(() => useDashPrefs());
     expect(second.result.current.prefs).toEqual({
@@ -286,6 +297,7 @@ describe("useDashPrefs", () => {
       paneOrder: "activity",
       paneView: "terminal",
       rejoinExperiment: true,
+      zoomPill: "off",
     });
   });
 
