@@ -23,12 +23,14 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.26.4+collie.1] - 2026-11-05
+
 ### Fixed
 
 - **One tap on Send sends on iPhone with the keyboard up.** The press no longer moves focus off the field, and a Send that is busy stays under the finger instead of letting the tap fall through to the box, so the keyboard stays up and the message goes out on the first tap. Thanks @JDFS404 for the diagnosis (#691). ([2c002b4dc](https://github.com/AltanS/collie/commit/2c002b4dc))
 - **Claude beacons stay live on Linux where /bin/sh is dash.** dash runs the hook command as a child and waits, so the beacon recorded the shell's pid and expired at once; every Claude pane on herdr-core then read as a shell (Ubuntu, Debian). `collie beacon emit` now records the first non-shell ancestor, and doctor accepts a hook command that starts with `exec`. Thanks @paran-kero for the diagnosis (#689). ([5f0e6d1c9](https://github.com/AltanS/collie/commit/5f0e6d1c9))
 - **The Zoom pill shows only in the Screen view.** In Chat it was a magnifier with a plus that pointed at nothing, because it zooms the terminal screen. Settings, under Appearance, has a new "Zoom pill" choice, "Screen view" (the default) or "Off", stored on the device. A theme file can set the surface word `zoom` to `screen` or `none`, and a choice made in Settings wins over the theme. ([9034c57](https://github.com/AltanS/collie/commit/9034c57))
-- **Merge upstream fixes for touch sending, beacons and zoom controls.** Preserve downstream sending choices, direct-input escape and UI customizations while adopting v1.26.2–v1.26.4.
+- **Merge upstream fixes for touch sending, beacons and zoom controls.** Preserve downstream sending choices, direct-input escape and UI customizations while adopting v1.26.2–v1.26.4. ([321023add](https://github.com/zhdsmy/collie/commit/321023add))
 
 ## [1.26.1+collie.1] - 2026-11-04
 
