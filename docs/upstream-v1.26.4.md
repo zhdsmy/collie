@@ -25,6 +25,10 @@
 
 320px Chromium／WebKit 共 4 项通过：一次触摸仅发送一条、忙碌按钮拦截重复触摸且输入区保留焦点、发送成功清空草稿；Zoom 关闭、重载持久化及页面无横向溢出。忙碌按钮使用强制触摸，防止 Playwright 等待 `aria-disabled` 恢复后才操作；初次测试的长等待触发了协议重试，修正的是测试操作。已保存并目视检查 [WebKit 发送后截图](/private/tmp/collie-v1264-send-focus-320.png)。
 
-干净标签构建通过，构建标识 `1.26.4+collie.1+6b07ee0341.1793885738`。标签后仅修改 E2E 操作及报告，没有改变运行产物。本机部署结果将在验收后补齐。
+干净标签构建通过，构建标识 `1.26.4+collie.1+6b07ee0341.1793885738`。标签后仅修改 E2E 操作及报告，没有改变运行产物。main 与 annotated tag 已推送；显式刷新 `origin/main`，避免远端追踪引用过旧而显示虚假的 ahead 数量。收尾再次查询 GitHub Release，最新稳定版仍为 v1.26.4。
+
+部署前及重启前均验证固定 `Collie Local Signing` 签名和 `dev.collie.bridge` 指定要求，仅重启 LaunchAgent `herdr.collie`，新监听进程 23012。localhost 的 build-info／响应头／config.build 一致，匿名 config 为 403，认证 health／config／snapshot 正常；3 个工作区、7 个智能体，现有 Codex／Claude／AGY session 正常。Documents 内本仓库 README 实际读取成功；空闲 pane 的镜像为 1000 行、发送保护为当前屏幕 45 行，两次读取合计 87ms。
+
+Herdr、herdr-core、Headroom 和采样 agent PID／执行路径均不变，没有向用户会话发键或执行终止操作。临时验收设备已撤销，已有配对信息保留；清理暂存与旧 v1.26.0 回滚，仅保留完整签名的 `v1.26.1-collie.1.plk7lbda` 回滚包。按约定只从本机验收，未访问或绕过公网 OAuth。没有活跃 Hermes pane，未做 Hermes 原生验证。
 
 未运行全量测试或调用真实模型；浏览器 stub 不代表真实 iPhone 软件键盘、Linux dash 主机或所有 agent 原生发送的认证。既有 core ANSI 样式和 Hermes 完成状态缺口不在此次补丁范围。
