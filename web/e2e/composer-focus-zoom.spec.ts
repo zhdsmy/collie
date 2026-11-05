@@ -42,7 +42,8 @@ test("one touch sends once and busy Send keeps the field focused", async ({ page
     await expect.poll(() => sent).toEqual(["first touch"]);
     await expect(send).toHaveAttribute("aria-disabled", "true");
     await expect(input).toBeFocused();
-    await send.tap();
+    // Playwright otherwise waits for aria-disabled to clear instead of touching the busy control.
+    await send.tap({ force: true });
     await expect(input).toBeFocused();
     expect(sent).toEqual(["first touch"]);
     release();
