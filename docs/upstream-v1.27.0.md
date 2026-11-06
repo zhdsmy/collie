@@ -64,4 +64,10 @@
 
 完整 logic 中既有 Cursor `idle-bottom-docked` 失败仍在，本次没有修改 Cursor profile；其余新增失败已分别定向复验。Chromium／WebKit 手机浏览器共 14 项通过，覆盖 Codex／Claude Queue／Steer、立即引导、Standard／Fast 单控件、首次触摸发送、忙碌按钮焦点及 Zoom；宽屏用例按项目设计在手机上跳过，另在 tablet 项目 3 项通过，覆盖 Auto／Off 和长行不撑宽页面。当前是合并树的前端预览构建，不冒充正式标签构建或已部署版本。
 
-正式标签构建、推送和固定签名部署结果将在验收后补齐。未新增模型调用或定时巡检，不把 stub／样本通过表述为真实 agent 交互、iPhone 键盘、Linux 或 Windows 原生认证。
+用户确认外观后，前后端绑定契约又通过后端 377 项检查。正式标签 `v1.27.0+collie.1` 的干净构建通过，构建标识为 `1.27.0+collie.1+dc21170734.1793968246`；代码及 annotated tag 已推送，收尾报告单独提交，不改变运行产物。
+
+暂存替换前、安装完成后及重启前均核验固定 `Collie Local Signing` 签名，指定要求保持 `dev.collie.bridge` 和原证书哈希。仅重启 LaunchAgent `herdr.collie`，新监听进程为 32820。localhost build-info／响应头／config.build 一致，匿名 API 为 403，认证 health／config／snapshot 正常；当前 2 个工作区、4 个 agent，Codex／Claude／AGY 均有 session。Documents 中本仓库 README 实际读取成功。
+
+历史检查初次选中只有 26 行内容的空闲 Claude，不足以比较长历史；改用已完成且有足够历史的 Claude 后，镜像为 1000 行，内部发送保护仍读取当前屏幕 72 行。没有向用户会话发键。Herdr、herdr-core、Headroom 及采样 agent PID／执行路径均不变，采样 agent 无退出。临时验收设备已撤销，原有设备和待配对信息不变；安装 checkout 干净，暂存及旧 v1.26.1 回滚已清理，仅保留完整签名的 v1.26.4 回滚包。只从本机验收，不绕过公网 OAuth。
+
+没有活跃 Hermes pane，未做其原生验证。未新增模型调用或定时巡检，不把 stub／样本通过表述为真实 agent 交互、iPhone 键盘、Linux 或 Windows 原生认证。
