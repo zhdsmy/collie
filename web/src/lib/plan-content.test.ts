@@ -10,6 +10,10 @@ function entry(text = source): TranscriptEntry {
 }
 
 describe("matching a plan to its original source", () => {
+  it("matches a rendered quote with nested list content", () => {
+    const quoted = "> - Keep the draft\n> - Read the complete plan";
+    expect(completePlanText({ text: "Keep the draft\nRead the complete plan", complete: true }, entry(quoted))).toBe(quoted);
+  });
   it("restores exact Markdown after the entire visible tail matches across terminal wrapping", () => {
     const visible = "Last paragraph contains enough distinct words to verify which completed\n  plan is currently on the terminal.";
     expect(completePlanText({ text: visible, complete: false }, entry())).toBe(source);

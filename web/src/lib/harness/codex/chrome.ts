@@ -53,11 +53,10 @@ const DIALOG_FOOTER =
 
 function isPlainComposerStatusRow(text: string): boolean {
   const row = rstrip(text);
-  if (!PLAIN_STATUS_ROW.test(row) || DIALOG_FOOTER.test(row)) return false;
+  if (!(PLAIN_STATUS_ROW.test(row) || isStatusRow(row, undefined, true)) || DIALOG_FOOTER.test(row)) return false;
   if (/\bContext \d+% (?:left|used)\b/.test(row) && !isStatusRow(row)) {
     return false;
   }
-  if (/^ {2}model · \/dir · [⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]$/u.test(row)) return false;
   return true;
 }
 
@@ -197,7 +196,9 @@ export function locateComposer(lines: StyledLine[]): ComposerBox | null {
   let crossedBlank = false;
   for (let i = top; i >= 0 && statusRow - 1 - i <= MAX_DRAFT_ROWS; i--) {
     const t = texts[i]!;
-    if (promptText(t) !== null) {
+    const body = promptText(t);
+    if (body !== null) {
+      if (unstyled && /^\d{1,2}\. /u.test(body)) return null;
       if (crossedBlank && !workingStatus && !customStatus) {
         const marker = lines[i]!.segments.find((segment) => segment.text.length > 0 && PROMPT_GLYPHS.includes(segment.text[0]!));
         if (!marker?.bold || marker.dim) return null;
@@ -224,7 +225,7 @@ function locateStatusRow(texts: string[], clean: StyledLine[], unstyled = false)
     isWorkingContextRow(texts[row]!) ||
     (unstyled && isPlainComposerStatusRow(texts[row]!));
   const above = last - 1;
-  if (above >= 0 && isHintRow(texts[last]!, clean[last]) && isCandidate(above)) return above;
+  if (above >= 0 && isHintRow(texts[last]!, clean[last], unstyled) && isCandidate(above)) return above;
   return isCandidate(last) ? last : -1;
 }
 

@@ -1,18 +1,19 @@
 import { fold, PROBE_CHARS, replyProse } from "./latest-reply";
 import type { PickerModel } from "./harness/picker-model";
 import type { TranscriptEntry } from "./types";
-import { parseMarkdown, type MdSpan } from "./markdown";
+import { parseMarkdown, type MdBlock, type MdSpan } from "./markdown";
 
 function spanText(spans: MdSpan[]): string {
   return spans.map((span) => "text" in span ? span.text : "spans" in span ? spanText(span.spans) : "alt" in span ? span.alt : "").join("");
 }
 
 /** Markdown syntax (notably a fenced code block's language) is absent from Codex's display. */
-function renderedText(source: string): string {
-  return parseMarkdown(source).map((block) => {
+function renderedText(blocks: MdBlock[]): string {
+  return blocks.map((block) => {
     switch (block.kind) {
       case "code": return block.text;
       case "rule": return "";
+      case "quote": return renderedText(block.blocks);
       case "list": return block.items.map((item, index) => `${block.ordered ? index + 1 : ""} ${spanText(item)}`).join("\n");
       case "table": return [block.header, ...block.rows].map((row) => row.map(spanText).join(" ")).join("\n");
       default: return spanText(block.spans);
@@ -29,7 +30,7 @@ export function completePlanText(plan: NonNullable<PickerModel["plan"]>, entry: 
   if (!match) return null;
   const original = match[1]!.trim();
   if (/<\/?proposed_plan>/.test(original)) return null;
-  const candidates = [fold(original), fold(renderedText(original))];
+  const candidates = [fold(original), fold(renderedText(parseMarkdown(original)))];
   const visible = fold(plan.text);
   if (!visible || !candidates.some((normalized) => plan.complete ? normalized === visible :
     visible.length >= PROBE_CHARS && normalized.endsWith(visible))) return null;

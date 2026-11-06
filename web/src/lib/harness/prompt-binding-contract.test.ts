@@ -61,6 +61,7 @@ const REGIONS = JSON.parse(
   readFileSync(join(FIXTURES_DIR, "prompt-binding-regions.json"), "utf8"),
 ) as RegionRow[];
 const READONLY_SETTINGS = [
+  "claude-lab--menu-config-panel-v2291--w82.txt",
   "claude--v2283-slash-usage.txt",
   "claude--v21284-settings-config.txt",
   "claude--v21284-settings-status.txt",

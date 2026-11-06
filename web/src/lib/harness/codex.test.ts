@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { parseAnsi } from "../ansi";
 import { splitLines } from "../blocks";
 import { draftCarriesSend } from "../draft-match";
+import { stripSgr } from "../surface/plain";
 import { codexAdapter } from "./codex";
 import { composerPrompt, extractInputDraft, locateComposer, stripChrome } from "./codex/chrome";
 import { isComposerStatusRow, isStatusRow, lineText, PLACEHOLDER, PROMPT_GLYPHS, promptText } from "./codex/markers";
@@ -218,6 +219,11 @@ const PINNED = [
   "codex--v0166-art-backspace--w120.txt",
   "codex--v0166-art-empty--w120.txt",
   "codex--v0166-art-typed--w120.txt",
+  // 0.166.0 on herdr-core, whose `terminal.read` carries no styling: a turn running, the box after it, and a
+  // draft (the Codex report of 2026-11-05, the unread-dialog card after every send).
+  "codex--v0166-core-draft--w120.txt",
+  "codex--v0166-core-idle--w120.txt",
+  "codex--v0166-core-working--w120.txt",
   "codex--v0166-warning-art-empty--w120.txt",
   "codex--v0166-warning-typed--w120.txt",
   "codex--working.txt",
@@ -400,6 +406,77 @@ describe("Codex 0.166.0: the logo over an empty box and the lone warning row (ha
   });
 });
 
+describe("Codex on a read with no styling (herdr-core, Codex 0.166.0, reported 2026-11-05)", () => {
+  // The core's `terminal.read` hands out plain text. The status row had no paint to pass on, so every
+  // Codex pane on the core had no composer, and while a turn ran (`esc to interrupt` in the last rows)
+  // the unread-dialog card stood over the live box after every send.
+  it.each([
+    ["codex--v0166-core-working--w120.txt", null],
+    ["codex--v0166-core-idle--w120.txt", null],
+    ["codex--v0166-core-draft--w120.txt", "collie core draft probe"],
+  ] as const)("%s: the box is found, its draft reads back, and no card covers it", (name, draft) => {
+    const lines = fixtureLines(name);
+    expect(codexAdapter.composerReady!(lines)).toBe(true);
+    expect(codexAdapter.extractInputDraft(lines)).toBe(draft);
+    expect(buildBlocks(lines, { agent: "codex" }).map((b) => b.kind)).not.toContain("unread-dialog");
+    expect(lineText(codexAdapter.extractStatusLines(lines)[0]!)).toBe(
+      "  GPT-6.1-Sol low · /var/home/alice/.cache/collie-lab/codex-lab/project · Run sleep and list files",
+    );
+  });
+
+  it("a running turn's interrupt hint does not authorize a modal Escape action", () => {
+    expect(codexAdapter.modalOnScreen!(fixtureLines("codex--v0166-core-working--w120.txt"))).toBe(false);
+  });
+
+  // Astra's starfield draws braille sparkles on the prompt row after the placeholder. Only their paint
+  // tells them from typed text, so a plain read takes them for a draft (as before this change).
+  // These downstream captures need paint to distinguish particles, blank draft lines or a typed placeholder.
+  const PLAIN_GAPS = new Set(["codex--v0154-submitted-fill.txt", "codex--v0154-particles-draft.txt", "codex--v0154-particles-working.txt", "codex--v0156-draft-blank-line.txt", "codex--v0156-paste-placeholder.txt"]);
+
+  it.each(allCodexFixtures.filter((f) => !PLAIN_GAPS.has(f)))(
+    "%s: stripping styling preserves its box and draft, without a fallback card over a readable box",
+    (name) => {
+      const raw = readFileSync(join(PANES_DIR, name), "utf8");
+      const styled = splitLines(parseAnsi(raw));
+      const plain = splitLines(parseAnsi(stripSgr(raw)));
+      expect(codexAdapter.composerReady!(plain)).toBe(codexAdapter.composerReady!(styled));
+      expect(codexAdapter.extractInputDraft(plain)).toBe(codexAdapter.extractInputDraft(styled));
+      const card = (lines: typeof styled) => buildBlocks(lines, { agent: "codex" }).some((b) => b.kind === "unread-dialog");
+      if (codexAdapter.composerReady!(plain)) expect(card(plain)).toBe(false);
+    },
+  );
+
+  it.each([...DIALOG, "codex--ask-notes-focused.txt"])("%s stripped: a modal still owns the screen", (name) => {
+    const raw = readFileSync(join(PANES_DIR, name), "utf8");
+    expect(codexAdapter.composerReady!(splitLines(parseAnsi(stripSgr(raw))))).toBe(false);
+  });
+
+  it("takes a status row by its text alone, and refuses the rows the paint kept out", () => {
+    const plainRow = (text: string) => isStatusRow(text, undefined, true);
+    expect(plainRow("  GPT-6.1-Sol low · /tmp/project · Run sleep and list files")).toBe(true);
+    expect(plainRow("  gpt-5.6-sol default · /tmp/collie-codex-sandbox")).toBe(true);
+    // A right-aligned notice after a gap of two spaces or more.
+    expect(plainRow(`  GPT-6-Astra high · ~/project${" ".repeat(90)}Pursuing goal (17h 43m)`)).toBe(true);
+    expect(plainRow(`  GPT-6-Astra high · ~/project${" ".repeat(4)}${"x".repeat(200)}`)).toBe(false);
+    // Key-hint rows and dialog footers.
+    expect(plainRow("  ← for agents · ? for shortcuts")).toBe(false);
+    expect(plainRow("  ? for shortcuts · tab to queue")).toBe(false);
+    expect(plainRow("  ⚠ 1 warning · f2 to view")).toBe(false);
+    expect(plainRow("  enter continue · esc quit")).toBe(false);
+    expect(plainRow("  enter select · esc back")).toBe(false);
+    // One field, no indent, and a field over its bound.
+    expect(plainRow("  just one field")).toBe(false);
+    expect(plainRow("model · /tmp/project")).toBe(false);
+    expect(plainRow(`  model · ${"y".repeat(200)}`)).toBe(false);
+  });
+
+  it("refuses a pointed option row, whose footer the paint no longer sets apart", () => {
+    const lines = splitLines(parseAnsi(["", "› 1. Trust and continue", "  2. Quit", "", "  model low · /tmp/project"].join("\n")));
+    expect(locateComposer(lines)).toBeNull();
+    expect(codexAdapter.composerReady!(lines)).toBe(false);
+  });
+});
+
 describe("the Ultra prompt glyph (issue 615)", () => {
   it("keeps an Ultra draft across an internal blank paragraph", () => {
     const original = fixtureLines("codex--v0156-draft-blank-line.txt");
@@ -536,7 +613,7 @@ describe("chrome", () => {
     const typed = splitLines(
       parseAnsi(
         [
-          "some output",
+          "\u001b[38;5;245msome output\u001b[0m",
           "",
           `\u001b[1m\u203a\u001b[0m ${PLACEHOLDER}`,
           "",
@@ -558,6 +635,15 @@ describe("chrome", () => {
       ),
     );
     expect(codexAdapter.extractInputDraft(unstyledIdle)).toBeNull();
+  });
+
+  it("reads the placeholder words as the empty box on a read with no styling anywhere", () => {
+    // herdr-core hands out plain text, so the dim style is gone everywhere on the screen. The words
+    // alone then stand for the empty box, as the Codex profile reads them (idle.placeholders).
+    const plain = splitLines(
+      parseAnsi(["some output", "", `\u203a ${PLACEHOLDER}`, "", "  model-example · demo-project · Context 99% left"].join("\n")),
+    );
+    expect(codexAdapter.extractInputDraft(plain)).toBeNull();
   });
 
   it("joins a wrapped draft back into the typed sentence", () => {
@@ -1618,7 +1704,15 @@ describe("Codex 0.156.1 busy: a spinner ends the status row", () => {
     });
 
     it("refuses the same text with no paint at all", () => {
-      expect(ready("  model · /dir · ⠧")).toBe(false);
+      // The placeholder is dim, as Codex draws it, so the screen is a styled read.
+      const styled = codexAdapter.composerReady!(
+        splitLines(parseAnsi([`› ${DIM}${PLACEHOLDER}${OFF}`, "", "  model · /dir · ⠧"].join("\n"))),
+      );
+      expect(styled).toBe(false);
+    });
+
+    it("takes the same text on a read with no styling anywhere, where every spinner looks like this", () => {
+      expect(ready("  model · /dir · ⠧")).toBe(true);
     });
   });
 });

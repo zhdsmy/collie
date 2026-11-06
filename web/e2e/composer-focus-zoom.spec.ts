@@ -49,7 +49,7 @@ test("one touch sends once and busy Send keeps the field focused", async ({ page
     release();
     await expect(input).toHaveValue("");
     await expect(send).not.toHaveAttribute("aria-disabled");
-    await page.screenshot({ path: info.outputPath("send-focus-320.png") });
+    await page.screenshot({ path: info.outputPath("send-focus-320.png"), animations: "disabled" });
   } finally {
     release();
   }
@@ -66,5 +66,5 @@ test("Zoom pill can be turned off and the device choice survives reload", async 
   await page.goto("/pane/w1:p1");
   await expect(page.getByRole("button", { name: "Zoom output" })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: info.outputPath("zoom-off-320.png") });
+  await page.screenshot({ path: info.outputPath("zoom-off-320.png"), animations: "disabled" });
 });

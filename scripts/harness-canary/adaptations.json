@@ -87,6 +87,27 @@
             "block": "raw",
             "statusLinesMin": 1
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0166-core-idle--w120.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0166-core-draft--w120.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/codex--v0166-core-working--w120.txt",
+          "agent": "codex",
+          "expect": {
+            "block": "raw"
+          }
         }
       ],
       "live": false,
@@ -278,6 +299,13 @@
           "expect": {
             "block": "prompt-select",
             "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/pi--v150-core-permission-gate-no-cost--w200.txt",
+          "agent": "pi",
+          "expect": {
+            "block": "prompt-select"
           }
         }
       ]
@@ -1394,6 +1422,13 @@
             "block": "menu",
             "minOptions": 1
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2318-model-picker-usage-notice-edge--w120.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu"
+          }
         }
       ],
       "live": true,
@@ -1979,6 +2014,20 @@
           "expect": {
             "block": "menu",
             "minOptions": 3
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2317-survey-context-row--w160.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/claude--v2317-survey-context-row-plain--w160.txt",
+          "agent": "claude",
+          "expect": {
+            "block": "menu"
           }
         }
       ],
@@ -2596,6 +2645,34 @@
             "block": "prompt-select",
             "minOptions": 2
           }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-17-0-switch--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-17-0-nerd-switch--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-17-0-nerd-switch-moved--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-17-0-nerd-switch-search--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select"
+          }
         }
       ],
       "live": false,
@@ -2754,6 +2831,20 @@
           "expect": {
             "block": "prompt-select",
             "minOptions": 2
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-16-0-ask-single-glyph-hide--w200.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-16-0-ask-single-glyph-hide-moved--w200.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "prompt-select"
           }
         }
       ],
@@ -2925,6 +3016,13 @@
           "agent": "omp",
           "expect": {
             "block": "raw"
+          }
+        },
+        {
+          "path": "web/src/fixtures/panes/omp--v18-17-0-usage-dashboard--w120.txt",
+          "agent": "omp",
+          "expect": {
+            "block": "unread-dialog"
           }
         }
       ],

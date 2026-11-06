@@ -103,6 +103,9 @@ export interface CardDockProps {
   /** Opens Report a problem from the unread-dialog card (ADR 0123, amendment 2026-10-28). Absent, the
    *  card offers no report. */
   onUnreadDialogReport?: (cancel: UnreadDialogModel) => void;
+  /** The unread-dialog card showed (M86 spec 05): called once per card instance for each pane and
+   *  dialog. Absent, nothing is called. */
+  onUnreadDialogShown?: (cancel: UnreadDialogModel) => void;
   /** Disable every card's controls (read-only device, gone pane). */
   promptDisabled?: boolean;
   /** The body draws no mirror (Chat), so an unread dialog carries the screen's rows itself. */
@@ -165,6 +168,7 @@ function liftedCard({
   pickerAutomating,
   planEntry = null,
   onUnreadDialogReport,
+  onUnreadDialogShown,
   promptDisabled,
   showScreen,
   paneId,
@@ -253,6 +257,8 @@ function liftedCard({
         wrap={wrap}
         onAction={(key) => onUnreadDialogAction?.(key, unreadBlock.cancel)}
         onReport={onUnreadDialogReport === undefined ? undefined : () => onUnreadDialogReport(unreadBlock.cancel)}
+        onShown={onUnreadDialogShown === undefined ? undefined : () => onUnreadDialogShown(unreadBlock.cancel)}
+        paneId={paneId}
       />
     );
   }

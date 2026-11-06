@@ -37,6 +37,13 @@ export interface UnreadDialogBlockProps {
   screen?: StyledLine[];
   /** Opens the existing problem report without sending anything. */
   onReport?: () => void;
+  /**
+   * Called once per card instance for each pane and dialog it shows (M86 spec 05): the trouble signal.
+   * A re-render of the same dialog is not a new call. Absent, nothing is called.
+   */
+  onShown?: () => void;
+  /** The pane the card shows, so an instance another pane reuses calls {@link onShown} again. */
+  paneId?: string;
 }
 
 // The UNREAD-DIALOG CARD — one declared key over a screen Collie could not read (.adr/0053).
@@ -64,7 +71,7 @@ const VIEWPORT_CLASS =
   "min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain [scrollbar-gutter:stable] [scrollbar-width:thin]";
 const NAMES_A_DISMISS = /\besc\s+dismiss\b/i;
 
-export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled, screen, wrap, onReport }: UnreadDialogBlockProps) {
+export function UnreadDialogBlock({ cancel, lines, viewport, screen, onAction, disabled, wrap, onReport, onShown, paneId }: UnreadDialogBlockProps) {
   useLocale();
   const [sending, setSending] = useState(false);
   const locked = disabled || sending;
@@ -79,7 +86,16 @@ export function UnreadDialogBlock({ cancel, lines, viewport, onAction, disabled,
   const shown = viewport ? undefined : screen;
 
   useEffect(() => () => clearTimeout(timer.current), []);
-  // A changed dialog or a card that stops being pressable also stops being armed.
+  // The trouble signal (M86 spec 05): once per instance for each pane and dialog identity, the same
+  // identity the arm keys on. A poll that re-renders the same dialog calls nothing.
+  const shownKey = `${paneId ?? ""}\n${identity}`;
+  const shownFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (onShown === undefined || shownFor.current === shownKey) return;
+    shownFor.current = shownKey;
+    onShown();
+  }, [shownKey, onShown]);
+  // A card that stops being pressable (read-only device, gone pane) also stops being armed.
   useEffect(() => {
     clearTimeout(timer.current);
     setArmedFor(null);
