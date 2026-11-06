@@ -23,6 +23,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.27.0+collie.1] - 2026-11-06
+
 ### Added
 
 - **Each pane row shows its status.** On a large screen the sidebar rows, and the Switch pane sheet, carry the same status mark the home cards show, so you see which pane needs you before you switch. Thanks @peter50216 (#696, #695). ([8a4591b](https://github.com/AltanS/collie/commit/8a4591b))
@@ -35,7 +37,7 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ### Changed
 
-- **Merge upstream v1.27.0 and adopt its default appearance.** Adopt input, notification, theme and core fixes while preserving agent icons, device settings, guarded sending and local integrations.
+- **Merge upstream v1.27.0 and adopt its default appearance.** Adopt input, notification, theme and core fixes while preserving agent icons, device settings, guarded sending and local integrations. ([45e11b2f4d](https://github.com/zhdsmy/collie/commit/45e11b2f4d))
 
 - **The install ping says whether the bridge runs alone, leads a crew or is a member.** One more word in the daily ping, so the count can tell setups from machines; nothing else is added. ([750ed95](https://github.com/AltanS/collie/commit/750ed95))
 - **Updates is the first row in Settings.** The row shows whether you are up to date or which version waits, and the gear on the home screen carries a dot when an update is available. System now holds devices, crew and connection. ([101e339](https://github.com/AltanS/collie/commit/101e339))
