@@ -23,6 +23,8 @@ Running a crew? Update the lead first; members follow on their own. Details:
 
 ## [Unreleased]
 
+## [1.27.1+collie.1] - 2026-11-07
+
 A patch for the phone and the desk: Chrome's "updated in the background" notice stops, and a browser tab can keep its place.
 
 ### Added
