@@ -50,5 +50,10 @@ Chrome 对最终没有显示通知的 push 有额度限制；上一版每 agent 
 - 前端相关 DOM：16 文件、640 项通过，覆盖槽记忆、角标、通知、弹层、标签和双栏；API 边界另 102 项通过。输入区、双栏与语音接管补检 367 项通过。
 - 手机 Chromium／WebKit：29 项通过、1 项按设计跳过（拖动采样依赖 Chromium CDP），包含 320px 标签栏、五标签恢复和笔记本布局恢复。双栏 6 项通过，包含 40px 顶部／30px 底部模拟安全区、长列表与整页滚动。没有修改上游安全区断言；首次发现输入区 5px 重叠，补齐双栏边距后复测通过。
 - [WebKit 标签栏截图](/private/tmp/collie-v1271-tabs-webkit.png)、[双栏安全区截图](/private/tmp/collie-v1271-wide-safe-area.png) 已目视检查，图标／按钮没有重叠；样本 API 无真实历史会话，因此截图中的历史提示不是运行中会话故障。
-- 两端类型检查通过；全树 lint、版本一致性检查与正式标签构建按交付流程执行。
+- 两端类型检查、全树 lint、版本一致性与干净正式标签构建通过。最终构建为 `1.27.1+collie.1+d40819545f.1794023539`，标签提交 `d40819545f`。
+- `main` 与 annotated tag `v1.27.1+collie.1` 均已推送并回读匹配；最终部署报告独立提交，不改已发布标签。
+- 暂存二进制安装前和重启前均通过固定签名验证，指定要求仍是 `dev.collie.bridge` 与证书 `73f7427f76157dbdebdf6bc14f1fc7a56af4a898`。仅重启 LaunchAgent `herdr.collie`，新监听 PID `30099`；采样中的 herdr-core、Headroom 和智能体 PID 均保持不变。Herdr.app 在部署前已未运行。
+- 本机 `/build-info.json` 的内容及构建响应头、认证 `/api/config` 的 build 均匹配；匿名 API 403，health 正常、未被替代，snapshot 已连接，2 个工作区／3 个 agent。当前 Codex、Claude session 正常；没有活跃 Hermes 或 AGY，本轮不作其原生认证。
+- 实际读取 Documents 内本仓库 `README.md` 成功；Codex 镜像 1000 行、内部 guard 43 行，两次读取共 81ms。验收临时设备已撤销，原配对设备与待配对码保留。
+- 仅保留上一版 `v1.27.0` 的完整签名回滚包，清理旧 `v1.26.4` 包和本轮暂存；安装目录干净，清理后构建及健康再次通过。
 - 仅使用本机验收，不绕过公网 OAuth；不调用新模型、不重启用户会话或其他服务。真实 iPhone 键盘、折叠屏硬件、Chrome 长期推送与跨机 Crew 未在本轮重新实测。
