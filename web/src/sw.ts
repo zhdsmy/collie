@@ -6,8 +6,7 @@ import { clientsClaim } from "workbox-core";
 import { decidePush, notificationPath, type NotifData, type PushPayload } from "./lib/push-decision";
 import { displayPush } from "./lib/push-display";
 import { askInApp, openNotificationTarget, type OpenOutcome, type OpenTargetClient } from "./lib/notification-open";
-import { recordSlot, showBadge, slotCount } from "./lib/app-badge";
-import { asJsonString } from "./lib/json";
+import { recordSlots, showBadge, slotUpdates } from "./lib/app-badge";
 import { readPushTitles } from "./lib/push-title-store";
 import { FONT_URLS, navigationNetworkOnlyUnder } from "./lib/sw-routes";
 import { stripMount, sttCacheName, sttCopyToStore, sttStorable, sttSweepKeeps } from "./lib/stt-cache";
@@ -239,12 +238,12 @@ async function handlePush(event: PushEvent): Promise<void> {
     payload = { body: event.data?.text() };
   }
 
-  // Before the decision, because a push a visible tab suppresses still moves the icon's count.
-  const count = slotCount(payload);
-  const slotTag = asJsonString(payload.tag);
-  if (count !== undefined && slotTag !== undefined) {
+  // Before the decision, because a push a visible tab suppresses still moves the icon's count. A push
+  // may carry several slots: a clear of a burst names each, and counts this worker missed ride along.
+  const updates = slotUpdates(payload);
+  if (updates.length > 0) {
     try {
-      await showBadge(self.navigator, await recordSlot(self.caches, self.location.origin, MOUNT, slotTag, count));
+      await showBadge(self.navigator, await recordSlots(self.caches, self.location.origin, MOUNT, updates));
     } catch {
       // Cache Storage refused: the notification below matters more than the count.
     }

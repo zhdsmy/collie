@@ -10,6 +10,14 @@ function registration(existing = true) {
 }
 
 describe("push delivery", () => {
+  test("closes every slot in a clear burst without showing a notification", async () => {
+    const target = registration();
+    await displayPush(decidePush({ type: "clear", tag: "collie:herd:t1", tags: ["collie:herd:t1", "collie:herd:t2"] }, true), target);
+    expect(target.getNotifications.mock.calls).toEqual([[{ tag: "collie:herd:t1" }], [{ tag: "collie:herd:t2" }]]);
+    expect(target.close).toHaveBeenCalledTimes(2);
+    expect(target.showNotification).not.toHaveBeenCalled();
+  });
+
   test("keeps the machine alert destination through display", async () => {
     const target = registration(false);
     await displayPush(decidePush({ title: "High CPU", data: { target: "machine", machine: "local" } }, false), target);

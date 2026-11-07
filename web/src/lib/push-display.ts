@@ -13,8 +13,10 @@ const BADGE = "/badge-96x96.png";
 export async function displayPush(decision: PushDecision, target: NotificationDisplay): Promise<void> {
   if (decision.kind === "suppress") return;
   if (decision.kind === "clear") {
-    const stale = await target.getNotifications({ tag: decision.tag });
-    for (const notification of stale) notification.close();
+    for (const tag of decision.tags) {
+      const stale = await target.getNotifications({ tag });
+      for (const notification of stale) notification.close();
+    }
     return;
   }
   // A retraction may update an existing alert, never recreate one already dismissed or suppressed.

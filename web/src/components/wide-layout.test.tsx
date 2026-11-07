@@ -265,6 +265,31 @@ describe("the sidebar", () => {
     for (const p of [A1, A2, A3, B1]) expect(sidebarRow(container, p)).not.toBeNull();
   });
 
+  it("clears the status bar on its two top rows and the gesture bar at its foot, and the docked header does not clear the bar again", async () => {
+    // A foldable draws the page under its status bar: the sidebar and the tab row are the top edge,
+    // so they take the inset. The header sits lower, in the column, and padding it as well pushed the
+    // pane's title down while the two top rows stayed under the bar (1.27.1).
+    const inset = "env(safe-area-inset-top)";
+    const { container } = await mount("w1:p1", 1200);
+    expect(q(container, "aside")?.className).toContain(`pt-[${inset}]`);
+    const tabRow = q(container, '[data-slot="space-header"]')!;
+    expect(tabRow.className).toContain(`pt-[${inset}]`);
+    expect(tabRow.className).toContain(`h-[calc(3rem+${inset})]`);
+    const header = q(container, "header")!;
+    expect(header.closest('[data-slot="column-head"]')).not.toBeNull();
+    expect(header.className).not.toContain(inset);
+    // At the bottom the foot clears the gesture bar as the composer beside it does.
+    expect(q(container, '[data-slot="sidebar-foot"]')?.className).toContain("pb-[calc(0.25rem+env(safe-area-inset-bottom))]");
+  });
+
+  it("is the containing block of everything absolute in its list, so a row's mark never grows the page", async () => {
+    // A mark far down a long list with no positioned box above it took the page as its containing
+    // block and made the document taller than the screen (1.27.1). The real layout is in e2e.
+    const { container } = await mount("w1:p1", 1200);
+    const list = q(container, '[data-slot="wide-sidebar"] > div.overflow-y-auto')!;
+    expect(list.className).toMatch(/(^|\s)relative(\s|$)/);
+  });
+
   it("is 280 px wide at medium", async () => {
     const { container } = await mount("w1:p1", 700);
     expect(q(container, "aside")?.style.width).toBe("280px");
