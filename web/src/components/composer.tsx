@@ -981,7 +981,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
   const takeoverOpen = recorder.busy;
   // The block's bottom padding. Named once because the takeover repeats it on its own column, which
   // is what puts OK on the mic's exact spot. See `composing` on the props above for the why.
-  const blockPad = composing ? "pb-2" : "pb-4";
+  const blockPad = composing ? "pb-2" : "pb-[var(--composer-bottom-pad,1rem)]";
   const blockRef = useRef<HTMLDivElement>(null);
   const openedByKeyboard = useRef(false);
   // Which mic opened the takeover, so focus returns to that button: the round primary one on an empty

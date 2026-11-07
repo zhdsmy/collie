@@ -426,7 +426,8 @@ export function WideLayout({ widthClass, paneId, scope, agent, focused, fold = "
       data-fold={fold}
       // No scroll bar anywhere in the layout: the position strip says where the strip is, and a bar on
       // every column and list would be a second, noisier answer.
-      className="flex min-h-0 w-full flex-1 [&_*]:[scrollbar-width:none] [&_*::-webkit-scrollbar]:hidden"
+      // Keep the phone's 16px clearance; columns also stand above a foldable's gesture bar.
+      className="flex min-h-0 w-full flex-1 [--composer-bottom-pad:max(1rem,calc(env(safe-area-inset-bottom)+0.5rem))] [&_*]:[scrollbar-width:none] [&_*::-webkit-scrollbar]:hidden"
     >
       <aside
         data-slot={sidebarShown ? "wide-sidebar" : "rail"}
